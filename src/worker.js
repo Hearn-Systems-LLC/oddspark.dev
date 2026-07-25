@@ -525,15 +525,18 @@ function page(initial, live) {
         "err    err"
         "idea   viz"
         "prov   viz"
-        "foot   foot";
+        "foot   viz";
     }
     header{grid-area:head} .strike-row{grid-area:strike} .err{grid-area:err}
-    .idea{grid-area:idea} .prov{grid-area:prov} footer{grid-area:foot}
+    .idea{grid-area:idea} .prov{grid-area:prov} footer{grid-area:foot; align-self:start}
     .viz{grid-area:viz; margin-top:0; align-self:start; position:sticky; top:24px}
   }
 
   /* seed geometry -------------------------------------------------- */
-  .viz{margin-top:38px; border-top:1px solid var(--rule); padding-top:20px}
+  .viz{border-top:1px solid var(--rule); padding-top:20px}
+  @media (max-width:919.98px){
+    .viz{margin-top:38px}
+  }
   .viz h2{
     font-size:10.5px; letter-spacing:.24em; text-transform:uppercase;
     color:var(--dim); font-weight:400; margin:0 0 14px;
