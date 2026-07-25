@@ -233,56 +233,77 @@ function stripFence(s) {
 }
 
 /* Neuron budget. Workers AI includes 10,000 free neurons per day; the binding
- * reports per-call spend in usage.neurons. Keep a running daily total in KV
- * (UTC day) and switch to the cheaper fallback model past FALLBACK_FRACTION of
- * it.
+ * reports per-call spend in usage.neurons. The authoritative count lives in a
+ * Durable Object (single "global" instance, so increments are serialized and
+ * strongly consistent) and the worker switches to the cheaper fallback model
+ * past FALLBACK_FRACTION of the free day.
  *
- * Metering is append-only: one key per generation, n:<date>:<neurons>:<id>,
- * with the spend encoded in the key name so a single list() call sums the day.
- * No read-modify-write, so concurrent generations can never clobber each
- * other, and a retried generation of the same spark overwrites its own key
- * instead of double-counting. KV list is eventually consistent, so the total
- * can lag a fresh write by seconds; the failure direction is a fallback that
- * kicks in slightly late, never a lost update. A KV hiccup must still never
- * lose a good generation. */
+ * Every generation also leaves an append-only KV receipt, n:<date>:<n>:<id>,
+ * with a 2 day TTL. The receipts are the audit trail; the DO is the counter.
+ * Metering is still best-effort: a hiccup in either store must never lose a
+ * good generation. */
 
 const NEURON_FREE_DAILY = 10000;
 const NEURON_FALLBACK_FRACTION = 0.25;
+const NEURON_RECEIPT_TTL = 172800; // 2 days; only the UTC day is ever live
 
 function neuronDay() {
   return new Date().toISOString().slice(0, 10);
 }
 
-async function neuronsUsedToday(env) {
-  const prefix = "n:" + neuronDay() + ":";
-  let total = 0;
-  let cursor;
-  do {
-    const page = await env.SPARKS.list({ prefix, cursor });
-    for (const k of page.keys) {
-      const n = parseFloat(k.name.split(":")[2]);
-      if (n > 0) total += n;
+// Plain class with fetch(); deliberately NOT extending DurableObject from
+// "cloudflare:workers" so test.mjs can import this file under plain Node.
+export class NeuronMeter {
+  constructor(state) {
+    this.state = state;
+  }
+  async fetch(request) {
+    const url = new URL(request.url);
+    const day = url.searchParams.get("day");
+    const key = "total:" + day;
+    if (request.method === "POST") {
+      const n = parseFloat(url.searchParams.get("n"));
+      const used = ((await this.state.storage.get(key)) || 0) + (n > 0 ? n : 0);
+      await this.state.storage.put(key, used);
+      return Response.json({ day, used });
     }
-    cursor = page.list_complete ? undefined : page.cursor;
-  } while (cursor);
-  return total;
+    return Response.json({ day, used: (await this.state.storage.get(key)) || 0 });
+  }
+}
+
+function meterStub(env) {
+  return env.METER.get(env.METER.idFromName("global"));
+}
+
+async function neuronsUsedToday(env) {
+  const res = await meterStub(env).fetch("https://meter/?day=" + neuronDay());
+  const j = await res.json();
+  return j.used || 0;
 }
 
 async function recordNeurons(env, id, n) {
   if (!n || !(n > 0)) return;
   try {
-    await env.SPARKS.put("n:" + neuronDay() + ":" + n + ":" + id, "1");
+    await meterStub(env).fetch("https://meter/?day=" + neuronDay() + "&n=" + n, { method: "POST" });
   } catch (e) {
     /* best-effort metering */
   }
+  try {
+    await env.SPARKS.put("n:" + neuronDay() + ":" + n + ":" + id, "1", { expirationTtl: NEURON_RECEIPT_TTL });
+  } catch (e) {
+    /* best-effort receipt */
+  }
+}
+
+function modelFor(env, used) {
+  const primary = env.AI_MODEL || "@cf/openai/gpt-oss-120b";
+  const cheap = env.AI_MODEL_FALLBACK || "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
+  return used >= NEURON_FREE_DAILY * NEURON_FALLBACK_FRACTION ? cheap : primary;
 }
 
 async function generate(env, d) {
-  const primary = env.AI_MODEL || "@cf/openai/gpt-oss-120b";
-  const cheap = env.AI_MODEL_FALLBACK || "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
   try {
-    const used = await neuronsUsedToday(env);
-    const model = used >= NEURON_FREE_DAILY * NEURON_FALLBACK_FRACTION ? cheap : primary;
+    const model = modelFor(env, await neuronsUsedToday(env));
     const out = await env.AI.run(model, {
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
@@ -390,7 +411,7 @@ async function buildSpark(env) {
  * Plain-text rendering, for people who reach for curl first
  * ------------------------------------------------------------------ */
 
-function asText(s, origin) {
+function asText(s, origin, meter) {
   const L = [];
   L.push("  oddspark.dev");
   L.push("  a recommendation seeded by verifiable randomness and the sun");
@@ -411,6 +432,9 @@ function asText(s, origin) {
   L.push("    flare class    " + s.solar.class + "  GOES-" + s.solar.satellite);
   L.push("    observed       " + s.solar.time_tag);
   L.push("    seed           " + s.seed.hash);
+  if (meter) {
+    L.push("    ai meter       " + meter.used.toFixed(1) + " / " + NEURON_FREE_DAILY + " neurons today  (" + String(meter.model).split("/").pop() + ")");
+  }
   L.push("");
   L.push("  seed = SHA256(randomness : round : flux : time_tag)");
   L.push("  recompute it yourself. every input is published.");
@@ -670,6 +694,7 @@ function page(initial, live) {
   <footer>
     <span id="foot-links"></span>
     <a href="/how">how does this work?</a>
+    <span id="meter"></span>
     <span>drand &middot; NOAA SWPC</span>
   </footer>
 
@@ -693,6 +718,18 @@ function page(initial, live) {
   console.log("seed = SHA256( randomness : round : flux : time_tag )");
   console.log("verify: https://api.drand.sh/v2/beacons/quicknet/rounds/latest");
   console.log("json:   /api/spark/<id>");
+
+  // live neuron meter in the footer; silent if the readout fails
+  fetch("/api/meter")
+    .then(function(r){ return r.json(); })
+    .then(function(m){
+      var node = el("meter");
+      if (!node || typeof m.used !== "number") return;
+      node.textContent =
+        "ai · " + Math.round(m.used) + " / " + m.free + " neurons today · " +
+        String(m.model).split("/").pop();
+    })
+    .catch(function(){});
 
   function scramble(node, finalText, delay){
     if (reduce || !finalText) { node.textContent = finalText || ""; return; }
@@ -1194,8 +1231,9 @@ sequenceDiagram
     W->>N: GET xrays-1-day.json
     N-->>W: flux + time_tag
     Note over W: randomness = SHA256(signature)<br/>seed = SHA256(randomness : round : flux : time_tag)
-    W->>A: run llama-3.3-70b on the four seed axes
+    W->>A: run the model of the day on the four seed axes
     A-->>W: headline, premise, question
+    Note over W,A: usage.neurons added to a Durable Object counter<br/>past 2,500/day the cheaper fallback model takes over
     W->>K: PUT spark + w:window pointer
     W-->>B: fresh spark
   end
@@ -1354,6 +1392,18 @@ export default {
         return json(await readSolar());
       }
 
+      // Neuron meter readout: today's spend and which model is active
+      if (path === "/api/meter") {
+        const used = await neuronsUsedToday(env);
+        return json({
+          day: neuronDay(),
+          used,
+          free: NEURON_FREE_DAILY,
+          fallback_at: NEURON_FREE_DAILY * NEURON_FALLBACK_FRACTION,
+          model: modelFor(env, used),
+        });
+      }
+
       // Permalink
       if (path.startsWith("/s/")) {
         const id = path.split("/").pop();
@@ -1380,7 +1430,8 @@ export default {
       if (path === "/") {
         if (wantsText(request)) {
           const s = await buildSpark(env);
-          return new Response(asText(s, origin), {
+          const used = await neuronsUsedToday(env);
+          return new Response(asText(s, origin, { used, model: modelFor(env, used) }), {
             headers: { "content-type": "text/plain; charset=utf-8" },
           });
         }

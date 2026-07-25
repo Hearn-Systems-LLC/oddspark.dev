@@ -1,6 +1,7 @@
 import worker from "./src/worker.js";
 
 const kv = new Map();
+const meterState = new Map();
 const env = {
   SPARKS: {
     async get(k, o) {
@@ -15,6 +16,22 @@ const env = {
       const keys = [...kv.keys()].filter((k) => k.startsWith(prefix)).map((name) => ({ name }));
       return { keys, cursor: "", list_complete: true };
     },
+  },
+  METER: {
+    idFromName: () => ({}),
+    get: () => ({
+      async fetch(req, init) {
+        const u = new URL(typeof req === "string" ? req : req.url);
+        const method = (init && init.method) || (typeof req !== "string" && req.method) || "GET";
+        const day = u.searchParams.get("day");
+        if (method === "POST") {
+          const used = (meterState.get(day) || 0) + parseFloat(u.searchParams.get("n"));
+          meterState.set(day, used);
+          return Response.json({ day, used });
+        }
+        return Response.json({ day, used: meterState.get(day) || 0 });
+      },
+    }),
   },
   AI: {
     async run(model, opts) {
