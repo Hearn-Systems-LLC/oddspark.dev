@@ -29,7 +29,7 @@ class_name = "NeuronMeter"
 
 [[migrations]]
 tag = "v1"
-new_classes = ["NeuronMeter"]
+new_sqlite_classes = ["NeuronMeter"]
 
 # Attach the domain after the zone is active in Cloudflare.
 [[routes]]
