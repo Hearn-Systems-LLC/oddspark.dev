@@ -1,6 +1,6 @@
 # oddspark.dev
 
-A button that hands you one content idea. The idea is fine. The receipt underneath it is the point.
+A button that hands you one practical recommendation: something worth building, offering, fixing, or pitching for a web developer, a webdev shop, or a local Port Huron business. The recommendation is fine. The receipt underneath it is the point.
 
 ## What it actually does
 
@@ -24,7 +24,7 @@ id         = seed[0:8]
 
 Four bytes of the seed index into four vocabularies: domain, lens, form, constraint. Those four seed a Workers AI generation, which produces a headline, a two-sentence premise, and the first question worth answering.
 
-Every input is published and archived, so anyone can recompute the seed and confirm the spark was not invented. There is a verification path on a toy that makes up blog post ideas. That is the joke.
+Every input is published and archived, so anyone can recompute the seed and confirm the spark was not invented. There is a verification path on a toy that makes up business recommendations. That is the joke.
 
 ### The determinism property
 

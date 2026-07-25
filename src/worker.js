@@ -13,7 +13,7 @@
  * two people who press the button in the same window get the identical spark.
  * The result is cached in KV under an id derived from the seed itself, so the
  * whole thing is reproducible and third-party verifiable. On a button that
- * makes up blog post ideas. That is the joke.
+ * makes up business recommendations. That is the joke.
  */
 
 const DRAND_BASE = "https://api.drand.sh/v2/beacons/quicknet/rounds/";
@@ -27,62 +27,64 @@ const WINDOW_ROUNDS = 100;
 
 /* ------------------------------------------------------------------ *
  * Seed vocabulary
- * Four axes. Domain and lens carry the beat; form is a real template;
- * friction is the constraint that keeps the output from being obvious.
+ * Four axes. Domain names who benefits; lens is the angle; form is the
+ * kind of move; friction is the constraint that keeps it from being obvious.
  * ------------------------------------------------------------------ */
 
 const DOMAINS = [
-  "municipal surveillance procurement",
-  "Federal Reserve independence",
-  "stablecoin reserve attestation",
-  "police union contract arbitration",
-  "DePIN token emission schedules",
-  "public records request denial",
-  "AI model provenance and training data",
-  "state preemption of local ordinance",
-  "clearinghouse and settlement risk",
-  "data broker licensing",
-  "open standards versus vendor lock-in",
-  "civil asset forfeiture accounting",
-  "election administration infrastructure",
-  "platform moderation appeals",
-  "critical infrastructure operator liability",
-  "algorithmic credit denial",
+  "your own portfolio and case study pages",
+  "your dev tooling and default project stack",
+  "your local development and deploy workflow",
+  "your shop's recurring maintenance and care plans",
+  "your shop's proposal and pricing process",
+  "your shop's pipeline of local leads",
+  "a Port Huron restaurant's online ordering and menu",
+  "a local contractor's quote-request flow",
+  "a marina's seasonal slip booking",
+  "a downtown retailer's Google Business Profile",
+  "a Blue Water area tourism or events page",
+  "a service-area business with no storefront",
+  "a real estate agent's listing pages",
+  "a salon or barbershop's appointment booking",
+  "a nonprofit or church donation page",
+  "an industrial supplier's parts catalog",
 ];
 
 const LENSES = [
-  "follow the procurement, not the press release",
-  "who has standing to sue, and who does not",
-  "what happened the last time this was tried",
-  "the failure mode nobody is priced for",
-  "read the dissent, not the ruling",
-  "the incentive that survives the reform",
-  "what the vendor contract says the policy does not",
-  "which party eats the loss when it breaks",
-  "the metric that got optimized instead",
-  "what the exemption is actually for",
-  "who audits the auditor",
-  "the quiet part in the footnote",
+  "the smallest version that pays for itself",
+  "what the owner checks every single day",
+  "where the manual work hides",
+  "what breaks in the busy season",
+  "what a customer does on a phone in a parking lot",
+  "the question people call in to ask",
+  "the competitor across the river already does it",
+  "the part untouched for five years",
+  "who maintains it after handoff",
+  "what shows up on a slow connection",
+  "the metric the client already cares about",
+  "what makes the business referable",
 ];
 
 const FORMS = [
-  "System Audit: problem, analysis, solution",
-  "Triple Connection: event, history, tech",
-  "Concept Decoder: definition, mechanics, applications",
-  "Pattern Report: the listicle that earns it",
+  "Build: the tool or feature worth shipping",
+  "Offer: the service to package and sell",
+  "Fix: the repair with a visible payoff",
+  "Pitch: the business to approach and the opener",
+  "Learn: the skill that compounds",
+  "Automate: the chore to delete",
 ];
 
 const FRICTIONS = [
-  "argue it without naming a single politician",
-  "the strongest version of the opposing case goes first",
-  "open on something physical you can touch",
-  "no numbers until the second half",
-  "the personal stake is a failure, not a win",
-  "one sentence has to work as a standalone post",
-  "the villain is a process, not a person",
-  "end where a reasonable reader still disagrees",
-  "the analogy comes from outside tech",
-  "assume the reader already agrees, then complicate it",
+  "no new software subscription allowed",
+  "shippable in one weekend",
+  "the owner never logs into a dashboard",
+  "it has to work on a five-year-old phone",
+  "price it before you describe it",
+  "no redesign; work with what is there",
+  "the payoff must be measurable in dollars or hours",
+  "assume it is January and the tourists are gone",
+  "someone non-technical has to own it after you",
+  "explain it without the word 'just'",
 ];
 
 /* ------------------------------------------------------------------ *
@@ -198,18 +200,19 @@ async function derive(entropy, solar) {
  * ------------------------------------------------------------------ */
 
 const SYSTEM_PROMPT = [
-  "You generate a single story seed for an independent accountability writer.",
-  "His beat: who controls power, and whether individuals have recourse against institutions that abuse it.",
+  "You generate a single practical recommendation for a web developer who runs a small webdev shop in Port Huron, Michigan.",
+  "Each recommendation must clearly benefit one of three parties: the developer's own skills or tooling, the shop's revenue or process, or a specific kind of local Port Huron area business the shop could serve.",
   "",
   "Rules:",
-  "- Build inductively. State what would need to be true, not a conclusion already reached.",
+  "- Concrete. Name the thing to build, offer, fix, pitch, learn, or automate; an action, not a topic.",
+  "- The payoff must be legible to a non-technical business owner: dollars, hours, calls, bookings, or search visibility.",
   "- Dry and precise. No hype, no urgency, no exclamation.",
   "- Never use: 'dive into', 'picture this', 'it's important to note', 'a testament to', 'navigating the complexities', 'have you ever wondered', 'not X, but Y'.",
   "- No em dashes. Use semicolons or commas.",
   "- Do not use three-item lists.",
-  "- The headline is flat and specific, not clickbait. Under 12 words.",
-  "- The premise is exactly two sentences, plain, concrete.",
-  "- The question is the single thing that has to be answered first, and it must be answerable with documents or records.",
+  "- The headline names the action, flat and specific, under 12 words.",
+  "- The premise is exactly two sentences: what it is, and why it pays off.",
+  "- The question is the first thing to check before starting, answerable by looking at something real: a website, a ledger, a calendar, a search result.",
   "",
   'Respond with raw JSON only, no markdown fence: {"headline":"...","premise":"...","question":"..."}',
 ].join("\n");
