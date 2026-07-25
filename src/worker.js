@@ -481,6 +481,18 @@ function page(initial, live) {
   const accent = SOLAR_COLOR[live && live.letter ? live.letter : "C"] || SOLAR_COLOR.C;
   const liveClass = live ? live.letter + live.magnitude.toFixed(1) : "----";
   const title = initial ? initial.idea.headline + " / oddspark" : "oddspark";
+  const desc = initial
+    ? initial.idea.premise
+    : "A recommendation seeded by verifiable distributed randomness and live solar flare activity.";
+  const canonical = initial ? "https://oddspark.dev/s/" + initial.id : "https://oddspark.dev/";
+  const ldJson = JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: "oddspark",
+    url: "https://oddspark.dev/",
+    description:
+      "A recommendation seeded by verifiable distributed randomness and live solar flare activity. Every spark is reproducible; the randomness has a receipt.",
+  }).replace(/</g, "\\u003c");
 
   return `<!doctype html>
 <html lang="en">
@@ -488,7 +500,21 @@ function page(initial, live) {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${esc(title)}</title>
-<meta name="description" content="A recommendation seeded by verifiable distributed randomness and live solar flare activity.">
+<meta name="description" content="${esc(desc)}">
+<link rel="canonical" href="${canonical}">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="oddspark">
+<meta property="og:title" content="${esc(title)}">
+<meta property="og:description" content="${esc(desc)}">
+<meta property="og:url" content="${canonical}">
+<meta property="og:image" content="https://oddspark.dev/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="${esc(title)}">
+<meta name="twitter:description" content="${esc(desc)}">
+<meta name="twitter:image" content="https://oddspark.dev/og.png">
+<script type="application/ld+json">${ldJson}</script>
 <link rel="icon" href="${FAVICON}">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -636,6 +662,8 @@ function page(initial, live) {
     margin-top:34px; padding-top:18px; border-top:1px solid var(--rule);
     display:flex; flex-wrap:wrap; gap:8px 22px; font-size:11px; color:var(--faint);
   }
+  /* the live meter readout always gets its own line below the links */
+  #meter{flex-basis:100%}
   a{color:var(--entropy); text-decoration:none; border-bottom:1px solid transparent}
   a:hover{border-bottom-color:var(--entropy)}
   a:focus-visible{outline:2px solid var(--entropy); outline-offset:2px}
@@ -701,8 +729,8 @@ function page(initial, live) {
   <footer>
     <span id="foot-links"></span>
     <a href="/how">how does this work?</a>
-    <span id="meter"></span>
     <span>drand &middot; NOAA SWPC</span>
+    <span id="meter"></span>
   </footer>
 
 </div>
@@ -1139,6 +1167,19 @@ function howPage() {
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>how oddspark works / oddspark</title>
 <meta name="description" content="The plumbing behind oddspark: drand randomness, solar X-ray flux, one SHA-256, and a 5 minute window.">
+<link rel="canonical" href="https://oddspark.dev/how">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="oddspark">
+<meta property="og:title" content="how oddspark works / oddspark">
+<meta property="og:description" content="The plumbing behind oddspark: drand randomness, solar X-ray flux, one SHA-256, and a 5 minute window.">
+<meta property="og:url" content="https://oddspark.dev/how">
+<meta property="og:image" content="https://oddspark.dev/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="how oddspark works / oddspark">
+<meta name="twitter:description" content="The plumbing behind oddspark: drand randomness, solar X-ray flux, one SHA-256, and a 5 minute window.">
+<meta name="twitter:image" content="https://oddspark.dev/og.png">
 <link rel="icon" href="${FAVICON}">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
