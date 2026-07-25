@@ -92,7 +92,7 @@ node test.mjs
 - This is a **Worker**, not Pages. It needs the AI and KV bindings plus request-level routing, so Pages Functions would be fighting the shape.
 - `AI_MODEL` and `AI_MODEL_FALLBACK` are vars. The Workers AI catalog changes often; if a configured model 404s, the code falls back to displaying the raw seed axes rather than erroring. Check the current catalog and swap the string if generation stops working.
 - KV entries are written without a TTL. Add `expirationTtl` in `buildSpark` if you'd rather they expire.
-- Workers AI includes 10,000 free neurons a day. The worker meters every generation into a `neurons:<date>` KV key from `usage.neurons` and switches from `AI_MODEL` to `AI_MODEL_FALLBACK` once the day passes 25% of the allocation (2,500 neurons). Because sparks are also cached per window, the ceiling is 288 generations a day regardless of traffic.
+- Workers AI includes 10,000 free neurons a day. The worker meters every generation append-only — one `n:<date>:<neurons>:<id>` KV key per generation, summed with a single `list()` — and switches from `AI_MODEL` to `AI_MODEL_FALLBACK` once the day passes 25% of the allocation (2,500 neurons). No read-modify-write, so concurrent strikes can't clobber the meter; KV list is eventually consistent, so the total can lag a fresh generation by seconds. Because sparks are also cached per window, the ceiling is 288 generations a day regardless of traffic.
 - `WINDOW_ROUNDS` at the top of the worker controls the window. 100 rounds is 5 minutes; drop it for more churn, raise it for fewer generations.
 
 ## Feeds and credit

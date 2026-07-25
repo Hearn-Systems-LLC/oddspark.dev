@@ -11,6 +11,10 @@ const env = {
     async put(k, v) {
       kv.set(k, v);
     },
+    async list({ prefix }) {
+      const keys = [...kv.keys()].filter((k) => k.startsWith(prefix)).map((name) => ({ name }));
+      return { keys, cursor: "", list_complete: true };
+    },
   },
   AI: {
     async run(model, opts) {

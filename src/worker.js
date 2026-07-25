@@ -235,24 +235,43 @@ function stripFence(s) {
 /* Neuron budget. Workers AI includes 10,000 free neurons per day; the binding
  * reports per-call spend in usage.neurons. Keep a running daily total in KV
  * (UTC day) and switch to the cheaper fallback model past FALLBACK_FRACTION of
- * it. Metering is best-effort: a KV hiccup must never lose a good generation. */
+ * it.
+ *
+ * Metering is append-only: one key per generation, n:<date>:<neurons>:<id>,
+ * with the spend encoded in the key name so a single list() call sums the day.
+ * No read-modify-write, so concurrent generations can never clobber each
+ * other, and a retried generation of the same spark overwrites its own key
+ * instead of double-counting. KV list is eventually consistent, so the total
+ * can lag a fresh write by seconds; the failure direction is a fallback that
+ * kicks in slightly late, never a lost update. A KV hiccup must still never
+ * lose a good generation. */
 
 const NEURON_FREE_DAILY = 10000;
 const NEURON_FALLBACK_FRACTION = 0.25;
 
-function neuronKey() {
-  return "neurons:" + new Date().toISOString().slice(0, 10);
+function neuronDay() {
+  return new Date().toISOString().slice(0, 10);
 }
 
 async function neuronsUsedToday(env) {
-  const v = await env.SPARKS.get(neuronKey());
-  return v ? parseFloat(v) : 0;
+  const prefix = "n:" + neuronDay() + ":";
+  let total = 0;
+  let cursor;
+  do {
+    const page = await env.SPARKS.list({ prefix, cursor });
+    for (const k of page.keys) {
+      const n = parseFloat(k.name.split(":")[2]);
+      if (n > 0) total += n;
+    }
+    cursor = page.list_complete ? undefined : page.cursor;
+  } while (cursor);
+  return total;
 }
 
-async function recordNeurons(env, n) {
+async function recordNeurons(env, id, n) {
   if (!n || !(n > 0)) return;
   try {
-    await env.SPARKS.put(neuronKey(), String((await neuronsUsedToday(env)) + n));
+    await env.SPARKS.put("n:" + neuronDay() + ":" + n + ":" + id, "1");
   } catch (e) {
     /* best-effort metering */
   }
@@ -286,7 +305,7 @@ async function generate(env, d) {
     if (start === -1 || end === -1) throw new Error("no json in model output");
     const parsed = JSON.parse(raw.slice(start, end + 1));
     if (!parsed.headline || !parsed.premise) throw new Error("incomplete model output");
-    await recordNeurons(env, out.usage && out.usage.neurons);
+    await recordNeurons(env, d.id, out.usage && out.usage.neurons);
     return { ...parsed, generated: true, model };
   } catch (err) {
     // Never blank. Fall back to the raw juxtaposition, which is legible on its own.
