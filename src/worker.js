@@ -232,26 +232,61 @@ function stripFence(s) {
   return s.replace(/```json/gi, "").replace(/```/g, "").trim();
 }
 
-async function generate(env, d) {
-  const model = env.AI_MODEL || "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
+/* Neuron budget. Workers AI includes 10,000 free neurons per day; the binding
+ * reports per-call spend in usage.neurons. Keep a running daily total in KV
+ * (UTC day) and switch to the cheaper fallback model past FALLBACK_FRACTION of
+ * it. Metering is best-effort: a KV hiccup must never lose a good generation. */
+
+const NEURON_FREE_DAILY = 10000;
+const NEURON_FALLBACK_FRACTION = 0.25;
+
+function neuronKey() {
+  return "neurons:" + new Date().toISOString().slice(0, 10);
+}
+
+async function neuronsUsedToday(env) {
+  const v = await env.SPARKS.get(neuronKey());
+  return v ? parseFloat(v) : 0;
+}
+
+async function recordNeurons(env, n) {
+  if (!n || !(n > 0)) return;
   try {
+    await env.SPARKS.put(neuronKey(), String((await neuronsUsedToday(env)) + n));
+  } catch (e) {
+    /* best-effort metering */
+  }
+}
+
+async function generate(env, d) {
+  const primary = env.AI_MODEL || "@cf/openai/gpt-oss-120b";
+  const cheap = env.AI_MODEL_FALLBACK || "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
+  try {
+    const used = await neuronsUsedToday(env);
+    const model = used >= NEURON_FREE_DAILY * NEURON_FALLBACK_FRACTION ? cheap : primary;
     const out = await env.AI.run(model, {
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
         { role: "user", content: userPrompt(d) },
       ],
-      max_tokens: 400,
+      // Reasoning models (gpt-oss) burn tokens on their chain of thought
+      // before the JSON; 400 truncates them. The cap is not the spend:
+      // non-reasoning models still stop when done.
+      max_tokens: 2048,
       temperature: 0.85,
     });
-    // Some models return `response` pre-parsed as an object when the output
-    // is valid JSON; normalize back to a string before stripping fences.
-    const resp = out.response || out.result || "";
+    // Output location varies by model: llama returns `response` (a string, or
+    // pre-parsed as an object when it is valid JSON); gpt-oss only populates
+    // OpenAI-style choices[].message.content. Normalize to a string either way.
+    const choice = out.choices && out.choices[0] && out.choices[0].message;
+    const resp = out.response || out.result || (choice && choice.content) || "";
     const raw = stripFence(typeof resp === "string" ? resp : JSON.stringify(resp));
     const start = raw.indexOf("{");
     const end = raw.lastIndexOf("}");
     if (start === -1 || end === -1) throw new Error("no json in model output");
     const parsed = JSON.parse(raw.slice(start, end + 1));
     if (!parsed.headline || !parsed.premise) throw new Error("incomplete model output");
+    await recordNeurons(env, out.usage && out.usage.neurons);
     return { ...parsed, generated: true, model };
   } catch (err) {
     // Never blank. Fall back to the raw juxtaposition, which is legible on its own.
