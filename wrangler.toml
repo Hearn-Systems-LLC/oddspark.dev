@@ -1,0 +1,27 @@
+name = "oddspark"
+main = "src/worker.js"
+compatibility_date = "2026-07-01"
+
+# Swap the model without touching code. Fallback is graceful: an unknown
+# model ID degrades to the raw seed rather than erroring out.
+[vars]
+AI_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+
+[ai]
+binding = "AI"
+remote = true
+
+# Create with:  npx wrangler kv namespace create SPARKS
+# then paste the returned id below.
+[[kv_namespaces]]
+binding = "SPARKS"
+id = "1a84502df1754aa5985648d803e6751e"
+remote = true
+
+# Attach the domain after the zone is active in Cloudflare.
+[[routes]]
+pattern = "oddspark.dev"
+custom_domain = true
+
+[observability]
+enabled = true

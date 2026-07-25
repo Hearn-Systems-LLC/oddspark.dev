@@ -1,0 +1,18 @@
+{
+  "name": "oddspark",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A button that hands you one content idea, deterministically derived from drand quicknet + NOAA GOES X-ray flux.",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "wrangler dev",
+    "test": "node test.mjs",
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "^4.114.0"
+  }
+}
