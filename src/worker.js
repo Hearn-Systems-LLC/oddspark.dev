@@ -297,7 +297,7 @@ async function recordNeurons(env, id, n) {
 
 function modelFor(env, used) {
   const primary = env.AI_MODEL || "@cf/openai/gpt-oss-120b";
-  const cheap = env.AI_MODEL_FALLBACK || "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
+  const cheap = env.AI_MODEL_FALLBACK || "@cf/openai/gpt-oss-20b";
   return used >= NEURON_FREE_DAILY * NEURON_FALLBACK_FRACTION ? cheap : primary;
 }
 
