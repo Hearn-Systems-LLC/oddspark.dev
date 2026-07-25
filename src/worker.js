@@ -1,7 +1,7 @@
 /**
  * oddspark.dev
  *
- * A content idea generator whose randomness has a receipt.
+ * A recommendation generator whose randomness has a receipt.
  *
  * Every spark is a pure function of two live public feeds:
  *   1. drand / League of Entropy quicknet  - verifiable distributed randomness, 3s rounds
@@ -339,7 +339,7 @@ async function buildSpark(env) {
 function asText(s, origin) {
   const L = [];
   L.push("  oddspark.dev");
-  L.push("  a content idea seeded by verifiable randomness and the sun");
+  L.push("  a recommendation seeded by verifiable randomness and the sun");
   L.push("");
   L.push("  " + s.idea.headline.toUpperCase());
   L.push("");
@@ -410,7 +410,7 @@ function page(initial, live) {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${esc(title)}</title>
-<meta name="description" content="A content idea seeded by verifiable distributed randomness and live solar flare activity.">
+<meta name="description" content="A recommendation seeded by verifiable distributed randomness and live solar flare activity.">
 <link rel="icon" href="${FAVICON}">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
