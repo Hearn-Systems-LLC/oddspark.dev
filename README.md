@@ -43,6 +43,7 @@ Generation cost is therefore bounded by wall-clock time rather than traffic. A t
 | `GET /s/:id` | permalink, server-hydrated. Also honors curl |
 | `GET /api/spark/:id` | raw JSON for a stored spark |
 | `GET /api/sun` | current flare class only |
+| `GET /how` | how it works; Mermaid diagrams via CDN |
 
 ## The layers
 

@@ -615,6 +615,7 @@ function page(initial, live) {
 
   <footer>
     <span id="foot-links"></span>
+    <a href="/how">how does this work?</a>
     <span>drand &middot; NOAA SWPC</span>
   </footer>
 
@@ -1028,6 +1029,227 @@ function esc(s) {
 }
 
 /* ------------------------------------------------------------------ *
+ * How it works. Mermaid from CDN; if the CDN is down the raw diagram
+ * source is still legible in the <pre> blocks. No build step.
+ * ------------------------------------------------------------------ */
+
+function howPage() {
+  return `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>how oddspark works / oddspark</title>
+<meta name="description" content="The plumbing behind oddspark: drand randomness, solar X-ray flux, one SHA-256, and a 5 minute window.">
+<link rel="icon" href="${FAVICON}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=Newsreader:opsz,wght@6..72,400;6..72,500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --void:#0B0D10; --panel:#101419; --rule:#1D242C;
+    --text:#C6CFD8; --dim:#67737F; --faint:#3D4750;
+    --entropy:#6E8FB8; --solar:#C9A227;
+    --mono:"Courier Prime",ui-monospace,SFMono-Regular,Menlo,monospace;
+    --serif:"Newsreader",Georgia,serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--void); color:var(--text);
+    font-family:var(--mono); font-size:14px; line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+    display:flex; justify-content:center;
+    padding:0 20px 80px;
+  }
+  .shell{width:100%; max-width:760px}
+  header{
+    display:flex; align-items:center; justify-content:space-between;
+    gap:16px; padding:22px 0 18px; border-bottom:1px solid var(--rule);
+  }
+  .mark{font-weight:700; letter-spacing:.14em; text-transform:lowercase; font-size:13px}
+  .mark span{color:var(--solar)}
+  a{color:var(--entropy); text-decoration:none}
+  a:hover{border-bottom:1px solid var(--entropy)}
+  header a{font-size:11px; letter-spacing:.1em}
+  h1{
+    font-family:var(--serif); font-weight:400; font-size:31px; line-height:1.24;
+    margin:44px 0 14px; color:#E4EAF0; letter-spacing:-.01em;
+  }
+  .lede{font-family:var(--serif); font-size:18px; line-height:1.62; margin:0 0 8px}
+  section{border-top:1px solid var(--rule); margin-top:44px; padding-top:20px}
+  h2{
+    font-size:10.5px; letter-spacing:.24em; text-transform:uppercase;
+    color:var(--dim); font-weight:400; margin:0 0 14px;
+  }
+  p{font-family:var(--serif); font-size:16.5px; line-height:1.62; margin:0 0 18px}
+  p code, li code{font-family:var(--mono); font-size:.85em; color:var(--solar)}
+  .diagram{
+    background:var(--panel); border:1px solid var(--rule);
+    padding:22px 16px; margin:18px 0 26px; overflow-x:auto;
+  }
+  .mermaid{display:flex; justify-content:center; min-width:520px}
+  footer{
+    margin-top:44px; padding-top:18px; border-top:1px solid var(--rule);
+    display:flex; flex-wrap:wrap; gap:8px 22px; font-size:11px; color:var(--faint);
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <header>
+    <div class="mark">odd<span>s</span>park</div>
+    <a href="/">&larr; back to the button</a>
+  </header>
+
+  <h1>How does this work?</h1>
+  <p class="lede">One button, one recommendation, and a receipt. The recommendation
+  is a deterministic function of two live public feeds, so anyone can recompute
+  the seed and confirm the spark was not invented after the fact.</p>
+
+  <section>
+    <h2>1 &middot; What happens when you press Strike</h2>
+    <p>The Worker asks drand for the latest round and floors it to a multiple of
+    100. Quicknet emits a round every 3 seconds, so that is a 5 minute window:
+    the first strike in a window does the work, every later strike in the same
+    window serves the same cached spark out of KV. A thousand visitors in five
+    minutes cost one generation.</p>
+    <div class="diagram"><pre class="mermaid">
+sequenceDiagram
+  autonumber
+  participant B as Browser
+  participant W as Worker
+  participant D as drand quicknet
+  participant N as NOAA SWPC
+  participant K as Workers KV
+  participant A as Workers AI
+  B->>W: POST /api/spark
+  W->>D: GET /rounds/latest
+  D-->>W: round R
+  Note over W: window = R - (R mod 100)
+  W->>K: GET w:window
+  alt already struck this window
+    K-->>W: spark id
+    W->>K: GET spark
+    K-->>W: stored spark
+    W-->>B: cached spark
+  else first strike of the window
+    W->>D: GET /rounds/window
+    D-->>W: signature
+    W->>N: GET xrays-1-day.json
+    N-->>W: flux + time_tag
+    Note over W: randomness = SHA256(signature)<br/>seed = SHA256(randomness : round : flux : time_tag)
+    W->>A: run llama-3.3-70b on the four seed axes
+    A-->>W: headline, premise, question
+    W->>K: PUT spark + w:window pointer
+    W-->>B: fresh spark
+  end
+    </pre></div>
+  </section>
+
+  <section>
+    <h2>2 &middot; The seed derivation</h2>
+    <p>Drand&rsquo;s own definition of randomness for unchained beacons like quicknet
+    is the SHA-256 of the round signature. That, the floored round number, the
+    current GOES X-ray flux, and its timestamp are hashed once more. Every input
+    is published and archived by someone else, so the whole chain is reproducible
+    by a third party. On a toy. That is the joke.</p>
+    <div class="diagram"><pre class="mermaid">
+flowchart LR
+  sig["drand signature<br/>round floored to 100"] --> rnd["randomness = SHA256(signature)"]
+  flx["GOES X-ray flux<br/>0.1-0.8nm + time_tag"] --> seed
+  rnd --> seed["seed = SHA256(randomness : round : flux : time_tag)"]
+  seed --> id["id = seed[0:8]<br/>the permalink"]
+  seed --> axes["bytes 0-3 pick<br/>domain / lens / form / friction"]
+  axes --> ai["Workers AI prompt<br/>one recommendation"]
+    </pre></div>
+  </section>
+
+  <section>
+    <h2>3 &middot; Same seed, same object</h2>
+    <p>The panel beside the text is not decoration; it is the seed rendered as an
+    object. The sun core reads the live flux. The shell seats one node per byte of
+    the hash on a Fibonacci sphere, each byte setting its own node&rsquo;s orbital
+    radius, and byte 0 sets the weave stride. A permalink always draws the
+    identical form. Hand-rolled projection and painter&rsquo;s-algorithm depth
+    sorting on a 2D canvas; no rendering library.</p>
+    <div class="diagram"><pre class="mermaid">
+flowchart TD
+  seed["seed: 32 bytes"] --> shell["shell: 32 nodes, one per byte"]
+  shell --> pos["position: Fibonacci sphere, even spacing"]
+  shell --> rad["orbital radius: each byte's own value"]
+  seed --> weave["byte 0: weave stride, the lacing pattern"]
+  flx["live X-ray flux"] --> core["core: radius, color, ray count"]
+  pos --> canvas["2D canvas<br/>hand-rolled projection + depth sort"]
+  rad --> canvas
+  weave --> canvas
+  core --> canvas
+    </pre></div>
+  </section>
+
+  <section>
+    <h2>4 &middot; Routing, and the artifact curl sees</h2>
+    <p>The Worker sniffs <code>User-Agent</code> and <code>Accept</code>. A browser
+    gets the page; curl and wget get a plain-text rendering with the full
+    provenance block, an artifact the browser never shows.</p>
+    <div class="diagram"><pre class="mermaid">
+flowchart TD
+  req["request"] --> which{"path"}
+  which -->|"/"| home{"who is asking?"}
+  home -->|"browser (Accept: text/html)"| html["the page + canvas"]
+  home -->|"curl / wget / no html"| text["strike + text/plain<br/>idea + full provenance"]
+  which -->|"/s/:id"| perm["permalink, server-hydrated<br/>curl gets text here too"]
+  which -->|"POST /api/spark"| strike["strike; full JSON with provenance"]
+  which -->|"/api/spark/:id"| raw["one stored spark, raw JSON"]
+  which -->|"/api/sun"| sun["current flare class only"]
+    </pre></div>
+  </section>
+
+  <footer>
+    <a href="/">oddspark.dev</a>
+    <span>drand &middot; NOAA SWPC &middot; Workers AI</span>
+    <span>diagrams: mermaid via CDN</span>
+  </footer>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script>
+mermaid.initialize({
+  startOnLoad: true,
+  securityLevel: "strict",
+  theme: "base",
+  themeVariables: {
+    background: "#0B0D10",
+    primaryColor: "#101419",
+    primaryTextColor: "#C6CFD8",
+    primaryBorderColor: "#3D4750",
+    lineColor: "#67737F",
+    secondaryColor: "#101419",
+    tertiaryColor: "#0B0D10",
+    clusterBkg: "#0B0D10",
+    edgeLabelBackground: "#101419",
+    actorBkg: "#101419",
+    actorBorder: "#3D4750",
+    actorTextColor: "#C6CFD8",
+    actorLineColor: "#3D4750",
+    signalColor: "#C6CFD8",
+    signalTextColor: "#C6CFD8",
+    noteBkgColor: "#101419",
+    noteBorderColor: "#3D4750",
+    noteTextColor: "#C6CFD8",
+    fontFamily: "'Courier Prime', monospace",
+    fontSize: "13px"
+  }
+});
+</script>
+</body>
+</html>`;
+}
+
+
+/* ------------------------------------------------------------------ *
  * Router
  * ------------------------------------------------------------------ */
 
@@ -1090,6 +1312,13 @@ export default {
         }
         return new Response(page(s, { letter: s.solar.letter, magnitude: parseFloat(s.solar.class.slice(1)) }), {
           headers: { "content-type": "text/html; charset=utf-8" },
+        });
+      }
+
+      // How it works
+      if (path === "/how") {
+        return new Response(howPage(), {
+          headers: { "content-type": "text/html; charset=utf-8", "cache-control": "public, max-age=300" },
         });
       }
 
