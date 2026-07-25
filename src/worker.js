@@ -516,8 +516,9 @@ function page(initial, live) {
   /* two columns once there's room; stacked on phones -------------- */
   @media (min-width:920px){
     .shell{
-      max-width:1000px; display:grid; column-gap:54px;
-      grid-template-columns:minmax(0,1fr) 322px;
+      max-width:1760px; display:grid; column-gap:54px;
+      /* text column capped for measure; the geometry takes the rest */
+      grid-template-columns:minmax(0,660px) minmax(322px,1fr);
       grid-template-areas:
         "head   head"
         "strike strike"
@@ -540,6 +541,9 @@ function page(initial, live) {
   .stage{
     position:relative; width:100%; aspect-ratio:1 / 1.06; max-height:352px;
     cursor:grab; touch-action:none;
+  }
+  @media (min-width:920px){
+    .stage{max-height:min(82vh, 1100px)}
   }
   .stage:active{cursor:grabbing}
   .stage canvas{display:block; width:100%; height:100%}
