@@ -36,7 +36,7 @@ const env = {
   AI: {
     async run(model, opts) {
       const u = opts.messages[1].content;
-      const domain = u.split("\n")[0].replace("DOMAIN: ", "");
+      const domain = u.split("\n")[0].replace("WHO (the business): ", "");
       return {
         response: JSON.stringify({
           headline: "The audit trail for " + domain + " ends at a vendor",

@@ -27,64 +27,86 @@ const WINDOW_ROUNDS = 100;
 
 /* ------------------------------------------------------------------ *
  * Seed vocabulary
- * Four axes. Domain names who benefits; lens is the angle; form is the
- * kind of move; friction is the constraint that keeps it from being obvious.
+ * Four axes, addressed to a small-business owner. Domain is WHO, a trade
+ * archetype; lens is WHY, what the website is hired to do; form is WHAT,
+ * a concrete move anchored to a moment in the business day; friction is
+ * the STING, the cost of not owning your own web presence.
  * ------------------------------------------------------------------ */
 
 const DOMAINS = [
-  "your own portfolio and case study pages",
-  "your dev tooling and default project stack",
-  "your local development and deploy workflow",
-  "your shop's recurring maintenance and care plans",
-  "your shop's proposal and pricing process",
-  "your shop's pipeline of local leads",
-  "a Port Huron restaurant's online ordering and menu",
-  "a local contractor's quote-request flow",
-  "a marina's seasonal slip booking",
-  "a downtown retailer's Google Business Profile",
-  "a Blue Water area tourism or events page",
-  "a service-area business with no storefront",
-  "a real estate agent's listing pages",
-  "a salon or barbershop's appointment booking",
-  "a nonprofit or church donation page",
-  "an industrial supplier's parts catalog",
+  "the plumber whose phone rings at 2am",
+  "the bakery with a line out the door on Saturday",
+  "the dentist paying a third-party scheduler per appointment",
+  "the landscaper whose best proof is photos",
+  "the Port Huron restaurant that can't update its own menu",
+  "the gym wiring signups into billing",
+  "the boutique fielding 'do you have it' calls",
+  "the auto shop with customers phoning for repair status",
+  "the contractor drowning in callback time",
+  "the salon with an empty chair and a waitlist",
+  "the food truck locals search for by name",
+  "the realtor renting leads from the portals",
+  "the HVAC crew that lives on seasonal repeat business",
+  "the photographer publishing under a platform's watermark",
+  "the caterer qualifying budgets by phone",
+  "the nonprofit losing a middleman skim on every donation",
 ];
 
 const LENSES = [
-  "the smallest version that pays for itself",
-  "what the owner checks every single day",
-  "where the manual work hides",
-  "what breaks in the busy season",
-  "what a customer does on a phone in a parking lot",
-  "the question people call in to ask",
-  "the competitor across the river already does it",
-  "the part untouched for five years",
-  "who maintains it after handoff",
-  "what shows up on a slow connection",
-  "the metric the client already cares about",
-  "what makes the business referable",
+  "the employee who never sleeps and answers the same ten questions",
+  "proof you exist; the legitimacy check before anyone calls",
+  "findable at the exact moment of need rather than browsed",
+  "owning the customer relationship instead of renting it",
+  "insurance for the day the platform locks you out",
+  "a filter that attracts right-fit customers and repels wrong-fit ones",
+  "a page added today that keeps working for years",
+  "the email list, the only audience you can keep",
+  "selling while the doors are closed",
+  "the hub every other channel points to",
+  "ranking in the next town without opening a location",
+  "making a five-person shop present like fifty",
+  "answering 'how much' honestly enough that price-shoppers self-serve",
+  "a transferable asset that makes the business sellable",
+  "cutting no-shows with reminders wired to the calendar",
+  "demonstrating instead of describing",
 ];
 
 const FORMS = [
-  "Build: the tool or feature worth shipping",
-  "Offer: the service to package and sell",
-  "Fix: the repair with a visible payoff",
-  "Pitch: the business to approach and the opener",
-  "Learn: the skill that compounds",
-  "Automate: the chore to delete",
+  "7am: 'open now' pulled from the calendar the staff actually use",
+  "first call: the CRM already has the quote-form details on screen",
+  "booking rush: website slots write straight into the scheduler",
+  "delivery arrives: POS sync flips products in-stock automatically",
+  "lunch rush: online orders print directly in the kitchen",
+  "slow afternoon: a same-day offer goes to the email list by itself",
+  "job done in the field: invoice and review request send themselves",
+  "five-star review lands: it auto-publishes to the testimonials page",
+  "appointment set: SMS confirmation and reminder cut no-shows",
+  "restock day: on-site searches show what shoppers wanted but didn't find",
+  "9pm: the FAQ answers 'are you open tomorrow' so nobody has to",
+  "storm warning: one dashboard pushes a banner to site and Google profile",
+  "class fills: the waitlist auto-promotes a cancellation",
+  "season change: scheduled content swaps the patio menu for the fireplace one",
+  "end of day: one dashboard shows calls, bookings, orders, and sources",
+  "referral moment: one link pre-fills a friend's intro discount",
 ];
 
 const FRICTIONS = [
-  "no new software subscription allowed",
-  "shippable in one weekend",
-  "the owner never logs into a dashboard",
-  "it has to work on a five-year-old phone",
-  "price it before you describe it",
-  "no redesign; work with what is there",
-  "the payoff must be measurable in dollars or hours",
-  "assume it is January and the tourists are gone",
-  "someone non-technical has to own it after you",
-  "explain it without the word 'just'",
+  "ten years of posts, unsearchable; rented content evaporates",
+  "the algorithm halved your reach overnight; your own domain has none",
+  "a competitor across the river bought your exact-match domain",
+  "every lead cost ad money forever; SEO gets cheaper over time",
+  "a directory outranks you for your own name",
+  "the customer list lived in a platform that closed",
+  "a decade of per-booking fees that could have amortized to free",
+  "the site builder raised prices and held the site hostage",
+  "couldn't update holiday hours; lost Christmas Eve",
+  "lead-gen middlemen commoditized the trade",
+  "staff hired to answer questions a page could have answered",
+  "the 'we'll get to it' website stayed a parked page",
+  "old listings still show the wrong phone number",
+  "a younger competitor quietly became 'the one on Google'",
+  "a decade of quotes retyped into invoices by hand",
+  "every marketing dollar spent as a guess, with no analytics",
 ];
 
 /* ------------------------------------------------------------------ *
@@ -200,31 +222,34 @@ async function derive(entropy, solar) {
  * ------------------------------------------------------------------ */
 
 const SYSTEM_PROMPT = [
-  "You generate a single practical recommendation for a web developer who runs a small webdev shop in Port Huron, Michigan.",
-  "Each recommendation must clearly benefit one of three parties: the developer's own skills or tooling, the shop's revenue or process, or a specific kind of local Port Huron area business the shop could serve.",
+  "You generate a single practical recommendation for a small-business owner reading about their own kind of business.",
+  "Address the owner directly in second person: you, your shop, your customers; never 'the owner' or 'businesses like yours'.",
+  "The recommendation shows what owning and controlling a real website, with software integrations and search visibility, would do for this business. Make the cost of not owning it felt, then resolve that cost with the concrete move.",
   "",
   "Rules:",
-  "- Concrete. Name the thing to build, offer, fix, pitch, learn, or automate; an action, not a topic.",
-  "- The payoff must be legible to a non-technical business owner: dollars, hours, calls, bookings, or search visibility.",
+  "- Concrete. Name what the website does and the moment in the business day it does it; an action, not a topic.",
+  "- The payoff must be legible without any technical vocabulary: dollars, hours, calls, bookings, no-shows, or search visibility.",
   "- Dry and precise. No hype, no urgency, no exclamation.",
   "- Never use: 'dive into', 'picture this', 'it's important to note', 'a testament to', 'navigating the complexities', 'have you ever wondered', 'not X, but Y'.",
   "- No em dashes. Use semicolons or commas.",
   "- Do not use three-item lists.",
+  "- The sting is a risk of not owning your web presence. Frame it as what it costs or what it exposes you to, never as an event that already happened to this reader.",
+  "- Translate the move so it fits this business; keep the moment in the day, adapt the mechanics.",
   "- The headline names the action, flat and specific, under 12 words.",
-  "- The premise is exactly two sentences: what it is, and why it pays off.",
-  "- The question is the first thing to check before starting, answerable by looking at something real: a website, a ledger, a calendar, a search result.",
+  "- The premise is exactly two sentences: what the website does for you, and why it pays off.",
+  "- The question is the first thing you can check before spending anything, answerable by looking at something real: your Google results, your booking book, your phone log, a competitor's website.",
   "",
   'Respond with raw JSON only, no markdown fence: {"headline":"...","premise":"...","question":"..."}',
 ].join("\n");
 
 function userPrompt(d) {
   return [
-    "DOMAIN: " + d.domain,
-    "LENS: " + d.lens,
-    "FORM: " + d.form,
-    "CONSTRAINT: " + d.friction,
+    "WHO (the business): " + d.domain,
+    "WHY (what the website is hired to do): " + d.lens,
+    "WHAT (the move, and the moment in the day it fires): " + d.form,
+    "STING (the cost of not owning it): " + d.friction,
     "",
-    "Write the seed. Honor the constraint literally.",
+    "Write the seed. Honor the sting literally: make it felt, then resolve it with the move.",
   ].join("\n");
 }
 
@@ -332,8 +357,8 @@ async function generate(env, d) {
     // Never blank. Fall back to the raw juxtaposition, which is legible on its own.
     return {
       headline: d.domain,
-      premise: "Angle: " + d.lens + ". Shape: " + d.form + ".",
-      question: "Constraint: " + d.friction + ".",
+      premise: "The job: " + d.lens + ". The move, " + d.form + ".",
+      question: "The sting: " + d.friction + ".",
       generated: false,
       model: null,
       note: "model unavailable; showing the raw seed",

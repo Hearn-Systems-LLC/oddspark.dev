@@ -1,6 +1,6 @@
 # oddspark.dev
 
-A button that hands you one practical recommendation: something worth building, offering, fixing, or pitching for a web developer, a webdev shop, or a local Port Huron business. The recommendation is fine. The receipt underneath it is the point.
+A button that hands you one practical recommendation, addressed to a small-business owner: what owning and controlling your own website, with software integrations and search visibility, can do for a small business. The recommendation is fine. The receipt underneath it is the point.
 
 ## What it actually does
 
@@ -22,7 +22,7 @@ seed       = SHA256(randomness : round : flux : time_tag)
 id         = seed[0:8]
 ```
 
-Four bytes of the seed index into four vocabularies: domain, lens, form, constraint. Those four seed a Workers AI generation, which produces a headline, a two-sentence premise, and the first question worth answering.
+Four bytes of the seed index into four vocabularies: domain (WHO, a small-business trade archetype), lens (WHY, what the website is hired to do), form (WHAT, a concrete move anchored to a moment in the business day), and friction (the STING, the cost of not owning your web presence). Those four seed a Workers AI generation, which produces a headline, a two-sentence premise, and the first question worth answering.
 
 Every input is published and archived, so anyone can recompute the seed and confirm the spark was not invented. There is a verification path on a toy that makes up business recommendations. That is the joke.
 
