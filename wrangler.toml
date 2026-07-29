@@ -43,3 +43,7 @@ custom_domain = true
 
 [observability]
 enabled = true
+
+# Give every uploaded version a shareable *.workers.dev preview URL
+# (used by Workers Builds for non-production branches).
+preview_urls = true
