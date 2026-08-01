@@ -1,6 +1,7 @@
 name = "oddspark"
 main = "src/worker.js"
 compatibility_date = "2026-07-01"
+compatibility_flags = ["global_fetch_strictly_public"]
 
 # Swap models without touching code. When the day's neuron spend (tracked in
 # the NeuronMeter Durable Object) passes 25% of the 10,000 free daily
@@ -27,9 +28,17 @@ remote = true
 name = "METER"
 class_name = "NeuronMeter"
 
+[[durable_objects.bindings]]
+name = "COORD"
+class_name = "SparkCoordinator"
+
 [[migrations]]
 tag = "v1"
 new_sqlite_classes = ["NeuronMeter"]
+
+[[migrations]]
+tag = "v2"
+new_sqlite_classes = ["SparkCoordinator"]
 
 # Static assets (public/og.png social preview card); requests that don't
 # match a file fall through to the Worker.
