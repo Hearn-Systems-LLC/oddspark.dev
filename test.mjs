@@ -456,6 +456,18 @@ await test("personalization is grounded, deterministic, metered, permanent, and 
   assert.equal(raw.status, 200);
   const permalink = await worker.fetch(new Request("https://oddspark.dev/s/" + spark.id, { headers: { accept: "text/html" } }), h.env);
   assert.equal(permalink.status, 200);
+  const curlPermalink = await worker.fetch(
+    new Request("https://oddspark.dev/s/" + spark.id, { headers: { "user-agent": "curl/8.4.0", accept: "*/*" } }),
+    h.env
+  );
+  assert.match(curlPermalink.headers.get("content-type") || "", /text\/plain/);
+  const curlText = await curlPermalink.text();
+  assert.match(curlText, /PROVENANCE/);
+  assert.match(curlText, /website\s+acmebakery\.com/);
+  assert.match(curlText, /vertical\s+bakery/);
+  assert.ok(curlText.includes(spark.personalization.scanned_urls.join(", ")));
+  assert.ok(curlText.includes(spark.personalization.observation.text));
+  assert.ok(curlText.includes(spark.personalization.profile_hash));
   const missing = await worker.fetch(new Request("https://oddspark.dev/api/spark/p-0000000000000000"), h.env);
   assert.equal(missing.status, 404);
   h.kv.set("secret", JSON.stringify({ secret: true }));
