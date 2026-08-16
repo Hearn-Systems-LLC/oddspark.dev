@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import worker, { SparkCoordinator } from "./src/worker.js";
+import worker, { NeuronMeter, SparkCoordinator } from "./src/worker.js";
 
 const ROUND = 31415900;
 const SIGNATURE = "ab".repeat(96);
@@ -51,11 +51,16 @@ function createNetwork(options = {}) {
     async fetch(input, init = {}) {
       const url = typeof input === "string" ? input : input.url;
       network.calls.push({ url, init });
-      if (url.endsWith("/rounds/latest")) return jsonResponse({ round: network.round + 37 });
+      if (url.endsWith("/rounds/latest")) {
+        if (options.failDrand) throw new Error("drand unavailable");
+        return jsonResponse({ round: network.round + 37 });
+      }
       if (url.includes("api.drand.sh/v2/beacons/quicknet/rounds/")) {
+        if (options.failDrand) throw new Error("drand unavailable");
         return jsonResponse({ round: Number(url.split("/").pop()), signature: SIGNATURE });
       }
       if (url === NOAA_URL) {
+        if (options.failNoaa) throw new Error("NOAA unavailable");
         return jsonResponse([
           { energy: "0.05-0.4nm", flux: 1e-7, time_tag: "2026-07-31T20:00:00Z", satellite: 18 },
           { energy: "0.1-0.8nm", flux: 2.5e-6, time_tag: "2026-07-31T20:01:00Z", satellite: 18 },
@@ -108,6 +113,8 @@ function createEnvironment(options = {}) {
   const kv = new Map();
   const kvPuts = [];
   const meterPosts = [];
+  const meterPostAttempts = [];
+  const neuronReceiptAttempts = [];
   const meterState = new Map();
   const aiCalls = [];
   const coordStorage = createStorage();
@@ -121,6 +128,10 @@ function createEnvironment(options = {}) {
         return readOptions && readOptions.type === "json" ? JSON.parse(value) : value;
       },
       async put(key, value, putOptions) {
+        if (key.startsWith("n:")) {
+          neuronReceiptAttempts.push(key);
+          if (options.neuronReceiptDown) throw new Error("neuron receipt unavailable");
+        }
         kv.set(key, String(value));
         kvPuts.push({ key, value: String(value), options: putOptions || null });
       },
@@ -137,6 +148,8 @@ function createEnvironment(options = {}) {
           const day = url.searchParams.get("day");
           if (request.method === "POST") {
             const neurons = Number(url.searchParams.get("n"));
+            meterPostAttempts.push(neurons);
+            if (options.meterPostDown) throw new Error("meter unavailable");
             meterPosts.push(neurons);
             meterState.set(day, (meterState.get(day) || 0) + neurons);
           }
@@ -216,7 +229,7 @@ function createEnvironment(options = {}) {
     AI_MODEL_FALLBACK: "mock-fallback",
   };
 
-  return { env, kv, kvPuts, meterPosts, meterState, aiCalls, coordStorage };
+  return { env, kv, kvPuts, meterPosts, meterPostAttempts, neuronReceiptAttempts, meterState, aiCalls, coordStorage };
 }
 
 function sparkRequest(website, { ip = "203.0.113.9", body, headers = {} } = {}) {
@@ -349,6 +362,276 @@ await test("generic provenance and legacy public surfaces remain reproducible", 
   assert.equal(typeof (await sun.json()).flux, "number");
 });
 
+await test("router normalization and 404 variants preserve their response contracts", async () => {
+  createNetwork();
+  const h = createEnvironment();
+
+  const badApiId = await worker.fetch(new Request("https://oddspark.dev/api/spark/not-an-id"), h.env);
+  assert.equal(badApiId.status, 404);
+  assert.deepEqual(await badApiId.json(), { error: "no spark with that id" });
+
+  const missingApiSpark = await worker.fetch(new Request("https://oddspark.dev/api/spark/00000000/"), h.env);
+  assert.equal(missingApiSpark.status, 404);
+  assert.deepEqual(await missingApiSpark.json(), { error: "no spark with that id" });
+
+  const badPermalink = await worker.fetch(new Request("https://oddspark.dev/s/not-an-id"), h.env);
+  assert.equal(badPermalink.status, 404);
+  assert.equal(await badPermalink.text(), "404");
+
+  const missingGenericPermalink = await worker.fetch(new Request("https://oddspark.dev/s/00000000"), h.env);
+  assert.equal(missingGenericPermalink.status, 302);
+  assert.equal(missingGenericPermalink.headers.get("location"), "https://oddspark.dev/");
+
+  const missingPersonalizedPermalink = await worker.fetch(
+    new Request("https://oddspark.dev/s/p-0000000000000000"),
+    h.env
+  );
+  assert.equal(missingPersonalizedPermalink.status, 404);
+  assert.equal(await missingPersonalizedPermalink.text(), "404");
+
+  const missingRoute = await worker.fetch(new Request("https://oddspark.dev/no-such-route"), h.env);
+  assert.equal(missingRoute.status, 404);
+  assert.equal(await missingRoute.text(), "404");
+
+  const how = await worker.fetch(new Request("https://oddspark.dev/how/"), h.env);
+  assert.equal(how.status, 200);
+  assert.match(how.headers.get("content-type") || "", /text\/html/);
+  assert.equal(how.headers.get("cache-control"), "public, max-age=300");
+  assert.match(await how.text(), /<!doctype html>/i);
+});
+
+await test("feed failures preserve API JSON and non-API text 502 taxonomy", async () => {
+  let network = createNetwork({ failDrand: true });
+  let h = createEnvironment();
+  let response = await worker.fetch(sparkRequest(undefined), h.env);
+  assert.equal(response.status, 502);
+  assert.match(response.headers.get("content-type") || "", /application\/json/);
+  assert.match((await response.json()).error, /drand unavailable/);
+
+  network = createNetwork({ failNoaa: true });
+  h = createEnvironment();
+  response = await worker.fetch(new Request("https://oddspark.dev/api/sun"), h.env);
+  assert.equal(response.status, 502);
+  assert.match(response.headers.get("content-type") || "", /application\/json/);
+  assert.match((await response.json()).error, /NOAA unavailable/);
+
+  network = createNetwork({ failDrand: true });
+  h = createEnvironment();
+  response = await worker.fetch(
+    new Request("https://oddspark.dev/", { headers: { "user-agent": "curl/8.4.0", accept: "*/*" } }),
+    h.env
+  );
+  assert.equal(response.status, 502);
+  assert.match(response.headers.get("content-type") || "", /text\/plain|^$/);
+  assert.match(await response.text(), /^A feed did not answer: drand unavailable$/);
+});
+
+await test("text negotiation covers CLI agents and Accept-header cases", async () => {
+  createNetwork();
+  const h = createEnvironment();
+  const textHeaders = [
+    { "user-agent": "wget/1.24", accept: "text/html" },
+    { "user-agent": "httpie/3.2", accept: "*/*" },
+    { "user-agent": "HTTP/2.0", accept: "text/html" },
+    { "user-agent": "Mozilla/5.0", accept: "text/plain" },
+    { "user-agent": "Mozilla/5.0", accept: "application/json" },
+    {},
+  ];
+  for (const headers of textHeaders) {
+    const response = await worker.fetch(new Request("https://oddspark.dev/", { headers }), h.env);
+    assert.equal(response.status, 200);
+    assert.match(response.headers.get("content-type") || "", /text\/plain/);
+    assert.match(await response.text(), /ai meter\s+[\d.]+ \/ 10000 neurons today/);
+  }
+
+  for (const accept of ["text/html", "*/*", "text/html,*/*"]) {
+    const response = await worker.fetch(
+      new Request("https://oddspark.dev/", { headers: { "user-agent": "Mozilla/5.0", accept } }),
+      h.env
+    );
+    assert.match(response.headers.get("content-type") || "", /text\/html/);
+  }
+});
+
+await test("Durable Objects pin meter and coordinator direct operations", async () => {
+  const meterStorage = createStorage();
+  const meter = new NeuronMeter({ storage: meterStorage });
+  let response = await meter.fetch(new Request("https://meter/?day=2026-08-16&n=5", { method: "POST" }));
+  assert.deepEqual(await response.json(), { day: "2026-08-16", used: 5 });
+  response = await meter.fetch(new Request("https://meter/?day=2026-08-16&n=-4", { method: "POST" }));
+  assert.deepEqual(await response.json(), { day: "2026-08-16", used: 5 });
+  response = await meter.fetch(new Request("https://meter/?day=2026-08-16&n=0", { method: "POST" }));
+  assert.deepEqual(await response.json(), { day: "2026-08-16", used: 5 });
+  response = await meter.fetch(new Request("https://meter/?day=2026-08-16"));
+  assert.deepEqual(await response.json(), { day: "2026-08-16", used: 5 });
+
+  const coordStorage = createStorage();
+  const coordinator = new SparkCoordinator({ storage: coordStorage });
+  const post = (path, body) => coordinator.fetch(new Request("https://coord" + path, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(body),
+  }));
+
+  response = await post("/slot", { visitorKey: "visitor", domain: "acmebakery.com" });
+  assert.deepEqual(await response.json(), { allowed: true, consumed: true });
+  response = await post("/slot", { visitorKey: "visitor", domain: "acmebakery.com" });
+  assert.deepEqual(await response.json(), { allowed: true, consumed: false });
+
+  response = await post("/claim", { round: ROUND, domain: "acmebakery.com", owner: "owner-a" });
+  const claim = await response.json();
+  assert.equal(claim.status, "claimed");
+  assert.equal(claim.owner, "owner-a");
+  response = await post("/claim", { round: ROUND, domain: "acmebakery.com", owner: "owner-b" });
+  assert.equal((await response.json()).owner, "owner-a");
+
+  response = await post("/release", { round: ROUND, domain: "acmebakery.com", owner: "owner-b" });
+  assert.deepEqual(await response.json(), { released: true });
+  assert.equal(coordStorage.map.has("dom:" + ROUND + ":acmebakery.com"), true);
+  response = await post("/release", { round: ROUND, domain: "acmebakery.com", owner: "owner-a" });
+  assert.deepEqual(await response.json(), { released: true });
+  assert.equal(coordStorage.map.has("dom:" + ROUND + ":acmebakery.com"), false);
+
+  response = await post("/commit", { result: "personalized", id: "bad" });
+  assert.equal(response.status, 400);
+  assert.deepEqual(await response.json(), { error: "invalid coordinator commit" });
+  response = await post("/unknown", {});
+  assert.equal(response.status, 404);
+  assert.deepEqual(await response.json(), { error: "unknown coordinator operation" });
+});
+
+await test("the footer meter is same-origin only and the former API route is retired", async () => {
+  createNetwork();
+  const h = createEnvironment();
+  const day = new Date().toISOString().slice(0, 10);
+  h.meterState.set(day, 1234);
+
+  const formerApi = await worker.fetch(
+    new Request("https://oddspark.dev/api/meter", { headers: { origin: "https://oddspark.dev" } }),
+    h.env
+  );
+  assert.equal(formerApi.status, 404);
+  assert.equal(formerApi.headers.get("access-control-allow-origin"), null);
+
+  const meter = await worker.fetch(
+    new Request("https://oddspark.dev/meter", { headers: { origin: "https://oddspark.dev" } }),
+    h.env
+  );
+  assert.equal(meter.status, 200);
+  assert.equal(meter.headers.get("access-control-allow-origin"), null);
+  assert.equal(meter.headers.get("vary"), null);
+  assert.deepEqual(await meter.json(), {
+    day,
+    used: 1234,
+    free: 10000,
+    fallback_at: 2500,
+    model: "mock-primary",
+  });
+
+  const home = await worker.fetch(
+    new Request("https://oddspark.dev/", { headers: { "user-agent": "Mozilla/5.0", accept: "text/html" } }),
+    h.env
+  );
+  const html = await home.text();
+  assert.match(html, /fetch\("\/meter"\)/);
+  assert.doesNotMatch(html, /fetch\("\/api\/meter"\)/);
+});
+
+await test("CORS allows only the canonical oddspark origin across JSON APIs", async () => {
+  createNetwork();
+  const canonicalOrigin = "https://oddspark.dev";
+  const h = createEnvironment();
+
+  const preflight = await worker.fetch(
+    new Request("https://oddspark.dev/api/spark", {
+      method: "OPTIONS",
+      headers: {
+        origin: canonicalOrigin,
+        "access-control-request-method": "POST",
+        "access-control-request-headers": "content-type",
+      },
+    }),
+    h.env
+  );
+  assert.equal(preflight.status, 200);
+  assert.equal(preflight.headers.get("access-control-allow-origin"), canonicalOrigin);
+  assert.equal(preflight.headers.get("access-control-allow-methods"), "GET,POST,OPTIONS");
+  assert.equal(preflight.headers.get("access-control-allow-headers"), "content-type");
+  assert.match(preflight.headers.get("vary") || "", /(?:^|,\s*)Origin(?:\s*,|$)/i);
+
+  for (const origin of [
+    "https://www.oddspark.dev",
+    "https://oddspark.pages.dev",
+    "https://evil.example",
+    "http://oddspark.dev",
+    "https://oddspark.dev:8443",
+  ]) {
+    const response = await worker.fetch(
+      new Request("https://oddspark.dev/api/spark", {
+        method: "OPTIONS",
+        headers: {
+          origin,
+          "access-control-request-method": "POST",
+          "access-control-request-headers": "content-type",
+        },
+      }),
+      h.env
+    );
+    assert.equal(response.status, 200, origin);
+    assert.equal(response.headers.get("access-control-allow-origin"), null, origin);
+    assert.match(response.headers.get("vary") || "", /(?:^|,\s*)Origin(?:\s*,|$)/i, origin);
+  }
+
+  let response = await worker.fetch(sparkRequest("", { headers: { origin: canonicalOrigin } }), h.env);
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get("access-control-allow-origin"), canonicalOrigin);
+  assert.notEqual(response.headers.get("access-control-allow-origin"), "*");
+
+  response = await worker.fetch(sparkRequest("", { headers: { origin: "https://evil.example" } }), h.env);
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get("access-control-allow-origin"), null);
+
+  response = await worker.fetch(sparkRequest(""), h.env);
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get("access-control-allow-origin"), null);
+  assert.match(response.headers.get("vary") || "", /(?:^|,\s*)Origin(?:\s*,|$)/i);
+
+  response = await worker.fetch(
+    new Request("https://oddspark.dev/api/spark/00000000", { headers: { origin: canonicalOrigin } }),
+    h.env
+  );
+  assert.equal(response.status, 404);
+  assert.equal(response.headers.get("access-control-allow-origin"), canonicalOrigin);
+
+  response = await worker.fetch(
+    new Request("https://oddspark.dev/api/spark/00000000", { headers: { origin: "https://evil.example" } }),
+    h.env
+  );
+  assert.equal(response.status, 404);
+  assert.equal(response.headers.get("access-control-allow-origin"), null);
+
+  response = await worker.fetch(
+    new Request("https://oddspark.dev/api/sun", { headers: { origin: canonicalOrigin } }),
+    h.env
+  );
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get("access-control-allow-origin"), canonicalOrigin);
+
+  const how = await worker.fetch(
+    new Request("https://oddspark.dev/how", { headers: { origin: canonicalOrigin, accept: "text/html" } }),
+    h.env
+  );
+  assert.equal(how.headers.get("access-control-allow-origin"), null);
+
+  const text = await worker.fetch(
+    new Request("https://oddspark.dev/", {
+      headers: { origin: canonicalOrigin, "user-agent": "curl/8.4.0", accept: "*/*" },
+    }),
+    h.env
+  );
+  assert.equal(text.headers.get("access-control-allow-origin"), null);
+});
+
 await test("unsafe and oversized website values return field 400 before any fetch", async () => {
   const network = createNetwork();
   const h = createEnvironment();
@@ -442,8 +725,18 @@ await test("personalization is grounded, deterministic, metered, permanent, and 
     observation: profile.observation,
   };
   assert.equal(profile.profile_hash, await sha256(JSON.stringify(profileInput)));
+  const personalizedPreimage = [
+    "1",
+    spark.window.round,
+    spark.seed.hash,
+    spark.personalization.domain,
+    spark.personalization.profile_hash,
+  ].join("|");
+  assert.equal(spark.id, "p-" + (await sha256(personalizedPreimage)).slice(0, 16));
   const profilePut = h.kvPuts.find((put) => put.key === "profile:acmebakery.com");
   assert.equal(profilePut.options.expirationTtl, 86400);
+  assert.equal(h.kv.get("pw:" + spark.window.round + ":acmebakery.com"), spark.id);
+  assert.equal(JSON.parse(h.kv.get(spark.id)).id, spark.id);
   assert.deepEqual(h.aiCalls.map((call) => call.kind), ["inference", "personalized"]);
   assert.deepEqual(h.meterPosts, [5, 7]);
   const neuronReceiptIds = [...h.kv.keys()].filter((key) => key.startsWith("n:")).map((key) => key.split(":").pop());
@@ -628,6 +921,74 @@ await test("HTML sniffing succeeds while non-HTML and aggregate overflow fall ba
   result = await strike(h.env, "acmebakery.com");
   assert.equal(result.body.personalization.status, "unavailable");
   assert.equal(h.kv.has("profile:acmebakery.com"), false);
+});
+
+await test("declared content length and the four-second scan deadline are enforced", async () => {
+  let network = createNetwork();
+  network.add(
+    "https://acmebakery.com/",
+    htmlResponse(`<html><body><p>${OBSERVATION}</p></body></html>`, 200, { "content-length": String(512 * 1024 + 1) })
+  );
+  let h = createEnvironment();
+  let result = await strike(h.env, "acmebakery.com");
+  assert.equal(result.body.personalization.status, "unavailable");
+  assert.equal(network.siteCalls.length, 1);
+  assert.equal(h.kv.has("profile:acmebakery.com"), false);
+
+  const originalNow = Date.now;
+  let now = 1000;
+  try {
+    Date.now = () => now;
+    network = createNetwork();
+    network.add("https://acmebakery.com/", () => {
+      now += 3999;
+      return htmlResponse(`<html><body><p>${OBSERVATION}</p></body></html>`);
+    });
+    h = createEnvironment();
+    result = await strike(h.env, "acmebakery.com");
+    assert.equal(result.body.personalization.status, "personalized");
+
+    now = 1000;
+    network = createNetwork();
+    network.add("https://acmebakery.com/", () => {
+      now += 4000;
+      return htmlResponse(`<html><body><p>${OBSERVATION}</p></body></html>`);
+    });
+    h = createEnvironment();
+    result = await strike(h.env, "acmebakery.com");
+  } finally {
+    Date.now = originalNow;
+  }
+  assert.equal(result.body.personalization.status, "unavailable");
+  assert.equal(h.kv.has("profile:acmebakery.com"), false);
+});
+
+await test("model fallback threshold and best-effort neuron recording are pinned", async () => {
+  createNetwork();
+  let h = createEnvironment();
+  h.meterState.set(new Date().toISOString().slice(0, 10), 2499);
+  let result = await strike(h.env, undefined);
+  assert.equal(result.response.status, 200);
+  assert.equal(h.aiCalls[0].model, "mock-primary");
+  assert.equal(result.body.model, "mock-primary");
+
+  createNetwork();
+  h = createEnvironment();
+  h.meterState.set(new Date().toISOString().slice(0, 10), 2500);
+  result = await strike(h.env, undefined);
+  assert.equal(result.response.status, 200);
+  assert.equal(h.aiCalls[0].model, "mock-fallback");
+  assert.equal(result.body.model, "mock-fallback");
+
+  createNetwork();
+  h = createEnvironment({ meterPostDown: true, neuronReceiptDown: true });
+  result = await strike(h.env, undefined);
+  assert.equal(result.response.status, 200);
+  assert.equal(result.body.generated, true);
+  assert.equal(h.meterPosts.length, 0);
+  assert.deepEqual(h.meterPostAttempts, [3]);
+  assert.equal(h.neuronReceiptAttempts.length, 1);
+  assert.equal([...h.kv.keys()].some((key) => key.startsWith("n:")), false);
 });
 
 await test("the redirect allowance is aggregate across all scanned pages", async () => {

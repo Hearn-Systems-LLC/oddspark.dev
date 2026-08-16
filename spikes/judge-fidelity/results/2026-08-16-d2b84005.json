@@ -1,0 +1,1901 @@
+{
+  "schema_version": "oddspark.judge-fidelity-result/v1",
+  "run": {
+    "id": "d2b84005-7c46-4379-88fa-abe8fe0e2d2d",
+    "started_at": "2026-08-16T15:39:36.077Z",
+    "ended_at": "2026-08-16T15:44:59.250Z",
+    "terminal_stage": "matrix",
+    "baseline": {
+      "head": "761c3dae989ca52a198f7b4f64a650f292fea3b9",
+      "dirty": true,
+      "dirty_entry_count": 9,
+      "dirty_state_sha256": "84edd2f78ae088a33dda6e637d354cd45993fdc9a04e7e2b6b7ca3f1b22d906f"
+    },
+    "runtime": {
+      "node": "v26.7.0",
+      "wrangler": "4.114.0"
+    },
+    "authorization": {
+      "operator_approved": true,
+      "approved_call_cap": 42,
+      "approval_scope": "2 probes plus 20 counted trials per model; no retries",
+      "profile_confirmed": true,
+      "headroom_confirmed": true,
+      "plan": "paid",
+      "remaining_free_neurons_at_check": 9721.28,
+      "account_identifier_persisted": false
+    },
+    "models": [
+      "@cf/openai/gpt-oss-120b",
+      "@cf/openai/gpt-oss-20b"
+    ],
+    "request": {
+      "temperature": 0,
+      "max_tokens": 2048,
+      "response_format_type": "json_schema",
+      "timeout_ms": 120000
+    },
+    "inputs": {
+      "semantic": {
+        "system_prompt_sha256": "796a7bb6a54ee637314e1b0d4342614e151c8fe4726ed1ffd8c6a38f6c173587",
+        "fixture_sha256": "21a0c652de010466d889f6070d306dd4f373e0c2b6c2dc50d351c62e5aa5e951",
+        "schema_sha256": "da370fe36a77cfecd4c2750dcf8d5895d0b44181aa1856a1a913b51100909065",
+        "contract_sha256": "cc17d962b5a109f24bff672210faca103db3faedb5737aef66d37c7b2e06a3dc"
+      },
+      "source_manifest": [
+        {
+          "path": "package.json",
+          "bytes": 737,
+          "sha256": "053013873cf500ebe806d78ae274162823368085694cefa2efe58715fa119918"
+        },
+        {
+          "path": "spikes/judge-fidelity/contract.mjs",
+          "bytes": 22735,
+          "sha256": "1b7c81f3de7aa1c108b56b8c1a5b9a143c4fe0d5ad2afae94478cdffb75a78bd"
+        },
+        {
+          "path": "spikes/judge-fidelity/fixtures.json",
+          "bytes": 9853,
+          "sha256": "d08b79de6ecb637fa560113c0f0ac061b8180e273086b92f47a290a86944848a"
+        },
+        {
+          "path": "spikes/judge-fidelity/run.mjs",
+          "bytes": 30051,
+          "sha256": "3113b20e2ee0ccffaa9d7f2a17d86c51143e7f595dbc9b798d1dbfcd7e8e076e"
+        },
+        {
+          "path": "spikes/judge-fidelity/test.mjs",
+          "bytes": 20276,
+          "sha256": "b77a0e6a32edd32385891e416e141ec60a14b3c7b0822baf79750d1b88241c66"
+        },
+        {
+          "path": "spikes/judge-fidelity/worker.mjs",
+          "bytes": 5535,
+          "sha256": "01fe698233a36995f4edb9582826c7efeb01d32a663c492e6367eb260adfc229"
+        },
+        {
+          "path": "spikes/judge-fidelity/wrangler.toml",
+          "bytes": 229,
+          "sha256": "4261707d3ba17e285f2b73bf84049f65b691a8fb5101b403640fd57648dc6c21"
+        }
+      ],
+      "source_manifest_sha256": "8dfaad892beb2fc168057e4d4bbe23cbb55d7c0367043112b5c11e62f1075d87",
+      "request_sha256_by_model": {
+        "@cf/openai/gpt-oss-120b": "e9faf0bc4fb6fe3054ab50766d9fe084ea852a94268d13217d930541c5ce47f9",
+        "@cf/openai/gpt-oss-20b": "cde83c50cfdf5198e6a58f4920b4df389b800248a9c86306a09a8a8f83b1b2cd"
+      }
+    },
+    "cost_estimate": {
+      "pricing_as_of": "2026-07-29",
+      "pricing_source": "https://developers.cloudflare.com/workers-ai/platform/pricing/",
+      "input_token_upper_bound_per_request": 6135,
+      "max_output_tokens_per_call": 2048,
+      "calls_per_model": 21,
+      "total_calls": 42,
+      "gross_usd": 0.11601765,
+      "gross_neurons": 10547.059090909092,
+      "free_neurons_per_day": 10000,
+      "by_model": {
+        "@cf/openai/gpt-oss-120b": {
+          "calls": 21,
+          "input_usd": 0.04509225,
+          "output_usd": 0.032256
+        },
+        "@cf/openai/gpt-oss-20b": {
+          "calls": 21,
+          "input_usd": 0.025767,
+          "output_usd": 0.0129024
+        }
+      }
+    },
+    "preflight_blockers": []
+  },
+  "fixture_results": {
+    "passed": true,
+    "passed_count": 18,
+    "total_count": 18
+  },
+  "probes": [
+    {
+      "model": "@cf/openai/gpt-oss-120b",
+      "index": 1,
+      "started_at": "2026-08-16T15:39:36.112Z",
+      "ended_at": "2026-08-16T15:39:42.214Z",
+      "latency_ms": 6103,
+      "call_state": "received",
+      "error_code": null,
+      "error_message": null,
+      "content_candidates": [
+        {
+          "location": "choices[0].message.content",
+          "kind": "text",
+          "value": "{\n  \"pass\": true,\n  \"gates\": {\n    \"1\": true,\n    \"2\": true,\n    \"3\": true,\n    \"4\": true,\n    \"5\": true,\n    \"6\": true,\n    \"7\": true,\n    \"8\": true,\n    \"9\": true\n  },\n  \"tone\": true,\n  \"claims\": true\n}",
+          "utf8_bytes": 204,
+          "sha256": "a2d6b318be5e82a98a8c681984123b7e38d19a647918c13af805b725eb5869d9"
+        }
+      ],
+      "classification": "schema_invalid",
+      "repair_kind": null,
+      "validation_errors": [
+        "verdict.gates must be an array",
+        "verdict.tone must be an object",
+        "verdict.claims must be an object",
+        "verdict.pass cannot be true when any reported check fails"
+      ],
+      "validated_verdict": null,
+      "validated_verdict_sha256": null,
+      "usage": {
+        "prompt_tokens": 782,
+        "completion_tokens": 1088,
+        "total_tokens": 1870,
+        "neurons": 99.06346893310547
+      },
+      "reported_effective_values": {},
+      "request_sha256": "e9faf0bc4fb6fe3054ab50766d9fe084ea852a94268d13217d930541c5ce47f9",
+      "accepted": true
+    },
+    {
+      "model": "@cf/openai/gpt-oss-20b",
+      "index": 1,
+      "started_at": "2026-08-16T15:39:42.215Z",
+      "ended_at": "2026-08-16T15:39:48.091Z",
+      "latency_ms": 5876,
+      "call_state": "received",
+      "error_code": null,
+      "error_message": null,
+      "content_candidates": [
+        {
+          "location": "choices[0].message.content",
+          "kind": "text",
+          "value": "{\"pass\":true,\"gates\":{\"1\":true,\"2\":true,\"3\":true,\"4\":true,\"5\":true,\"6\":true,\"7\":true,\"8\":true,\"9\":true},\"tone\":\"confident plan, plain language, no pitch, no consultant-speak, no bare‑mush effects\",\"claims\":\"qualitative, no numeric claims, evidence grounded\"}",
+          "utf8_bytes": 260,
+          "sha256": "79f83477d21d6a5ca80788506ecb29758ce4a489572ba0371d74c79b729487f4"
+        }
+      ],
+      "classification": "schema_invalid",
+      "repair_kind": null,
+      "validation_errors": [
+        "verdict.gates must be an array",
+        "verdict.tone must be an object",
+        "verdict.claims must be an object",
+        "verdict.pass cannot be true when any reported check fails"
+      ],
+      "validated_verdict": null,
+      "validated_verdict_sha256": null,
+      "usage": {
+        "prompt_tokens": 788,
+        "completion_tokens": 707,
+        "total_tokens": 1495,
+        "neurons": 33.6090573
+      },
+      "reported_effective_values": {},
+      "request_sha256": "cde83c50cfdf5198e6a58f4920b4df389b800248a9c86306a09a8a8f83b1b2cd",
+      "accepted": true
+    }
+  ],
+  "trials": [
+    {
+      "model": "@cf/openai/gpt-oss-120b",
+      "index": 1,
+      "started_at": "2026-08-16T15:39:48.092Z",
+      "ended_at": "2026-08-16T15:39:54.688Z",
+      "latency_ms": 6596,
+      "call_state": "received",
+      "error_code": null,
+      "error_message": null,
+      "content_candidates": [
+        {
+          "location": "choices[0].message.content",
+          "kind": "text",
+          "value": "{\n  \"pass\": true,\n  \"gate1\": true,\n  \"gate2\": true,\n  \"gate3\": true,\n  \"gate4\": true,\n  \"gate5\": true,\n  \"gate6\": true,\n  \"gate7\": true,\n  \"gate8\": true,\n  \"gate9\": true,\n  \"tone\": true,\n  \"claims\": true\n}",
+          "utf8_bytes": 205,
+          "sha256": "858f78037a1434660ae43388917f80c865379034f28ebe6a0346decdf9be7387"
+        }
+      ],
+      "classification": "schema_invalid",
+      "repair_kind": null,
+      "validation_errors": [
+        "verdict.gates is required",
+        "verdict.gate1 is not allowed",
+        "verdict.gate2 is not allowed",
+        "verdict.gate3 is not allowed",
+        "verdict.gate4 is not allowed",
+        "verdict.gate5 is not allowed",
+        "verdict.gate6 is not allowed",
+        "verdict.gate7 is not allowed",
+        "verdict.gate8 is not allowed",
+        "verdict.gate9 is not allowed",
+        "verdict.gates must be an array",
+        "verdict.tone must be an object",
+        "verdict.claims must be an object",
+        "verdict.pass cannot be true when any reported check fails"
+      ],
+      "validated_verdict": null,
+      "validated_verdict_sha256": null,
+      "usage": {
+        "prompt_tokens": 782,
+        "completion_tokens": 1202,
+        "total_tokens": 1984,
+        "neurons": 106.83619689941406
+      },
+      "reported_effective_values": {},
+      "request_sha256": "e9faf0bc4fb6fe3054ab50766d9fe084ea852a94268d13217d930541c5ce47f9"
+    },
+    {
+      "model": "@cf/openai/gpt-oss-120b",
+      "index": 2,
+      "started_at": "2026-08-16T15:39:54.688Z",
+      "ended_at": "2026-08-16T15:40:02.061Z",
+      "latency_ms": 7373,
+      "call_state": "received",
+      "error_code": null,
+      "error_message": null,
+      "content_candidates": [
+        {
+          "location": "choices[0].message.content",
+          "kind": "text",
+          "value": "{\n  \"pass\": true,\n  \"gate1\": true,\n  \"gate2\": true,\n  \"gate3\": true,\n  \"gate4\": true,\n  \"gate5\": true,\n  \"gate6\": true,\n  \"gate7\": true,\n  \"gate8\": true,\n  \"gate9\": true,\n  \"tone\": true,\n  \"claims\": true\n}",
+          "utf8_bytes": 205,
+          "sha256": "858f78037a1434660ae43388917f80c865379034f28ebe6a0346decdf9be7387"
+        }
+      ],
+      "classification": "schema_invalid",
+      "repair_kind": null,
+      "validation_errors": [
+        "verdict.gates is required",
+        "verdict.gate1 is not allowed",
+        "verdict.gate2 is not allowed",
+        "verdict.gate3 is not allowed",
+        "verdict.gate4 is not allowed",
+        "verdict.gate5 is not allowed",
+        "verdict.gate6 is not allowed",
+        "verdict.gate7 is not allowed",
+        "verdict.gate8 is not allowed",
+        "verdict.gate9 is not allowed",
+        "verdict.gates must be an array",
+        "verdict.tone must be an object",
+        "verdict.claims must be an object",
+        "verdict.pass cannot be true when any reported check fails"
+      ],
+      "validated_verdict": null,
+      "validated_verdict_sha256": null,
+      "usage": {
+        "prompt_tokens": 782,
+        "completion_tokens": 1179,
+        "total_tokens": 1961,
+        "neurons": 105.26801300048828
+      },
+      "reported_effective_values": {},
+      "request_sha256": "e9faf0bc4fb6fe3054ab50766d9fe084ea852a94268d13217d930541c5ce47f9"
+    },
+    {
+      "model": "@cf/openai/gpt-oss-120b",
+      "index": 3,
+      "started_at": "2026-08-16T15:40:02.061Z",
+      "ended_at": "2026-08-16T15:40:08.002Z",
+      "latency_ms": 5941,
+      "call_state": "received",
+      "error_code": null,
+      "error_message": null,
+      "content_candidates": [
+        {
+          "location": "choices[0].message.content",
+          "kind": "text",
+          "value": "{\n  \"pass\": true,\n  \"gates\": {\n    \"1\": true,\n    \"2\": true,\n    \"3\": true,\n    \"4\": true,\n    \"5\": true,\n    \"6\": true,\n    \"7\": true,\n    \"8\": true,\n    \"9\": true\n  },\n  \"tone\": true,\n  \"claims\": true\n}",
+          "utf8_bytes": 204,
+          "sha256": "a2d6b318be5e82a98a8c681984123b7e38d19a647918c13af805b725eb5869d9"
+        }
+      ],
+      "classification": "schema_invalid",
+      "repair_kind": null,
+      "validation_errors": [
+        "verdict.gates must be an array",
+        "verdict.tone must be an object",
+        "verdict.claims must be an object",
+        "verdict.pass cannot be true when any reported check fails"
+      ],
+      "validated_verdict": null,
+      "validated_verdict_sha256": null,
+      "usage": {
+        "prompt_tokens": 782,
+        "completion_tokens": 961,
+        "total_tokens": 1743,
+        "neurons": 90.40438079833984
+      },
+      "reported_effective_values": {},
+      "request_sha256": "e9faf0bc4fb6fe3054ab50766d9fe084ea852a94268d13217d930541c5ce47f9"
+    },
+    {
+      "model": "@cf/openai/gpt-oss-120b",
+      "index": 4,
+      "started_at": "2026-08-16T15:40:08.002Z",
+      "ended_at": "2026-08-16T15:40:15.784Z",
+      "latency_ms": 7782,
+      "call_state": "received",
+      "error_code": null,
+      "error_message": null,
+      "content_candidates": [
+        {
+          "location": "choices[0].message.content",
+          "kind": "text",
+          "value": "{\n  \"pass\": true,\n  \"gates\": {\n    \"1\": true,\n    \"2\": true,\n    \"3\": true,\n    \"4\": true,\n    \"5\": true,\n    \"6\": true,\n    \"7\": true,\n    \"8\": true,\n    \"9\": true\n  }\n}",
+          "utf8_bytes": 170,
+          "sha256": "ed97c44aab9d0977fa900fcb298e72875ef9d2e1f36f76458c6929d9a26a5fd5"
+        }
+      ],
+      "classification": "schema_invalid",
+      "repair_kind": null,
+      "validation_errors": [
+        "verdict.tone is required",
+        "verdict.claims is required",
+        "verdict.gates must be an array",
+        "verdict.tone must be an object",
+        "verdict.claims must be an object",
+        "verdict.pass cannot be true when any reported check fails"
+      ],
+      "validated_verdict": null,
+      "validated_verdict_sha256": null,
+      "usage": {
+        "prompt_tokens": 782,
+        "completion_tokens": 1161,
+        "total_tokens": 1943,
+        "neurons": 104.04074096679688
+      },
+      "reported_effective_values": {},
+      "request_sha256": "e9faf0bc4fb6fe3054ab50766d9fe084ea852a94268d13217d930541c5ce47f9"
+    },
+    {
+      "model": "@cf/openai/gpt-oss-120b",
+      "index": 5,
+      "started_at": "2026-08-16T15:40:15.784Z",
+      "ended_at": "2026-08-16T15:40:22.595Z",
+      "latency_ms": 6810,
+      "call_state": "received",
+      "error_code": null,
+      "error_message": null,
+      "content_candidates": [
+        {
+          "location": "choices[0].message.content",
+          "kind": "text",
+          "value": "{\n  \"pass\": true,\n  \"gates\": {\n    \"1\": true,\n    \"2\": true,\n    \"3\": true,\n    \"4\": true,\n    \"5\": true,\n    \"6\": true,\n    \"7\": true,\n    \"8\": true,\n    \"9\": true\n  }\n}",
+          "utf8_bytes": 170,
+          "sha256": "ed97c44aab9d0977fa900fcb298e72875ef9d2e1f36f76458c6929d9a26a5fd5"
+        }
+      ],
+      "classification": "schema_invalid",
+      "repair_kind": null,
+      "validation_errors": [
+        "verdict.tone is required",
+        "verdict.claims is required",
+        "verdict.gates must be an array",
+        "verdict.tone must be an object",
+        "verdict.claims must be an object",
+        "verdict.pass cannot be true when any reported check fails"
+      ],
+      "validated_verdict": null,
+      "validated_verdict_sha256": null,
+      "usage": {
+        "prompt_tokens": 782,
+        "completion_tokens": 979,
+        "total_tokens": 1761,
+        "neurons": 91.63165283203125
+      },
+      "reported_effective_values": {},
+      "request_sha256": "e9faf0bc4fb6fe3054ab50766d9fe084ea852a94268d13217d930541c5ce47f9"
+    },
+    {
+      "model": "@cf/openai/gpt-oss-120b",
+      "index": 6,
+      "started_at": "2026-08-16T15:40:22.595Z",
+      "ended_at": "2026-08-16T15:40:30.443Z",
+      "latency_ms": 7848,
+      "call_state": "received",
+      "error_code": null,
+      "error_message": null,
+      "content_candidates": [
+        {
+          "location": "choices[0].message.content",
+          "kind": "text",
+          "value": "{\n  \"pass\": true,\n  \"gates\": {\n    \"1\": { \"pass\": true, \"reason\": \"The brief starts from the routine of online appointment requests and the recurring annoyance of requests sitting idle.\" },\n    \"2\": { \"pass\": true, \"reason\": \"Identifies the friction (unfollowed requests) and proposes a concrete follow‑up queue as the solution.\" },\n    \"3\": { \"pass\": true, \"reason\": \"The follow‑up queue is a new capability, not a duplicate of the existing online request or calendar system.\" },\n    \"4\": { \"pass\": true, \"reason\": \"Leverages the observed website request form and phone channel; the queue fits within those channels.\" },\n    \"5\": { \"pass\": true, \"reason\": \"Scope (2 steps changed, 1 removed, 1–2 weeks) matches the modest scale and maintenance capacity of a dental practice.\" },\n    \"6\": { \"pass\": true, \"reason\": \"Hearn Systems could deliver the queue as a software integration or workflow automation around the existing form.\" },\n    \"7\": { \"pass\": true, \"reason\": \"Keeps the same patient‑facing form, calendar, and front‑desk authority; only adds a backstage queue.\" },\n    \"8\": { \"pass\": true, \"reason\": \"A staff member could easily explain the problem, the added queue, and the benefit in everyday language.\" },\n    \"9\": { \"pass\": true, \"reason\": \"A follow‑up relay is a concrete, imaginable improvement that goes beyond the obvious reminder.\" }\n  },\n  \"tone\": \"pass\",\n  \"claims\": \"pass\"\n}",
+          "utf8_bytes": 1409,
+          "sha256": "752b0c5c945828b7737d9f882b0cc117961fd6a0c8ae4768d3aff45ac01bc900"
+        }
+      ],
+      "classification": "schema_invalid",
+      "repair_kind": null,
+      "validation_errors": [
+        "verdict.gates must be an array",
+        "verdict.tone must be an object",
+        "verdict.claims must be an object",
+        "verdict.pass cannot be true when any reported check fails"
+      ],
+      "validated_verdict": null,
+      "validated_verdict_sha256": null,
+      "usage": {
+        "prompt_tokens": 782,
+        "completion_tokens": 1243,
+        "total_tokens": 2025,
+        "neurons": 109.63165283203125
+      },
+      "reported_effective_values": {},
+      "request_sha256": "e9faf0bc4fb6fe3054ab50766d9fe084ea852a94268d13217d930541c5ce47f9"
+    },
+    {
+      "model": "@cf/openai/gpt-oss-120b",
+      "index": 7,
+      "started_at": "2026-08-16T15:40:30.444Z",
+      "ended_at": "2026-08-16T15:40:39.057Z",
+      "latency_ms": 8613,
+      "call_state": "received",
+      "error_code": null,
+      "error_message": null,
+      "content_candidates": [
+        {
+          "location": "choices[0].message.content",
+          "kind": "text",
+          "value": "{\n  \"pass\": true,\n  \"gate1\": true,\n  \"gate2\": true,\n  \"gate3\": true,\n  \"gate4\": true,\n  \"gate5\": true,\n  \"gate6\": true,\n  \"gate7\": true,\n  \"gate8\": true,\n  \"gate9\": true,\n  \"tone\": true,\n  \"claims\": true\n}",
+          "utf8_bytes": 205,
+          "sha256": "858f78037a1434660ae43388917f80c865379034f28ebe6a0346decdf9be7387"
+        }
+      ],
+      "classification": "schema_invalid",
+      "repair_kind": null,
+      "validation_errors": [
+        "verdict.gates is required",
+        "verdict.gate1 is not allowed",
+        "verdict.gate2 is not allowed",
+        "verdict.gate3 is not allowed",
+        "verdict.gate4 is not allowed",
+        "verdict.gate5 is not allowed",
+        "verdict.gate6 is not allowed",
+        "verdict.gate7 is not allowed",
+        "verdict.gate8 is not allowed",
+        "verdict.gate9 is not allowed",
+        "verdict.gates must be an array",
+        "verdict.tone must be an object",
+        "verdict.claims must be an object",
+        "verdict.pass cannot be true when any reported check fails"
+      ],
+      "validated_verdict": null,
+      "validated_verdict_sha256": null,
+      "usage": {
+        "prompt_tokens": 782,
+        "completion_tokens": 1251,
+        "total_tokens": 2033,
+        "neurons": 110.1771011352539
+      },
+      "reported_effective_values": {},
+      "request_sha256": "e9faf0bc4fb6fe3054ab50766d9fe084ea852a94268d13217d930541c5ce47f9"
+    },
+    {
+      "model": "@cf/openai/gpt-oss-120b",
+      "index": 8,
+      "started_at": "2026-08-16T15:40:39.060Z",
+      "ended_at": "2026-08-16T15:40:48.219Z",
+      "latency_ms": 9160,
+      "call_state": "received",
+      "error_code": null,
+      "error_message": null,
+      "content_candidates": [
+        {
+          "location": "choices[0].message.content",
+          "kind": "text",
+          "value": "{\n  \"pass\": true,\n  \"gates\": {\n    \"1\": true,\n    \"2\": true,\n    \"3\": true,\n    \"4\": true,\n    \"5\": true,\n    \"6\": true,\n    \"7\": true,\n    \"8\": true,\n    \"9\": true\n  },\n  \"tone\": true,\n  \"claims\": true\n}",
+          "utf8_bytes": 204,
+          "sha256": "a2d6b318be5e82a98a8c681984123b7e38d19a647918c13af805b725eb5869d9"
+        }
+      ],
+      "classification": "schema_invalid",
+      "repair_kind": null,
+      "validation_errors": [
+        "verdict.gates must be an array",
+        "verdict.tone must be an object",
+        "verdict.claims must be an object",
+        "verdict.pass cannot be true when any reported check fails"
+      ],
+      "validated_verdict": null,
+      "validated_verdict_sha256": null,
+      "usage": {
+        "prompt_tokens": 782,
+        "completion_tokens": 1064,
+        "total_tokens": 1846,
+        "neurons": 97.42710876464844
+      },
+      "reported_effective_values": {},
+      "request_sha256": "e9faf0bc4fb6fe3054ab50766d9fe084ea852a94268d13217d930541c5ce47f9"
+    },
+    {
+      "model": "@cf/openai/gpt-oss-120b",
+      "index": 9,
+      "started_at": "2026-08-16T15:40:48.219Z",
+      "ended_at": "2026-08-16T15:40:55.797Z",
+      "latency_ms": 7578,
+      "call_state": "received",
+      "error_code": null,
+      "error_message": null,
+      "content_candidates": [
+        {
+          "location": "choices[0].message.content",
+          "kind": "text",
+          "value": "{\n  \"gates\": {\n    \"recognizable_routine\": true,\n    \"constructive_intervention\": true,\n    \"capability_inventory\": true,\n    \"channel_fit\": true,\n    \"proportionality\": true,\n    \"delivery_fit\": true,\n    \"preservation\": true,\n    \"natural_retelling\": true,\n    \"novel_but_imaginable\": true,\n    \"tone\": true,\n    \"claims\": true\n  },\n  \"pass\": true\n}",
+          "utf8_bytes": 351,
+          "sha256": "7fa99ef2f4180473efa029971135ed185aa5c86ee4fe60829d23903d24ee9e30"
+        }
+      ],
+      "classification": "schema_invalid",
+      "repair_kind": null,
+      "validation_errors": [
+        "verdict.tone is required",
+        "verdict.claims is required",
+        "verdict.gates must be an array",
+        "verdict.tone must be an object",
+        "verdict.claims must be an object",
+        "verdict.pass cannot be true when any reported check fails"
+      ],
+      "validated_verdict": null,
+      "validated_verdict_sha256": null,
+      "usage": {
+        "prompt_tokens": 782,
+        "completion_tokens": 1188,
+        "total_tokens": 1970,
+        "neurons": 105.88165283203125
+      },
+      "reported_effective_values": {},
+      "request_sha256": "e9faf0bc4fb6fe3054ab50766d9fe084ea852a94268d13217d930541c5ce47f9"
+    },
+    {
+      "model": "@cf/openai/gpt-oss-120b",
+      "index": 10,
+      "started_at": "2026-08-16T15:40:55.798Z",
+      "ended_at": "2026-08-16T15:41:02.900Z",
+      "latency_ms": 7102,
+      "call_state": "received",
+      "error_code": null,
+      "error_message": null,
+      "content_candidates": [
+        {
+          "location": "choices[0].message.content",
+          "kind": "text",
+          "value": "{\n  \"pass\": true,\n  \"gates\": {\n    \"gate1\": true,\n    \"gate2\": true,\n    \"gate3\": true,\n    \"gate4\": true,\n    \"gate5\": true,\n    \"gate6\": true,\n    \"gate7\": true,\n    \"gate8\": true,\n    \"gate9\": true\n  },\n  \"tone\": true,\n  \"claims\": true\n}",
+          "utf8_bytes": 240,
+          "sha256": "fd467061cf93629bd1059ebe432bc1d65601750777945396470e0e1323c56601"
+        }
+      ],
+      "classification": "schema_invalid",
+      "repair_kind": null,
+      "validation_errors": [
+        "verdict.gates must be an array",
+        "verdict.tone must be an object",
+        "verdict.claims must be an object",
+        "verdict.pass cannot be true when any reported check fails"
+      ],
+      "validated_verdict": null,
+      "validated_verdict_sha256": null,
+      "usage": {
+        "prompt_tokens": 782,
+        "completion_tokens": 1167,
+        "total_tokens": 1949,
+        "neurons": 104.44983673095703
+      },
+      "reported_effective_values": {},
+      "request_sha256": "e9faf0bc4fb6fe3054ab50766d9fe084ea852a94268d13217d930541c5ce47f9"
+    },
+    {
+      "model": "@cf/openai/gpt-oss-120b",
+      "index": 11,
+      "started_at": "2026-08-16T15:41:02.900Z",
+      "ended_at": "2026-08-16T15:41:08.708Z",
+      "latency_ms": 5808,
+      "call_state": "received",
+      "error_code": null,
+      "error_message": null,
+      "content_candidates": [
+        {
+          "location": "choices[0].message.content",
+          "kind": "text",
+          "value": "{\n  \"pass\": true,\n  \"gates\": {\n    \"1\": true,\n    \"2\": true,\n    \"3\": true,\n    \"4\": true,\n    \"5\": true,\n    \"6\": true,\n    \"7\": true,\n    \"8\": true,\n    \"9\": true\n  },\n  \"tone\": true,\n  \"claims\": true\n}",
+          "utf8_bytes": 204,
+          "sha256": "a2d6b318be5e82a98a8c681984123b7e38d19a647918c13af805b725eb5869d9"
+        }
+      ],
+      "classification": "schema_invalid",
+      "repair_kind": null,
+      "validation_errors": [
+        "verdict.gates must be an array",
+        "verdict.tone must be an object",
+        "verdict.claims must be an object",
+        "verdict.pass cannot be true when any reported check fails"
+      ],
+      "validated_verdict": null,
+      "validated_verdict_sha256": null,
+      "usage": {
+        "prompt_tokens": 782,
+        "completion_tokens": 1088,
+        "total_tokens": 1870,
+        "neurons": 99.06346893310547
+      },
+      "reported_effective_values": {},
+      "request_sha256": "e9faf0bc4fb6fe3054ab50766d9fe084ea852a94268d13217d930541c5ce47f9"
+    },
+    {
+      "model": "@cf/openai/gpt-oss-120b",
+      "index": 12,
+      "started_at": "2026-08-16T15:41:08.709Z",
+      "ended_at": "2026-08-16T15:41:13.794Z",
+      "latency_ms": 5085,
+      "call_state": "received",
+      "error_code": null,
+      "error_message": null,
+      "content_candidates": [
+        {
+          "location": "choices[0].message.content",
+          "kind": "text",
+          "value": "{\n  \"pass\": true,\n  \"gates\": {\n    \"1\": true,\n    \"2\": true,\n    \"3\": true,\n    \"4\": true,\n    \"5\": true,\n    \"6\": true,\n    \"7\": true,\n    \"8\": true,\n    \"9\": true\n  }\n}",
+          "utf8_bytes": 170,
+          "sha256": "ed97c44aab9d0977fa900fcb298e72875ef9d2e1f36f76458c6929d9a26a5fd5"
+        }
+      ],
+      "classification": "schema_invalid",
+      "repair_kind": null,
+      "validation_errors": [
+        "verdict.tone is required",
+        "verdict.claims is required",
+        "verdict.gates must be an array",
+        "verdict.tone must be an object",
+        "verdict.claims must be an object",
+        "verdict.pass cannot be true when any reported check fails"
+      ],
+      "validated_verdict": null,
+      "validated_verdict_sha256": null,
+      "usage": {
+        "prompt_tokens": 782,
+        "completion_tokens": 1006,
+        "total_tokens": 1788,
+        "neurons": 93.47256469726562
+      },
+      "reported_effective_values": {},
+      "request_sha256": "e9faf0bc4fb6fe3054ab50766d9fe084ea852a94268d13217d930541c5ce47f9"
+    },
+    {
+      "model": "@cf/openai/gpt-oss-120b",
+      "index": 13,
+      "started_at": "2026-08-16T15:41:13.794Z",
+      "ended_at": "2026-08-16T15:41:19.933Z",
+      "latency_ms": 6140,
+      "call_state": "received",
+      "error_code": null,
+      "error_message": null,
+      "content_candidates": [
+        {
+          "location": "choices[0].message.content",
+          "kind": "text",
+          "value": "{\n  \"pass\": true,\n  \"gate1\": true,\n  \"gate2\": true,\n  \"gate3\": true,\n  \"gate4\": true,\n  \"gate5\": true,\n  \"gate6\": true,\n  \"gate7\": true,\n  \"gate8\": true,\n  \"gate9\": true,\n  \"tone\": true,\n  \"claims\": true\n}",
+          "utf8_bytes": 205,
+          "sha256": "858f78037a1434660ae43388917f80c865379034f28ebe6a0346decdf9be7387"
+        }
+      ],
+      "classification": "schema_invalid",
+      "repair_kind": null,
+      "validation_errors": [
+        "verdict.gates is required",
+        "verdict.gate1 is not allowed",
+        "verdict.gate2 is not allowed",
+        "verdict.gate3 is not allowed",
+        "verdict.gate4 is not allowed",
+        "verdict.gate5 is not allowed",
+        "verdict.gate6 is not allowed",
+        "verdict.gate7 is not allowed",
+        "verdict.gate8 is not allowed",
+        "verdict.gate9 is not allowed",
+        "verdict.gates must be an array",
+        "verdict.tone must be an object",
+        "verdict.claims must be an object",
+        "verdict.pass cannot be true when any reported check fails"
+      ],
+      "validated_verdict": null,
+      "validated_verdict_sha256": null,
+      "usage": {
+        "prompt_tokens": 782,
+        "completion_tokens": 1048,
+        "total_tokens": 1830,
+        "neurons": 96.33619689941406
+      },
+      "reported_effective_values": {},
+      "request_sha256": "e9faf0bc4fb6fe3054ab50766d9fe084ea852a94268d13217d930541c5ce47f9"
+    },
+    {
+      "model": "@cf/openai/gpt-oss-120b",
+      "index": 14,
+      "started_at": "2026-08-16T15:41:19.935Z",
+      "ended_at": "2026-08-16T15:41:25.739Z",
+      "latency_ms": 5804,
+      "call_state": "received",
+      "error_code": null,
+      "error_message": null,
+      "content_candidates": [
+        {
+          "location": "choices[0].message.content",
+          "kind": "text",
+          "value": "{\n  \"pass\": true,\n  \"gates\": [\n    { \"gate\": 1, \"pass\": true },\n    { \"gate\": 2, \"pass\": true },\n    { \"gate\": 3, \"pass\": true },\n    { \"gate\": 4, \"pass\": true },\n    { \"gate\": 5, \"pass\": true },\n    { \"gate\": 6, \"pass\": true },\n    { \"gate\": 7, \"pass\": true },\n    { \"gate\": 8, \"pass\": true },\n    { \"gate\": 9, \"pass\": true }\n  ]\n}",
+          "utf8_bytes": 332,
+          "sha256": "e0d23cc7d2fcd62f79e6ff52bac58bb640dc5c3a224e3114e828f9a204bb0a9d"
+        }
+      ],
+      "classification": "schema_invalid",
+      "repair_kind": null,
+      "validation_errors": [
+        "verdict.tone is required",
+        "verdict.claims is required",
+        "verdict.gates[0].reason is required",
+        "verdict.gates[0].reason must be a non-empty string",
+        "verdict.gates[1].reason is required",
+        "verdict.gates[1].reason must be a non-empty string",
+        "verdict.gates[2].reason is required",
+        "verdict.gates[2].reason must be a non-empty string",
+        "verdict.gates[3].reason is required",
+        "verdict.gates[3].reason must be a non-empty string",
+        "verdict.gates[4].reason is required",
+        "verdict.gates[4].reason must be a non-empty string",
+        "verdict.gates[5].reason is required",
+        "verdict.gates[5].reason must be a non-empty string",
+        "verdict.gates[6].reason is required",
+        "verdict.gates[6].reason must be a non-empty string",
+        "verdict.gates[7].reason is required",
+        "verdict.gates[7].reason must be a non-empty string",
+        "verdict.gates[8].reason is required",
+        "verdict.gates[8].reason must be a non-empty string",
+        "verdict.tone must be an object",
+        "verdict.claims must be an object",
+        "verdict.pass cannot be true when any reported check fails"
+      ],
+      "validated_verdict": null,
+      "validated_verdict_sha256": null,
+      "usage": {
+        "prompt_tokens": 782,
+        "completion_tokens": 1070,
+        "total_tokens": 1852,
+        "neurons": 97.83619689941406
+      },
+      "reported_effective_values": {},
+      "request_sha256": "e9faf0bc4fb6fe3054ab50766d9fe084ea852a94268d13217d930541c5ce47f9"
+    },
+    {
+      "model": "@cf/openai/gpt-oss-120b",
+      "index": 15,
+      "started_at": "2026-08-16T15:41:25.740Z",
+      "ended_at": "2026-08-16T15:41:30.677Z",
+      "latency_ms": 4938,
+      "call_state": "received",
+      "error_code": null,
+      "error_message": null,
+      "content_candidates": [
+        {
+          "location": "choices[0].message.content",
+          "kind": "text",
+          "value": "{\n  \"pass\": true,\n  \"gates\": {\n    \"1\": true,\n    \"2\": true,\n    \"3\": true,\n    \"4\": true,\n    \"5\": true,\n    \"6\": true,\n    \"7\": true,\n    \"8\": true,\n    \"9\": true\n  }\n}",
+          "utf8_bytes": 170,
+          "sha256": "ed97c44aab9d0977fa900fcb298e72875ef9d2e1f36f76458c6929d9a26a5fd5"
+        }
+      ],
+      "classification": "schema_invalid",
+      "repair_kind": null,
+      "validation_errors": [
+        "verdict.tone is required",
+        "verdict.claims is required",
+        "verdict.gates must be an array",
+        "verdict.tone must be an object",
+        "verdict.claims must be an object",
+        "verdict.pass cannot be true when any reported check fails"
+      ],
+      "validated_verdict": null,
+      "validated_verdict_sha256": null,
+      "usage": {
+        "prompt_tokens": 782,
+        "completion_tokens": 892,
+        "total_tokens": 1674,
+        "neurons": 85.69984436035156
+      },
+      "reported_effective_values": {},
+      "request_sha256": "e9faf0bc4fb6fe3054ab50766d9fe084ea852a94268d13217d930541c5ce47f9"
+    },
+    {
+      "model": "@cf/openai/gpt-oss-120b",
+      "index": 16,
+      "started_at": "2026-08-16T15:41:30.678Z",
+      "ended_at": "2026-08-16T15:41:36.634Z",
+      "latency_ms": 5957,
+      "call_state": "received",
+      "error_code": null,
+      "error_message": null,
+      "content_candidates": [
+        {
+          "location": "choices[0].message.content",
+          "kind": "text",
+          "value": "{\n  \"pass\": true,\n  \"gates\": {\n    \"1\": true,\n    \"2\": true,\n    \"3\": true,\n    \"4\": true,\n    \"5\": true,\n    \"6\": true,\n    \"7\": true,\n    \"8\": true,\n    \"9\": true\n  }\n}",
+          "utf8_bytes": 170,
+          "sha256": "ed97c44aab9d0977fa900fcb298e72875ef9d2e1f36f76458c6929d9a26a5fd5"
+        }
+      ],
+      "classification": "schema_invalid",
+      "repair_kind": null,
+      "validation_errors": [
+        "verdict.tone is required",
+        "verdict.claims is required",
+        "verdict.gates must be an array",
+        "verdict.tone must be an object",
+        "verdict.claims must be an object",
+        "verdict.pass cannot be true when any reported check fails"
+      ],
+      "validated_verdict": null,
+      "validated_verdict_sha256": null,
+      "usage": {
+        "prompt_tokens": 782,
+        "completion_tokens": 994,
+        "total_tokens": 1776,
+        "neurons": 92.65438079833984
+      },
+      "reported_effective_values": {},
+      "request_sha256": "e9faf0bc4fb6fe3054ab50766d9fe084ea852a94268d13217d930541c5ce47f9"
+    },
+    {
+      "model": "@cf/openai/gpt-oss-120b",
+      "index": 17,
+      "started_at": "2026-08-16T15:41:36.635Z",
+      "ended_at": "2026-08-16T15:41:42.325Z",
+      "latency_ms": 5690,
+      "call_state": "received",
+      "error_code": null,
+      "error_message": null,
+      "content_candidates": [
+        {
+          "location": "choices[0].message.content",
+          "kind": "text",
+          "value": "{\n  \"pass\": true,\n  \"gates\": {\n    \"1\": true,\n    \"2\": true,\n    \"3\": true,\n    \"4\": true,\n    \"5\": true,\n    \"6\": true,\n    \"7\": true,\n    \"8\": true,\n    \"9\": true\n  }\n}",
+          "utf8_bytes": 170,
+          "sha256": "ed97c44aab9d0977fa900fcb298e72875ef9d2e1f36f76458c6929d9a26a5fd5"
+        }
+      ],
+      "classification": "schema_invalid",
+      "repair_kind": null,
+      "validation_errors": [
+        "verdict.tone is required",
+        "verdict.claims is required",
+        "verdict.gates must be an array",
+        "verdict.tone must be an object",
+        "verdict.claims must be an object",
+        "verdict.pass cannot be true when any reported check fails"
+      ],
+      "validated_verdict": null,
+      "validated_verdict_sha256": null,
+      "usage": {
+        "prompt_tokens": 782,
+        "completion_tokens": 1019,
+        "total_tokens": 1801,
+        "neurons": 94.35892486572266
+      },
+      "reported_effective_values": {},
+      "request_sha256": "e9faf0bc4fb6fe3054ab50766d9fe084ea852a94268d13217d930541c5ce47f9"
+    },
+    {
+      "model": "@cf/openai/gpt-oss-120b",
+      "index": 18,
+      "started_at": "2026-08-16T15:41:42.325Z",
+      "ended_at": "2026-08-16T15:41:50.656Z",
+      "latency_ms": 8331,
+      "call_state": "received",
+      "error_code": null,
+      "error_message": null,
+      "content_candidates": [
+        {
+          "location": "choices[0].message.content",
+          "kind": "text",
+          "value": "{\n  \"pass\": true,\n  \"gate1\": true,\n  \"gate2\": true,\n  \"gate3\": true,\n  \"gate4\": true,\n  \"gate5\": true,\n  \"gate6\": true,\n  \"gate7\": true,\n  \"gate8\": true,\n  \"gate9\": true,\n  \"tone\": true,\n  \"claims\": true\n}",
+          "utf8_bytes": 205,
+          "sha256": "858f78037a1434660ae43388917f80c865379034f28ebe6a0346decdf9be7387"
+        }
+      ],
+      "classification": "schema_invalid",
+      "repair_kind": null,
+      "validation_errors": [
+        "verdict.gates is required",
+        "verdict.gate1 is not allowed",
+        "verdict.gate2 is not allowed",
+        "verdict.gate3 is not allowed",
+        "verdict.gate4 is not allowed",
+        "verdict.gate5 is not allowed",
+        "verdict.gate6 is not allowed",
+        "verdict.gate7 is not allowed",
+        "verdict.gate8 is not allowed",
+        "verdict.gate9 is not allowed",
+        "verdict.gates must be an array",
+        "verdict.tone must be an object",
+        "verdict.claims must be an object",
+        "verdict.pass cannot be true when any reported check fails"
+      ],
+      "validated_verdict": null,
+      "validated_verdict_sha256": null,
+      "usage": {
+        "prompt_tokens": 782,
+        "completion_tokens": 1191,
+        "total_tokens": 1973,
+        "neurons": 106.08619689941406
+      },
+      "reported_effective_values": {},
+      "request_sha256": "e9faf0bc4fb6fe3054ab50766d9fe084ea852a94268d13217d930541c5ce47f9"
+    },
+    {
+      "model": "@cf/openai/gpt-oss-120b",
+      "index": 19,
+      "started_at": "2026-08-16T15:41:50.656Z",
+      "ended_at": "2026-08-16T15:41:57.641Z",
+      "latency_ms": 6985,
+      "call_state": "received",
+      "error_code": null,
+      "error_message": null,
+      "content_candidates": [
+        {
+          "location": "choices[0].message.content",
+          "kind": "text",
+          "value": "{\n  \"pass\": true,\n  \"gate1\": true,\n  \"gate2\": true,\n  \"gate3\": true,\n  \"gate4\": true,\n  \"gate5\": true,\n  \"gate6\": true,\n  \"gate7\": true,\n  \"gate8\": true,\n  \"gate9\": true,\n  \"tone\": true,\n  \"claims\": true\n}",
+          "utf8_bytes": 205,
+          "sha256": "858f78037a1434660ae43388917f80c865379034f28ebe6a0346decdf9be7387"
+        }
+      ],
+      "classification": "schema_invalid",
+      "repair_kind": null,
+      "validation_errors": [
+        "verdict.gates is required",
+        "verdict.gate1 is not allowed",
+        "verdict.gate2 is not allowed",
+        "verdict.gate3 is not allowed",
+        "verdict.gate4 is not allowed",
+        "verdict.gate5 is not allowed",
+        "verdict.gate6 is not allowed",
+        "verdict.gate7 is not allowed",
+        "verdict.gate8 is not allowed",
+        "verdict.gate9 is not allowed",
+        "verdict.gates must be an array",
+        "verdict.tone must be an object",
+        "verdict.claims must be an object",
+        "verdict.pass cannot be true when any reported check fails"
+      ],
+      "validated_verdict": null,
+      "validated_verdict_sha256": null,
+      "usage": {
+        "prompt_tokens": 782,
+        "completion_tokens": 1039,
+        "total_tokens": 1821,
+        "neurons": 95.72256469726562
+      },
+      "reported_effective_values": {},
+      "request_sha256": "e9faf0bc4fb6fe3054ab50766d9fe084ea852a94268d13217d930541c5ce47f9"
+    },
+    {
+      "model": "@cf/openai/gpt-oss-120b",
+      "index": 20,
+      "started_at": "2026-08-16T15:41:57.641Z",
+      "ended_at": "2026-08-16T15:42:09.617Z",
+      "latency_ms": 11976,
+      "call_state": "received",
+      "error_code": null,
+      "error_message": null,
+      "content_candidates": [
+        {
+          "location": "choices[0].message.content",
+          "kind": "text",
+          "value": "{\n  \"pass\": true,\n  \"gates\": {\n    \"1\": true,\n    \"2\": true,\n    \"3\": true,\n    \"4\": true,\n    \"5\": true,\n    \"6\": true,\n    \"7\": true,\n    \"8\": true,\n    \"9\": true\n  },\n  \"tone\": true,\n  \"claims\": true\n}",
+          "utf8_bytes": 204,
+          "sha256": "a2d6b318be5e82a98a8c681984123b7e38d19a647918c13af805b725eb5869d9"
+        }
+      ],
+      "classification": "schema_invalid",
+      "repair_kind": null,
+      "validation_errors": [
+        "verdict.gates must be an array",
+        "verdict.tone must be an object",
+        "verdict.claims must be an object",
+        "verdict.pass cannot be true when any reported check fails"
+      ],
+      "validated_verdict": null,
+      "validated_verdict_sha256": null,
+      "usage": {
+        "prompt_tokens": 782,
+        "completion_tokens": 1043,
+        "total_tokens": 1825,
+        "neurons": 95.99529266357422
+      },
+      "reported_effective_values": {},
+      "request_sha256": "e9faf0bc4fb6fe3054ab50766d9fe084ea852a94268d13217d930541c5ce47f9"
+    },
+    {
+      "model": "@cf/openai/gpt-oss-20b",
+      "index": 1,
+      "started_at": "2026-08-16T15:42:09.617Z",
+      "ended_at": "2026-08-16T15:42:23.373Z",
+      "latency_ms": 13744,
+      "call_state": "received",
+      "error_code": null,
+      "error_message": null,
+      "content_candidates": [
+        {
+          "location": "choices[0].message.content",
+          "kind": "text",
+          "value": "{\n  \"pass\": true,\n  \"gates\": {\n    \"1\": true,\n    \"2\": true,\n    \"3\": true,\n    \"4\": true,\n    \"5\": true,\n    \"6\": true,\n    \"7\": true,\n    \"8\": true,\n    \"9\": true\n  },\n  \"tone\": true,\n  \"claims\": true\n}",
+          "utf8_bytes": 204,
+          "sha256": "a2d6b318be5e82a98a8c681984123b7e38d19a647918c13af805b725eb5869d9"
+        }
+      ],
+      "classification": "schema_invalid",
+      "repair_kind": null,
+      "validation_errors": [
+        "verdict.gates must be an array",
+        "verdict.tone must be an object",
+        "verdict.claims must be an object",
+        "verdict.pass cannot be true when any reported check fails"
+      ],
+      "validated_verdict": null,
+      "validated_verdict_sha256": null,
+      "usage": {
+        "prompt_tokens": 788,
+        "completion_tokens": 1045,
+        "total_tokens": 1833,
+        "neurons": 42.827229900000006
+      },
+      "reported_effective_values": {},
+      "request_sha256": "cde83c50cfdf5198e6a58f4920b4df389b800248a9c86306a09a8a8f83b1b2cd"
+    },
+    {
+      "model": "@cf/openai/gpt-oss-20b",
+      "index": 2,
+      "started_at": "2026-08-16T15:42:23.374Z",
+      "ended_at": "2026-08-16T15:42:37.357Z",
+      "latency_ms": 13976,
+      "call_state": "received",
+      "error_code": null,
+      "error_message": null,
+      "content_candidates": [
+        {
+          "location": "choices[0].message.content",
+          "kind": "text",
+          "value": "{\"pass\":true,\"gates\":[{\"gate\":1,\"pass\":true},{\"gate\":2,\"pass\":true},{\"gate\":3,\"pass\":true},{\"gate\":4,\"pass\":true},{\"gate\":5,\"pass\":true},{\"gate\":6,\"pass\":true},{\"gate\":7,\"pass\":true},{\"gate\":8,\"pass\":true},{\"gate\":9,\"pass\":true}],\"tone\":{\"pass\":true},\"claims\":{\"pass\":true}}",
+          "utf8_bytes": 274,
+          "sha256": "758a18fe87cc6f79c229d7bb4b4defb4df8a346571c019d9992502393e57691d"
+        }
+      ],
+      "classification": "schema_invalid",
+      "repair_kind": null,
+      "validation_errors": [
+        "verdict.gates[0].reason is required",
+        "verdict.gates[0].reason must be a non-empty string",
+        "verdict.gates[1].reason is required",
+        "verdict.gates[1].reason must be a non-empty string",
+        "verdict.gates[2].reason is required",
+        "verdict.gates[2].reason must be a non-empty string",
+        "verdict.gates[3].reason is required",
+        "verdict.gates[3].reason must be a non-empty string",
+        "verdict.gates[4].reason is required",
+        "verdict.gates[4].reason must be a non-empty string",
+        "verdict.gates[5].reason is required",
+        "verdict.gates[5].reason must be a non-empty string",
+        "verdict.gates[6].reason is required",
+        "verdict.gates[6].reason must be a non-empty string",
+        "verdict.gates[7].reason is required",
+        "verdict.gates[7].reason must be a non-empty string",
+        "verdict.gates[8].reason is required",
+        "verdict.gates[8].reason must be a non-empty string",
+        "verdict.tone.reason is required",
+        "verdict.tone.reason must be a non-empty string",
+        "verdict.claims.reason is required",
+        "verdict.claims.reason must be a non-empty string"
+      ],
+      "validated_verdict": null,
+      "validated_verdict_sha256": null,
+      "usage": {
+        "prompt_tokens": 788,
+        "completion_tokens": 1181,
+        "total_tokens": 1969,
+        "neurons": 46.536317100000005
+      },
+      "reported_effective_values": {},
+      "request_sha256": "cde83c50cfdf5198e6a58f4920b4df389b800248a9c86306a09a8a8f83b1b2cd"
+    },
+    {
+      "model": "@cf/openai/gpt-oss-20b",
+      "index": 3,
+      "started_at": "2026-08-16T15:42:37.357Z",
+      "ended_at": "2026-08-16T15:42:42.962Z",
+      "latency_ms": 5604,
+      "call_state": "received",
+      "error_code": null,
+      "error_message": null,
+      "content_candidates": [
+        {
+          "location": "choices[0].message.content",
+          "kind": "text",
+          "value": "{\"gate_1\":true,\"gate_2\":true,\"gate_3\":true,\"gate_4\":true,\"gate_5\":true,\"gate_6\":true,\"gate_7\":true,\"gate_8\":true,\"gate_9\":true,\"pass\":true}",
+          "utf8_bytes": 139,
+          "sha256": "0833515bb7b82b3c81601806a1cf9ad5d975b4728fda6cef5c8f2286e220b4ab"
+        }
+      ],
+      "classification": "schema_invalid",
+      "repair_kind": null,
+      "validation_errors": [
+        "verdict.gates is required",
+        "verdict.tone is required",
+        "verdict.claims is required",
+        "verdict.gate_1 is not allowed",
+        "verdict.gate_2 is not allowed",
+        "verdict.gate_3 is not allowed",
+        "verdict.gate_4 is not allowed",
+        "verdict.gate_5 is not allowed",
+        "verdict.gate_6 is not allowed",
+        "verdict.gate_7 is not allowed",
+        "verdict.gate_8 is not allowed",
+        "verdict.gate_9 is not allowed",
+        "verdict.gates must be an array",
+        "verdict.tone must be an object",
+        "verdict.claims must be an object",
+        "verdict.pass cannot be true when any reported check fails"
+      ],
+      "validated_verdict": null,
+      "validated_verdict_sha256": null,
+      "usage": {
+        "prompt_tokens": 788,
+        "completion_tokens": 819,
+        "total_tokens": 1607,
+        "neurons": 36.663599700000006
+      },
+      "reported_effective_values": {},
+      "request_sha256": "cde83c50cfdf5198e6a58f4920b4df389b800248a9c86306a09a8a8f83b1b2cd"
+    },
+    {
+      "model": "@cf/openai/gpt-oss-20b",
+      "index": 4,
+      "started_at": "2026-08-16T15:42:42.962Z",
+      "ended_at": "2026-08-16T15:42:56.036Z",
+      "latency_ms": 13072,
+      "call_state": "received",
+      "error_code": null,
+      "error_message": null,
+      "content_candidates": [
+        {
+          "location": "choices[0].message.content",
+          "kind": "text",
+          "value": "{\"pass\":true,\"gates\":{\"1\":true,\"2\":true,\"3\":true,\"4\":true,\"5\":true,\"6\":true,\"7\":true,\"8\":true,\"9\":true},\"tone\":true,\"claims\":true}",
+          "utf8_bytes": 130,
+          "sha256": "add18b42684922975b781dfa3dcd5d3d30cf181895e433ac52e5baa7c1ffffc8"
+        }
+      ],
+      "classification": "schema_invalid",
+      "repair_kind": null,
+      "validation_errors": [
+        "verdict.gates must be an array",
+        "verdict.tone must be an object",
+        "verdict.claims must be an object",
+        "verdict.pass cannot be true when any reported check fails"
+      ],
+      "validated_verdict": null,
+      "validated_verdict_sha256": null,
+      "usage": {
+        "prompt_tokens": 788,
+        "completion_tokens": 905,
+        "total_tokens": 1693,
+        "neurons": 39.0090519
+      },
+      "reported_effective_values": {},
+      "request_sha256": "cde83c50cfdf5198e6a58f4920b4df389b800248a9c86306a09a8a8f83b1b2cd"
+    },
+    {
+      "model": "@cf/openai/gpt-oss-20b",
+      "index": 5,
+      "started_at": "2026-08-16T15:42:56.037Z",
+      "ended_at": "2026-08-16T15:43:01.858Z",
+      "latency_ms": 5820,
+      "call_state": "received",
+      "error_code": null,
+      "error_message": null,
+      "content_candidates": [
+        {
+          "location": "choices[0].message.content",
+          "kind": "text",
+          "value": "{\n  \"pass\": true,\n  \"gates\": {\n    \"1\": true,\n    \"2\": true,\n    \"3\": true,\n    \"4\": true,\n    \"5\": true,\n    \"6\": true,\n    \"7\": true,\n    \"8\": true,\n    \"9\": true\n  },\n  \"tone\": true,\n  \"claims\": true\n}",
+          "utf8_bytes": 204,
+          "sha256": "a2d6b318be5e82a98a8c681984123b7e38d19a647918c13af805b725eb5869d9"
+        }
+      ],
+      "classification": "schema_invalid",
+      "repair_kind": null,
+      "validation_errors": [
+        "verdict.gates must be an array",
+        "verdict.tone must be an object",
+        "verdict.claims must be an object",
+        "verdict.pass cannot be true when any reported check fails"
+      ],
+      "validated_verdict": null,
+      "validated_verdict_sha256": null,
+      "usage": {
+        "prompt_tokens": 788,
+        "completion_tokens": 951,
+        "total_tokens": 1739,
+        "neurons": 40.2635961
+      },
+      "reported_effective_values": {},
+      "request_sha256": "cde83c50cfdf5198e6a58f4920b4df389b800248a9c86306a09a8a8f83b1b2cd"
+    },
+    {
+      "model": "@cf/openai/gpt-oss-20b",
+      "index": 6,
+      "started_at": "2026-08-16T15:43:01.858Z",
+      "ended_at": "2026-08-16T15:43:07.735Z",
+      "latency_ms": 5877,
+      "call_state": "received",
+      "error_code": null,
+      "error_message": null,
+      "content_candidates": [
+        {
+          "location": "choices[0].message.content",
+          "kind": "text",
+          "value": "{\n  \"gate1\": true,\n  \"gate2\": true,\n  \"gate3\": true,\n  \"gate4\": true,\n  \"gate5\": true,\n  \"gate6\": true,\n  \"gate7\": true,\n  \"gate8\": true,\n  \"gate9\": true,\n  \"pass\": true,\n  \"tone\": true,\n  \"claims\": true\n}",
+          "utf8_bytes": 205,
+          "sha256": "890920f4f932cf92129796c0db4a7a1be1b96e0dc2aca4bbaab90bc3041e8603"
+        }
+      ],
+      "classification": "schema_invalid",
+      "repair_kind": null,
+      "validation_errors": [
+        "verdict.gates is required",
+        "verdict.gate1 is not allowed",
+        "verdict.gate2 is not allowed",
+        "verdict.gate3 is not allowed",
+        "verdict.gate4 is not allowed",
+        "verdict.gate5 is not allowed",
+        "verdict.gate6 is not allowed",
+        "verdict.gate7 is not allowed",
+        "verdict.gate8 is not allowed",
+        "verdict.gate9 is not allowed",
+        "verdict.gates must be an array",
+        "verdict.tone must be an object",
+        "verdict.claims must be an object",
+        "verdict.pass cannot be true when any reported check fails"
+      ],
+      "validated_verdict": null,
+      "validated_verdict_sha256": null,
+      "usage": {
+        "prompt_tokens": 788,
+        "completion_tokens": 809,
+        "total_tokens": 1597,
+        "neurons": 36.3908727
+      },
+      "reported_effective_values": {},
+      "request_sha256": "cde83c50cfdf5198e6a58f4920b4df389b800248a9c86306a09a8a8f83b1b2cd"
+    },
+    {
+      "model": "@cf/openai/gpt-oss-20b",
+      "index": 7,
+      "started_at": "2026-08-16T15:43:07.735Z",
+      "ended_at": "2026-08-16T15:43:12.856Z",
+      "latency_ms": 5121,
+      "call_state": "received",
+      "error_code": null,
+      "error_message": null,
+      "content_candidates": [
+        {
+          "location": "choices[0].message.content",
+          "kind": "text",
+          "value": "{\"gates\":{\"1\":true,\"2\":true,\"3\":true,\"4\":true,\"5\":true,\"6\":true,\"7\":true,\"8\":true,\"9\":true},\"tone\":true,\"claims\":true,\"pass\":true}",
+          "utf8_bytes": 130,
+          "sha256": "ea2e52d77185ea64ee3daa354be3f9868c4318916db3e34bd9a53ec16a2ceedd"
+        }
+      ],
+      "classification": "schema_invalid",
+      "repair_kind": null,
+      "validation_errors": [
+        "verdict.gates must be an array",
+        "verdict.tone must be an object",
+        "verdict.claims must be an object",
+        "verdict.pass cannot be true when any reported check fails"
+      ],
+      "validated_verdict": null,
+      "validated_verdict_sha256": null,
+      "usage": {
+        "prompt_tokens": 788,
+        "completion_tokens": 632,
+        "total_tokens": 1420,
+        "neurons": 31.5636048
+      },
+      "reported_effective_values": {},
+      "request_sha256": "cde83c50cfdf5198e6a58f4920b4df389b800248a9c86306a09a8a8f83b1b2cd"
+    },
+    {
+      "model": "@cf/openai/gpt-oss-20b",
+      "index": 8,
+      "started_at": "2026-08-16T15:43:12.856Z",
+      "ended_at": "2026-08-16T15:43:21.047Z",
+      "latency_ms": 8191,
+      "call_state": "received",
+      "error_code": null,
+      "error_message": null,
+      "content_candidates": [
+        {
+          "location": "choices[0].message.content",
+          "kind": "text",
+          "value": "{\"gates\":{\"1\":true,\"2\":true,\"3\":true,\"4\":true,\"5\":true,\"6\":true,\"7\":true,\"8\":true,\"9\":true},\"pass\":true,\"tone\":\"confident plain language, no pitch\",\"claims\":[]}",
+          "utf8_bytes": 160,
+          "sha256": "0d22f938124d4ea375bf75ca75fed09dc6f43242da0873b1fc2b5e4af2c1c655"
+        }
+      ],
+      "classification": "schema_invalid",
+      "repair_kind": null,
+      "validation_errors": [
+        "verdict.gates must be an array",
+        "verdict.tone must be an object",
+        "verdict.claims must be an object",
+        "verdict.pass cannot be true when any reported check fails"
+      ],
+      "validated_verdict": null,
+      "validated_verdict_sha256": null,
+      "usage": {
+        "prompt_tokens": 788,
+        "completion_tokens": 865,
+        "total_tokens": 1653,
+        "neurons": 37.918143900000004
+      },
+      "reported_effective_values": {},
+      "request_sha256": "cde83c50cfdf5198e6a58f4920b4df389b800248a9c86306a09a8a8f83b1b2cd"
+    },
+    {
+      "model": "@cf/openai/gpt-oss-20b",
+      "index": 9,
+      "started_at": "2026-08-16T15:43:21.048Z",
+      "ended_at": "2026-08-16T15:43:25.899Z",
+      "latency_ms": 4851,
+      "call_state": "received",
+      "error_code": null,
+      "error_message": null,
+      "content_candidates": [
+        {
+          "location": "choices[0].message.content",
+          "kind": "text",
+          "value": "{\"pass\":true,\"gates\":{\"1\":true,\"2\":true,\"3\":true,\"4\":true,\"5\":true,\"6\":true,\"7\":true,\"8\":true,\"9\":true},\"tone\":true,\"claims\":true}",
+          "utf8_bytes": 130,
+          "sha256": "add18b42684922975b781dfa3dcd5d3d30cf181895e433ac52e5baa7c1ffffc8"
+        }
+      ],
+      "classification": "schema_invalid",
+      "repair_kind": null,
+      "validation_errors": [
+        "verdict.gates must be an array",
+        "verdict.tone must be an object",
+        "verdict.claims must be an object",
+        "verdict.pass cannot be true when any reported check fails"
+      ],
+      "validated_verdict": null,
+      "validated_verdict_sha256": null,
+      "usage": {
+        "prompt_tokens": 788,
+        "completion_tokens": 797,
+        "total_tokens": 1585,
+        "neurons": 36.063600300000004
+      },
+      "reported_effective_values": {},
+      "request_sha256": "cde83c50cfdf5198e6a58f4920b4df389b800248a9c86306a09a8a8f83b1b2cd"
+    },
+    {
+      "model": "@cf/openai/gpt-oss-20b",
+      "index": 10,
+      "started_at": "2026-08-16T15:43:25.899Z",
+      "ended_at": "2026-08-16T15:43:34.418Z",
+      "latency_ms": 8519,
+      "call_state": "received",
+      "error_code": null,
+      "error_message": null,
+      "content_candidates": [
+        {
+          "location": "choices[0].message.content",
+          "kind": "text",
+          "value": "{\"pass\":true,\"gates\":[{\"gate\":1,\"pass\":true,\"reason\":\"Recognizable routine and recurring annoyance identified.\"},{\"gate\":2,\"pass\":true,\"reason\":\"Solution directly addresses friction.\"},{\"gate\":3,\"pass\":true,\"reason\":\"Adds new capability without duplication.\"},{\"gate\":4,\"pass\":true,\"reason\":\"Uses existing website channel.\"},{\"gate\":5,\"pass\":true,\"reason\":\"Change scope matches complexity.\"},{\"gate\":6,\"pass\":true,\"reason\":\"Implementable via software integration.\"},{\"gate\":7,\"pass\":true,\"reason\":\"Preserves existing tools and authority.\"},{\"gate\":8,\"pass\":true,\"reason\":\"Can be naturally explained.\"},{\"gate\":9,\"pass\":true,\"reason\":\"Concrete yet novel improvement.\"}],\"tone\":\"confident\",\"claims\":\"qualitative\"}",
+          "utf8_bytes": 711,
+          "sha256": "49fe0c0412c484d98af4d156514f09cd9761c662fa37e7edc523a75f2a2d28dd"
+        }
+      ],
+      "classification": "schema_invalid",
+      "repair_kind": null,
+      "validation_errors": [
+        "verdict.tone must be an object",
+        "verdict.claims must be an object",
+        "verdict.pass cannot be true when any reported check fails"
+      ],
+      "validated_verdict": null,
+      "validated_verdict_sha256": null,
+      "usage": {
+        "prompt_tokens": 788,
+        "completion_tokens": 1185,
+        "total_tokens": 1973,
+        "neurons": 46.645407899999995
+      },
+      "reported_effective_values": {},
+      "request_sha256": "cde83c50cfdf5198e6a58f4920b4df389b800248a9c86306a09a8a8f83b1b2cd"
+    },
+    {
+      "model": "@cf/openai/gpt-oss-20b",
+      "index": 11,
+      "started_at": "2026-08-16T15:43:34.419Z",
+      "ended_at": "2026-08-16T15:43:39.890Z",
+      "latency_ms": 5471,
+      "call_state": "received",
+      "error_code": null,
+      "error_message": null,
+      "content_candidates": [
+        {
+          "location": "choices[0].message.content",
+          "kind": "text",
+          "value": "{\n  \"gate_1\": true,\n  \"gate_2\": true,\n  \"gate_3\": true,\n  \"gate_4\": true,\n  \"gate_5\": true,\n  \"gate_6\": true,\n  \"gate_7\": true,\n  \"gate_8\": true,\n  \"gate_9\": true,\n  \"pass\": true,\n  \"tone\": true,\n  \"claims\": true\n}",
+          "utf8_bytes": 214,
+          "sha256": "5b6c80c5129c3ac4b109c55cbc7ca8e1ee2b4e28a664dc954716baa7a9dbf03c"
+        }
+      ],
+      "classification": "schema_invalid",
+      "repair_kind": null,
+      "validation_errors": [
+        "verdict.gates is required",
+        "verdict.gate_1 is not allowed",
+        "verdict.gate_2 is not allowed",
+        "verdict.gate_3 is not allowed",
+        "verdict.gate_4 is not allowed",
+        "verdict.gate_5 is not allowed",
+        "verdict.gate_6 is not allowed",
+        "verdict.gate_7 is not allowed",
+        "verdict.gate_8 is not allowed",
+        "verdict.gate_9 is not allowed",
+        "verdict.gates must be an array",
+        "verdict.tone must be an object",
+        "verdict.claims must be an object",
+        "verdict.pass cannot be true when any reported check fails"
+      ],
+      "validated_verdict": null,
+      "validated_verdict_sha256": null,
+      "usage": {
+        "prompt_tokens": 788,
+        "completion_tokens": 861,
+        "total_tokens": 1649,
+        "neurons": 37.8090531
+      },
+      "reported_effective_values": {},
+      "request_sha256": "cde83c50cfdf5198e6a58f4920b4df389b800248a9c86306a09a8a8f83b1b2cd"
+    },
+    {
+      "model": "@cf/openai/gpt-oss-20b",
+      "index": 12,
+      "started_at": "2026-08-16T15:43:39.890Z",
+      "ended_at": "2026-08-16T15:43:47.608Z",
+      "latency_ms": 7718,
+      "call_state": "received",
+      "error_code": null,
+      "error_message": null,
+      "content_candidates": [
+        {
+          "location": "choices[0].message.content",
+          "kind": "text",
+          "value": "{\"gates\":{\"1\":true,\"2\":true,\"3\":true,\"4\":true,\"5\":true,\"6\":true,\"7\":true,\"8\":true,\"9\":true},\"tone\":true,\"claims\":true,\"pass\":true}",
+          "utf8_bytes": 130,
+          "sha256": "ea2e52d77185ea64ee3daa354be3f9868c4318916db3e34bd9a53ec16a2ceedd"
+        }
+      ],
+      "classification": "schema_invalid",
+      "repair_kind": null,
+      "validation_errors": [
+        "verdict.gates must be an array",
+        "verdict.tone must be an object",
+        "verdict.claims must be an object",
+        "verdict.pass cannot be true when any reported check fails"
+      ],
+      "validated_verdict": null,
+      "validated_verdict_sha256": null,
+      "usage": {
+        "prompt_tokens": 788,
+        "completion_tokens": 942,
+        "total_tokens": 1730,
+        "neurons": 40.0181418
+      },
+      "reported_effective_values": {},
+      "request_sha256": "cde83c50cfdf5198e6a58f4920b4df389b800248a9c86306a09a8a8f83b1b2cd"
+    },
+    {
+      "model": "@cf/openai/gpt-oss-20b",
+      "index": 13,
+      "started_at": "2026-08-16T15:43:47.609Z",
+      "ended_at": "2026-08-16T15:43:53.319Z",
+      "latency_ms": 5710,
+      "call_state": "received",
+      "error_code": null,
+      "error_message": null,
+      "content_candidates": [
+        {
+          "location": "choices[0].message.content",
+          "kind": "text",
+          "value": "{\"gates\":{\"1\":true,\"2\":true,\"3\":true,\"4\":true,\"5\":true,\"6\":true,\"7\":true,\"8\":true,\"9\":true},\"pass\":true}",
+          "utf8_bytes": 104,
+          "sha256": "7c285b566953ba88d13c1d537ac597436da1a7f9918b1463d71346d2b5201223"
+        }
+      ],
+      "classification": "schema_invalid",
+      "repair_kind": null,
+      "validation_errors": [
+        "verdict.tone is required",
+        "verdict.claims is required",
+        "verdict.gates must be an array",
+        "verdict.tone must be an object",
+        "verdict.claims must be an object",
+        "verdict.pass cannot be true when any reported check fails"
+      ],
+      "validated_verdict": null,
+      "validated_verdict_sha256": null,
+      "usage": {
+        "prompt_tokens": 788,
+        "completion_tokens": 557,
+        "total_tokens": 1345,
+        "neurons": 29.518152300000004
+      },
+      "reported_effective_values": {},
+      "request_sha256": "cde83c50cfdf5198e6a58f4920b4df389b800248a9c86306a09a8a8f83b1b2cd"
+    },
+    {
+      "model": "@cf/openai/gpt-oss-20b",
+      "index": 14,
+      "started_at": "2026-08-16T15:43:53.319Z",
+      "ended_at": "2026-08-16T15:44:04.868Z",
+      "latency_ms": 11549,
+      "call_state": "received",
+      "error_code": null,
+      "error_message": null,
+      "content_candidates": [
+        {
+          "location": "choices[0].message.content",
+          "kind": "text",
+          "value": "{\n  \"gates\": {\n    \"1\": true,\n    \"2\": true,\n    \"3\": true,\n    \"4\": true,\n    \"5\": true,\n    \"6\": true,\n    \"7\": true,\n    \"8\": true,\n    \"9\": true\n  },\n  \"pass\": true,\n  \"tone\": \"confident plan, plain language, no pitch, no consultant-speak, no bare‑mush effects\",\n  \"claims\": [\n    {\n      \"field\": \"candidate.why_fits.breadcrumb\",\n      \"matched_text\": \"Open late on Mondays\",\n      \"source\": \"evidence_bundle.observation.text\"\n    }\n  ]\n}",
+          "utf8_bytes": 445,
+          "sha256": "47d1c93ba536e05a2e7a07e736cad30a636b58e1be5c995ce3eb33ebb6c56584"
+        }
+      ],
+      "classification": "schema_invalid",
+      "repair_kind": null,
+      "validation_errors": [
+        "verdict.gates must be an array",
+        "verdict.tone must be an object",
+        "verdict.claims must be an object",
+        "verdict.pass cannot be true when any reported check fails"
+      ],
+      "validated_verdict": null,
+      "validated_verdict_sha256": null,
+      "usage": {
+        "prompt_tokens": 788,
+        "completion_tokens": 1176,
+        "total_tokens": 1964,
+        "neurons": 46.3999536
+      },
+      "reported_effective_values": {},
+      "request_sha256": "cde83c50cfdf5198e6a58f4920b4df389b800248a9c86306a09a8a8f83b1b2cd"
+    },
+    {
+      "model": "@cf/openai/gpt-oss-20b",
+      "index": 15,
+      "started_at": "2026-08-16T15:44:04.868Z",
+      "ended_at": "2026-08-16T15:44:12.697Z",
+      "latency_ms": 7828,
+      "call_state": "received",
+      "error_code": null,
+      "error_message": null,
+      "content_candidates": [
+        {
+          "location": "choices[0].message.content",
+          "kind": "text",
+          "value": "{\"pass\":true,\"gates\":{\"1\":true,\"2\":true,\"3\":true,\"4\":true,\"5\":true,\"6\":true,\"7\":true,\"8\":true,\"9\":true},\"tone\":true,\"claims\":true}",
+          "utf8_bytes": 130,
+          "sha256": "add18b42684922975b781dfa3dcd5d3d30cf181895e433ac52e5baa7c1ffffc8"
+        }
+      ],
+      "classification": "schema_invalid",
+      "repair_kind": null,
+      "validation_errors": [
+        "verdict.gates must be an array",
+        "verdict.tone must be an object",
+        "verdict.claims must be an object",
+        "verdict.pass cannot be true when any reported check fails"
+      ],
+      "validated_verdict": null,
+      "validated_verdict_sha256": null,
+      "usage": {
+        "prompt_tokens": 788,
+        "completion_tokens": 971,
+        "total_tokens": 1759,
+        "neurons": 40.8090501
+      },
+      "reported_effective_values": {},
+      "request_sha256": "cde83c50cfdf5198e6a58f4920b4df389b800248a9c86306a09a8a8f83b1b2cd"
+    },
+    {
+      "model": "@cf/openai/gpt-oss-20b",
+      "index": 16,
+      "started_at": "2026-08-16T15:44:12.697Z",
+      "ended_at": "2026-08-16T15:44:25.117Z",
+      "latency_ms": 12420,
+      "call_state": "received",
+      "error_code": null,
+      "error_message": null,
+      "content_candidates": [
+        {
+          "location": "choices[0].message.content",
+          "kind": "text",
+          "value": "{\n  \"pass\": true,\n  \"gates\": {\n    \"1\": true,\n    \"2\": true,\n    \"3\": true,\n    \"4\": true,\n    \"5\": true,\n    \"6\": true,\n    \"7\": true,\n    \"8\": true,\n    \"9\": true\n  },\n  \"tone\": true,\n  \"claims\": true\n}",
+          "utf8_bytes": 204,
+          "sha256": "a2d6b318be5e82a98a8c681984123b7e38d19a647918c13af805b725eb5869d9"
+        }
+      ],
+      "classification": "schema_invalid",
+      "repair_kind": null,
+      "validation_errors": [
+        "verdict.gates must be an array",
+        "verdict.tone must be an object",
+        "verdict.claims must be an object",
+        "verdict.pass cannot be true when any reported check fails"
+      ],
+      "validated_verdict": null,
+      "validated_verdict_sha256": null,
+      "usage": {
+        "prompt_tokens": 788,
+        "completion_tokens": 763,
+        "total_tokens": 1551,
+        "neurons": 35.136328500000005
+      },
+      "reported_effective_values": {},
+      "request_sha256": "cde83c50cfdf5198e6a58f4920b4df389b800248a9c86306a09a8a8f83b1b2cd"
+    },
+    {
+      "model": "@cf/openai/gpt-oss-20b",
+      "index": 17,
+      "started_at": "2026-08-16T15:44:25.117Z",
+      "ended_at": "2026-08-16T15:44:36.610Z",
+      "latency_ms": 11493,
+      "call_state": "received",
+      "error_code": null,
+      "error_message": null,
+      "content_candidates": [
+        {
+          "location": "choices[0].message.content",
+          "kind": "text",
+          "value": "{\n  \"gates\": {\n    \"1\": {\n      \"pass\": true,\n      \"explanation\": \"The routine of online appointment requests and front‑desk follow‑up is recognizable, and the recurring annoyance of requests sitting unaddressed is clear.\"\n    },\n    \"2\": {\n      \"pass\": true,\n      \"explanation\": \"The friction of unanswered requests is addressed by a concrete follow‑up queue solution.\"\n    },\n    \"3\": {\n      \"pass\": true,\n      \"explanation\": \"The new capability (a follow‑up queue) does not duplicate existing online request or calendar functions.\"\n    },\n    \"4\": {\n      \"pass\": true,\n      \"explanation\": \"It uses the observed channel (website request form) and fits the internal workflow.\"\n    },\n    \"5\": {\n      \"pass\": true,\n      \"explanation\": \"The change is small, 1–2 weeks, matching the practice’s scale and maintenance capacity.\"\n    },\n    \"6\": {\n      \"pass\": true,\n      \"explanation\": \"Hearn Systems can implement it as a software integration or workflow automation.\"\n    },\n    \"7\": {\n      \"pass\": true,\n      \"explanation\": \"Existing tools, steps, and decision rights are preserved.\"\n    },\n    \"8\": {\n      \"pass\": true,\n      \"explanation\": \"A staff member could naturally explain the situation, capability, and payoff.\"\n    },\n    \"9\": {\n      \"pass\": true,\n      \"explanation\": \"The follow‑up queue is concrete, slightly novel, and imaginable.\"\n    }\n  },\n  \"tone\": {\n    \"pass\": true,\n    \"explanation\": \"The brief uses plain language, is confident, and contains no pitch or consultant‑speak.\"\n  },\n  \"claims\": {\n    \"pass\": true,\n    \"explanation\": \"Qualitative claims are supported by the grounding report.\"\n  },\n  \"pass\": true\n}",
+          "utf8_bytes": 1663,
+          "sha256": "a5fbac920c5146dadcbf5fc38894750fa39ef6f65c44fcca071681fcc8e4d47c"
+        }
+      ],
+      "classification": "schema_invalid",
+      "repair_kind": null,
+      "validation_errors": [
+        "verdict.gates must be an array",
+        "verdict.tone.reason is required",
+        "verdict.tone.explanation is not allowed",
+        "verdict.tone.reason must be a non-empty string",
+        "verdict.claims.reason is required",
+        "verdict.claims.explanation is not allowed",
+        "verdict.claims.reason must be a non-empty string",
+        "verdict.pass cannot be true when any reported check fails"
+      ],
+      "validated_verdict": null,
+      "validated_verdict_sha256": null,
+      "usage": {
+        "prompt_tokens": 788,
+        "completion_tokens": 1696,
+        "total_tokens": 2484,
+        "neurons": 60.5817576
+      },
+      "reported_effective_values": {},
+      "request_sha256": "cde83c50cfdf5198e6a58f4920b4df389b800248a9c86306a09a8a8f83b1b2cd"
+    },
+    {
+      "model": "@cf/openai/gpt-oss-20b",
+      "index": 18,
+      "started_at": "2026-08-16T15:44:36.610Z",
+      "ended_at": "2026-08-16T15:44:41.842Z",
+      "latency_ms": 5232,
+      "call_state": "received",
+      "error_code": null,
+      "error_message": null,
+      "content_candidates": [
+        {
+          "location": "choices[0].message.content",
+          "kind": "text",
+          "value": "{\"gates\":{\"1\":true,\"2\":true,\"3\":true,\"4\":true,\"5\":true,\"6\":true,\"7\":true,\"8\":true,\"9\":true},\"pass\":true,\"tone\":true,\"claims\":true}",
+          "utf8_bytes": 130,
+          "sha256": "91bb6ed7b3735e004aac3d71726955bd260813ce1d8a8b8f73eb09ab6e42edbe"
+        }
+      ],
+      "classification": "schema_invalid",
+      "repair_kind": null,
+      "validation_errors": [
+        "verdict.gates must be an array",
+        "verdict.tone must be an object",
+        "verdict.claims must be an object",
+        "verdict.pass cannot be true when any reported check fails"
+      ],
+      "validated_verdict": null,
+      "validated_verdict_sha256": null,
+      "usage": {
+        "prompt_tokens": 788,
+        "completion_tokens": 576,
+        "total_tokens": 1364,
+        "neurons": 30.036333600000003
+      },
+      "reported_effective_values": {},
+      "request_sha256": "cde83c50cfdf5198e6a58f4920b4df389b800248a9c86306a09a8a8f83b1b2cd"
+    },
+    {
+      "model": "@cf/openai/gpt-oss-20b",
+      "index": 19,
+      "started_at": "2026-08-16T15:44:41.843Z",
+      "ended_at": "2026-08-16T15:44:47.579Z",
+      "latency_ms": 5736,
+      "call_state": "received",
+      "error_code": null,
+      "error_message": null,
+      "content_candidates": [
+        {
+          "location": "choices[0].message.content",
+          "kind": "text",
+          "value": "{\"pass\":true,\"gates\":{\"1\":true,\"2\":true,\"3\":true,\"4\":true,\"5\":true,\"6\":true,\"7\":true,\"8\":true,\"9\":true},\"tone\":true,\"claims\":true}",
+          "utf8_bytes": 130,
+          "sha256": "add18b42684922975b781dfa3dcd5d3d30cf181895e433ac52e5baa7c1ffffc8"
+        }
+      ],
+      "classification": "schema_invalid",
+      "repair_kind": null,
+      "validation_errors": [
+        "verdict.gates must be an array",
+        "verdict.tone must be an object",
+        "verdict.claims must be an object",
+        "verdict.pass cannot be true when any reported check fails"
+      ],
+      "validated_verdict": null,
+      "validated_verdict_sha256": null,
+      "usage": {
+        "prompt_tokens": 788,
+        "completion_tokens": 877,
+        "total_tokens": 1665,
+        "neurons": 38.2454163
+      },
+      "reported_effective_values": {},
+      "request_sha256": "cde83c50cfdf5198e6a58f4920b4df389b800248a9c86306a09a8a8f83b1b2cd"
+    },
+    {
+      "model": "@cf/openai/gpt-oss-20b",
+      "index": 20,
+      "started_at": "2026-08-16T15:44:47.579Z",
+      "ended_at": "2026-08-16T15:44:59.249Z",
+      "latency_ms": 11670,
+      "call_state": "received",
+      "error_code": null,
+      "error_message": null,
+      "content_candidates": [
+        {
+          "location": "choices[0].message.content",
+          "kind": "text",
+          "value": "{\n  \"pass\": true,\n  \"gates\": {\n    \"1\": {\n      \"pass\": true,\n      \"reason\": \"The brief starts from a credible routine—patients use an online appointment form and staff often forget to follow up—making the recurring annoyance recognizable.\"\n    },\n    \"2\": {\n      \"pass\": true,\n      \"reason\": \"Every friction (unanswered requests) is addressed by a concrete, imaginable solution: a small staff‑approved follow‑up queue.\"\n    },\n    \"3\": {\n      \"pass\": true,\n      \"reason\": \"The new capability does not duplicate existing online request or calendar functions.\"\n    },\n    \"4\": {\n      \"pass\": true,\n      \"reason\": \"It uses the observed channel of the website request form and does not introduce an ill‑fitting channel.\"\n    },\n    \"5\": {\n      \"pass\": true,\n      \"reason\": \"The scope (1–2 weeks, small queue) matches likely scale, complexity, and maintenance capacity.\"\n    },\n    \"6\": {\n      \"pass\": true,\n      \"reason\": \"Hearn Systems could implement it as a software queue or workflow integration.\"\n    },\n    \"7\": {\n      \"pass\": true,\n      \"reason\": \"The plan preserves existing tools, steps, and decision rights.\"\n    },\n    \"8\": {\n      \"pass\": true,\n      \"reason\": \"A person could naturally explain the situation, capability, and payoff without jargon.\"\n    },\n    \"9\": {\n      \"pass\": true,\n      \"reason\": \"Adding a follow‑up queue is concrete, goes beyond the obvious, and remains imaginable.\"\n    }\n  },\n  \"tone\": {\n    \"pass\": true,\n    \"reason\": \"The brief uses plain, confident language with no pitch, consultant‑speak, or bare‑mush effects.\"\n  },\n  \"claims\": {\n    \"pass\": true,\n    \"reason\": \"All qualitative claims are supported by the evidence bundle and grounding report.\"\n  }\n}",
+          "utf8_bytes": 1726,
+          "sha256": "56ff82bf174794ead5ad266ca788384a219dfcc969a7c150a85109844ab219d8"
+        }
+      ],
+      "classification": "schema_invalid",
+      "repair_kind": null,
+      "validation_errors": [
+        "verdict.gates must be an array",
+        "verdict.pass cannot be true when any reported check fails"
+      ],
+      "validated_verdict": null,
+      "validated_verdict_sha256": null,
+      "usage": {
+        "prompt_tokens": 788,
+        "completion_tokens": 1515,
+        "total_tokens": 2303,
+        "neurons": 55.6453989
+      },
+      "reported_effective_values": {},
+      "request_sha256": "cde83c50cfdf5198e6a58f4920b4df389b800248a9c86306a09a8a8f83b1b2cd"
+    }
+  ],
+  "summary": {
+    "by_model": {
+      "@cf/openai/gpt-oss-120b": {
+        "total": 20,
+        "provider_error": 0,
+        "timeout": 0,
+        "empty_response": 0,
+        "ambiguous_envelope": 0,
+        "output_too_large": 0,
+        "unrecoverable_json": 0,
+        "schema_invalid": 20,
+        "repaired_valid": 0,
+        "direct_valid": 0,
+        "direct_rate": {
+          "numerator": 0,
+          "denominator": 20,
+          "percent": 0
+        },
+        "post_repair_rate": {
+          "numerator": 0,
+          "denominator": 20,
+          "percent": 0
+        }
+      },
+      "@cf/openai/gpt-oss-20b": {
+        "total": 20,
+        "provider_error": 0,
+        "timeout": 0,
+        "empty_response": 0,
+        "ambiguous_envelope": 0,
+        "output_too_large": 0,
+        "unrecoverable_json": 0,
+        "schema_invalid": 20,
+        "repaired_valid": 0,
+        "direct_valid": 0,
+        "direct_rate": {
+          "numerator": 0,
+          "denominator": 20,
+          "percent": 0
+        },
+        "post_repair_rate": {
+          "numerator": 0,
+          "denominator": 20,
+          "percent": 0
+        }
+      }
+    },
+    "aggregate": {
+      "total": 40,
+      "provider_error": 0,
+      "timeout": 0,
+      "empty_response": 0,
+      "ambiguous_envelope": 0,
+      "output_too_large": 0,
+      "unrecoverable_json": 0,
+      "schema_invalid": 40,
+      "repaired_valid": 0,
+      "direct_valid": 0,
+      "direct_rate": {
+        "numerator": 0,
+        "denominator": 40,
+        "percent": 0
+      },
+      "post_repair_rate": {
+        "numerator": 0,
+        "denominator": 40,
+        "percent": 0
+      }
+    }
+  },
+  "outcome": {
+    "decision": "NO-GO",
+    "reasons": [
+      "@cf/openai/gpt-oss-120b: direct-valid rate is below 95%",
+      "@cf/openai/gpt-oss-20b: direct-valid rate is below 95%"
+    ]
+  }
+}

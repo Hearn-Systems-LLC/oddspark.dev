@@ -1712,7 +1712,7 @@ function page(initial, live) {
   console.log("json:   /api/spark/<id>");
 
   // live neuron meter in the footer; silent if the readout fails
-  fetch("/api/meter")
+  fetch("/meter")
     .then(function(r){ return r.json(); })
     .then(function(m){
       var node = el("meter");
@@ -2397,16 +2397,28 @@ mermaid.initialize({
  * Router
  * ------------------------------------------------------------------ */
 
+const APP_ORIGIN = "https://oddspark.dev";
 const CORS = {
-  "access-control-allow-origin": "*",
   "access-control-allow-methods": "GET,POST,OPTIONS",
+  "access-control-allow-headers": "content-type",
 };
 
-function json(obj, status = 200) {
+function corsHeaders(request) {
+  const origin = request.headers.get("origin");
+  if (!origin) return { vary: "Origin" };
+  if (origin !== APP_ORIGIN) return { vary: "Origin" };
+  return { "access-control-allow-origin": APP_ORIGIN, ...CORS, vary: "Origin" };
+}
+
+function json(obj, status = 200, headers = {}) {
   return new Response(JSON.stringify(obj, null, 2), {
     status,
-    headers: { "content-type": "application/json; charset=utf-8", ...CORS },
+    headers: { "content-type": "application/json; charset=utf-8", ...headers },
   });
+}
+
+function apiJson(request, obj, status = 200) {
+  return json(obj, status, corsHeaders(request));
 }
 
 function wantsText(req) {
@@ -2422,16 +2434,16 @@ export default {
     const path = url.pathname.replace(/\/+$/, "") || "/";
     const origin = url.origin;
 
-    if (request.method === "OPTIONS") return new Response(null, { headers: CORS });
+    if (request.method === "OPTIONS") return new Response(null, { headers: corsHeaders(request) });
 
     try {
       // JSON for an existing spark
       if (path.startsWith("/api/spark/")) {
         const id = path.split("/").pop();
-        if (!SPARK_ID_RE.test(id || "")) return json({ error: "no spark with that id" }, 404);
+        if (!SPARK_ID_RE.test(id || "")) return apiJson(request, { error: "no spark with that id" }, 404);
         const s = await env.SPARKS.get(id, { type: "json" });
-        if (!s) return json({ error: "no spark with that id" }, 404);
-        return json(s);
+        if (!s) return apiJson(request, { error: "no spark with that id" }, 404);
+        return apiJson(request, s);
       }
 
       // Strike
@@ -2440,26 +2452,26 @@ export default {
         try {
           intent = await readSparkIntent(request);
         } catch (err) {
-          if (err instanceof WebsiteInputError) return json({ error: err.message, field: "website" }, 400);
+          if (err instanceof WebsiteInputError) return apiJson(request, { error: err.message, field: "website" }, 400);
           throw err;
         }
-        if (!intent.website) return json(await buildSpark(env));
+        if (!intent.website) return apiJson(request, await buildSpark(env));
 
         const round = await currentWindow();
         const visitorKey = await visitorKeyFor(request);
         if (!visitorKey) {
-          return json(await genericFallback(env, round, "limited", intent.website.domain, LIMITED_WARNING));
+          return apiJson(request, await genericFallback(env, round, "limited", intent.website.domain, LIMITED_WARNING));
         }
-        return json(await buildDomainSpark(request, env, intent.website, round, visitorKey));
+        return apiJson(request, await buildDomainSpark(request, env, intent.website, round, visitorKey));
       }
 
       // Live solar readout only
       if (path === "/api/sun") {
-        return json(await readSolar());
+        return apiJson(request, await readSolar());
       }
 
-      // Neuron meter readout: today's spend and which model is active
-      if (path === "/api/meter") {
+      // Same-origin neuron meter readout: today's spend and active model
+      if (path === "/meter") {
         const used = await neuronsUsedToday(env);
         return json({
           day: neuronDay(),
@@ -2515,8 +2527,8 @@ export default {
 
       return new Response("404", { status: 404 });
     } catch (err) {
-      if (err instanceof WebsiteInputError) return json({ error: err.message, field: "website" }, 400);
-      if (path.startsWith("/api/")) return json({ error: String(err.message || err) }, 502);
+      if (err instanceof WebsiteInputError) return apiJson(request, { error: err.message, field: "website" }, 400);
+      if (path.startsWith("/api/")) return apiJson(request, { error: String(err.message || err) }, 502);
       return new Response("A feed did not answer: " + (err.message || err), { status: 502 });
     }
   },

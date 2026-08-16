@@ -10,7 +10,11 @@
   "scripts": {
     "dev": "wrangler dev",
     "test": "node test.mjs",
-    "deploy": "wrangler deploy"
+    "deploy": "wrangler deploy",
+    "spike:judge:self-test": "node spikes/judge-fidelity/test.mjs",
+    "spike:judge:verify": "node spikes/judge-fidelity/run.mjs verify",
+    "spike:judge:dev": "wrangler dev --config spikes/judge-fidelity/wrangler.toml --ip 127.0.0.1 --port 8788",
+    "spike:judge:live": "node spikes/judge-fidelity/run.mjs live"
   },
   "devDependencies": {
     "wrangler": "^4.114.0"
