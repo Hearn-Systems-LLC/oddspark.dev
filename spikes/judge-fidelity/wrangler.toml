@@ -1,0 +1,11 @@
+name = "oddspark-judge-fidelity-spike-local-only"
+main = "worker.mjs"
+compatibility_date = "2026-07-01"
+
+[ai]
+binding = "AI"
+remote = true
+
+[vars]
+AI_MODEL = "@cf/openai/gpt-oss-120b"
+AI_MODEL_FALLBACK = "@cf/openai/gpt-oss-20b"
