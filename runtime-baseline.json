@@ -1,0 +1,77 @@
+{
+  "compatibility_date": "2026-07-01",
+  "compatibility_flags": [
+    "global_fetch_strictly_public"
+  ],
+  "configs": {
+    "offline": {
+      "compatibility_date": "2026-07-01",
+      "compatibility_flags": [
+        "global_fetch_strictly_public"
+      ],
+      "has_remote_binding": false,
+      "main": "src/worker.js",
+      "name": "oddspark-offline",
+      "preview_urls": false,
+      "remote_sections": [],
+      "sections": [
+        "assets",
+        "durable_objects",
+        "kv_namespaces",
+        "migrations",
+        "vars"
+      ],
+      "sha256": "39e267e5d7833f5a1df9015e1d278e23b290ef5320ab9edabbc511021ed26d46"
+    },
+    "root": {
+      "compatibility_date": "2026-07-01",
+      "compatibility_flags": [
+        "global_fetch_strictly_public"
+      ],
+      "has_remote_binding": true,
+      "main": "src/worker.js",
+      "name": "oddspark",
+      "preview_urls": true,
+      "remote_sections": [
+        "ai"
+      ],
+      "sections": [
+        "ai",
+        "assets",
+        "durable_objects",
+        "kv_namespaces",
+        "migrations",
+        "observability",
+        "routes",
+        "vars"
+      ],
+      "sha256": "dccc172215d1e99b730ffc61c027966b768fe70e55a988d8f667c0d959e2178f"
+    },
+    "spike": {
+      "compatibility_date": "2026-07-01",
+      "compatibility_flags": [],
+      "has_remote_binding": true,
+      "main": "worker.mjs",
+      "name": "oddspark-judge-fidelity-spike-local-only",
+      "preview_urls": null,
+      "remote_sections": [
+        "ai"
+      ],
+      "sections": [
+        "ai",
+        "vars"
+      ],
+      "sha256": "4261707d3ba17e285f2b73bf84049f65b691a8fb5101b403640fd57648dc6c21"
+    }
+  },
+  "frozen_at": "2026-08-17T19:05:44.544Z",
+  "frozen_from_commit": "51743b4720172d66d7f86d7cd61c440ec606585f",
+  "main": "src/worker.js",
+  "node_engines": ">=20",
+  "package_lock_sha256": "c5c31aa5474ec9d04a96a4744c5f41c4ffb2e644cbb0ec28950041edc60301ba",
+  "runtime_identity_sha256": "4c9c52065a99596617970c3620b5d873c6465bfd6ab589681ef2fb13f3b311b8",
+  "schema_version": "oddspark.runtime-baseline/v1",
+  "worker_types_sha256": "3aa45eadbc4c641afa2aa0174adbb1b1387b0bb7d06aa5d3ad662dfc0135873b",
+  "workerd": "1.20260811.1",
+  "wrangler": "4.123.0"
+}

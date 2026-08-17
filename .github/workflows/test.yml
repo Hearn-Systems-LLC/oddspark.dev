@@ -7,11 +7,17 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      # no dependencies to install; test.mjs imports src/worker.js directly
-      # and runs against the live drand + NOAA feeds with a mocked AI binding
-      - run: node test.mjs
+          cache: npm
+      # `npm run check` = test.mjs + baseline tests + generated-type check +
+      # wrangler config validation (dry run only) + runtime baseline verify.
+      # Every step is non-mutating and needs no Cloudflare credentials.
+      - run: npm ci
+      - run: npm run check
+        env:
+          WRANGLER_SEND_METRICS: "false"

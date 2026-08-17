@@ -3,6 +3,10 @@ main = "src/worker.js"
 compatibility_date = "2026-07-01"
 compatibility_flags = ["global_fetch_strictly_public"]
 
+# Give every uploaded version a shareable *.workers.dev preview URL
+# (used by Workers Builds for non-production branches).
+preview_urls = true
+
 # Swap models without touching code. When the day's neuron spend (tracked in
 # the NeuronMeter Durable Object) passes 25% of the 10,000 free daily
 # allocation, the worker switches from AI_MODEL to AI_MODEL_FALLBACK for the
@@ -21,7 +25,6 @@ remote = true
 [[kv_namespaces]]
 binding = "SPARKS"
 id = "1a84502df1754aa5985648d803e6751e"
-remote = true
 
 # Strongly consistent neuron counter. Requires the Workers Paid plan.
 [[durable_objects.bindings]]
@@ -52,7 +55,3 @@ custom_domain = true
 
 [observability]
 enabled = true
-
-# Give every uploaded version a shareable *.workers.dev preview URL
-# (used by Workers Builds for non-production branches).
-preview_urls = true

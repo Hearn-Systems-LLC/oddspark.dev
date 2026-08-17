@@ -140,17 +140,40 @@ npx wrangler kv namespace create SPARKS      # paste the id into wrangler.toml
 npx wrangler deploy
 ```
 
-Local:
+Local (offline — no AI binding, local KV and Durable Objects; generation shows
+the raw seed rather than a polished line):
 
 ```bash
-npx wrangler dev     # bindings are marked `remote = true`; Workers AI has no local emulation
+npm run dev          # wrangler dev --config wrangler.offline.toml
 ```
+
+`npx wrangler dev` on the root config is *not* the offline path: it still binds
+the metered Workers AI service (which has no local emulation), so use it only
+when you mean to spend neurons. Its KV is now local and empty rather than the
+production namespace (`remote = true` was removed from `[[kv_namespaces]]`), so
+personalization paths that depend on stored profiles return their "unavailable"
+fallback until you generate the data locally.
 
 Tests (runs against the live feeds, mocks only the AI binding):
 
 ```bash
 node test.mjs
 ```
+
+Full check — tests, runtime-baseline tests, generated types, config dry runs, and
+the frozen runtime identity. Deploys and mutates nothing; this is what CI runs:
+
+```bash
+npm run check
+```
+
+If `baseline:verify` fails, it names each drifted field. Intentional toolchain
+change: review the drift, then `npm run baseline:freeze` and commit the new
+`runtime-baseline.json` (this invalidates evidence bound to the old identity).
+Unintentional: revert the change rather than refreezing over it.
+
+See [docs/runtime-baseline.md](docs/runtime-baseline.md) for the pinned toolchain
+and the runtime identity freeze.
 
 ### Notes
 

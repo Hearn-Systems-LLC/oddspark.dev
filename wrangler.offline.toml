@@ -1,0 +1,40 @@
+# Offline development config (`npm run dev`).
+#
+# Deliberately binds nothing callable in production: no [ai] binding (Workers AI
+# has no local emulation, so the only way to keep dev off the metered service is
+# to omit the binding entirely — src/worker.js falls back to the raw seed), a
+# local-only KV namespace id, and local Durable Objects. Never deployed.
+name = "oddspark-offline"
+main = "src/worker.js"
+compatibility_date = "2026-07-01"
+compatibility_flags = ["global_fetch_strictly_public"]
+workers_dev = false
+preview_urls = false
+
+[vars]
+AI_MODEL = "@cf/openai/gpt-oss-120b"
+AI_MODEL_FALLBACK = "@cf/openai/gpt-oss-20b"
+
+# Local-only namespace id; never created remotely.
+[[kv_namespaces]]
+binding = "SPARKS"
+id = "oddspark-offline-local"
+
+[[durable_objects.bindings]]
+name = "METER"
+class_name = "NeuronMeter"
+
+[[durable_objects.bindings]]
+name = "COORD"
+class_name = "SparkCoordinator"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["NeuronMeter"]
+
+[[migrations]]
+tag = "v2"
+new_sqlite_classes = ["SparkCoordinator"]
+
+[assets]
+directory = "./public"
