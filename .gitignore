@@ -18,3 +18,6 @@ _bmad/render/
 
 # transient output of `npm run check:types`
 .worker-configuration.check.d.ts
+.bmad-loop/runs/
+.bmad-loop/cache/
+.bmad-loop/policy.toml
