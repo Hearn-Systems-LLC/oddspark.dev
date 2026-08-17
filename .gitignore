@@ -7,3 +7,11 @@ node_modules/
 .omc/
 *.zip
 screenshot-*.png
+
+# Agent CLI state, generated skills, hooks, and machine-local BMAD Loop policy
+.agent/
+.agents/
+.claude/
+.codex/
+.bmad-loop/
+_bmad/render/
