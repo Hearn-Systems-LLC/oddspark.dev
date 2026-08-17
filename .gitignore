@@ -4,5 +4,17 @@ node_modules/
 .env
 *.log
 .DS_Store
+.omc/
 *.zip
 screenshot-*.png
+
+# Agent CLI state, generated skills, hooks, and machine-local BMAD Loop policy
+.agent/
+.agents/
+.claude/
+.codex/
+.bmad-loop/
+_bmad/render/
+
+# transient output of `npm run check:types`
+.worker-configuration.check.d.ts
