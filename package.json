@@ -16,13 +16,16 @@
     "check:config": "node scripts/check-config.mjs",
     "baseline:freeze": "node scripts/runtime-baseline.mjs freeze",
     "baseline:verify": "node scripts/runtime-baseline.mjs verify",
-    "check": "npm run test && npm run test:baseline && npm run check:types && npm run check:config && npm run baseline:verify",
+    "check": "npm run test && npm run test:baseline && npm run spike:judge:self-test && npm run check:types && npm run check:config && npm run baseline:verify",
     "deploy": "wrangler deploy",
     "spike:judge:self-test": "node spikes/judge-fidelity/test.mjs",
-    "spike:judge:verify": "node spikes/judge-fidelity/run.mjs verify",
+    "spike:judge:verify": "node spikes/judge-fidelity/verify-v2.mjs",
+    "spike:judge:verify:v1": "node spikes/judge-fidelity/run.mjs verify",
     "spike:judge:verify:v2": "node spikes/judge-fidelity/verify-v2.mjs",
     "spike:judge:verify-launcher": "node spikes/judge-fidelity/verify-launcher.mjs",
     "spike:judge:dev": "node spikes/judge-fidelity/start-adapter.mjs",
+    "spike:judge:plan": "node spikes/judge-fidelity/run.mjs plan",
+    "spike:judge:qualification:verify": "node spikes/judge-fidelity/qualification.mjs verify",
     "spike:judge:live": "node spikes/judge-fidelity/run.mjs live"
   },
   "devDependencies": {

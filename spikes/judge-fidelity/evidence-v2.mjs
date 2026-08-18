@@ -24,7 +24,7 @@ export const EVIDENCE_V2 = "oddspark.judge-recovery-evidence/v2";
 export const EVIDENCE_SOURCE_PATHS = Object.freeze([
   "package.json", "spikes/judge-fidelity/contract.mjs", "spikes/judge-fidelity/evidence-v2.mjs",
   "spikes/judge-fidelity/fixture-executor.mjs", "spikes/judge-fidelity/fixtures.json",
-  "spikes/judge-fidelity/run.mjs", "spikes/judge-fidelity/start-adapter.mjs", "spikes/judge-fidelity/test.mjs",
+  "spikes/judge-fidelity/qualification.mjs", "spikes/judge-fidelity/run.mjs", "spikes/judge-fidelity/start-adapter.mjs", "spikes/judge-fidelity/test.mjs",
   "spikes/judge-fidelity/worker.mjs", "spikes/judge-fidelity/verify-launcher.mjs", "spikes/judge-fidelity/verify-v2.mjs", "spikes/judge-fidelity/wrangler.toml",
 ]);
 const CLASSIFICATIONS = ["provider_error", "timeout", "empty_response", "ambiguous_envelope", "output_too_large", "unrecoverable_json", "schema_invalid", "repaired_valid", "direct_valid"];
@@ -131,11 +131,11 @@ async function rebuildRequestManifest(candidate) {
   }) };
 }
 
-export function buildAdapterIdentity({ observed_health, http_status, endpoint, outbound_request, sources, runtime }) {
+export function buildAdapterIdentity({ observed_health, http_status, endpoint, outbound_request, sources, runtime, observation_attempted = true }) {
   const expected_health = expectedAdapterHealth(sources, runtime);
   const identity_match = http_status === 200 && same(observed_health, expected_health);
   return {
-    schema_version: "oddspark-judge-adapter-health/v2", endpoint, http_status, identity_match,
+    schema_version: "oddspark-judge-adapter-health/v2", endpoint, http_status, observation_attempted, identity_match,
     expected_health, expected_health_sha256: hash(stableStringify(expected_health)),
     observed_health: structuredClone(observed_health), observed_health_sha256: hash(stableStringify(observed_health)),
     outbound_request: structuredClone(outbound_request), outbound_request_sha256: hash(stableStringify(outbound_request)),
@@ -240,14 +240,17 @@ export async function verifyEvidenceV2(evidence, dependencies = {}) {
     let permittedEndpoint = false;
     try { const endpoint = new URL(evidence?.adapter?.endpoint); permittedEndpoint = endpoint.protocol === "http:" && ["127.0.0.1", "localhost", "[::1]"].includes(endpoint.hostname) && endpoint.pathname === "/health" && !endpoint.username && !endpoint.password && !endpoint.search && !endpoint.hash; } catch { /* false */ }
     const observedMatch = evidence?.adapter?.http_status === 200 && same(evidence?.adapter?.observed_health, independentlyExpectedHealth);
-    if (!exact(evidence?.adapter, ["schema_version", "endpoint", "http_status", "identity_match", "expected_health", "expected_health_sha256", "observed_health", "observed_health_sha256", "outbound_request", "outbound_request_sha256"])
-      || evidence.adapter.schema_version !== "oddspark-judge-adapter-health/v2" || !permittedEndpoint || !Number.isInteger(evidence.adapter.http_status) || evidence.adapter.identity_match !== observedMatch
+    if (!exact(evidence?.adapter, ["schema_version", "endpoint", "http_status", "observation_attempted", "identity_match", "expected_health", "expected_health_sha256", "observed_health", "observed_health_sha256", "outbound_request", "outbound_request_sha256"])
+      || evidence.adapter.schema_version !== "oddspark-judge-adapter-health/v2" || !permittedEndpoint || typeof evidence.adapter.observation_attempted !== "boolean"
+      || (!evidence.adapter.observation_attempted && (evidence.adapter.http_status !== 0 || evidence.adapter.observed_health !== null))
+      || !Number.isInteger(evidence.adapter.http_status) || evidence.adapter.identity_match !== observedMatch
       || !exact(expectedHealth, expectedHealthKeys) || (observedMatch && !exact(evidence.adapter.observed_health, expectedHealthKeys)) || !jsonTree(evidence.adapter.observed_health)
       || !same(expectedHealth, independentlyExpectedHealth)
       || hash(stableStringify(evidence.adapter.expected_health)) !== evidence.adapter.expected_health_sha256
       || hash(stableStringify(evidence.adapter.observed_health)) !== evidence.adapter.observed_health_sha256
       || hash(stableStringify(evidence.adapter.outbound_request)) !== evidence.adapter.outbound_request_sha256
-      || (!evidence.adapter.identity_match && ((evidence.records?.length ?? 0) !== 0 || !evidence.run?.preflight_blockers?.includes("adapter identity preflight failed")))) fail("adapter.identity", "adapter handshake or outbound request retention mismatch");
+      || (!evidence.adapter.identity_match && ((evidence.records?.length ?? 0) !== 0
+        || !(evidence.run?.preflight_blockers ?? []).some((reason) => reason === "adapter identity preflight failed" || reason.startsWith("adapter identity preflight skipped"))))) fail("adapter.identity", "adapter handshake or outbound request retention mismatch");
     const requestEntries = evidence?.adapter?.outbound_request?.by_model;
     const independentlyRebuiltRequests = await rebuildRequestManifest(evidence.candidate);
     if (!exact(evidence?.adapter?.outbound_request, ["by_model"]) || !Array.isArray(requestEntries) || requestEntries.length !== MODEL_IDS.length
@@ -281,29 +284,43 @@ export async function verifyEvidenceV2(evidence, dependencies = {}) {
     }
     const calls = evidence?.records?.length ?? 0;
     const auth = evidence?.run?.authorization;
+    const checks = evidence?.run?.preflight_checks;
+    const checkKeys = ["plan_match", "approval_preflight", "offline_errors", "adapter", "approval_at_run_start"];
+    const approvalCheckKeys = ["valid", "errors"];
+    const adapterCheckKeys = ["attempted", "identity_match"];
+    const checksValid = exact(checks, checkKeys) && typeof checks.plan_match === "boolean"
+      && exact(checks.approval_preflight, approvalCheckKeys) && typeof checks.approval_preflight.valid === "boolean" && Array.isArray(checks.approval_preflight.errors) && checks.approval_preflight.errors.every((item) => typeof item === "string")
+      && Array.isArray(checks.offline_errors) && checks.offline_errors.every((item) => typeof item === "string")
+      && exact(checks.adapter, adapterCheckKeys) && typeof checks.adapter.attempted === "boolean" && typeof checks.adapter.identity_match === "boolean"
+      && exact(checks.approval_at_run_start, approvalCheckKeys) && typeof checks.approval_at_run_start.valid === "boolean" && Array.isArray(checks.approval_at_run_start.errors) && checks.approval_at_run_start.errors.every((item) => typeof item === "string");
     const expectedBlockers = [];
-    if (evidence?.profile === "operational") {
-      if (auth?.approved_call_cap !== 42) expectedBlockers.push("approved call cap must equal 42");
-      if (auth?.profile_confirmed !== true) expectedBlockers.push("active Wrangler profile was not confirmed");
-      if (auth?.headroom_confirmed !== true) expectedBlockers.push("Workers AI headroom was not confirmed");
-      if (!["free", "paid"].includes(auth?.plan)) expectedBlockers.push("Workers plan must be confirmed as free or paid");
-      if (auth?.plan === "free" && auth?.remaining_free_neurons === null) expectedBlockers.push("remaining free neurons were not recorded");
-      else if (auth?.plan === "free" && auth.remaining_free_neurons < auth.estimated_gross_neurons) expectedBlockers.push("remaining free neurons are below the conservative run estimate");
-      if (evidence?.adapter?.identity_match !== true) expectedBlockers.push("adapter identity preflight failed");
+    if (evidence?.profile === "operational" && checksValid) {
+      if (!checks.plan_match) expectedBlockers.push("frozen plan differs from current repository/runtime/request disclosure");
+      for (const error of checks.approval_preflight.errors) expectedBlockers.push(`approval: ${error}`);
+      for (const error of checks.offline_errors) expectedBlockers.push(`offline gate: ${error}`);
+      if (!checks.adapter.attempted) expectedBlockers.push("adapter identity preflight skipped because earlier authority or offline gates failed");
+      else if (!checks.adapter.identity_match) expectedBlockers.push("adapter identity preflight failed");
+      if (checks.approval_preflight.valid && !checks.approval_at_run_start.valid) {
+        for (const error of checks.approval_at_run_start.errors) expectedBlockers.push(`run-start approval: ${error}`);
+      }
     }
     const blocked = expectedBlockers.length > 0;
     const probeStopped = evidence?.profile === "operational" && !blocked
       && MODEL_IDS.every((model) => (evidence?.records ?? []).filter((record) => record.kind === "probe" && record.model === model).length === 1)
       && (evidence?.records ?? []).some((record) => record.kind === "probe" && ["provider_error", "timeout", "empty_response"].includes(record.classification));
     const authKeys = ["operator_approved", "profile_confirmed", "headroom_confirmed", "approved_call_cap", "estimated_calls", "calls_made", "plan", "remaining_free_neurons", "estimated_gross_neurons"];
-    if (!exact(auth, authKeys) || ![auth.operator_approved, auth.profile_confirmed, auth.headroom_confirmed].every((v) => typeof v === "boolean") || ![auth.approved_call_cap, auth.estimated_calls, auth.calls_made].every(Number.isInteger)
+    const expectedOperatorApproval = checksValid && checks.plan_match && checks.approval_preflight.valid && checks.offline_errors.length === 0 && checks.approval_at_run_start.valid;
+    if (!checksValid || (evidence.profile === "operational" && (checks.adapter.attempted !== evidence?.adapter?.observation_attempted || checks.adapter.identity_match !== evidence?.adapter?.identity_match))
+      || !exact(auth, authKeys) || ![auth.operator_approved, auth.profile_confirmed, auth.headroom_confirmed].every((v) => typeof v === "boolean") || ![auth.approved_call_cap, auth.estimated_calls, auth.calls_made].every(Number.isInteger)
       || !(auth.plan === null || auth.plan === "free" || auth.plan === "paid") || !(auth.remaining_free_neurons === null || (typeof auth.remaining_free_neurons === "number" && Number.isFinite(auth.remaining_free_neurons) && auth.remaining_free_neurons >= 0))
       || !(auth.estimated_gross_neurons === null || (typeof auth.estimated_gross_neurons === "number" && Number.isFinite(auth.estimated_gross_neurons) && auth.estimated_gross_neurons >= 0))
+      || auth.operator_approved !== expectedOperatorApproval || auth.approved_call_cap !== (expectedOperatorApproval ? 42 : 0)
+      || (evidence.profile === "operational" && (auth.profile_confirmed !== true || auth.headroom_confirmed !== true))
       || auth.calls_made !== calls || auth.calls_made > auth.approved_call_cap
       || (evidence.profile === "operational" && !blocked && (auth.operator_approved !== true || auth.profile_confirmed !== true || auth.headroom_confirmed !== true || auth.approved_call_cap !== 42 || auth.estimated_calls !== 42 || auth.calls_made !== (probeStopped ? 2 : 42)))
       || (evidence.profile === "operational" && !blocked && (!['free', 'paid'].includes(auth.plan) || auth.estimated_gross_neurons === null || (auth.plan === "free" && (auth.remaining_free_neurons === null || auth.remaining_free_neurons < auth.estimated_gross_neurons))))
       || (evidence.profile === "operational" && blocked && calls !== 0)) fail("run.authorization", "authorization or call accounting mismatch");
-    if (!exact(evidence?.run, ["id", "started_at", "ended_at", "models", "authorization", "preflight_blockers"]) || typeof evidence.run.id !== "string" || !/^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/.test(evidence.run.id)
+    if (!exact(evidence?.run, ["id", "started_at", "ended_at", "models", "authorization", "preflight_checks", "preflight_blockers"]) || typeof evidence.run.id !== "string" || !/^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/.test(evidence.run.id)
       || !same(evidence.run.models, MODEL_IDS) || !Array.isArray(evidence.run.preflight_blockers) || !same(evidence.run.preflight_blockers, expectedBlockers)) fail("run.authorization", "run envelope or derived preflight blockers invalid");
     const started = Date.parse(evidence?.run?.started_at); const ended = Date.parse(evidence?.run?.ended_at);
     if (!canonicalTimestamp(evidence?.run?.started_at) || !canonicalTimestamp(evidence?.run?.ended_at)) fail("run.ordering", "run timestamps must be canonical UTC ISO strings");
@@ -372,7 +389,7 @@ export async function buildSyntheticEvidence({ candidate_schema_version, candida
     legacy: await (dependencies.currentLegacyIdentity ?? currentLegacyIdentity)(), runtime: await (dependencies.currentRuntimeIdentity ?? currentRuntimeIdentity)(),
     sources: await (dependencies.currentSourceIdentity ?? currentSourceIdentity)(source_paths),
     candidate: { schema_version: candidate_schema_version, value: candidate, ref, request_input }, adapter,
-    run: { id: "synthetic-offline-self-test", started_at: "2026-08-17T00:00:00.000Z", ended_at: "2026-08-17T00:00:00.000Z", models: MODEL_IDS, authorization: { operator_approved: false, profile_confirmed: false, headroom_confirmed: false, approved_call_cap: 0, estimated_calls: 0, calls_made: 0, plan: null, remaining_free_neurons: null, estimated_gross_neurons: null }, preflight_blockers: [] },
+    run: { id: "synthetic-offline-self-test", started_at: "2026-08-17T00:00:00.000Z", ended_at: "2026-08-17T00:00:00.000Z", models: MODEL_IDS, authorization: { operator_approved: false, profile_confirmed: false, headroom_confirmed: false, approved_call_cap: 0, estimated_calls: 0, calls_made: 0, plan: null, remaining_free_neurons: null, estimated_gross_neurons: null }, preflight_checks: { plan_match: false, approval_preflight: { valid: false, errors: [] }, offline_errors: [], adapter: { attempted: false, identity_match: false }, approval_at_run_start: { valid: false, errors: [] } }, preflight_blockers: [] },
     fixtures, records: [], summary: { by_model: {} }, outcome: {}, predicate_results: [], report: "",
   };
   return finalizeEvidenceV2(evidence, dependencies);
