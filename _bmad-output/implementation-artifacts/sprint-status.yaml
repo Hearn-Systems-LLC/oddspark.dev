@@ -1,0 +1,136 @@
+# generated: 2026-08-16
+# last_updated: 2026-08-18
+# project: Github
+# project_key: NOKEY
+# tracking_system: file-system
+# story_location: /Volumes/fast/Github/oddspark/_bmad-output/implementation-artifacts
+#
+# 2026-08-17 REGENERATION (Sprint Change Proposal 2026-08-17, approved):
+#   Story keys now follow the current epics.md (Epics 1-5, 45 stories). The previous file used the
+#   pre-2026-08-16 legacy IDs. Crosswalks: epics.md "Legacy Story Crosswalk" (legacy -> 2026-08-16)
+#   and "2026-08-17 Course-Correction Crosswalk" (2026-08-16 -> current).
+#   Status carry-over: legacy 1.1 (done) -> 1-1; legacy 1.2 judge fidelity spike (in-progress) -> 1-3
+#   (its story file remains implementation-artifacts/1-2-judge-fidelity-spike.md as immutable history;
+#   it is annotated, not renamed). Everything else is backlog.
+#
+# 2026-08-17 READINESS REMEDIATION (Sprint Change Proposal 2026-08-17-2, approved):
+#   Story 5.3 removed from sprint accounting (first cycle is 3-5; recurrence is
+#   planning-artifacts/owner-review-runbook.md). Story 3-5-first-owner-review-cycle added as backlog.
+#   Crosswalk: epics.md "2026-08-17 Readiness Crosswalk". Story 1-3 remains in-progress.
+#
+# 2026-08-17 ARCHITECTURE / PRODUCTION-PROOF RECONCILIATION
+# (Sprint Change Proposal 2026-08-17-3, approved):
+#   The current epics.md contains 47 stories. Story 1.24 was split into inactive deployment (1.24)
+#   and separately approved local activation (1.25). Epic 3 was resliced into local proof, first
+#   owner review, domain proof, quiet-production observation, and receipt-claim activation. Story
+#   5.1 is now the non-destructive closed legacy-retirement oracle. All affected stories were
+#   backlog, so their new keys remain backlog; Story 1.1 remains done and Story 1.3 in-progress.
+#   Exact crosswalk: 1-24-local-writer-rollout-and-atomic-local-only-activation ->
+#   1-24-inactive-writer-deployment + 1-25-atomic-local-only-activation;
+#   3-2-production-receipt-verification-run -> 3-2-local-production-receipt-verification-run +
+#   3-4-domain-production-receipt-verification-run; 3-5-first-owner-review-cycle ->
+#   3-3-first-owner-review-cycle; 3-3-quiet-production-house-rate-gate ->
+#   3-5-quiet-production-house-rate-gate-operational-checkpoint;
+#   3-4-receipt-claim-approval-and-activation -> 3-6-receipt-claim-approval-and-activation;
+#   5-1-executable-dead-code-hygiene -> 5-1-closed-legacy-retirement-oracle.
+
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic not yet started
+#   - in-progress: Epic actively being worked on
+#   - done: All stories in epic completed
+#
+# Epic Status Transitions:
+#   - backlog → in-progress: Automatically when first story is created (via create-story)
+#   - in-progress → done: Manually when all stories reach 'done' status
+#
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - ready-for-dev: Story file created in stories folder
+#   - in-progress: Developer actively working on implementation
+#   - review: Ready for code review (via Dev's code-review workflow)
+#   - done: Story completed
+#
+# Retrospective Status:
+#   - optional: Can be completed but not required
+#   - done: Retrospective has been completed
+#
+# Action Item Status:
+#   - open: Committed during a retrospective, not yet addressed
+#   - in-progress: Actively being worked on
+#   - done: Completed
+#
+# WORKFLOW NOTES:
+# ===============
+# - Epic transitions to 'in-progress' automatically when first story is created
+# - Stories can be worked in parallel if team capacity allows
+# - Developer typically creates next story after previous one is 'done' to incorporate learnings
+# - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
+# - Retrospective appends its action items to action_items; sprint-status surfaces open ones
+
+generated: 2026-08-16
+last_updated: 2026-08-18
+project: Github
+project_key: NOKEY
+tracking_system: file-system
+story_location: /Volumes/fast/Github/oddspark/_bmad-output/implementation-artifacts
+
+development_status:
+  epic-1: in-progress
+  1-1-shell-safety-net: done
+  1-2-toolchain-and-isolated-runtime-baseline: done
+  1-3-judge-recovery-contract-and-offline-verifier: done
+  1-4-judge-structural-recovery-matrix: done
+  1-5-voice-rubric-and-golden-briefs: done
+  1-6-local-priors-content: done
+  1-7-brief-attempt-and-grounding-contracts: review
+  1-8-versioned-house-brief-catalog: backlog
+  1-9-local-evidence-assembly: backlog
+  1-10-generation-contract-and-offline-adapter: backlog
+  1-11-generation-structural-qualification: backlog
+  1-12-composite-gate-and-qualified-judge-integration: backlog
+  1-13-strike-orchestrator-and-house-fallbacks: backlog
+  1-14-authoritative-commit-and-compatibility-reader: backlog
+  1-15-committed-brief-rendering: backlog
+  1-16-request-hardening-and-domain-downgrade-seam: backlog
+  1-17-semantic-regression-suite: backlog
+  1-18-semantic-qualification: backlog
+  1-19-local-full-request-qualification: backlog
+  1-20-atomic-activation-contract-and-release-decision-view: backlog
+  1-21-local-artifact-retention-lifecycle: backlog
+  1-22-honest-pipeline-explanation: backlog
+  1-23-compatibility-reader-deployment: backlog
+  1-24-inactive-writer-deployment: backlog
+  1-25-atomic-local-only-activation: backlog
+  epic-1-retrospective: optional
+  epic-2: backlog
+  2-1-robots-aware-public-site-scanning: backlog
+  2-2-domain-evidence-contract-and-offline-adapter: backlog
+  2-3-evidenceprovider-structural-qualification: backlog
+  2-4-evidence-eligibility-and-honest-downgrade: backlog
+  2-5-one-safe-breadcrumb-and-domain-grounding: backlog
+  2-6-one-hour-domain-result-lifecycle: backlog
+  2-7-domain-pipeline-integration: backlog
+  2-8-domain-full-request-qualification: backlog
+  2-9-governed-path-verification-and-legacy-quarantine: backlog
+  2-10-domain-production-activation: backlog
+  epic-2-retrospective: optional
+  epic-3: backlog
+  3-1-production-receipt-verification-harness: backlog
+  3-2-local-production-receipt-verification-run: backlog
+  3-3-first-owner-review-cycle: backlog
+  3-4-domain-production-receipt-verification-run: backlog
+  3-5-quiet-production-house-rate-gate-operational-checkpoint: backlog
+  3-6-receipt-claim-approval-and-activation: backlog
+  epic-3-retrospective: optional
+  epic-4: backlog
+  4-1-aggregate-invitation-event-endpoint: backlog
+  4-2-hearn-sender-contract-and-plain-link-fallback: backlog
+  4-3-hearn-receiver-contract-verification: backlog
+  4-4-hearn-reference-handoff-activation: backlog
+  epic-4-retrospective: optional
+  epic-5: backlog
+  5-1-closed-legacy-retirement-oracle: backlog
+  5-2-destructive-legacy-seam-retirement: backlog
+  epic-5-retrospective: optional

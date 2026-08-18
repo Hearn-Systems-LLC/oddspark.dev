@@ -1,0 +1,66 @@
+document_output_language: English
+output_folder: '{project-root}/_bmad-output'
+bmad-loop:
+  name: BMAD Loop Skills
+  description: 'Automation-mode skills driven by the bmad-loop orchestrator: interactive
+    escalation resolution (bmad-loop-resolve) and deferred-work sweep triage (bmad-loop-sweep)
+    — the inner dev primitive (which self-reviews and commits) is the upstream bmad-dev-auto
+    skill'
+  version: 0.9.0
+  default_selected: false
+lws:
+  name: LLM Wiki Steward
+  description: Manages isolated registered LLM research wikis through one dependable
+    hub and proposes reusable improvements for human approval.
+  version: 1.0.0
+  default_selected: false
+frg:
+  name: Forge
+  description: A Conductor agent that runs the standardized client-website production
+    pipeline with human checkpoints and persistent standards.
+  version: 1.0.0
+  frg_clients_root: '{project-root}/clients'
+  frg_intake_guide: '{project-root}/client-discovery-facilitator-guide.md'
+  frg_deploy_provider: cloudflare
+  frg_default_cloudflare_product: pages
+  frg_default_production_branch: main
+  frg_hosted_cloudflare_account: Hearn Systems
+  frg_default_demo_zone: hearn.systems
+  frg_default_demo_hostname_pattern: '{slug}.example.hearn.systems'
+  frg_cross_host_redirect_policy: cloudflare_redirect_rules
+  frg_same_host_redirect_policy: repo_framework_redirects
+  frg_launch_requires_dns_control: true
+  frg_launch_requires_owner_approval: true
+  frg_launch_requires_pr_gated_production_branch: true
+  frg_launch_requires_post_attach_canonical_verification: true
+kvs:
+  name: Codex
+  description: A Conductor agent that documents and diagrams finished websites.
+  version: 1.0.0
+  kvs_clients_root: '{project-root}/clients'
+  kvs_forge_sanctum: '{project-root}/_bmad/memory/frg-agent-conductor'
+  kvs_diagram_format: svg+pdf+png
+  kvs_publish_target: in-repo /docs
+  kvs_protected_branches: main,staging
+etr:
+  name: Refinery
+  description: A Conductor agent that refines and hardens existing websites.
+  version: 1.0.0
+  etr_clients_root: '{project-root}/clients'
+  etr_forge_sanctum: '{project-root}/_bmad/memory/frg-agent-conductor'
+  etr_deploy_target: cloudflare
+  etr_a11y_target: WCAG 2.2 AA
+lok:
+  name: The Gambit
+  description: A Conductor agent that rebuilds prospect websites speculatively.
+  version: 1.0.0
+  lok_prospects_root: '{project-root}/prospects'
+hei:
+  name: The Watchtower
+  description: A Conductor agent that watches local-pack and AI visibility.
+  version: 1.0.0
+  hei_watches_root: '{project-root}/watches'
+  hei_forge_sanctum: '{project-root}/_bmad/memory/frg-agent-conductor'
+  hei_seo_data_provider: auto
+  hei_places_api_key_env: GOOGLE_MAPS_API_KEY
+  hei_default_publish_mode: draft-only
