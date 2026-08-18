@@ -166,6 +166,79 @@ test("numeric Change Level ranges are allowed while unsupported claim numbers ar
   assert.ok(validateCorpus(websiteClaim).errors.some(({ rule }) => rule === "number_provenance"));
 });
 
+test("quantity validation covers every claim-bearing element and resists token bypasses", () => {
+  const cases = [
+    ["local_numeric_claim", 0, "spark_title", "Five Calls Saved"],
+    ["local_numeric_claim", 0, "what_stays_the_same", "Keep several customers in the old list."],
+    ["local_numeric_claim", 0, "implementation_invitation", "We can save ten hours and say if it is not worth changing."],
+    ["number_provenance", 3, "spark_title", "The 20-Call Card"],
+    ["number_provenance", 3, "what_stays_the_same", "Keep 40 customers in the old system."],
+    ["number_provenance", 3, "implementation_invitation", "We can save five hours and say if it is not worth changing."],
+  ];
+  for (const [rule, fixtureIndex, elementName, text] of cases) {
+    const changed = clone(corpus);
+    changed.goldens.fixtures[fixtureIndex].elements.find(({ element }) => element === elementName).text = text;
+    assert.ok(validateCorpus(changed).errors.some((error) => error.rule === rule), `${elementName} bypassed ${rule}`);
+  }
+  const exact = clone(corpus);
+  exact.goldens.fixtures[3].elements[3].text += " Handles 20 calls.";
+  exact.goldens.fixtures[3].evidence.supported_claims.push("The site documents 120 calls.");
+  assert.ok(validateCorpus(exact).errors.some(({ rule }) => rule === "number_provenance"), "20 must not match 120");
+  const supported = clone(exact);
+  supported.goldens.fixtures[3].evidence.supported_claims.push("The site documents 20 calls.");
+  assert.ok(!validateCorpus(supported).errors.some(({ rule }) => rule === "number_provenance"));
+});
+
+test("Change Level rejects invalid ranges and accepts exact boundaries", () => {
+  const invalid = [
+    "Preliminary change: 0-2 days; 1 step changes and 0 steps disappear.",
+    "Preliminary change: -1-2 days; 1 step changes and 0 steps disappear.",
+    "Preliminary change: 5-3 days; 1 step changes and 0 steps disappear.",
+    "Preliminary change: 1-2 days; -1 steps change and 0 steps disappear.",
+    "Preliminary change: 1-2 days; 1 step changes and -1 steps disappear.",
+  ];
+  for (const text of invalid) {
+    const changed = clone(corpus);
+    changed.goldens.fixtures[0].elements[5].text = text;
+    assert.ok(validateCorpus(changed).errors.some(({ rule }) => ["change_level_shape", "change_level_bounds"].includes(rule)), text);
+  }
+  const boundary = clone(corpus);
+  boundary.goldens.fixtures[0].elements[5].text = "Preliminary change: 1-1 day; 0 workflow steps change and 0 steps disappear.";
+  assert.ok(!validateCorpus(boundary).errors.some(({ rule }) => ["change_level_shape", "change_level_bounds"].includes(rule)));
+});
+
+test("invitation requires the explicit exit and rejects pressure language", () => {
+  const cases = [
+    ["invitation_exit", "We can map the smallest version together."],
+    ["invitation_pressure", "Book now before this disappears; we can stop if it is not worth changing."],
+    ["invitation_pressure", "Schedule a call today; we can stop if it is not worth changing."],
+    ["invitation_pressure", "This is a limited time offer; stop if it is not worth changing."],
+  ];
+  for (const [rule, text] of cases) {
+    const changed = clone(corpus);
+    changed.goldens.fixtures[0].elements[7].text = text;
+    assert.ok(validateCorpus(changed).errors.some((error) => error.rule === rule), `missing ${rule}`);
+  }
+  assert.ok(corpus.goldens.fixtures.every((fixture) => !validateCorpus({ ...clone(corpus), goldens: { ...clone(corpus.goldens), fixtures: [fixture, ...clone(corpus.goldens.fixtures.filter((other) => other.id !== fixture.id))] } }).errors.some(({ rule }) => ["invitation_exit", "invitation_pressure"].includes(rule))));
+});
+
+test("website sources reject special-use IP literals and accept public hosts offline", () => {
+  const rejected = [
+    "0.1.2.3", "10.0.0.1", "100.64.0.1", "127.0.0.1", "169.254.1.1", "172.16.0.1", "192.0.0.1", "192.0.2.1", "192.88.99.1", "192.168.1.1", "198.18.0.1", "198.51.100.1", "203.0.113.1", "224.0.0.1", "240.0.0.1",
+    "[::]", "[::1]", "[::ffff:192.0.2.1]", "[64:ff9b:1::1]", "[100::1]", "[2001::1]", "[2001:db8::1]", "[2002::1]", "[3fff::1]", "[fc00::1]", "[fe80::1]", "[ff00::1]",
+  ];
+  for (const host of rejected) {
+    const changed = clone(corpus);
+    changed.goldens.fixtures[3].evidence.sources[0] = `https://${host}/evidence`;
+    assert.ok(validateCorpus(changed).errors.some(({ rule }) => rule === "website_source_url"), host);
+  }
+  for (const host of ["8.8.8.8", "1.1.1.1", "[2606:4700:4700::1111]", "example.com", "fixtures.example.com"]) {
+    const changed = clone(corpus);
+    changed.goldens.fixtures[3].evidence.sources[0] = `https://${host}/evidence`;
+    assert.ok(!validateCorpus(changed).errors.some(({ rule }) => rule === "website_source_url"), host);
+  }
+});
+
 test("exact Justin approval emits the approved deterministic identity", () => {
   const approved = approve(corpus);
   const first = validateCorpus(approved);
@@ -234,6 +307,33 @@ test("rejects invalid approval timestamps, hashes, and identity shapes", () => {
     mutate(changed);
     assert.ok(validateCorpus(changed).errors.some((error) => error.rule === rule), `missing ${rule}`);
   }
+});
+
+test("approval time accepts exact now and rejects the next millisecond", () => {
+  const nowMs = Date.parse("2026-08-18T12:00:00.000Z");
+  const exact = approve(corpus);
+  exact.approval.approved_at = new Date(nowMs).toISOString();
+  assert.equal(validateCorpus(exact, { nowMs }).readiness, "approved");
+  const future = approve(corpus);
+  future.approval.approved_at = new Date(nowMs + 1).toISOString();
+  const report = validateCorpus(future, { nowMs });
+  assert.equal(report.readiness, "invalid");
+  assert.ok(report.errors.some(({ rule }) => rule === "approval_future"));
+});
+
+test("anti-golden categories are unique and bind closed rules and gates", () => {
+  const duplicate = clone(corpus);
+  duplicate.anti_goldens.fixtures[1].category = duplicate.anti_goldens.fixtures[0].category;
+  assert.ok(validateCorpus(duplicate).errors.some(({ rule }) => rule === "duplicate_category"));
+  const typo = clone(corpus);
+  typo.anti_goldens.fixtures[0].expected_rejection.rubric_rules[0] = "banned_regster";
+  assert.ok(validateCorpus(typo).errors.some(({ rule }) => rule === "category_rubric_rule"));
+  const unrelated = clone(corpus);
+  unrelated.anti_goldens.fixtures[0].expected_rejection.rubric_rules[0] = "claim_provenance";
+  assert.ok(validateCorpus(unrelated).errors.some(({ rule }) => rule === "category_rubric_rule"));
+  const wrongGate = clone(corpus);
+  wrongGate.anti_goldens.fixtures[0].expected_rejection.gates = [7];
+  assert.ok(validateCorpus(wrongGate).errors.some(({ rule }) => rule === "category_gates"));
 });
 
 test("CLI reports structured pending readiness and exits nonzero without owner approval", () => {

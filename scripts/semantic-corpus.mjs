@@ -23,6 +23,19 @@ const ELEMENT_ORDER = [
   "what_stays_the_same",
   "implementation_invitation",
 ];
+const CLAIM_QUANTITY_WORDS = "zero|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|dozen|hundred|thousand|several|many|multiple";
+const CLAIM_QUANTITY_UNITS = "percent|percentage|hours?|days?|weeks?|calls?|bookings?|orders?|customers?|guests?|inquiries|messages?|minutes?|dollars?|sales?|appointments?|jobs?|trips?|supporters?";
+const WRITTEN_CLAIM_QUANTITY = new RegExp(`\\b(?:${CLAIM_QUANTITY_WORDS})\\s+(?:${CLAIM_QUANTITY_UNITS})\\b`, "gi");
+const DIGIT_CLAIM = /\b\d+(?:\.\d+)?%?\b/g;
+const PRESSURE_LANGUAGE = /\b(?:act now|book now|today only|limited time|before (?:it|this|the) (?:is )?(?:gone|ends?|expires?|disappears?)|don't miss|last chance|exclusive offer|sales call|transformation call|schedule (?:a )?call|reserve your spot)\b/i;
+const ANTI_GOLDEN_RULES = {
+  consultant_speak: { gates: [8], rules: ["banned_register", "counter_level_language"] },
+  unsupported_claims: { gates: [1], rules: ["claim_provenance"] },
+  weak_preservation: { gates: [7], rules: ["preserved_tools", "decision_authority", "untouched_steps"] },
+  capability_duplication: { gates: [3], rules: ["capability_inventory"] },
+  poor_scope: { gates: [5, 6], rules: ["proportionality", "delivery_envelope"] },
+  invitation_pressure: { gates: [8], rules: ["counter_level_invitation", "no_pressure", "not_worth_changing_exit"] },
+};
 
 function issue(artifact, rule, message, fixture = null) {
   return { artifact, fixture, rule, message };
@@ -50,15 +63,73 @@ function hasDuplicates(values) {
   return new Set(values).size !== values.length;
 }
 
+function ipv4Number(host) {
+  return host.split(".").reduce((value, octet) => (value << 8n) | BigInt(Number(octet)), 0n);
+}
+
+function inIpv4Range(value, start, prefix) {
+  const shift = BigInt(32 - prefix);
+  return value >> shift === ipv4Number(start) >> shift;
+}
+
+function expandIpv6(host) {
+  let source = host.toLowerCase();
+  if (source.includes(".")) {
+    const lastColon = source.lastIndexOf(":");
+    const ip = source.slice(lastColon + 1);
+    if (isIP(ip) !== 4) return null;
+    const value = ipv4Number(ip);
+    source = `${source.slice(0, lastColon)}:${Number((value >> 16n) & 0xffffn).toString(16)}:${Number(value & 0xffffn).toString(16)}`;
+  }
+  const halves = source.split("::");
+  if (halves.length > 2) return null;
+  const left = halves[0] ? halves[0].split(":") : [];
+  const right = halves[1] ? halves[1].split(":") : [];
+  const missing = 8 - left.length - right.length;
+  if ((halves.length === 1 && missing !== 0) || missing < 0) return null;
+  const groups = [...left, ...Array(missing).fill("0"), ...right];
+  return groups.reduce((value, group) => (value << 16n) | BigInt(`0x${group || "0"}`), 0n);
+}
+
+function inIpv6Range(value, start, prefix) {
+  const shift = BigInt(128 - prefix);
+  return value >> shift === expandIpv6(start) >> shift;
+}
+
 function isPublicHostname(hostname) {
   const host = hostname.toLowerCase().replace(/^\[|\]$/g, "");
   if (host === "localhost" || host.endsWith(".localhost") || host.endsWith(".local") || host.endsWith(".test") || host.endsWith(".invalid")) return false;
   if (isIP(host) === 4) {
-    const [a, b] = host.split(".").map(Number);
-    return !(a === 10 || a === 127 || a === 0 || (a === 169 && b === 254) || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168));
+    const value = ipv4Number(host);
+    const blocked = [["0.0.0.0", 8], ["10.0.0.0", 8], ["100.64.0.0", 10], ["127.0.0.0", 8], ["169.254.0.0", 16], ["172.16.0.0", 12], ["192.0.0.0", 24], ["192.0.2.0", 24], ["192.88.99.0", 24], ["192.168.0.0", 16], ["198.18.0.0", 15], ["198.51.100.0", 24], ["203.0.113.0", 24], ["224.0.0.0", 4], ["240.0.0.0", 4]];
+    return !blocked.some(([start, prefix]) => inIpv4Range(value, start, prefix));
   }
-  if (isIP(host) === 6) return host !== "::1" && !host.startsWith("fc") && !host.startsWith("fd") && !host.startsWith("fe8") && !host.startsWith("fe9") && !host.startsWith("fea") && !host.startsWith("feb");
+  if (isIP(host) === 6) {
+    const value = expandIpv6(host);
+    const blocked = [["::", 128], ["::1", 128], ["::ffff:0:0", 96], ["64:ff9b:1::", 48], ["100::", 64], ["2001::", 23], ["2001:db8::", 32], ["2002::", 16], ["3fff::", 20], ["fc00::", 7], ["fe80::", 10], ["ff00::", 8]];
+    return value !== null && !blocked.some(([start, prefix]) => inIpv6Range(value, start, prefix));
+  }
   return host.includes(".");
+}
+
+function quantityTokens(text) {
+  return {
+    digits: text.match(DIGIT_CLAIM) ?? [],
+    written: text.match(WRITTEN_CLAIM_QUANTITY) ?? [],
+  };
+}
+
+function exactTokenSet(text) {
+  return new Set((text.match(DIGIT_CLAIM) ?? []).map((token) => token.toLowerCase()));
+}
+
+function parseChangeLevel(text) {
+  if (!isNonblank(text) || !/^Preliminary change:/i.test(text)) return null;
+  const range = text.match(/(?<![\d-])(-?\d+)\s*(?:-|–|to)\s*(-?\d+)\s+(?:business\s+)?(?:days?|weeks?)\b/i);
+  const changed = text.match(/(?<![\d-])(-?\d+)\s+(?:[A-Za-z0-9_][\w-]*\s+){0,4}(?:step|steps)\s+changes?\b/i);
+  const disappeared = text.match(/(?<![\d-])(-?\d+)\s+(?:[A-Za-z0-9_][\w-]*\s+){0,4}(?:step|steps|work|explanation|drafting)\s+disappears?\b/i);
+  if (!range || !changed || !disappeared) return null;
+  return { minimum: Number(range[1]), maximum: Number(range[2]), changed: Number(changed[1]), disappeared: Number(disappeared[1]) };
 }
 
 class NonJsonValueError extends TypeError {
@@ -151,21 +222,26 @@ function validateGolden(fixture, rubric, errors) {
     for (const term of Array.isArray(rubric?.banned_registers) ? rubric.banned_registers : []) {
       if (allText.includes(term.toLowerCase())) errors.push(issue("goldens", "banned_register", `contains banned register: ${term}`, id));
     }
-    const claimElements = new Set(["the_plan", "why_it_fits", "what_gets_better", "before_after"]);
-    const claimText = fixture.elements.filter((element) => isObject(element) && claimElements.has(element.element)).map((element) => element.text).join(" ").toLowerCase();
-    const numericClaims = claimText.match(/\b\d+(?:\.\d+)?%?\b/g) ?? [];
-    if (fixture.mode === "local" && numericClaims.length > 0) errors.push(issue("goldens", "local_numeric_claim", "local fixtures cannot contain numeric claims", id));
+    const claimText = fixture.elements.filter((element) => isObject(element) && element.element !== "change_level").map((element) => element.text).join(" ").toLowerCase();
+    const quantities = quantityTokens(claimText);
+    if (fixture.mode === "local" && (quantities.digits.length > 0 || quantities.written.length > 0)) errors.push(issue("goldens", "local_numeric_claim", "local fixtures cannot contain numeric or written quantity claims", id));
     if (fixture.mode === "website") {
       const supportText = Array.isArray(fixture.evidence?.supported_claims) ? fixture.evidence.supported_claims.join(" ").toLowerCase() : "";
-      for (const number of numericClaims) if (!supportText.includes(number)) errors.push(issue("goldens", "number_provenance", `website number lacks supplied evidence: ${number}`, id));
+      const supportedDigits = exactTokenSet(supportText);
+      for (const number of quantities.digits) if (!supportedDigits.has(number.toLowerCase())) errors.push(issue("goldens", "number_provenance", `website number lacks exact supplied evidence: ${number}`, id));
+      for (const quantity of quantities.written) if (!supportText.includes(quantity.toLowerCase())) errors.push(issue("goldens", "number_provenance", `website written quantity lacks supplied evidence: ${quantity}`, id));
     }
     if (/\b(audit|fault|stale|broken|failure)\b/.test(allText)) errors.push(issue("goldens", "audit_framing", "golden reads as an audit or fault report", id));
     if (/\b(replace|discard|remove)\s+(?:the\s+)?(?:existing|current)\b/.test(allText)) errors.push(issue("goldens", "helpful_work_replacement", "golden replaces an existing helpful tool or workflow", id));
     if (/\bnew\s+(?:appointment\s+)?scheduler\b/.test(allText) && /\bexisting\s+(?:appointment\s+)?scheduler\b/.test(allText)) errors.push(issue("goldens", "capability_duplication", "golden duplicates an existing capability", id));
     const changeLevel = fixture.elements.find((element) => isObject(element) && element.element === "change_level")?.text;
-    if (!isNonblank(changeLevel) || !/^Preliminary change:/i.test(changeLevel) || !/\b\d+\s*(?:-|–|to)\s*\d+\s+(?:business\s+)?(?:days?|weeks?)\b/i.test(changeLevel) || !/\b\d+\s+[^.;]*(?:step|steps)\s+changes?\b/i.test(changeLevel) || !/\b\d+\s+[^.;]*(?:step|steps|work|explanation|drafting)\s+disappears?\b/i.test(changeLevel)) errors.push(issue("goldens", "change_level_shape", "Change Level must state a preliminary numeric time range and numeric changed/disappearing step counts", id));
+    const parsedChange = parseChangeLevel(changeLevel);
+    if (!parsedChange) errors.push(issue("goldens", "change_level_shape", "Change Level must state a preliminary numeric time range and numeric changed/disappearing step counts", id));
+    else if (parsedChange.minimum <= 0 || parsedChange.maximum <= 0 || parsedChange.minimum > parsedChange.maximum || parsedChange.changed < 0 || parsedChange.disappeared < 0) errors.push(issue("goldens", "change_level_bounds", "Change Level range must be positive and ordered; workflow-step counts must be nonnegative", id));
     const invitation = fixture.elements.find((element) => isObject(element) && element.element === "implementation_invitation")?.text;
     if (!isNonblank(invitation) || invitation.includes("?")) errors.push(issue("goldens", "rhetorical_invitation", "implementation invitation must be confident and not a rhetorical question", id));
+    if (isNonblank(invitation) && !/\bnot worth changing\b/i.test(invitation)) errors.push(issue("goldens", "invitation_exit", "implementation invitation must explicitly say when it is not worth changing", id));
+    if (isNonblank(invitation) && PRESSURE_LANGUAGE.test(invitation)) errors.push(issue("goldens", "invitation_pressure", "implementation invitation cannot use urgency, funnel, or pressure language", id));
   }
   if (!Array.isArray(fixture.expected_gates) || fixture.expected_gates.length !== 9 || fixture.expected_gates.some((value) => value !== true)) errors.push(issue("goldens", "expected_gates", "all nine gates must expect pass", id));
   if (!isObject(fixture.effect) || ["who", "when", "physical_change"].some((key) => typeof fixture.effect[key] !== "string" || fixture.effect[key].trim() === "")) errors.push(issue("goldens", "effect_shape", "effect must name who, when, and the physical change", id));
@@ -224,6 +300,7 @@ function validateAntiGoldens(anti, errors) {
     if (!isNonblank(id) || !/^[a-z0-9-]+$/.test(id)) errors.push(issue("anti_goldens", "stable_id", "anti-golden id must be stable kebab-case", id));
     if (ids.has(id)) errors.push(issue("anti_goldens", "duplicate_id", `duplicate id: ${id}`, id));
     ids.add(id);
+    if (categories.has(fixture.category)) errors.push(issue("anti_goldens", "duplicate_category", `duplicate category: ${fixture.category}`, id));
     categories.add(fixture.category);
     if (!REQUIRED_CATEGORIES.includes(fixture.category)) errors.push(issue("anti_goldens", "category", `unknown category: ${fixture.category}`, id));
     if (!['local', 'website'].includes(fixture.mode)) errors.push(issue("anti_goldens", "mode", "mode must be local or website", id));
@@ -231,11 +308,14 @@ function validateAntiGoldens(anti, errors) {
     if (!Array.isArray(fixture.expected_rejection?.gates) || fixture.expected_rejection.gates.length === 0 || fixture.expected_rejection.gates.some((gate) => !Number.isInteger(gate) || gate < 1 || gate > 9)) errors.push(issue("anti_goldens", "rejection_gates", "expected rejection must name valid gates", id));
     if (Array.isArray(fixture.expected_rejection?.gates) && hasDuplicates(fixture.expected_rejection.gates)) errors.push(issue("anti_goldens", "duplicate_rejection_gate", "expected rejection gates must be unique", id));
     if (!Array.isArray(fixture.expected_rejection?.rubric_rules) || fixture.expected_rejection.rubric_rules.length === 0 || fixture.expected_rejection.rubric_rules.some((rule) => !isNonblank(rule)) || !isNonblank(fixture.expected_rejection?.reason)) errors.push(issue("anti_goldens", "rejection_reason", "expected rejection must name nonblank rubric rules and a nonblank reason", id));
+    const policy = ANTI_GOLDEN_RULES[fixture.category];
+    if (policy && Array.isArray(fixture.expected_rejection?.rubric_rules) && fixture.expected_rejection.rubric_rules.some((rule) => !policy.rules.includes(rule))) errors.push(issue("anti_goldens", "category_rubric_rule", "anti-golden rubric rules must belong to the category allowlist", id));
+    if (policy && Array.isArray(fixture.expected_rejection?.gates) && canonicalJson(fixture.expected_rejection.gates) !== canonicalJson(policy.gates)) errors.push(issue("anti_goldens", "category_gates", "anti-golden gates must match the category metadata", id));
   }
   for (const category of REQUIRED_CATEGORIES) if (!categories.has(category)) errors.push(issue("anti_goldens", "category_coverage", `missing category: ${category}`));
 }
 
-function validateApprovalShape(approval, errors) {
+function validateApprovalShape(approval, errors, nowMs) {
   if (!exactKeys(approval, ["schema_version", "status", "owner", "corpus_version", "hashes", "semantic_identity", "approved_at"], "approval", "approval", errors)) return;
   if (approval.schema_version !== 1 || approval.corpus_version !== "voice-v1") errors.push(issue("approval", "version", "approval must be schema 1 and corpus voice-v1"));
   if (!['pending_owner_approval', 'approved'].includes(approval.status)) errors.push(issue("approval", "status", "approval status is invalid"));
@@ -246,6 +326,7 @@ function validateApprovalShape(approval, errors) {
       const parsed = Date.parse(approval.approved_at);
       const normalizedInput = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/.test(approval.approved_at) ? approval.approved_at.replace(/Z$/, ".000Z") : approval.approved_at;
       if (Number.isNaN(parsed) || new Date(parsed).toISOString() !== normalizedInput) errors.push(issue("approval", "approval_timestamp", "approved_at must be a real canonical UTC timestamp"));
+      else if (parsed > nowMs) errors.push(issue("approval", "approval_future", "approved_at cannot be in the future"));
     }
     if (exactKeys(approval.hashes, ["rubric", "goldens", "anti_goldens", "thresholds"], "approval", "approval.hashes", errors) && Object.values(approval.hashes).some((hash) => !isSha256(hash))) errors.push(issue("approval", "approval_hash", "every approved hash must be lowercase SHA-256 hex"));
   }
@@ -261,7 +342,7 @@ export function deriveIdentity({ rubric, goldens, anti_goldens: antiGoldens }) {
   return { hashes, semantic_identity: domainHash("semantic_identity", { corpus_version: rubric?.corpus_version, hashes }) };
 }
 
-export function validateCorpus(input) {
+export function validateCorpus(input, { nowMs = Date.now() } = {}) {
   try {
     const errors = [];
     if (!isObject(input)) return { valid: false, readiness: "invalid", approved_semantic_identity: null, semantic_identity: null, hashes: null, errors: [issue("corpus", "object", "corpus input must be an object")] };
@@ -270,7 +351,7 @@ export function validateCorpus(input) {
     validateRubric(input.rubric, errors);
     validateGoldens(input.goldens, input.rubric, errors);
     validateAntiGoldens(input.anti_goldens, errors);
-    validateApprovalShape(input.approval, errors);
+    validateApprovalShape(input.approval, errors, nowMs);
     if (errors.length > 0) return { valid: false, readiness: "invalid", approved_semantic_identity: null, semantic_identity: null, hashes: null, errors };
     const identity = deriveIdentity(input);
     const approval = input.approval;
