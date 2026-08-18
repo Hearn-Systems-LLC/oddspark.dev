@@ -1,0 +1,115 @@
+{
+  "schema_version": 1,
+  "corpus_version": "voice-v1",
+  "authority": "developer_fixture_not_owner_approved",
+  "fixtures": [
+    {
+      "id": "local-after-hours-callback-card",
+      "mode": "local",
+      "evidence": {"sources": ["Port Huron small-service-business context", "evening and weekend seasonality"], "breadcrumb": null, "supported_claims": []},
+      "effect": {"who": "the owner returning calls", "when": "at the start of the next workday", "physical_change": "opens one short callback list instead of rebuilding it from voicemail and scraps of paper"},
+      "preservation": {"tools": ["current phone number", "current calendar"], "decision_authority": "the owner still chooses which jobs to take", "untouched_steps": ["answering live calls", "scheduling accepted work", "doing the work"]},
+      "elements": [
+        {"element": "spark_title", "text": "The Morning Call Card"},
+        {"element": "the_plan", "text": "Turn each after-hours voicemail into one short callback card with the caller's request and preferred return time, ready for the next workday."},
+        {"element": "why_it_fits", "text": "Busy local service days do not stop when the phone rings, and evening messages are easy to scatter before morning."},
+        {"element": "what_gets_better", "text": "The owner returning calls starts the next workday with one physical list instead of replaying messages and hunting for notes."},
+        {"element": "before_after", "text": "Before: morning starts by reconstructing who called. After: each caller is already on a plain callback card."},
+        {"element": "change_level", "text": "Preliminary change: 2-4 days to connect the voicemail handoff; 1 existing step changes and 1 repetitive replay step disappears."},
+        {"element": "what_stays_the_same", "text": "Keep the current phone number and calendar. The owner still decides which jobs to take; live calls, scheduling, and the work itself stay untouched."},
+        {"element": "implementation_invitation", "text": "We can kick around the smallest version of The Morning Call Card, map the handoff, and say so if it is not worth changing."}
+      ],
+      "expected_gates": [true, true, true, true, true, true, true, true, true]
+    },
+    {
+      "id": "local-lakeside-weather-handoff",
+      "mode": "local",
+      "evidence": {"sources": ["Blue Water Area outdoor-work context", "fast-changing lakeside weather"], "breadcrumb": null, "supported_claims": []},
+      "effect": {"who": "the crew lead", "when": "when weather shifts before the first stop", "physical_change": "moves one job card and sends the customer the same short update from the existing schedule"},
+      "preservation": {"tools": ["existing schedule", "current customer text channel"], "decision_authority": "the crew lead still decides whether work moves", "untouched_steps": ["route planning", "on-site work", "final invoicing"]},
+      "elements": [
+        {"element": "spark_title", "text": "The Lake-Wind Shuffle"},
+        {"element": "the_plan", "text": "Add one weather-aware morning handoff that flags the exposed outdoor stop and drafts a plain customer update when the crew lead moves it."},
+        {"element": "why_it_fits", "text": "Near the lake, a workable plan at breakfast can need one sensible swap before the first truck rolls."},
+        {"element": "what_gets_better", "text": "The crew lead facing a weather shift moves one job card and sends the same clear update without rebuilding the day on two screens."},
+        {"element": "before_after", "text": "Before: a weather change triggers schedule edits and separate customer messages. After: the chosen move carries its update with it."},
+        {"element": "change_level", "text": "Preliminary change: 3-5 days; 1 morning scheduling step changes and 1 duplicate message-writing step disappears."},
+        {"element": "what_stays_the_same", "text": "Keep the existing schedule and customer text channel. The crew lead still calls every move; route planning, field work, and invoicing stay untouched."},
+        {"element": "implementation_invitation", "text": "We can sketch the smallest Lake-Wind Shuffle around the schedule you already trust, and call it off if it is not worth changing."}
+      ],
+      "expected_gates": [true, true, true, true, true, true, true, true, true]
+    },
+    {
+      "id": "local-counter-special-tally",
+      "mode": "local",
+      "evidence": {"sources": ["Port Huron walk-in retail context", "seasonal counter-special routine"], "breadcrumb": null, "supported_claims": []},
+      "effect": {"who": "the person opening the shop", "when": "before the first customer arrives", "physical_change": "sees one restock note made from yesterday's counter tally"},
+      "preservation": {"tools": ["current register", "paper production sheet"], "decision_authority": "the owner still sets the special and quantity", "untouched_steps": ["making the product", "serving customers", "closing the register"]},
+      "elements": [
+        {"element": "spark_title", "text": "Yesterday's Last Crumb"},
+        {"element": "the_plan", "text": "Capture the final counter tally with one closing tap and turn it into a short restock note for the next opener."},
+        {"element": "why_it_fits", "text": "A seasonal counter special often leaves its best clue at closing, when the next morning's production sheet is not nearby."},
+        {"element": "what_gets_better", "text": "The person opening before the first customer sees one concrete restock note instead of guessing from an empty tray."},
+        {"element": "before_after", "text": "Before: the last tray and tomorrow's sheet live in different moments. After: closing leaves one useful note for opening."},
+        {"element": "change_level", "text": "Preliminary change: 2-4 days; 1 closing step changes and 0 production steps disappear."},
+        {"element": "what_stays_the_same", "text": "Keep the current register and paper production sheet. The owner still sets the special and quantity; making, serving, and register close stay untouched."},
+        {"element": "implementation_invitation", "text": "If Yesterday's Last Crumb sounds useful, we can test the one-tap version together and say plainly if it is not worth changing."}
+      ],
+      "expected_gates": [true, true, true, true, true, true, true, true, true]
+    },
+    {
+      "id": "website-menu-sold-out-bridge",
+      "mode": "website",
+      "evidence": {"sources": ["https://example.com/oddspark-fixtures/bakery-menu"], "breadcrumb": "rotating hand pies", "supported_claims": ["The public menu names rotating hand pies.", "The site offers phone ordering."]},
+      "effect": {"who": "the counter worker", "when": "when the last rotating hand pie sells", "physical_change": "taps sold out once and the phone-order view stops offering it"},
+      "preservation": {"tools": ["existing public menu", "current phone ordering"], "decision_authority": "the baker still chooses each flavor and batch", "untouched_steps": ["baking", "counter service", "taking phone orders"]},
+      "elements": [
+        {"element": "spark_title", "text": "The Last Hand Pie Tap"},
+        {"element": "the_plan", "text": "Give the counter one sold-out tap that removes today's item from the phone-order view without rebuilding the menu."},
+        {"element": "why_it_fits", "text": "Those rotating hand pies deserve a graceful last act: the public menu already names them, and phone ordering is already the path."},
+        {"element": "what_gets_better", "text": "The counter worker selling the last one taps once, so the next caller sees what is actually available instead of asking about an empty tray."},
+        {"element": "before_after", "text": "Before: the tray empties before the menu catches up. After: one counter tap keeps the ordering view honest."},
+        {"element": "change_level", "text": "Preliminary change: 3-5 days; 1 sell-out step changes and 1 repeated availability explanation disappears."},
+        {"element": "what_stays_the_same", "text": "Keep the existing public menu and phone ordering. The baker still chooses flavors and batches; baking, counter service, and taking calls stay untouched."},
+        {"element": "implementation_invitation", "text": "We can try the smallest Last Hand Pie Tap around the menu you have, and say so if the handoff is not worth changing."}
+      ],
+      "expected_gates": [true, true, true, true, true, true, true, true, true]
+    },
+    {
+      "id": "website-trail-status-note",
+      "mode": "website",
+      "evidence": {"sources": ["https://example.com/oddspark-fixtures/outfitter-trips"], "breadcrumb": "sunrise paddle outings", "supported_claims": ["The public site lists sunrise paddle outings.", "The site uses email for trip contact."]},
+      "effect": {"who": "the trip lead", "when": "when morning conditions change", "physical_change": "marks one trip note and sends the prepared update through the existing email channel"},
+      "preservation": {"tools": ["existing trips page", "current email channel"], "decision_authority": "the trip lead still decides whether an outing changes", "untouched_steps": ["guest check-in", "safety briefing", "guiding the outing"]},
+      "elements": [
+        {"element": "spark_title", "text": "First-Light Trip Note"},
+        {"element": "the_plan", "text": "Attach one condition note to each morning trip so the lead can send a prepared update through the current email link when plans change."},
+        {"element": "why_it_fits", "text": "Sunrise paddle outings begin before most inboxes wake up, and the public trip page already points guests to email."},
+        {"element": "what_gets_better", "text": "The trip lead handling a morning change marks one note and sends one consistent update instead of rewriting the situation for each guest."},
+        {"element": "before_after", "text": "Before: a changed morning means repeated explanations. After: the lead's one decision carries a ready, human update."},
+        {"element": "change_level", "text": "Preliminary change: 1-2 weeks; 1 trip-update step changes and 1 repetitive message-drafting step disappears."},
+        {"element": "what_stays_the_same", "text": "Keep the trips page and email channel. The trip lead still makes every weather call; check-in, safety briefing, and guiding stay untouched."},
+        {"element": "implementation_invitation", "text": "We can map First-Light Trip Note onto one outing first, and be honest if it is not worth changing."}
+      ],
+      "expected_gates": [true, true, true, true, true, true, true, true, true]
+    },
+    {
+      "id": "website-donation-thank-you-handoff",
+      "mode": "website",
+      "evidence": {"sources": ["https://example.com/oddspark-fixtures/museum-support"], "breadcrumb": "named exhibit sponsorship", "supported_claims": ["The public support page offers named exhibit sponsorship.", "The page provides a contact form."]},
+      "effect": {"who": "the staff member answering support messages", "when": "when a sponsorship inquiry arrives", "physical_change": "opens a prepared exhibit-specific reply card beside the existing form message"},
+      "preservation": {"tools": ["existing support page", "current contact form"], "decision_authority": "staff still decide the appropriate reply and sponsorship fit", "untouched_steps": ["reviewing inquiries", "speaking with supporters", "recording accepted gifts"]},
+      "elements": [
+        {"element": "spark_title", "text": "The Exhibit Reply Card"},
+        {"element": "the_plan", "text": "Pair each sponsorship form message with a short reply card for the named exhibit, ready for staff to adjust and send."},
+        {"element": "why_it_fits", "text": "Named exhibit sponsorship gives each supporter a real place to picture, while the public contact form already carries the first hello."},
+        {"element": "what_gets_better", "text": "The staff member opening a new inquiry sees an exhibit-specific starting point beside it instead of beginning every thank-you on a blank screen."},
+        {"element": "before_after", "text": "Before: every thoughtful reply starts from nothing. After: the exhibit and the message arrive together on one editable card."},
+        {"element": "change_level", "text": "Preliminary change: 3-5 days; 1 response step changes and 1 repetitive first-draft step disappears."},
+        {"element": "what_stays_the_same", "text": "Keep the support page and contact form. Staff still decide each reply and sponsorship fit; review, conversations, and gift records stay untouched."},
+        {"element": "implementation_invitation", "text": "We can build one Exhibit Reply Card as a small test, then stop if it is not worth changing."}
+      ],
+      "expected_gates": [true, true, true, true, true, true, true, true, true]
+    }
+  ]
+}

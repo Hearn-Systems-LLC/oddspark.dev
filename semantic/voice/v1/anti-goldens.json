@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "corpus_version": "voice-v1",
+  "authority": "developer_fixture_not_owner_approved",
+  "fixtures": [
+    {
+      "id": "anti-consultant-speak",
+      "category": "consultant_speak",
+      "mode": "local",
+      "sample": "Leverage a transformative intake queue to unlock value and optimize your workflow.",
+      "expected_rejection": {"gates": [8], "rubric_rules": ["banned_register", "counter_level_language"], "reason": "Abstract consultant language cannot be naturally retold across a counter."}
+    },
+    {
+      "id": "anti-unsupported-claims",
+      "category": "unsupported_claims",
+      "mode": "website",
+      "sample": "This change will raise bookings by 37 percent and save the owner ten hours every week.",
+      "expected_rejection": {"gates": [1], "rubric_rules": ["claim_provenance"], "reason": "The supplied public-site evidence supports neither number."}
+    },
+    {
+      "id": "anti-weak-preservation",
+      "category": "weak_preservation",
+      "mode": "local",
+      "sample": "Install the new system and move the team over once it is ready.",
+      "expected_rejection": {"gates": [7], "rubric_rules": ["preserved_tools", "decision_authority", "untouched_steps"], "reason": "It names no preserved tool, authority, or untouched step."}
+    },
+    {
+      "id": "anti-capability-duplication",
+      "category": "capability_duplication",
+      "mode": "website",
+      "sample": "Replace the existing public appointment scheduler with a new appointment scheduler.",
+      "expected_rejection": {"gates": [3], "rubric_rules": ["capability_inventory"], "reason": "The proposed core job is already served by the site's existing tool."}
+    },
+    {
+      "id": "anti-poor-scope",
+      "category": "poor_scope",
+      "mode": "local",
+      "sample": "Build a statewide marketplace, hire a dispatch center, and replace every shop system before winter.",
+      "expected_rejection": {"gates": [5, 6], "rubric_rules": ["proportionality", "delivery_envelope"], "reason": "The intervention is oversized and includes work outside the delivery envelope."}
+    },
+    {
+      "id": "anti-invitation-pressure",
+      "category": "invitation_pressure",
+      "mode": "website",
+      "sample": "Book your transformation call today before this opportunity disappears.",
+      "expected_rejection": {"gates": [8], "rubric_rules": ["counter_level_invitation", "no_pressure", "not_worth_changing_exit"], "reason": "The invitation applies urgency, sounds like a funnel, and offers no honest exit."}
+    }
+  ]
+}
