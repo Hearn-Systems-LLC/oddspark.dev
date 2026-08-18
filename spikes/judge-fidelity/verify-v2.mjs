@@ -3,10 +3,9 @@ import { readFile } from "node:fs/promises";
 import { verifyEvidenceV2 } from "./evidence-v2.mjs";
 import { executeCurrentFixtureCatalog } from "./fixture-executor.mjs";
 
-const supplied = process.argv.slice(2);
-const paths = supplied[0] === "--file" ? supplied.slice(1) : supplied;
+const paths = process.argv.slice(2);
 if (paths.length === 0) {
-  console.error("Usage: npm run spike:judge:verify -- --file <evidence-v2.json> [...]");
+  console.error("Usage: npm run spike:judge:verify:v2 -- <evidence-v2.json> [...]");
   process.exitCode = 2;
 } else {
   const fixtureResults = await executeCurrentFixtureCatalog();
@@ -27,3 +26,4 @@ if (paths.length === 0) {
     }
   }
 }
+

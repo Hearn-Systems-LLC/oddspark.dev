@@ -1,93 +1,72 @@
-# Judge Structural Recovery
+# Judge Fidelity Spike
 
-This is the isolated, operator-only Story 1.4 recovery harness for the frozen Workers AI judge pair. It does not deploy a Worker, modify production routes or bindings, prove semantic judgment quality, select one production `judge_ref`, or authorize provider use by itself.
+This is a non-production, opt-in structural-fidelity test for the configured Workers AI judge models. It does not deploy a Worker, modify production routes or bindings, prove semantic judgment quality, or authorize Story 1.8.
 
 ## Safety boundary
 
-- The Worker executes locally on loopback. Only the `AI` binding is remote; Cloudflare documents that `remote = true` routes that binding to the remote resource while the Worker continues to execute locally.
+- The Worker runtime stays local on `127.0.0.1:8788`; only the `AI` binding is remote.
+- Start it with `npm run spike:judge:dev`. Do not add `--remote`, `--local`, or run `wrangler deploy` with this config.
 - `GET /health` makes no inference. Only an exact JSON `POST /run` can call an allowlisted model, and each accepted POST performs exactly one `AI.run` call.
-- The frozen protocol is capped at 42 calls: one probe per model followed, only when both probes return content, by 20 sequential trials per model. It never retries or replaces a counted call.
-- A probe error, timeout, or empty response stops after both probes. A counted-trial failure remains in that model's denominator and does not stop later scheduled trials.
-- CI and non-interactive live execution are rejected. Deployments, production bindings, routes, KV, Durable Objects, assets, persistent Worker names, additional providers, and additional models are prohibited.
-- Retention is closed to the fields listed in the disclosed plan: the full closed plan and approval, candidate and request input, run authorization/timestamps/checks, bounded provider envelope and usage records, evidence identities/results, and the full qualification bundle/manifests/refs. Credentials, request headers, secrets, account IDs, tool calls, and provider reasoning are excluded. `--account-profile` accepts only a non-secret label and rejects a bare 32-hex Cloudflare account ID.
+- The live command is capped at 42 calls: a successful preflight runs both model probes first and then 20 counted trials for each model, while a rejected, timed-out, or empty probe stops after the two probes. It never retries. A timeout or provider error during a counted trial is retained in the denominator and the remaining scheduled trials continue.
+- Results retain only allowlisted answer locations, sanitized provider errors, allowlisted numeric usage, and provider-reported effective values. Credentials, headers, account IDs, raw provider envelopes, tool calls, and reasoning are excluded.
 
-The fixture is synthetic and uses `example.invalid`. This matrix measures provider-wire and canonical structural fidelity only.
+The fixture is synthetic and uses `example.invalid`. Its `synthetic-grounding-report/v1` object is fixture-only; Story 1.5 owns the production Brief/grounding contract. This spike measures structural output fidelity, not whether the model shares the intended taste or applies the gates correctly.
 
-## Offline preparation and verification
-
-Run the complete offline contract suite:
+## Offline verification
 
 ```sh
 npm run spike:judge:self-test
 ```
 
-It executes all 79 shared fixtures and covers all 18 frozen Story 1.3 predicates without network access. Verify a retained evidence-v2 artifact explicitly with:
+The self-test executes the complete 79-case shared fixture catalog and tests all 18 frozen evidence-v2 predicates, including mutation routing. It produces synthetic NO-GO proof only; it does not verify a supplied artifact and uses no network.
+
+Verify one or more explicit evidence-v2 JSON artifacts with the same shared fixture executor used by the self-test:
 
 ```sh
-npm run spike:judge:verify -- --file path/to/evidence-v2.json
+npm run spike:judge:verify:v2 -- path/to/evidence-v2.json [another-evidence-v2.json]
 ```
 
-Verify a qualification bundle and its sibling evidence file with:
+The v2 verifier independently reconstructs provider requests and adapter inputs, executes the fixture catalog, recomputes source/runtime/legacy identities, classifications, counts, rates, predicates, outcome, and Markdown. It accepts an exact permitted loopback health endpoint, including a non-default port. A supplied v1 artifact remains immutable historical evidence and is never dispatched through v2 rules; `npm run spike:judge:verify` remains the legacy v1 verifier.
 
-```sh
-npm run spike:judge:qualification:verify -- --file path/to/qualification-bundle.json
-```
+The ordered v2 predicate oracle is versioned and hashed. Any predicate identity, ordering, description, or behavior change requires a new evidence version; it must not reinterpret retained v1 or v2 bytes in place.
 
-The normal `npm run check` gate includes the Story 1.4 self-test once; the self-test does not invoke `npm run check`, so CI coverage does not recurse.
-
-The qualification verifier independently recomputes the evidence hash, plan ref, approval match, source/runtime/request identities, all evidence predicates and fixtures, per-model rates, AD-11 manifests, and domain-separated refs. A v1 artifact remains immutable historical evidence and is never interpreted as v2; the legacy verifier is available only as `npm run spike:judge:verify:v1 -- <v1.json>`.
-
-The launcher check starts the pinned adapter on loopback, checks the complete health identity, makes zero inference calls, and terminates it:
+Before an authorized live run, the separately invoked launcher check starts the pinned adapter on loopback, compares the complete served health descriptor with independently computed source/config/runtime identities, makes zero inference calls, and terminates the adapter:
 
 ```sh
 npm run spike:judge:verify-launcher
 ```
 
-## Frozen disclosure and approval
+## Authorized live protocol
 
-The operator first confirms the active Wrangler account/profile and Workers AI plan/headroom. Do not persist the account ID. Then generate a plan outside the repository; this makes no provider call:
-
-```sh
-npm run spike:judge:plan -- \
-  --output /tmp/oddspark-judge-recovery-plan.json \
-  --account-profile '<non-secret profile label>' \
-  --plan paid
-```
-
-For a free plan, use `--plan free --remaining-free-neurons <observed remaining neurons>`. Plan creation refuses headroom below the conservative maximum.
-
-The plan discloses and hashes the provider, ordered resolved models, full frozen request manifest and request hashes, prompt/wire-schema/adapter/binding/runtime/source identities, timeout and call policies, retained fields, 42-call cap, pricing basis, maximum estimated dollars and neurons, approval run id, and one-recovery governance. Plan output inside the repository is rejected. The command also atomically writes an `-approval-template.json` sibling or rolls the plan back. That template is not authority: both timestamp fields are deliberately `null`.
-
-The frozen price basis is the Cloudflare Workers AI pricing table observed 2026-07-29: `gpt-oss-120b` at $0.35/M input and $0.75/M output tokens, `gpt-oss-20b` at $0.20/M input and $0.30/M output tokens, with the existing $0.011/1,000-neuron conversion and 10,000-neuron daily free allocation. The generated plan computes its exact conservative maximum from the frozen request and 2,048-token output cap; a changed basis changes the plan ref and requires new approval.
-
-After reviewing the exact plan and cost, the operator must replace both `null` timestamp placeholders with canonical UTC `approved_at` and `expires_at` values no more than four hours apart, then change `decision` to `approved`. Changing only the decision can never authorize. `approved_at` cannot precede the disclosed plan's `created_at`. The resulting record is closed: missing or unknown fields, malformed JSON, a stale or future-dated timestamp, or any mismatch in plan ref, approval run id, call cap, or maximum cost fails closed.
-
-## Operator-only live sequence
-
-Only after the exact approval exists:
-
-1. Start the isolated adapter in one terminal:
+1. Run `npx wrangler whoami --json` and confirm the active profile/account transiently. Do not copy an account ID into a file.
+2. Check the Workers AI dashboard for the account plan and current daily neuron usage/headroom. The free allocation is 10,000 neurons per day and resets at 00:00 UTC; paid usage above it is currently priced at $0.011 per 1,000 neurons.
+3. Run the offline self-test and start the local adapter in one terminal:
 
    ```sh
    npm run spike:judge:dev
    ```
 
-2. In another terminal, run the approved plan:
+4. In another terminal, run the exact approved matrix. For a free plan, include the observed remaining free neurons:
 
    ```sh
    npm run spike:judge:live -- \
-     --plan-file /tmp/oddspark-judge-recovery-plan.json \
-     --approval-file /tmp/oddspark-judge-recovery-plan-approval.json
+     --approved-call-cap 42 \
+     --profile-confirmed \
+     --headroom-confirmed \
+     --plan free \
+     --remaining-free-neurons 10000
    ```
 
-3. Stop the adapter. Run both explicit verifiers against the printed evidence and qualification paths.
+   For a paid plan, use `--plan paid`; the conservative gross estimate is printed before any inference. The flags are operator assertions and do not persist the account/profile identity.
 
-Before adapter preflight, the runner reconstructs the plan from current bytes and requires an exact fresh approval. An omitted, nonexistent, or malformed approval file is treated as missing/invalid authority, not as a reason to skip evidence creation. Missing, stale, open, mismatched, or drifted authority produces verified zero-call `NO-GO` evidence and no qualification refs. The evidence retains precise plan, approval, offline-gate, adapter-skipped/failed, and run-start-expiry reasons; it does not claim an adapter observation when the handshake was skipped. Approval is checked again at `evidence.run.started_at` immediately before provider calls; the qualification bundle records that observation time and later verifiers recompute against it, so valid retained evidence remains verifiable after the approval window expires.
+5. Stop the local adapter and run `npm run spike:judge:verify:v2 -- <the printed evidence-v2.json path>`.
 
-The entire prior scan, run, and publication is protected by an atomic local exclusive lock. A durable local spend receipt is created for the attempt and atomically advanced before every provider invocation. A live concurrent process cannot acquire the lock; after a crash, any receipt showing calls started—or any unreadable/unknown receipt—blocks another attempt. Only a stale reservation that proves zero calls and belongs to a dead process may be recovered.
+The runner records both probes before any trial. If either probe is a provider error, timeout, or empty response, it writes verifiable `NO-GO` evidence with both probe records and makes no matrix calls. Otherwise it performs exactly 20 sequential trials per model; every scheduled timeout/provider error remains counted and does not stop the matrix. Adapter identity or authorization preflight failure writes verifiable zero-call `NO-GO` evidence. Evidence is written before a post-call integrity failure is surfaced, so authorized spend always leaves an inspectable fail-closed artifact. Missing provider usage remains `null` and is reported as missing, never as zero usage.
 
-Prior discovery fully verifies zero-call evidence, its deterministic Markdown, and its sibling qualification bundle before ignoring it. Truncated/tampered zero-call files, `*-v2-invalid.json`, spend receipts that show or cannot disprove calls, temporary/orphaned partial publication, and missing or invalid siblings all block. Qualification refs are printed only from an independently verified sibling bundle.
+`GO` requires both models to reach at least 19 direct-valid outputs out of 20 plus complete fixture and evidence integrity. Repaired results are reported separately and never inflate direct fidelity. Story 1.3 defines the judge recovery contract and offline verifier; Story 1.4 alone owns authorization and execution of any live provider run. Neither offline command authorizes inference.
 
-After provider calls, evidence must independently pass all 18 predicates and all 79 fixtures before evidence, Markdown, and the qualification bundle publish as one atomic set. Every execution attempt receives a unique basename containing its evidence digest and attempt id, and the qualification bundle binds the exact sibling evidence filename and bytes. Repeated zero-call blocks therefore remain available when a corrected approval uses the same plan and approval run id. Evidence, qualification, verification, or publication failure after a call retains a discoverable `*-v2-invalid.json` record whenever evidence construction completed and always preserves the spend receipt, so a failure cannot reopen the allowance. Publication failure rolls back the valid sibling set before failure retention.
+## Story 1.8 handoff
 
-`GO` requires each model independently to reach at least 19/20 direct-valid trials. Repaired-valid rates, latency, usage, cost, outcome, and manifest remain separate per model in every bundle. Only an overall `GO` derives the two exact `STRUCT-JUDGE` qualification refs; `NO-GO` emits none. Selecting or aggregating refs into a later production activation `judge_ref` is outside Story 1.4. Any spent `NO-GO` requires MVP review, blocks dependent work, and permits no third matrix.
+Story 1.8 may adopt allowlisted extraction from `response`, `result`, or `choices[0].message.content`; type-sensitive byte-identical duplicate handling; the 64 KiB UTF-8 bound; and exactly one of these repairs followed by strict validation: BOM removal, a lowercase whole-value `json` fence, one double-encoded JSON string, or bounded prose around one balanced JSON object.
+
+Empty or ambiguous envelopes, oversized output, truncated or multiple objects, guessed syntax, chained wrappers, coercion, schema drift, semantic omission, and `pass: true` alongside any reported failure remain hard failures. Semantic calibration still depends on Stories 1.3 and 1.8.
