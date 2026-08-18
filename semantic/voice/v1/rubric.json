@@ -1,0 +1,75 @@
+{
+  "schema_version": 1,
+  "corpus_version": "voice-v1",
+  "authority": {
+    "author": "developer",
+    "owner": "Justin",
+    "status": "pending_owner_approval",
+    "production_authorized": false
+  },
+  "element_order": [
+    "spark_title",
+    "the_plan",
+    "why_it_fits",
+    "what_gets_better",
+    "before_after",
+    "change_level",
+    "what_stays_the_same",
+    "implementation_invitation"
+  ],
+  "gate_order": [1, 2, 3, 4, 5, 6, 7, 8, 9],
+  "voice_rules": {
+    "register": "Plain, confident language a busy owner could say across a counter.",
+    "confidence": "State one concrete smallest-useful plan without rhetorical questions or hypothetical hedging.",
+    "effects": "Every claimed effect names who benefits, when it happens, and what physically changes.",
+    "preservation": "Name preserved tools, the person retaining decision authority, and workflow steps left untouched.",
+    "retelling": "Use a sayable title and one memorable image; the situation, intervention, and payoff must survive a short spoken retelling.",
+    "breadcrumb": "Website mode uses exactly one supported, warm business-specific detail; local mode uses none.",
+    "scope": "Describe one proportional intervention inside Hearn Systems' software, AI, automation, integration, or data-work delivery envelope.",
+    "invitation": "Invite a bounded conversation about this Spark in counter-level language, include the not-worth-changing exit, and apply no pressure."
+  },
+  "banned_registers": [
+    "leverage",
+    "synergy",
+    "transformative",
+    "optimize your workflow",
+    "unlock value",
+    "best-in-class",
+    "seamless solution",
+    "intake queue",
+    "bounded feasibility conversation",
+    "circle back",
+    "move the needle"
+  ],
+  "claim_rules": {
+    "local": "Qualitative only: no pricing, ROI, percentages, invented counts, or business-specific assertions.",
+    "website": "Business-specific claims and numbers must be supported by the supplied public-site evidence; no off-site or private evidence.",
+    "all": "Do not turn absence, staleness, or breakage into an audit. Every observation must serve the constructive plan."
+  },
+  "preservation_requirements": [
+    "tools",
+    "decision_authority",
+    "untouched_steps"
+  ],
+  "gate_boundary_examples": {
+    "gate_3_pass": "A bakery keeps its existing online order form while a small handoff adds a same-day sold-out update to the staff's current routine.",
+    "gate_3_fail": "A new booking system replaces an existing scheduler that already performs the plan's core job.",
+    "gate_9_pass": "A familiar missed-call routine gains one concrete after-hours capture step that is surprising but easy to picture.",
+    "gate_9_fail": "Send ordinary seasonal reminders with no fresh intervention beyond common advice."
+  },
+  "thresholds": {
+    "minimum_goldens_per_mode": 3,
+    "required_anti_golden_categories": [
+      "consultant_speak",
+      "unsupported_claims",
+      "weak_preservation",
+      "capability_duplication",
+      "poor_scope",
+      "invitation_pressure"
+    ],
+    "required_gate_passes_per_golden": 9,
+    "website_breadcrumbs": 1,
+    "local_breadcrumbs": 0,
+    "maximum_banned_register_matches": 0
+  }
+}
