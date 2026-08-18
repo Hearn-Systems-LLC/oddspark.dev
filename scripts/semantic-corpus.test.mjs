@@ -187,6 +187,18 @@ test("quantity validation covers every claim-bearing element and resists token b
   const supported = clone(exact);
   supported.goldens.fixtures[3].evidence.supported_claims.push("The site documents 20 calls.");
   assert.ok(!validateCorpus(supported).errors.some(({ rule }) => rule === "number_provenance"));
+
+  const percentExact = clone(corpus);
+  percentExact.goldens.fixtures[3].elements[3].text += " Boosts return by 50%.";
+  percentExact.goldens.fixtures[3].evidence.supported_claims.push("The site documents 50 visitors.");
+  assert.ok(validateCorpus(percentExact).errors.some(({ rule }) => rule === "number_provenance"), "50% must not match 50 without percent");
+  const percentSupported = clone(percentExact);
+  percentSupported.goldens.fixtures[3].evidence.supported_claims.push("The site documents 50% increase.");
+  assert.ok(!validateCorpus(percentSupported).errors.some(({ rule }) => rule === "number_provenance"));
+
+  const writtenExpanded = clone(corpus);
+  writtenExpanded.goldens.fixtures[0].elements[3].text += " Answers twenty inquiries every month.";
+  assert.ok(validateCorpus(writtenExpanded).errors.some(({ rule }) => rule === "local_numeric_claim"), "twenty inquiries must be caught by local_numeric_claim");
 });
 
 test("Change Level rejects invalid ranges and accepts exact boundaries", () => {
@@ -212,12 +224,15 @@ test("invitation requires the explicit exit and rejects pressure language", () =
     ["invitation_exit", "We can map the smallest version together."],
     ["invitation_pressure", "Book now before this disappears; we can stop if it is not worth changing."],
     ["invitation_pressure", "Schedule a call today; we can stop if it is not worth changing."],
+    ["invitation_pressure", "Schedule your call today; we can stop if it is not worth changing."],
+    ["invitation_pressure", "Book a call with us; we can stop if it is not worth changing."],
+    ["invitation_pressure", "Apply now while spots last; we can stop if it is not worth changing."],
     ["invitation_pressure", "This is a limited time offer; stop if it is not worth changing."],
   ];
   for (const [rule, text] of cases) {
     const changed = clone(corpus);
     changed.goldens.fixtures[0].elements[7].text = text;
-    assert.ok(validateCorpus(changed).errors.some((error) => error.rule === rule), `missing ${rule}`);
+    assert.ok(validateCorpus(changed).errors.some((error) => error.rule === rule), `missing ${rule} for "${text}"`);
   }
   assert.ok(corpus.goldens.fixtures.every((fixture) => !validateCorpus({ ...clone(corpus), goldens: { ...clone(corpus.goldens), fixtures: [fixture, ...clone(corpus.goldens.fixtures.filter((other) => other.id !== fixture.id))] } }).errors.some(({ rule }) => ["invitation_exit", "invitation_pressure"].includes(rule))));
 });

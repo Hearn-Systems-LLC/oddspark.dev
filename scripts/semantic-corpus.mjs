@@ -23,11 +23,11 @@ const ELEMENT_ORDER = [
   "what_stays_the_same",
   "implementation_invitation",
 ];
-const CLAIM_QUANTITY_WORDS = "zero|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|dozen|hundred|thousand|several|many|multiple";
-const CLAIM_QUANTITY_UNITS = "percent|percentage|hours?|days?|weeks?|calls?|bookings?|orders?|customers?|guests?|inquiries|messages?|minutes?|dollars?|sales?|appointments?|jobs?|trips?|supporters?";
+const CLAIM_QUANTITY_WORDS = "zero|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety|dozen|hundred|thousand|million|several|many|multiple";
+const CLAIM_QUANTITY_UNITS = "percent|percentage|seconds?|minutes?|hours?|days?|weeks?|months?|years?|calls?|bookings?|orders?|customers?|guests?|clients?|leads?|inquir(?:y|ies)|messages?|dollars?|sales?|appointments?|jobs?|trips?|supporters?";
 const WRITTEN_CLAIM_QUANTITY = new RegExp(`\\b(?:${CLAIM_QUANTITY_WORDS})\\s+(?:${CLAIM_QUANTITY_UNITS})\\b`, "gi");
-const DIGIT_CLAIM = /\b\d+(?:\.\d+)?%?\b/g;
-const PRESSURE_LANGUAGE = /\b(?:act now|book now|today only|limited time|before (?:it|this|the) (?:is )?(?:gone|ends?|expires?|disappears?)|don't miss|last chance|exclusive offer|sales call|transformation call|schedule (?:a )?call|reserve your spot)\b/i;
+const DIGIT_CLAIM = /\b\d+(?:\.\d+)?%?(?!\w)/g;
+const PRESSURE_LANGUAGE = /\b(?:act now|book now|today only|limited time|before (?:it|this|the) (?:is )?(?:gone|ends?|expires?|disappears?)|don't miss|last chance|exclusive offer|sales call|transformation call|schedule (?:a|your|a quick)?\s*call|book (?:a|your)?\s*call|reserve your spot|apply now|while (?:spots|seats|supplies) last)\b/i;
 const ANTI_GOLDEN_RULES = {
   consultant_speak: { gates: [8], rules: ["banned_register", "counter_level_language"] },
   unsupported_claims: { gates: [1], rules: ["claim_provenance"] },
