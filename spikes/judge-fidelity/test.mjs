@@ -84,6 +84,11 @@ const ciWorkflow = await readFile(new URL("../../.github/workflows/test.yml", im
 const tests = [];
 const execFileAsync = promisify(execFile);
 
+// The self-test runs under GitHub Actions (CI=true). runLive() and the run.mjs
+// child process fall back to process.env.CI, which would mask the guards under
+// test; the CI-rejection case below sets ci: true explicitly instead.
+delete process.env.CI;
+
 function test(name, fn) {
   tests.push({ name, fn });
 }
