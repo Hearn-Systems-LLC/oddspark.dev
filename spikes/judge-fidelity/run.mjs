@@ -1,6 +1,6 @@
 import { execFile } from "node:child_process";
 import { createHash, randomUUID } from "node:crypto";
-import { mkdir, readFile, readdir, writeFile } from "node:fs/promises";
+import { link, mkdir, readFile, readdir, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { promisify } from "node:util";
@@ -31,6 +31,7 @@ export const APPROVED_CALL_CAP = MODELS.length * (TRIALS_PER_MODEL + PROBES_PER_
 export const MAX_TOKENS = 2048;
 export const REQUESTED_TEMPERATURE = 0;
 export const DEFAULT_TIMEOUT_MS = 120_000;
+export const PREFLIGHT_TIMEOUT_MS = 10_000;
 export const DEFAULT_BASE_URL = "http://127.0.0.1:8788";
 export const TERMINAL_TAXONOMY = Object.freeze([
   "provider_error",
@@ -151,11 +152,15 @@ export async function checkAdapterHealth(baseUrl = DEFAULT_BASE_URL, fetchImpl =
   if (body?.ok !== true || body?.inference !== false) throw new Error("Adapter health response is invalid");
   return body;
 }
-export async function observeAdapterHealth(baseUrl = DEFAULT_BASE_URL, fetchImpl = fetch) {
+export async function observeAdapterHealth(baseUrl = DEFAULT_BASE_URL, fetchImpl = fetch, timeoutMs = PREFLIGHT_TIMEOUT_MS) {
   const url = assertLoopbackBaseUrl(baseUrl); const endpoint = new URL("health", url).href;
-  const response = await fetchImpl(endpoint, { redirect: "error" }); let body = null;
-  try { body = await response.json(); } catch { /* typed absence */ }
-  return { endpoint, http_status: response.status, body };
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetchImpl(endpoint, { redirect: "error", signal: controller.signal }); let body = null;
+    try { body = await response.json(); } catch { /* typed absence */ }
+    return { endpoint, http_status: response.status, body };
+  } finally { clearTimeout(timeout); }
 }
 
 export async function invokeAdapter({
@@ -221,7 +226,7 @@ export async function invokeAdapter({
   }
 }
 
-export async function executeRecoveryProtocol({ requests, base_url = DEFAULT_BASE_URL, invoke = invokeAdapter }) {
+export async function executeRecoveryProtocol({ requests, base_url = DEFAULT_BASE_URL, invoke = invokeAdapter, on_record = () => {} }) {
   if (!Array.isArray(requests) || requests.length !== MODELS.length || requests.some((entry, i) => entry.model !== MODELS[i])) throw new TypeError("requests must bind the frozen ordered model pair");
   const canonicalCandidate = stableStringify(requests[0].body.candidate); const schema = requests[0].body.candidate_schema_version; const ref = requests[0].body.candidate_ref;
   for (const entry of requests) {
@@ -243,12 +248,21 @@ export async function executeRecoveryProtocol({ requests, base_url = DEFAULT_BAS
   const records = [];
   const retain = async (kind, entry, index, call) => {
     const usage = call.usage === undefined ? null : call.usage;
-    records.push(await retainOperationalRecord({ kind, model: entry.model, index, started_at: call.started_at, ended_at: call.ended_at, call_state: call.call_state,
-      error_code: call.error_code ?? null, envelope: call.envelope ?? null, usage, request_sha256: entry.sha256, candidate_ref: ref }));
+    const record = await retainOperationalRecord({ kind, model: entry.model, index, started_at: call.started_at, ended_at: call.ended_at, call_state: call.call_state,
+      error_code: call.error_code ?? null, envelope: call.envelope ?? null, usage, request_sha256: entry.sha256, candidate_ref: ref });
+    records.push(record);
+    await on_record(structuredClone(record));
   };
-  for (const entry of requests) await retain("probe", entry, 1, await invoke({ base_url, request_body: entry.body }));
+  const invokeRetained = async (kind, entry, index) => {
+    const started_at = new Date().toISOString();
+    try { await retain(kind, entry, index, await invoke({ base_url, request_body: entry.body })); }
+    catch (error) {
+      await retain(kind, entry, index, { call_state: "provider_error", error_code: "invocation_exception", envelope: null, usage: null, started_at, ended_at: new Date().toISOString() });
+    }
+  };
+  for (const entry of requests) await invokeRetained("probe", entry, 1);
   if (!records.some((r) => ["provider_error", "timeout", "empty_response"].includes(r.classification))) {
-    for (const entry of requests) for (let i = 1; i <= TRIALS_PER_MODEL; i += 1) await retain("trial", entry, i, await invoke({ base_url, request_body: entry.body }));
+    for (const entry of requests) for (let i = 1; i <= TRIALS_PER_MODEL; i += 1) await invokeRetained("trial", entry, i);
   }
   return records;
 }
@@ -714,8 +728,21 @@ export async function writeOperationalEvidence(evidence, resultsDir = RESULTS_DI
   const basename = `${date}-${evidence.run.id.slice(0, 8)}-v2`;
   const jsonPath = path.join(resultsDir, `${basename}.json`);
   const markdownPath = path.join(resultsDir, `${basename}.md`);
-  await writeFile(jsonPath, `${JSON.stringify(evidence, null, 2)}\n`, { flag: "wx" });
-  await writeFile(markdownPath, evidence.report, { flag: "wx" });
+  const nonce = randomUUID();
+  const jsonTemp = `${jsonPath}.${nonce}.tmp`;
+  const markdownTemp = `${markdownPath}.${nonce}.tmp`;
+  let jsonPublished = false;
+  try {
+    await writeFile(jsonTemp, `${JSON.stringify(evidence, null, 2)}\n`, { flag: "wx" });
+    await writeFile(markdownTemp, evidence.report, { flag: "wx" });
+    await link(jsonTemp, jsonPath); jsonPublished = true;
+    await link(markdownTemp, markdownPath);
+  } catch (error) {
+    if (jsonPublished) await unlink(jsonPath).catch(() => {});
+    throw error;
+  } finally {
+    await Promise.all([unlink(jsonTemp).catch(() => {}), unlink(markdownTemp).catch(() => {})]);
+  }
   return { jsonPath, markdownPath };
 }
 
@@ -753,6 +780,7 @@ export async function runLive(options, dependencies = {}) {
       requests: manifest.by_model,
       base_url: baseUrl,
       invoke: dependencies.invoke ?? invokeAdapter,
+      on_record(record) { records.push(record); },
     });
   }
   const run = {

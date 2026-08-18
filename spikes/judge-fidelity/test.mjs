@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
 import { createHash } from "node:crypto";
-import { mkdtemp, readFile, writeFile } from "node:fs/promises";
+import { access, mkdtemp, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
@@ -35,8 +35,10 @@ import {
   renderMarkdown,
   runSequentialCalls,
   executeRecoveryProtocol,
+  observeAdapterHealth,
   runLive,
   summarizeTrials,
+  writeOperationalEvidence,
 } from "./run.mjs";
 import { executeCurrentFixtureCatalog } from "./fixture-executor.mjs";
 import {
@@ -392,7 +394,7 @@ test("the adapter health route makes no inference and live POST makes exactly on
       async run(model, input) {
         calls.push({ model, input });
         return {
-          response: { candidate_ref: buildModelRequest(model, fixtures.synthetic_input).candidate_ref, result: clone(fixtures.valid_verdict) },
+          response: { candidate_ref: buildModelRequest(model, fixtures.synthetic_input).candidate_ref, verdict: clone(fixtures.valid_verdict) },
           usage: { prompt_tokens: 100, completion_tokens: 200, total_tokens: 300, secret: 1 },
         };
       },
@@ -411,6 +413,16 @@ test("the adapter health route makes no inference and live POST makes exactly on
   assert.equal(invalid.status, 400);
   assert.equal(calls.length, 0);
 
+  const mismatched = buildModelRequest(MODELS[0], fixtures.synthetic_input);
+  const wrapped = JSON.parse(mismatched.messages[1].content);
+  wrapped.input.candidate.title = "different candidate";
+  mismatched.messages[1].content = stableStringify(wrapped);
+  const mismatchResponse = await adapter.fetch(new Request("http://127.0.0.1/run", {
+    method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(mismatched),
+  }), env);
+  assert.equal(mismatchResponse.status, 400);
+  assert.equal(calls.length, 0);
+
   const response = await adapter.fetch(new Request("http://127.0.0.1/run", {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -421,9 +433,15 @@ test("the adapter health route makes no inference and live POST makes exactly on
   assert.deepEqual(calls[0].input, buildRequestManifest(fixtures.synthetic_input).by_model[0].adapter_input);
   const body = await response.json();
   assert.equal(body.ok, true);
-  assert.deepEqual(body.envelope.response.result, fixtures.valid_verdict);
+  assert.deepEqual(body.envelope.response.verdict, fixtures.valid_verdict);
   assert.deepEqual(body.usage, { prompt_tokens: 100, completion_tokens: 200, total_tokens: 300 });
   assert.equal(Object.hasOwn(body, "tool_calls"), false);
+
+  env.AI.run = async () => ({ response: { candidate_ref: buildModelRequest(MODELS[0], fixtures.synthetic_input).candidate_ref, verdict: clone(fixtures.valid_verdict), reasoning: "must not retain" } });
+  const metadataResponse = await adapter.fetch(new Request("http://127.0.0.1/run", {
+    method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(buildModelRequest(MODELS[0], fixtures.synthetic_input)),
+  }), env);
+  assert.deepEqual((await metadataResponse.json()).envelope, {});
 });
 
 test("the adapter rejects non-JSON, alternate routes, and preflight without inference", async () => {
@@ -600,7 +618,13 @@ async function operationalEvidence({ blocked = false, endpoint = "http://127.0.0
     adapter: adapterIdentity,
     run: { id: "operational-fixture", started_at: "2026-08-17T02:00:00.000Z", ended_at: new Date(tick + 10).toISOString(), models: MODELS,
       authorization: { operator_approved: !blocked, profile_confirmed: !blocked, headroom_confirmed: !blocked, approved_call_cap: blocked ? 0 : 42, estimated_calls: 42, calls_made: records.length, plan: blocked ? null : "paid", remaining_free_neurons: null, estimated_gross_neurons: 11000 },
-      preflight_blockers: blocked ? ["adapter identity preflight failed"] : [] },
+      preflight_blockers: blocked ? [
+        "approved call cap must equal 42",
+        "active Wrangler profile was not confirmed",
+        "Workers AI headroom was not confirmed",
+        "Workers plan must be confirmed as free or paid",
+        "adapter identity preflight failed",
+      ] : [] },
     records,
   }, { currentSourceIdentity: async () => sources, currentRuntimeIdentity: async () => runtime });
   return { evidence, sources, runtime, fixtureResult };
@@ -633,7 +657,73 @@ test("preflight identity failure is retained as a verifiable zero-call NO-GO art
   assert.equal(verified.valid, true);
   assert.equal(evidence.records.length, 0);
   assert.equal(evidence.outcome.decision, "NO-GO");
-  assert.deepEqual(evidence.run.preflight_blockers, ["adapter identity preflight failed"]);
+  assert.deepEqual(evidence.run.preflight_blockers, [
+    "approved call cap must equal 42",
+    "active Wrangler profile was not confirmed",
+    "Workers AI headroom was not confirmed",
+    "Workers plan must be confirmed as free or paid",
+    "adapter identity preflight failed",
+  ]);
+});
+
+test("runLive retains adapter-identity preflight failure without inference", async () => {
+  const [sources, runtime] = await Promise.all([currentSourceIdentity(EVIDENCE_SOURCE_PATHS), currentRuntimeIdentity()]);
+  let calls = 0; let retained;
+  const decision = await runLive({ approved_call_cap: 42, profile_confirmed: true, headroom_confirmed: true, plan: "paid", base_url: "http://127.0.0.1:9657" }, {
+    currentSourceIdentity: async () => sources,
+    currentRuntimeIdentity: async () => runtime,
+    observeHealth: async () => ({ endpoint: "http://127.0.0.1:9657/health", http_status: 503, body: null }),
+    async invoke() { calls += 1; throw new Error("must not infer"); },
+    async writeEvidence(evidence) { retained = clone(evidence); return { jsonPath: "retained.json", markdownPath: "retained.md" }; },
+  });
+  assert.equal(decision, "NO-GO");
+  assert.equal(calls, 0);
+  assert.equal(retained.records.length, 0);
+  assert.deepEqual(retained.run.preflight_blockers, ["adapter identity preflight failed"]);
+});
+
+test("artifact-controlled source paths are rejected before any read", async () => {
+  const { evidence, sources, runtime, fixtureResult } = await operationalEvidence();
+  evidence.sources[0].path = "../../unexpected";
+  let observedPaths;
+  const result = await verifyEvidenceV2(evidence, {
+    currentSourceIdentity: async (paths) => { observedPaths = paths; return sources; },
+    currentRuntimeIdentity: async () => runtime,
+    executeFixtures: async () => fixtureResult,
+  });
+  assert.deepEqual(observedPaths, EVIDENCE_SOURCE_PATHS);
+  assert.equal(result.predicate_results.find(({ id }) => id === "source.identity").pass, false);
+});
+
+test("record provenance, exact order, canonical timestamps, and safe usage are enforced", async () => {
+  const { evidence, sources, runtime, fixtureResult } = await operationalEvidence();
+  const dependencies = { currentSourceIdentity: async () => sources, currentRuntimeIdentity: async () => runtime, executeFixtures: async () => fixtureResult };
+  const contradictory = clone(evidence); contradictory.records[0].error_code = "impossible";
+  assert.equal((await verifyEvidenceV2(contradictory, dependencies)).predicate_results.find(({ id }) => id === "records.closed").pass, false);
+  const interleaved = clone(evidence); [interleaved.records[2], interleaved.records[22]] = [interleaved.records[22], interleaved.records[2]];
+  assert.equal((await verifyEvidenceV2(interleaved, dependencies)).predicate_results.find(({ id }) => id === "run.ordering").pass, false);
+  const noncanonical = clone(evidence); noncanonical.records[0].started_at = noncanonical.records[0].started_at.replace(".010Z", ".01Z");
+  assert.equal((await verifyEvidenceV2(noncanonical, dependencies)).predicate_results.find(({ id }) => id === "run.ordering").pass, false);
+  const unsafeUsage = clone(evidence); unsafeUsage.records[0].usage = { prompt_tokens: Number.MAX_SAFE_INTEGER + 1, completion_tokens: 0, total_tokens: Number.MAX_SAFE_INTEGER + 1 };
+  assert.equal((await verifyEvidenceV2(unsafeUsage, dependencies)).predicate_results.find(({ id }) => id === "records.closed").pass, false);
+});
+
+test("adapter health observation aborts at its bounded deadline", async () => {
+  await assert.rejects(observeAdapterHealth("http://127.0.0.1:9788", (_url, { signal }) => new Promise((_resolve, reject) => {
+    signal.addEventListener("abort", () => reject(new DOMException("aborted", "AbortError")), { once: true });
+  }), 5), /aborted/i);
+});
+
+test("paired evidence publication rolls back JSON when Markdown cannot publish", async () => {
+  const { evidence } = await operationalEvidence();
+  const directory = await mkdtemp(path.join(tmpdir(), "oddspark-paired-evidence-"));
+  const basename = `${evidence.run.started_at.slice(0, 10)}-${evidence.run.id.slice(0, 8)}-v2`;
+  const jsonPath = path.join(directory, `${basename}.json`);
+  const markdownPath = path.join(directory, `${basename}.md`);
+  await writeFile(markdownPath, "occupied");
+  await assert.rejects(writeOperationalEvidence(evidence, directory));
+  await assert.rejects(access(jsonPath));
+  assert.equal(await readFile(markdownPath, "utf8"), "occupied");
 });
 
 test("independent reconstruction catches a self-consistent mutated request manifest", async () => {

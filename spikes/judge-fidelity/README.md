@@ -7,7 +7,7 @@ This is a non-production, opt-in structural-fidelity test for the configured Wor
 - The Worker runtime stays local on `127.0.0.1:8788`; only the `AI` binding is remote.
 - Start it with `npm run spike:judge:dev`. Do not add `--remote`, `--local`, or run `wrangler deploy` with this config.
 - `GET /health` makes no inference. Only an exact JSON `POST /run` can call an allowlisted model, and each accepted POST performs exactly one `AI.run` call.
-- The live command is capped at exactly 42 calls: both model probes first, then 20 counted trials for each model. It never retries. A timeout or provider error during a counted trial is retained in the denominator and the remaining scheduled trials continue.
+- The live command is capped at 42 calls: a successful preflight runs both model probes first and then 20 counted trials for each model, while a rejected, timed-out, or empty probe stops after the two probes. It never retries. A timeout or provider error during a counted trial is retained in the denominator and the remaining scheduled trials continue.
 - Results retain only allowlisted answer locations, sanitized provider errors, allowlisted numeric usage, and provider-reported effective values. Credentials, headers, account IDs, raw provider envelopes, tool calls, and reasoning are excluded.
 
 The fixture is synthetic and uses `example.invalid`. Its `synthetic-grounding-report/v1` object is fixture-only; Story 1.5 owns the production Brief/grounding contract. This spike measures structural output fidelity, not whether the model shares the intended taste or applies the gates correctly.
@@ -29,6 +29,12 @@ npm run spike:judge:verify:v2 -- path/to/evidence-v2.json [another-evidence-v2.j
 The v2 verifier independently reconstructs provider requests and adapter inputs, executes the fixture catalog, recomputes source/runtime/legacy identities, classifications, counts, rates, predicates, outcome, and Markdown. It accepts an exact permitted loopback health endpoint, including a non-default port. A supplied v1 artifact remains immutable historical evidence and is never dispatched through v2 rules; `npm run spike:judge:verify` remains the legacy v1 verifier.
 
 The ordered v2 predicate oracle is versioned and hashed. Any predicate identity, ordering, description, or behavior change requires a new evidence version; it must not reinterpret retained v1 or v2 bytes in place.
+
+Before an authorized live run, the separately invoked launcher check starts the pinned adapter on loopback, compares the complete served health descriptor with independently computed source/config/runtime identities, makes zero inference calls, and terminates the adapter:
+
+```sh
+npm run spike:judge:verify-launcher
+```
 
 ## Authorized live protocol
 

@@ -6,6 +6,7 @@ import {
   deriveCandidateRef,
   sha256Hex,
   stableStringify,
+  validateJudgeResult,
   validateSpikeInput,
 } from "./contract.mjs";
 
@@ -80,6 +81,8 @@ function validateRequest(body, env) {
         const input = wrapped.input;
         const validation = validateSpikeInput(input);
         if (!validation.valid) errors.push(...validation.errors);
+        if (stableStringify(input?.candidate) !== stableStringify(body.candidate)) errors.push("user input candidate does not match the bound candidate");
+        if (body.candidate_schema_version !== `oddspark-candidate/v${body.candidate?.version}`) errors.push("candidate_schema_version does not match candidate.version");
         if (stableStringify(wrapped) !== body.messages[1].content) {
           errors.push("user message is not the canonical frozen serialization");
         }
@@ -100,11 +103,13 @@ async function healthDescriptor(env) {
     wire_schema_sha256: await sha256Hex(stableStringify(responseFormat)), adapter_source_sha256: env.ADAPTER_SOURCE_SHA256, config_source_sha256: env.CONFIG_SOURCE_SHA256, runtime_sha256: env.RUNTIME_SHA256 };
 }
 
-function sanitizedEnvelope(result) {
+function sanitizedEnvelope(result, candidateRef) {
   const envelope = {};
   if (!result || typeof result !== "object") return envelope;
-  if (result.response !== undefined) envelope.response = result.response;
-  if (result.result !== undefined) envelope.result = result.result;
+  for (const key of ["response", "result"]) {
+    const value = result[key];
+    if (typeof value === "string" || validateJudgeResult(value, candidateRef).valid) envelope[key] = value;
+  }
   const content = result.choices?.[0]?.message?.content;
   if (content !== undefined) {
     envelope.choices = [{ message: { content } }];
@@ -155,7 +160,7 @@ async function handleRun(request, env) {
   return json({
     ok: true,
     model: body.model,
-    envelope: sanitizedEnvelope(result),
+    envelope: sanitizedEnvelope(result, body.candidate_ref),
     usage: Object.keys(allowlistedNumbers(result?.usage, USAGE_KEYS)).length
       ? allowlistedNumbers(result?.usage, USAGE_KEYS)
       : null,

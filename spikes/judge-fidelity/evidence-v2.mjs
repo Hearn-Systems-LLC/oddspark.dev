@@ -16,6 +16,8 @@ import {
   deriveCandidateRef,
   SYSTEM_PROMPT,
   stableStringify,
+  validateJudgeResult,
+  validateSpikeInput,
 } from "./contract.mjs";
 
 export const EVIDENCE_V2 = "oddspark.judge-recovery-evidence/v2";
@@ -23,7 +25,7 @@ export const EVIDENCE_SOURCE_PATHS = Object.freeze([
   "package.json", "spikes/judge-fidelity/contract.mjs", "spikes/judge-fidelity/evidence-v2.mjs",
   "spikes/judge-fidelity/fixture-executor.mjs", "spikes/judge-fidelity/fixtures.json",
   "spikes/judge-fidelity/run.mjs", "spikes/judge-fidelity/start-adapter.mjs", "spikes/judge-fidelity/test.mjs",
-  "spikes/judge-fidelity/worker.mjs", "spikes/judge-fidelity/verify-v2.mjs", "spikes/judge-fidelity/wrangler.toml",
+  "spikes/judge-fidelity/worker.mjs", "spikes/judge-fidelity/verify-launcher.mjs", "spikes/judge-fidelity/verify-v2.mjs", "spikes/judge-fidelity/wrangler.toml",
 ]);
 const CLASSIFICATIONS = ["provider_error", "timeout", "empty_response", "ambiguous_envelope", "output_too_large", "unrecoverable_json", "schema_invalid", "repaired_valid", "direct_valid"];
 const REPAIRS = [null, "bom", "json_fence", "double_encoded_json", "surrounding_prose"];
@@ -43,14 +45,23 @@ const exact = (value, keys) => plain(value) && Object.keys(value).length === key
   && keys.every((key) => Object.hasOwn(value, key));
 const same = (a, b) => stableStringify(a) === stableStringify(b);
 
-function closedEnvelopeShape(envelope) {
+function closedEnvelopeShape(envelope, candidateRef) {
   if (envelope === null) return true;
   if (!plain(envelope) || Object.keys(envelope).some((key) => !["response", "result", "choices"].includes(key))) return false;
+  for (const key of ["response", "result"]) {
+    if (!Object.hasOwn(envelope, key)) continue;
+    const value = envelope[key];
+    if (typeof value !== "string" && !validateJudgeResult(value, candidateRef).valid) return false;
+  }
   if (Object.hasOwn(envelope, "choices")) {
-    if (!Array.isArray(envelope.choices) || envelope.choices.length !== 1 || !exact(envelope.choices[0], ["message"]) || !exact(envelope.choices[0].message, ["content"])) return false;
+    if (!Array.isArray(envelope.choices) || envelope.choices.length !== 1 || !exact(envelope.choices[0], ["message"]) || !exact(envelope.choices[0].message, ["content"]) || typeof envelope.choices[0].message.content !== "string") return false;
   }
   return true;
 }
+
+const canonicalTimestamp = (value) => typeof value === "string" && Number.isFinite(Date.parse(value))
+  && new Date(value).toISOString() === value;
+const safeNonnegativeInteger = (value) => Number.isSafeInteger(value) && value >= 0;
 
 function jsonTree(value, seen = new Set()) {
   if (value === null || typeof value === "string" || typeof value === "boolean") return true;
@@ -161,9 +172,9 @@ export function summarize(records) {
 
 export function deterministicOutcome(evidence, integrityPass = true) {
   if (evidence.profile === "synthetic") return { decision: "SYNTHETIC-NO-GO", reasons: ["Synthetic evidence cannot authorize operational recovery."] };
-  if (evidence.run.preflight_blockers.length > 0) return { decision: "NO-GO", reasons: [...evidence.run.preflight_blockers] };
-  const reasons = [];
+  const reasons = [...evidence.run.preflight_blockers];
   if (!integrityPass) reasons.push("One or more evidence integrity predicates failed.");
+  if (evidence.run.preflight_blockers.length > 0) return { decision: "NO-GO", reasons };
   for (const model of MODEL_IDS) {
     const probe = evidence.records.filter((r) => r.kind === "probe" && r.model === model);
     if (probe.length !== 1 || ["provider_error", "timeout", "empty_response"].includes(probe[0]?.classification)) reasons.push(`${model}: capability probe did not return content.`);
@@ -210,11 +221,17 @@ export async function verifyEvidenceV2(evidence, dependencies = {}) {
     const executingNode = Number(/^v([0-9]+)/.exec(runtime.execution.node)?.[1]);
     if (!same(evidence?.runtime, runtime) || runtime.execution.wrangler !== runtime.frozen.wrangler || !Number.isInteger(minimumNode) || !Number.isInteger(executingNode) || executingNode < minimumNode) fail("runtime.identity", "frozen and executing runtime identity mismatch");
     const sourcePaths = Array.isArray(evidence?.sources) ? evidence.sources.map((item) => item.path) : [];
-    const sources = await (dependencies.currentSourceIdentity ?? currentSourceIdentity)(sourcePaths);
-    if (!same(sourcePaths, EVIDENCE_SOURCE_PATHS) || !same(evidence?.sources, sources)) fail("source.identity", "source manifest mismatch");
+    const sourceManifestMatches = same(sourcePaths, EVIDENCE_SOURCE_PATHS);
+    if (!sourceManifestMatches) fail("source.identity", "source manifest mismatch");
+    const sources = await (dependencies.currentSourceIdentity ?? currentSourceIdentity)(EVIDENCE_SOURCE_PATHS);
+    if (!same(evidence?.sources, sources)) fail("source.identity", "source bytes do not match the frozen manifest");
 
     const candidateRef = await deriveCandidateRef(evidence?.candidate?.schema_version, evidence?.candidate?.value);
-    if (!exact(evidence?.candidate, ["schema_version", "value", "ref", "request_input"]) || evidence.candidate.ref !== candidateRef || !same(evidence.candidate.request_input?.candidate, evidence.candidate.value)) fail("candidate.binding", "candidate reference or request input mismatch");
+    const inputValidation = validateSpikeInput(evidence?.candidate?.request_input);
+    const expectedCandidateSchemaVersion = `oddspark-candidate/v${evidence?.candidate?.value?.version}`;
+    if (!exact(evidence?.candidate, ["schema_version", "value", "ref", "request_input"]) || evidence.candidate.ref !== candidateRef
+      || evidence.candidate.schema_version !== expectedCandidateSchemaVersion || !inputValidation.valid
+      || !same(evidence.candidate.request_input?.candidate, evidence.candidate.value)) fail("candidate.binding", "candidate reference, schema version, or complete request input mismatch");
     const expectedHealthKeys = ["ok", "inference", "schema_version", "result_contract_version", "candidate_binding_version", "models", "parameters", "binding", "system_prompt_sha256", "message_contract_sha256", "wire_schema_sha256", "adapter_source_sha256", "config_source_sha256", "runtime_sha256"];
     const expectedHealth = evidence?.adapter?.expected_health;
     const workerSource = sources.find(({ path: sourcePath }) => sourcePath === "spikes/judge-fidelity/worker.mjs");
@@ -237,7 +254,11 @@ export async function verifyEvidenceV2(evidence, dependencies = {}) {
       || requestEntries.some((entry, index) => !exact(entry, ["model", "body", "sha256", "adapter_input", "adapter_input_sha256"]) || entry.model !== MODEL_IDS[index] || !hex(entry.sha256) || !hex(entry.adapter_input_sha256)
         || !same(entry, independentlyRebuiltRequests.by_model[index]))) fail("adapter.identity", "outbound request manifest differs from independent frozen reconstruction");
 
-    const executed = await (dependencies.executeFixtures ?? (async () => evidence.fixtures))();
+    const executeFixtures = dependencies.executeFixtures ?? (async () => {
+      const { executeCurrentFixtureCatalog } = await import("./fixture-executor.mjs");
+      return executeCurrentFixtureCatalog();
+    });
+    const executed = await executeFixtures();
     if (!exact(evidence?.fixtures, ["declared_ids", "passing_ids", "failures"]) || !same(executed, evidence.fixtures) || evidence.fixtures.failures.length || !same(evidence.fixtures.declared_ids, evidence.fixtures.passing_ids)) fail("fixtures.executed", "fixture coverage was not independently reproduced");
     if (!Array.isArray(evidence?.records)) fail("records.closed", "records must be an array");
     const recomputedRecords = [];
@@ -246,18 +267,31 @@ export async function verifyEvidenceV2(evidence, dependencies = {}) {
       if (!exact(record, keys) || !["probe", "trial"].includes(record.kind) || !MODEL_IDS.includes(record.model) || !Number.isInteger(record.index) || record.index < 1
         || !["received", "provider_error", "timeout"].includes(record.call_state) || !(record.error_code === null || typeof record.error_code === "string")
         || !CLASSIFICATIONS.includes(record.classification) || !REPAIRS.includes(record.repair_kind) || !(record.verdict_sha256 === null || hex(record.verdict_sha256))
-        || !hex(record.request_sha256) || record.candidate_ref !== candidateRef || !jsonTree(record.envelope) || !closedEnvelopeShape(record.envelope) || !jsonTree(record.usage)) fail("records.closed", "record shape or scalar invalid");
+        || !hex(record.request_sha256) || record.candidate_ref !== candidateRef || !jsonTree(record.envelope) || !closedEnvelopeShape(record.envelope, candidateRef) || !jsonTree(record.usage)
+        || (record.call_state === "received" && (record.error_code !== null || record.envelope === null))
+        || (record.call_state === "provider_error" && (typeof record.error_code !== "string" || !record.error_code.trim() || record.envelope !== null || record.usage !== null))
+        || (record.call_state === "timeout" && (record.error_code !== null || record.envelope !== null || record.usage !== null))) fail("records.closed", "record shape, call-state provenance, or scalar invalid");
       const classified = await classifyJudgeCall({ call_state: record.call_state, envelope: record.envelope, error_code: record.error_code }, candidateRef);
       recomputedRecords.push(classified);
       if (classified.classification !== record.classification || (classified.repair_kind ?? null) !== record.repair_kind || (classified.verdict ? hash(stableStringify(classified.verdict)) : null) !== record.verdict_sha256) fail("records.classified", "retained record classification mismatch");
       const modelRequest = requestEntries?.find((entry) => entry.model === record.model);
       if (record.request_sha256 !== modelRequest?.sha256 || !same(modelRequest?.body?.candidate, evidence.candidate.value) || modelRequest?.body?.candidate_schema_version !== evidence.candidate.schema_version) fail("run.common_request", "record request differs from frozen model request or common candidate");
       const usageKeys = ["prompt_tokens", "completion_tokens", "total_tokens"];
-      if (record.usage !== null && (!exact(record.usage, usageKeys) || !usageKeys.every((key) => Number.isInteger(record.usage[key]) && record.usage[key] >= 0) || record.usage.total_tokens !== record.usage.prompt_tokens + record.usage.completion_tokens)) fail("records.closed", "usage arithmetic invalid");
+      if (record.usage !== null && (!exact(record.usage, usageKeys) || !usageKeys.every((key) => safeNonnegativeInteger(record.usage[key])) || record.usage.total_tokens !== record.usage.prompt_tokens + record.usage.completion_tokens)) fail("records.closed", "usage arithmetic invalid");
     }
     const calls = evidence?.records?.length ?? 0;
     const auth = evidence?.run?.authorization;
-    const blocked = Array.isArray(evidence?.run?.preflight_blockers) && evidence.run.preflight_blockers.length > 0;
+    const expectedBlockers = [];
+    if (evidence?.profile === "operational") {
+      if (auth?.approved_call_cap !== 42) expectedBlockers.push("approved call cap must equal 42");
+      if (auth?.profile_confirmed !== true) expectedBlockers.push("active Wrangler profile was not confirmed");
+      if (auth?.headroom_confirmed !== true) expectedBlockers.push("Workers AI headroom was not confirmed");
+      if (!["free", "paid"].includes(auth?.plan)) expectedBlockers.push("Workers plan must be confirmed as free or paid");
+      if (auth?.plan === "free" && auth?.remaining_free_neurons === null) expectedBlockers.push("remaining free neurons were not recorded");
+      else if (auth?.plan === "free" && auth.remaining_free_neurons < auth.estimated_gross_neurons) expectedBlockers.push("remaining free neurons are below the conservative run estimate");
+      if (evidence?.adapter?.identity_match !== true) expectedBlockers.push("adapter identity preflight failed");
+    }
+    const blocked = expectedBlockers.length > 0;
     const probeStopped = evidence?.profile === "operational" && !blocked
       && MODEL_IDS.every((model) => (evidence?.records ?? []).filter((record) => record.kind === "probe" && record.model === model).length === 1)
       && (evidence?.records ?? []).some((record) => record.kind === "probe" && ["provider_error", "timeout", "empty_response"].includes(record.classification));
@@ -269,16 +303,26 @@ export async function verifyEvidenceV2(evidence, dependencies = {}) {
       || (evidence.profile === "operational" && !blocked && (auth.operator_approved !== true || auth.profile_confirmed !== true || auth.headroom_confirmed !== true || auth.approved_call_cap !== 42 || auth.estimated_calls !== 42 || auth.calls_made !== (probeStopped ? 2 : 42)))
       || (evidence.profile === "operational" && !blocked && (!['free', 'paid'].includes(auth.plan) || auth.estimated_gross_neurons === null || (auth.plan === "free" && (auth.remaining_free_neurons === null || auth.remaining_free_neurons < auth.estimated_gross_neurons))))
       || (evidence.profile === "operational" && blocked && calls !== 0)) fail("run.authorization", "authorization or call accounting mismatch");
-    if (!exact(evidence?.run, ["id", "started_at", "ended_at", "models", "authorization", "preflight_blockers"]) || typeof evidence.run.id !== "string" || !same(evidence.run.models, MODEL_IDS) || !Array.isArray(evidence.run.preflight_blockers) || evidence.run.preflight_blockers.some((v) => typeof v !== "string" || !v.trim())) fail("run.authorization", "run envelope invalid");
+    if (!exact(evidence?.run, ["id", "started_at", "ended_at", "models", "authorization", "preflight_blockers"]) || typeof evidence.run.id !== "string" || !/^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/.test(evidence.run.id)
+      || !same(evidence.run.models, MODEL_IDS) || !Array.isArray(evidence.run.preflight_blockers) || !same(evidence.run.preflight_blockers, expectedBlockers)) fail("run.authorization", "run envelope or derived preflight blockers invalid");
     const started = Date.parse(evidence?.run?.started_at); const ended = Date.parse(evidence?.run?.ended_at);
+    if (!canonicalTimestamp(evidence?.run?.started_at) || !canonicalTimestamp(evidence?.run?.ended_at)) fail("run.ordering", "run timestamps must be canonical UTC ISO strings");
     let priorEnd = started;
     const probeEnds = (evidence?.records ?? []).filter((record) => record.kind === "probe").map((record) => Date.parse(record.ended_at));
     const latestProbeEnd = probeEnds.length ? Math.max(...probeEnds) : started;
     for (const record of evidence?.records ?? []) {
       const begin = Date.parse(record.started_at); const finish = Date.parse(record.ended_at);
-      if (!Number.isFinite(begin) || !Number.isFinite(finish) || begin < priorEnd || finish < begin || begin < started || finish > ended) fail("run.ordering", "record timestamps overlap or escape run bounds");
+      if (!canonicalTimestamp(record.started_at) || !canonicalTimestamp(record.ended_at) || !Number.isFinite(begin) || !Number.isFinite(finish) || begin < priorEnd || finish < begin || begin < started || finish > ended) fail("run.ordering", "record timestamps are noncanonical, overlap, or escape run bounds");
       priorEnd = finish;
       if (record.kind === "trial" && begin < latestProbeEnd) fail("run.ordering", "trial began before both probes completed");
+    }
+    if (evidence?.profile === "operational" && !blocked && !probeStopped) {
+      const expectedOrder = [
+        ...MODEL_IDS.map((model) => ["probe", model, 1]),
+        ...MODEL_IDS.flatMap((model) => Array.from({ length: 20 }, (_, index) => ["trial", model, index + 1])),
+      ];
+      const actualOrder = (evidence.records ?? []).map(({ kind, model, index }) => [kind, model, index]);
+      if (!same(actualOrder, expectedOrder)) fail("run.ordering", "records do not follow the exact frozen probe and per-model trial sequence");
     }
     for (const model of MODEL_IDS) {
       const probes = (evidence?.records ?? []).filter((r) => r.kind === "probe" && r.model === model);
@@ -331,7 +375,7 @@ export async function buildSyntheticEvidence({ candidate_schema_version, candida
     run: { id: "synthetic-offline-self-test", started_at: "2026-08-17T00:00:00.000Z", ended_at: "2026-08-17T00:00:00.000Z", models: MODEL_IDS, authorization: { operator_approved: false, profile_confirmed: false, headroom_confirmed: false, approved_call_cap: 0, estimated_calls: 0, calls_made: 0, plan: null, remaining_free_neurons: null, estimated_gross_neurons: null }, preflight_blockers: [] },
     fixtures, records: [], summary: { by_model: {} }, outcome: {}, predicate_results: [], report: "",
   };
-  return finalizeEvidenceV2(evidence, { ...dependencies, executeFixtures: async () => fixtures });
+  return finalizeEvidenceV2(evidence, dependencies);
 }
 
 export async function retainOperationalRecord({ kind, model, index, started_at, ended_at, call_state, error_code = null, envelope = null, usage, request_sha256, candidate_ref }) {
@@ -360,5 +404,5 @@ export async function buildOperationalEvidence(input, dependencies = {}) {
     adapter: structuredClone(input.adapter), run: structuredClone(input.run), fixtures: structuredClone(input.fixtures),
     records: structuredClone(input.records), summary: { by_model: {} }, outcome: {}, predicate_results: [], report: "",
   };
-  return finalizeEvidenceV2(evidence, { ...dependencies, executeFixtures: async () => input.fixtures });
+  return finalizeEvidenceV2(evidence, dependencies);
 }

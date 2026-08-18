@@ -77,7 +77,10 @@ async function v2Call(document, fixture) {
     default: throw new Error(`unknown v2 shape ${fixture.shape}`);
   }
   const classified = await classifyJudgeCall(call, ref);
-  return classified.classification === fixture.classification && (classified.repair_kind ?? null) === (fixture.repair_kind ?? null);
+  const expectedValid = ["direct_valid", "repaired_valid"].includes(fixture.classification);
+  return classified.classification === fixture.classification
+    && (classified.repair_kind ?? null) === (fixture.repair_kind ?? null)
+    && (expectedValid ? classified.result?.candidate_ref === ref && classified.verdict !== undefined && classified.validation_errors.length === 0 : classified.verdict === undefined);
 }
 
 export function declaredFixtureCatalog(document) {
@@ -99,4 +102,3 @@ export async function executeCurrentFixtureCatalog(document = null) {
     return v2Call(document, fixture);
   });
 }
-
