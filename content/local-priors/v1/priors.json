@@ -1,0 +1,113 @@
+{
+  "schema_version": 1,
+  "catalog_version": 1,
+  "authority": {
+    "author": "developer",
+    "owner": "Justin",
+    "status": "pending_owner_approval",
+    "production_authorized": false
+  },
+  "region": {
+    "id": "port-huron-blue-water-area",
+    "name": "Port Huron / Blue Water Area",
+    "framing": "A qualitative regional setting for small-business ideas, not a claim about any particular business or current local condition."
+  },
+  "seasons": [
+    {
+      "id": "winter",
+      "months": [12, 1, 2],
+      "cues": ["Make routine information and follow-up easy to handle when schedules and travel can be less predictable.", "Favor useful digital access that complements normal in-person service."]
+    },
+    {
+      "id": "spring",
+      "months": [3, 4, 5],
+      "cues": ["Help teams refresh recurring information and prepare for a busier mix of inquiries.", "Keep changes light enough to fit alongside everyday work."]
+    },
+    {
+      "id": "summer",
+      "months": [6, 7, 8],
+      "cues": ["Make mobile-friendly information and quick handoffs easier during active days.", "Support changing demand without asserting tourism, event, or weather conditions."]
+    },
+    {
+      "id": "fall",
+      "months": [9, 10, 11],
+      "cues": ["Help teams organize follow-up and reusable information as routines shift toward year-end.", "Preserve familiar service while reducing avoidable administrative repetition."]
+    }
+  ],
+  "capability_bundles": [
+    {
+      "id": "inquiry-handoff",
+      "name": "Inquiry handoff",
+      "categories": ["software", "ai_automation", "integrations"],
+      "capabilities": ["a focused inquiry form or lightweight internal tool", "drafting and sorting assistance with human review", "a connection to the team's existing inbox or customer system"]
+    },
+    {
+      "id": "repeatable-information-flow",
+      "name": "Repeatable information flow",
+      "categories": ["data_workflows", "online_opportunities"],
+      "capabilities": ["a maintainable online information path", "a structured workflow for updating and reusing approved business information", "simple reporting from information the business already collects"]
+    },
+    {
+      "id": "operations-bridge",
+      "name": "Operations bridge",
+      "categories": ["integrations", "data_workflows", "adjacent_digital_systems"],
+      "capabilities": ["a small integration between existing tools", "a reviewable handoff queue", "practical improvements to forms, notifications, or internal digital steps"]
+    },
+    {
+      "id": "service-guide",
+      "name": "Service guide",
+      "categories": ["software", "ai_automation", "online_opportunities", "adjacent_digital_systems"],
+      "capabilities": ["a focused online guide or interactive helper", "assisted drafting from owner-approved material", "an accessible path to the business's existing contact or service process"]
+    }
+  ],
+  "situations": [
+    {
+      "id": "repeated-inquiries",
+      "description": "A small team repeatedly explains the same service details before it can route an inquiry.",
+      "compatible_capability_bundle_ids": ["inquiry-handoff", "service-guide"],
+      "preservation": {
+        "tools": "Keep the current inbox, phone, and customer tools in place.",
+        "decision_authority": "The owner or team still decides how every inquiry is answered and routed.",
+        "untouched_steps": "Keep the existing conversation and service steps that already work."
+      }
+    },
+    {
+      "id": "scattered-approved-information",
+      "description": "Approved business information is useful in several places but takes repeated effort to keep consistent.",
+      "compatible_capability_bundle_ids": ["repeatable-information-flow", "service-guide"],
+      "preservation": {
+        "tools": "Keep the current website, documents, and publishing tools unless the owner chooses otherwise.",
+        "decision_authority": "The business approves source material and every public update.",
+        "untouched_steps": "Leave specialized advice and customer conversations with the people who handle them now."
+      }
+    },
+    {
+      "id": "manual-tool-handoff",
+      "description": "A routine handoff between tools requires retyping or checking the same information.",
+      "compatible_capability_bundle_ids": ["operations-bridge", "inquiry-handoff"],
+      "preservation": {
+        "tools": "Retain the systems the team already relies on.",
+        "decision_authority": "People remain responsible for exceptions, approvals, and final actions.",
+        "untouched_steps": "Do not automate judgment-heavy or relationship-based work."
+      }
+    },
+    {
+      "id": "online-next-step-friction",
+      "description": "People can find the business online but the useful next step could be clearer and easier to complete.",
+      "compatible_capability_bundle_ids": ["service-guide", "repeatable-information-flow"],
+      "preservation": {
+        "tools": "Build around the current site and contact channels.",
+        "decision_authority": "The owner chooses the offered next step and controls its wording.",
+        "untouched_steps": "Keep the existing personal follow-up after someone reaches out."
+      }
+    }
+  ],
+  "prohibited_claim_classes": [
+    "business-specific facts or performance claims",
+    "personally identifiable information",
+    "reviews, cookies, sessions, or inferred visitor behavior",
+    "off-site research or unsupported local assertions",
+    "weather forecasts, events, or changing business facts",
+    "numeric outcomes, pricing, or return-on-investment claims"
+  ]
+}
