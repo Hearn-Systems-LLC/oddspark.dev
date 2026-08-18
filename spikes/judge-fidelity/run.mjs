@@ -625,6 +625,8 @@ function assertSafeBasename(value, label = "artifact") {
 }
 
 function canonicalSystemPath(resolved) {
+  // macOS exposes /tmp and /var as firmlinks into /private; other platforms resolve them literally.
+  if (process.platform !== "darwin") return resolved;
   return resolved === "/var" || resolved.startsWith("/var/") ? `/private${resolved}`
     : resolved === "/tmp" || resolved.startsWith("/tmp/") ? `/private${resolved}` : resolved;
 }
