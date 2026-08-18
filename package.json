@@ -20,7 +20,9 @@
     "deploy": "wrangler deploy",
     "spike:judge:self-test": "node spikes/judge-fidelity/test.mjs",
     "spike:judge:verify": "node spikes/judge-fidelity/run.mjs verify",
-    "spike:judge:dev": "wrangler dev --config spikes/judge-fidelity/wrangler.toml --ip 127.0.0.1 --port 8788",
+    "spike:judge:verify:v2": "node spikes/judge-fidelity/verify-v2.mjs",
+    "spike:judge:verify-launcher": "node spikes/judge-fidelity/verify-launcher.mjs",
+    "spike:judge:dev": "node spikes/judge-fidelity/start-adapter.mjs",
     "spike:judge:live": "node spikes/judge-fidelity/run.mjs live"
   },
   "devDependencies": {

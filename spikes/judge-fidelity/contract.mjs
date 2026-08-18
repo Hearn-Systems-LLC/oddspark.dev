@@ -1,4 +1,5 @@
 export const CONTRACT_VERSION = 1;
+export const RESULT_CONTRACT_VERSION = "oddspark-judge-result/v2";
 export const MAX_EXTRACTED_BYTES = 64 * 1024;
 export const MODEL_IDS = Object.freeze([
   "@cf/openai/gpt-oss-120b",
@@ -94,6 +95,22 @@ export const VERDICT_RESPONSE_FORMAT = {
   type: "json_schema",
   json_schema: VERDICT_SCHEMA,
 };
+
+export const JUDGE_RESULT_SCHEMA = Object.freeze({ type: "object", additionalProperties: false,
+  required: ["candidate_ref", "verdict"], properties: { candidate_ref: { type: "string", pattern: "^[a-f0-9]{64}$" }, verdict: VERDICT_SCHEMA } });
+export const PREDICATE_ORACLE_VERSION = "oddspark-judge-evidence-predicates/v2";
+export const PREDICATE_ORACLE = Object.freeze([
+  ["evidence.shape", "Evidence and every retained nested object are closed and strictly typed."], ["oracle.identity", "The ordered predicate oracle version and hash match this verifier."],
+  ["legacy.immutable", "The legacy v1 artifacts retain pinned hashes and NO-GO facts."], ["runtime.identity", "The frozen and executing runtime identities agree."],
+  ["source.identity", "Every retained source manifest entry matches actual bytes."], ["adapter.identity", "Observed adapter health, endpoint, and input match independent identities."],
+  ["candidate.binding", "The common candidate reference equals the canonical candidate hash."], ["fixtures.executed", "Every unique declared fixture was executed by the shared executor."],
+  ["records.classified", "Every retained call classification and verdict hash recomputes."], ["records.closed", "Record, envelope, usage, and error shapes are closed and typed."],
+  ["run.authorization", "Authorization, cap, estimate, and calls made are exact."], ["run.cardinality", "Operational records use the frozen pair with exact probes and trials."],
+  ["run.ordering", "Both probes precede chronological non-overlapping trials."], ["run.common_request", "Every record uses an independently rebuilt frozen request."],
+  ["summary.rates", "Counts and rates recompute from all trials."], ["outcome.deterministic", "Decision and reasons recompute from integrity and records."],
+  ["predicates.retained", "Retained predicate IDs and booleans equal recomputation."], ["report.deterministic", "Retained Markdown is byte-deterministic."],
+].map(([id, description]) => Object.freeze({ id, description })));
+export const PREDICATE_ORACLE_HASH = "87e15af7b9ad5477862de03bf9b2b049f68932d41eb1cbbf2eaacee1c9ee7ade";
 
 export const SYSTEM_PROMPT = `You are the independent Oddspark judge. Evaluate the supplied synthetic Candidate Brief against every check below.
 
@@ -365,6 +382,33 @@ export function stableStringify(value) {
   return JSON.stringify(value);
 }
 
+function assertCanonicalJson(value, path = "value", seen = new Set()) {
+  if (value === null || typeof value === "string" || typeof value === "boolean") return;
+  if (typeof value === "number") { if (!Number.isFinite(value)) throw new TypeError(`${path} must contain finite JSON numbers`); return; }
+  if (typeof value !== "object") throw new TypeError(`${path} must contain only JSON values`);
+  if (seen.has(value)) throw new TypeError(`${path} must not contain cycles`);
+  if (Object.getOwnPropertySymbols(value).length) throw new TypeError(`${path} must not contain symbol keys`);
+  if (!Array.isArray(value) && Object.getPrototypeOf(value) !== Object.prototype && Object.getPrototypeOf(value) !== null) throw new TypeError(`${path} must be a plain object`);
+  seen.add(value);
+  if (Array.isArray(value)) {
+    if (Object.keys(value).length !== value.length || !Array.from({ length: value.length }, (_, i) => Object.hasOwn(value, i)).every(Boolean)) throw new TypeError(`${path} must not contain sparse or supplemented arrays`);
+    value.forEach((item, i) => assertCanonicalJson(item, `${path}[${i}]`, seen));
+  } else for (const key of Object.keys(value)) assertCanonicalJson(value[key], `${path}.${key}`, seen);
+  seen.delete(value);
+}
+export async function deriveCandidateRef(candidateSchemaVersion, candidate) {
+  if (typeof candidateSchemaVersion !== "string" || !/^[a-z0-9][a-z0-9._/-]*$/.test(candidateSchemaVersion)) throw new TypeError("candidate_schema_version must be a lowercase canonical identifier");
+  assertCanonicalJson(candidate, "candidate");
+  return sha256Hex(`oddspark-candidate-ref/v1\n${stableStringify({ candidate_schema_version: candidateSchemaVersion, candidate })}`);
+}
+export function validateJudgeResult(value, expectedCandidateRef) {
+  const errors = [];
+  if (!checkKeys(value, ["candidate_ref", "verdict"], ["candidate_ref", "verdict"], "result", errors)) return { valid: false, errors };
+  if (typeof value.candidate_ref !== "string") errors.push("result.candidate_ref must be a string"); else if (value.candidate_ref !== expectedCandidateRef) errors.push("result.candidate_ref does not match the frozen candidate");
+  const verdict = validateVerdict(value.verdict); errors.push(...verdict.errors.map((error) => error.replace(/^verdict/, "result.verdict")));
+  return { valid: errors.length === 0, errors };
+}
+
 export async function sha256Hex(value) {
   const bytes = new TextEncoder().encode(value);
   const digest = await globalThis.crypto.subtle.digest("SHA-256", bytes);
@@ -473,7 +517,7 @@ function parsedClassification(value, repairKind = null) {
   };
 }
 
-function parseAfterOneRepair(text, repairKind) {
+function parseAfterOneRepair(text, repairKind, expectedCandidateRef = null) {
   let parsed;
   try {
     parsed = JSON.parse(text);
@@ -483,7 +527,7 @@ function parseAfterOneRepair(text, repairKind) {
   if (typeof parsed === "string") {
     return { classification: "unrecoverable_json", repair_kind: null, validation_errors: [] };
   }
-  return parsedClassification(parsed, repairKind);
+  return expectedCandidateRef === null ? parsedClassification(parsed, repairKind) : parsedResultClassification(parsed, expectedCandidateRef, repairKind);
 }
 
 function balancedObjectRanges(text) {
@@ -525,8 +569,8 @@ function balancedObjectRanges(text) {
   return { ranges, invalid };
 }
 
-export function parseJudgeContent(content) {
-  if (typeof content !== "string") return parsedClassification(content);
+export function parseJudgeContent(content, expectedCandidateRef = null) {
+  if (typeof content !== "string") return expectedCandidateRef === null ? parsedClassification(content) : parsedResultClassification(content, expectedCandidateRef);
 
   let direct;
   try {
@@ -536,18 +580,18 @@ export function parseJudgeContent(content) {
   }
 
   if (direct !== undefined && typeof direct !== "string") {
-    return parsedClassification(direct);
+    return expectedCandidateRef === null ? parsedClassification(direct) : parsedResultClassification(direct, expectedCandidateRef);
   }
   if (typeof direct === "string") {
-    return parseAfterOneRepair(direct, "double_encoded_json");
+    return parseAfterOneRepair(direct, "double_encoded_json", expectedCandidateRef);
   }
 
   if (content.startsWith("\uFEFF")) {
-    return parseAfterOneRepair(content.slice(1), "bom");
+    return parseAfterOneRepair(content.slice(1), "bom", expectedCandidateRef);
   }
 
   const fence = content.match(/^\s*```json[ \t]*\r?\n([\s\S]*?)\r?\n```[ \t]*\s*$/);
-  if (fence) return parseAfterOneRepair(fence[1], "json_fence");
+  if (fence) return parseAfterOneRepair(fence[1], "json_fence", expectedCandidateRef);
 
   if (content.includes("```")) {
     return { classification: "unrecoverable_json", repair_kind: null, validation_errors: [] };
@@ -560,10 +604,16 @@ export function parseJudgeContent(content) {
   if (start === 0 && end === content.length) {
     return { classification: "unrecoverable_json", repair_kind: null, validation_errors: [] };
   }
-  return parseAfterOneRepair(content.slice(start, end), "surrounding_prose");
+  return parseAfterOneRepair(content.slice(start, end), "surrounding_prose", expectedCandidateRef);
 }
 
-export async function classifyJudgeCall({ call_state, envelope, error_code }) {
+function parsedResultClassification(value, expectedCandidateRef, repairKind = null) {
+  const validation = validateJudgeResult(value, expectedCandidateRef);
+  if (!validation.valid) return { classification: "schema_invalid", repair_kind: repairKind, validation_errors: validation.errors };
+  return { classification: repairKind ? "repaired_valid" : "direct_valid", repair_kind: repairKind, validation_errors: [], result: value, verdict: value.verdict };
+}
+
+export async function classifyJudgeCall({ call_state, envelope, error_code }, expectedCandidateRef = null) {
   if (call_state === "provider_error") {
     return {
       classification: "provider_error",
@@ -611,7 +661,7 @@ export async function classifyJudgeCall({ call_state, envelope, error_code }) {
     };
   }
 
-  const parsed = parseJudgeContent(extraction.content);
+  const parsed = parseJudgeContent(extraction.content, expectedCandidateRef);
   const result = {
     ...parsed,
     candidates: extraction.candidates,

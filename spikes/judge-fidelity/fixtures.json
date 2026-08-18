@@ -142,5 +142,24 @@
     { "id": "over-size", "shape": "over_size", "classification": "output_too_large" },
     { "id": "conflict-before-size", "shape": "conflict_with_oversize", "classification": "ambiguous_envelope" },
     { "id": "identical-oversize", "shape": "identical_oversize", "classification": "output_too_large" }
+  ],
+  "v2_cases": [
+    { "id": "bound-direct-object", "shape": "bound_direct", "classification": "direct_valid" },
+    { "id": "bound-direct-text", "shape": "bound_text", "classification": "direct_valid" },
+    { "id": "bound-repair-fence", "shape": "bound_fence", "classification": "repaired_valid", "repair_kind": "json_fence" },
+    { "id": "binding-missing", "shape": "binding_missing", "classification": "schema_invalid" },
+    { "id": "binding-extra", "shape": "binding_extra", "classification": "schema_invalid" },
+    { "id": "binding-non-string", "shape": "binding_non_string", "classification": "schema_invalid" },
+    { "id": "binding-mismatch", "shape": "binding_mismatch", "classification": "schema_invalid" },
+    { "id": "outer-extra", "shape": "outer_extra", "classification": "schema_invalid" },
+    { "id": "verdict-extra", "shape": "verdict_extra", "classification": "schema_invalid" },
+    { "id": "verdict-blank-reason", "shape": "verdict_blank_reason", "classification": "schema_invalid" },
+    { "id": "verdict-duplicate-gate", "shape": "verdict_duplicate_gate", "classification": "schema_invalid" },
+    { "id": "verdict-unsafe-pass", "shape": "verdict_unsafe_pass", "classification": "schema_invalid" },
+    { "id": "bound-chained-repair", "shape": "bound_chained_repair", "classification": "unrecoverable_json" },
+    { "id": "bound-ambiguous-before-size", "shape": "bound_ambiguous_size", "classification": "ambiguous_envelope" },
+    { "id": "bound-oversized", "shape": "bound_oversized", "classification": "output_too_large" },
+    { "id": "bound-provider-error", "shape": "provider_error", "classification": "provider_error" },
+    { "id": "bound-timeout", "shape": "timeout", "classification": "timeout" }
   ]
 }

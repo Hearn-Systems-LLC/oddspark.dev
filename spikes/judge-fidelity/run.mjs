@@ -1,18 +1,20 @@
 import { execFile } from "node:child_process";
 import { createHash, randomUUID } from "node:crypto";
-import { mkdir, readFile, readdir, writeFile } from "node:fs/promises";
+import { link, mkdir, readFile, readdir, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { promisify } from "node:util";
 
 import {
   MODEL_IDS,
-  VERDICT_RESPONSE_FORMAT,
+  JUDGE_RESULT_SCHEMA,
   buildJudgeMessages,
   classifyJudgeCall,
   fingerprintContractInput,
   stableStringify,
 } from "./contract.mjs";
+import { buildAdapterIdentity, buildOperationalEvidence, currentLegacyIdentity, currentRuntimeIdentity, currentSourceIdentity, EVIDENCE_SOURCE_PATHS, expectedAdapterHealth, retainOperationalRecord, verifyEvidenceV2 } from "./evidence-v2.mjs";
+import { executeCurrentFixtureCatalog } from "./fixture-executor.mjs";
 
 const execFileAsync = promisify(execFile);
 const SPIKE_DIR = path.dirname(fileURLToPath(import.meta.url));
@@ -29,6 +31,7 @@ export const APPROVED_CALL_CAP = MODELS.length * (TRIALS_PER_MODEL + PROBES_PER_
 export const MAX_TOKENS = 2048;
 export const REQUESTED_TEMPERATURE = 0;
 export const DEFAULT_TIMEOUT_MS = 120_000;
+export const PREFLIGHT_TIMEOUT_MS = 10_000;
 export const DEFAULT_BASE_URL = "http://127.0.0.1:8788";
 export const TERMINAL_TAXONOMY = Object.freeze([
   "provider_error",
@@ -47,15 +50,7 @@ const MODEL_PRICING = {
   "@cf/openai/gpt-oss-20b": { input_per_million_usd: 0.20, output_per_million_usd: 0.30 },
 };
 
-const SOURCE_PATHS = [
-  "package.json",
-  "spikes/judge-fidelity/contract.mjs",
-  "spikes/judge-fidelity/fixtures.json",
-  "spikes/judge-fidelity/run.mjs",
-  "spikes/judge-fidelity/test.mjs",
-  "spikes/judge-fidelity/worker.mjs",
-  "spikes/judge-fidelity/wrangler.toml",
-];
+const SOURCE_PATHS = EVIDENCE_SOURCE_PATHS;
 
 function sha256Bytes(value) {
   return createHash("sha256").update(value).digest("hex");
@@ -86,13 +81,39 @@ export function assertLoopbackBaseUrl(value) {
 
 export function buildModelRequest(model, input) {
   if (!MODELS.includes(model)) throw new TypeError(`Unsupported model: ${model}`);
+  const candidateSchemaVersion = `oddspark-candidate/v${input.candidate.version}`;
+  const candidateRef = sha256Bytes(`oddspark-candidate-ref/v1\n${stableStringify({ candidate_schema_version: candidateSchemaVersion, candidate: input.candidate })}`);
+  const messages = buildJudgeMessages(input);
+  messages[1] = { role: "user", content: stableStringify({ candidate_ref: candidateRef, input }) };
   return {
     model,
-    messages: buildJudgeMessages(input),
+    messages,
     max_tokens: MAX_TOKENS,
     temperature: REQUESTED_TEMPERATURE,
-    response_format: VERDICT_RESPONSE_FORMAT,
+    response_format: { type: "json_schema", json_schema: JUDGE_RESULT_SCHEMA },
+    candidate_schema_version: candidateSchemaVersion,
+    candidate: input.candidate,
+    candidate_ref: candidateRef,
   };
+}
+
+export function buildRequestManifest(input) {
+  return { by_model: MODELS.map((model) => {
+    const body = buildModelRequest(model, input);
+    const adapter_input = {
+      messages: body.messages,
+      max_tokens: body.max_tokens,
+      temperature: body.temperature,
+      response_format: body.response_format,
+    };
+    return {
+      model,
+      body,
+      sha256: sha256Bytes(stableStringify(body)),
+      adapter_input,
+      adapter_input_sha256: sha256Bytes(stableStringify(adapter_input)),
+    };
+  }) };
 }
 
 export function estimateMaximumUsage(inputTokensPerRequest) {
@@ -130,6 +151,16 @@ export async function checkAdapterHealth(baseUrl = DEFAULT_BASE_URL, fetchImpl =
   const body = await response.json();
   if (body?.ok !== true || body?.inference !== false) throw new Error("Adapter health response is invalid");
   return body;
+}
+export async function observeAdapterHealth(baseUrl = DEFAULT_BASE_URL, fetchImpl = fetch, timeoutMs = PREFLIGHT_TIMEOUT_MS) {
+  const url = assertLoopbackBaseUrl(baseUrl); const endpoint = new URL("health", url).href;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetchImpl(endpoint, { redirect: "error", signal: controller.signal }); let body = null;
+    try { body = await response.json(); } catch { /* typed absence */ }
+    return { endpoint, http_status: response.status, body };
+  } finally { clearTimeout(timeout); }
 }
 
 export async function invokeAdapter({
@@ -174,7 +205,7 @@ export async function invokeAdapter({
       ...timing,
       call_state: "received",
       envelope: body.envelope,
-      usage: body.usage ?? {},
+      usage: Object.hasOwn(body, "usage") ? body.usage : null,
       reported_effective_values: body.reported_effective_values ?? {},
     };
   } catch (error) {
@@ -195,6 +226,47 @@ export async function invokeAdapter({
   }
 }
 
+export async function executeRecoveryProtocol({ requests, base_url = DEFAULT_BASE_URL, invoke = invokeAdapter, on_record = () => {} }) {
+  if (!Array.isArray(requests) || requests.length !== MODELS.length || requests.some((entry, i) => entry.model !== MODELS[i])) throw new TypeError("requests must bind the frozen ordered model pair");
+  const canonicalCandidate = stableStringify(requests[0].body.candidate); const schema = requests[0].body.candidate_schema_version; const ref = requests[0].body.candidate_ref;
+  for (const entry of requests) {
+    const adapterInput = {
+      messages: entry.body.messages,
+      max_tokens: entry.body.max_tokens,
+      temperature: entry.body.temperature,
+      response_format: entry.body.response_format,
+    };
+    if (stableStringify(entry.body.candidate) !== canonicalCandidate
+      || entry.body.candidate_schema_version !== schema
+      || entry.body.candidate_ref !== ref
+      || entry.sha256 !== sha256Bytes(stableStringify(entry.body))
+      || stableStringify(entry.adapter_input) !== stableStringify(adapterInput)
+      || entry.adapter_input_sha256 !== sha256Bytes(stableStringify(adapterInput))) {
+      throw new TypeError("model requests or adapter inputs diverge from the common frozen candidate before inference");
+    }
+  }
+  const records = [];
+  const retain = async (kind, entry, index, call) => {
+    const usage = call.usage === undefined ? null : call.usage;
+    const record = await retainOperationalRecord({ kind, model: entry.model, index, started_at: call.started_at, ended_at: call.ended_at, call_state: call.call_state,
+      error_code: call.error_code ?? null, envelope: call.envelope ?? null, usage, request_sha256: entry.sha256, candidate_ref: ref });
+    records.push(record);
+    await on_record(structuredClone(record));
+  };
+  const invokeRetained = async (kind, entry, index) => {
+    const started_at = new Date().toISOString();
+    try { await retain(kind, entry, index, await invoke({ base_url, request_body: entry.body })); }
+    catch (error) {
+      await retain(kind, entry, index, { call_state: "provider_error", error_code: "invocation_exception", envelope: null, usage: null, started_at, ended_at: new Date().toISOString() });
+    }
+  };
+  for (const entry of requests) await invokeRetained("probe", entry, 1);
+  if (!records.some((r) => ["provider_error", "timeout", "empty_response"].includes(r.classification))) {
+    for (const entry of requests) for (let i = 1; i <= TRIALS_PER_MODEL; i += 1) await invokeRetained("trial", entry, i);
+  }
+  return records;
+}
+
 export async function runSequentialCalls({ model, input, count, invoke = invokeAdapter }) {
   if (!MODELS.includes(model)) throw new TypeError(`Unsupported model: ${model}`);
   if (!Number.isInteger(count) || count < 1) throw new TypeError("count must be a positive integer");
@@ -202,7 +274,6 @@ export async function runSequentialCalls({ model, input, count, invoke = invokeA
   for (let index = 1; index <= count; index += 1) {
     const call = await invoke({ request_body: buildModelRequest(model, input) });
     calls.push({ model, index, ...call });
-    if (call.call_state === "timeout") break;
   }
   return calls;
 }
@@ -485,7 +556,7 @@ function resultSkeleton({ context, inputs, fixtures, authorization, estimate, bl
       request: {
         temperature: REQUESTED_TEMPERATURE,
         max_tokens: MAX_TOKENS,
-        response_format_type: VERDICT_RESPONSE_FORMAT.type,
+        response_format_type: "json_schema",
         timeout_ms: DEFAULT_TIMEOUT_MS,
       },
       inputs,
@@ -651,84 +722,115 @@ function parseOptions(argv) {
   return options;
 }
 
-async function runLive(options) {
+export async function writeOperationalEvidence(evidence, resultsDir = RESULTS_DIR) {
+  await mkdir(resultsDir, { recursive: true });
+  const date = evidence.run.started_at.slice(0, 10);
+  const basename = `${date}-${evidence.run.id.slice(0, 8)}-v2`;
+  const jsonPath = path.join(resultsDir, `${basename}.json`);
+  const markdownPath = path.join(resultsDir, `${basename}.md`);
+  const nonce = randomUUID();
+  const jsonTemp = `${jsonPath}.${nonce}.tmp`;
+  const markdownTemp = `${markdownPath}.${nonce}.tmp`;
+  let jsonPublished = false;
+  try {
+    await writeFile(jsonTemp, `${JSON.stringify(evidence, null, 2)}\n`, { flag: "wx" });
+    await writeFile(markdownTemp, evidence.report, { flag: "wx" });
+    await link(jsonTemp, jsonPath); jsonPublished = true;
+    await link(markdownTemp, markdownPath);
+  } catch (error) {
+    if (jsonPublished) await unlink(jsonPath).catch(() => {});
+    throw error;
+  } finally {
+    await Promise.all([unlink(jsonTemp).catch(() => {}), unlink(markdownTemp).catch(() => {})]);
+  }
+  return { jsonPath, markdownPath };
+}
+
+export async function runLive(options, dependencies = {}) {
   const input = await readSyntheticInput();
   const estimate = estimateMaximumUsage(inputTokenUpperBound(input));
   console.log(`Approved cap: ${APPROVED_CALL_CAP} calls; conservative gross maximum: ${estimate.gross_neurons.toFixed(0)} neurons / $${estimate.gross_usd.toFixed(4)}.`);
   const { authorization, blockers } = authorizationFromOptions(options, estimate);
-  const [context, inputs, fixtures] = await Promise.all([
-    runtimeContext(),
-    runInputs(input),
-    offlineFixtureResult(),
+  const [legacy, sources, runtime, fixtures] = await Promise.all([
+    (dependencies.currentLegacyIdentity ?? currentLegacyIdentity)(),
+    (dependencies.currentSourceIdentity ?? currentSourceIdentity)(SOURCE_PATHS),
+    (dependencies.currentRuntimeIdentity ?? currentRuntimeIdentity)(),
+    (dependencies.executeFixtures ?? executeCurrentFixtureCatalog)(),
   ]);
-  const result = resultSkeleton({ context, inputs, fixtures, authorization, estimate, blockers });
   const baseUrl = options.base_url ?? DEFAULT_BASE_URL;
-
-  if (blockers.length === 0) {
-    try {
-      await checkAdapterHealth(baseUrl);
-    } catch (error) {
-      result.run.preflight_blockers.push(`adapter health failed: ${String(error.message).slice(0, 200)}`);
-    }
-  }
-
-  if (result.run.preflight_blockers.length === 0) {
-    result.run.terminal_stage = "probe";
-    for (const model of MODELS) {
-      const call = await invokeAdapter({
-        base_url: baseUrl,
-        request_body: buildModelRequest(model, input),
-      });
-      result.probes.push(await callRecord({
-        model,
-        index: 1,
-        call,
-        requestSha256: inputs.request_sha256_by_model[model],
-        probe: true,
-      }));
-      if (call.call_state === "timeout") break;
-    }
-  }
-
-  const probesAccepted = result.probes.length === MODELS.length && result.probes.every(probeAccepted);
-  if (probesAccepted) {
-    result.run.terminal_stage = "matrix";
-    let timedOut = false;
-    for (const model of MODELS) {
-      for (let index = 1; index <= TRIALS_PER_MODEL; index += 1) {
-        const call = await invokeAdapter({
-          base_url: baseUrl,
-          request_body: buildModelRequest(model, input),
-        });
-        result.trials.push(await callRecord({
-          model,
-          index,
-          call,
-          requestSha256: inputs.request_sha256_by_model[model],
-          probe: false,
-        }));
-        if (call.call_state === "timeout") {
-          timedOut = true;
-          break;
-        }
-      }
-      if (timedOut) break;
-    }
-  }
-
-  result.summary = summarizeTrials(result.trials);
-  result.outcome = decideOutcome({
-    probes: result.probes,
-    trials: result.trials,
-    fixture_results: result.fixture_results,
-    preflight_blockers: result.run.preflight_blockers,
+  const manifest = buildRequestManifest(input);
+  const healthEndpoint = new URL("health", assertLoopbackBaseUrl(baseUrl)).href;
+  let observed = { endpoint: healthEndpoint, http_status: 0, body: null };
+  try { observed = await (dependencies.observeHealth ?? observeAdapterHealth)(baseUrl); }
+  catch { /* retain typed failed observation */ }
+  const adapter = buildAdapterIdentity({
+    observed_health: observed.body,
+    http_status: observed.http_status,
+    endpoint: observed.endpoint,
+    outbound_request: manifest,
+    sources,
+    runtime,
   });
-  result.run.ended_at = new Date().toISOString();
-  const files = await writeEvidence(result);
-  await verifyEvidenceFile(files.jsonPath);
-  console.log(`Decision: ${result.outcome.decision}`);
+  const preflightBlockers = [...blockers];
+  if (!adapter.identity_match) preflightBlockers.push("adapter identity preflight failed");
+  const startedAt = new Date().toISOString();
+  let records = [];
+  if (preflightBlockers.length === 0) {
+    records = await executeRecoveryProtocol({
+      requests: manifest.by_model,
+      base_url: baseUrl,
+      invoke: dependencies.invoke ?? invokeAdapter,
+      on_record(record) { records.push(record); },
+    });
+  }
+  const run = {
+    id: randomUUID(),
+    started_at: startedAt,
+    ended_at: new Date().toISOString(),
+    models: MODELS,
+    authorization: {
+      operator_approved: authorization.operator_approved,
+      profile_confirmed: authorization.profile_confirmed,
+      headroom_confirmed: authorization.headroom_confirmed,
+      approved_call_cap: authorization.approved_call_cap,
+      estimated_calls: APPROVED_CALL_CAP,
+      calls_made: records.length,
+      plan: authorization.plan,
+      remaining_free_neurons: authorization.remaining_free_neurons_at_check,
+      estimated_gross_neurons: estimate.gross_neurons,
+    },
+    preflight_blockers: preflightBlockers,
+  };
+  const evidence = await buildOperationalEvidence({
+    candidate_schema_version: `oddspark-candidate/v${input.candidate.version}`,
+    candidate: input.candidate,
+    request_input: input,
+    source_paths: SOURCE_PATHS,
+    fixtures,
+    adapter,
+    run,
+    records,
+  }, {
+    currentLegacyIdentity: async () => legacy,
+    currentSourceIdentity: async () => sources,
+    currentRuntimeIdentity: async () => runtime,
+    ...(dependencies.evidenceDependencies ?? {}),
+  });
+  const files = await (dependencies.writeEvidence ?? writeOperationalEvidence)(evidence, dependencies.resultsDir);
+  const verification = await verifyEvidenceV2(evidence, {
+    currentLegacyIdentity: async () => legacy,
+    executeFixtures: async () => fixtures,
+    currentSourceIdentity: async () => sources,
+    currentRuntimeIdentity: async () => runtime,
+    ...(dependencies.evidenceDependencies ?? {}),
+  });
+  console.log(`Decision: ${evidence.outcome.decision}`);
   console.log(`Evidence: ${files.jsonPath}`);
-  return result.outcome.decision;
+  if (!verification.valid) {
+    const failed = verification.predicate_results.filter(({ pass }) => !pass).map(({ id }) => id);
+    throw new Error(`retained evidence failed verification: ${failed.join(", ")}`);
+  }
+  return evidence.outcome.decision;
 }
 
 async function verifyCommand(options) {
