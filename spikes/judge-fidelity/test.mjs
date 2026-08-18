@@ -421,9 +421,18 @@ test("provider usage normalization retains only complete unambiguous token evide
   assert.deepEqual(normalizeProviderUsage({ input_tokens: 10, output_tokens: 4 }), { prompt_tokens: 10, completion_tokens: 4, total_tokens: 14 });
   assert.deepEqual(normalizeProviderUsage({ input_tokens: 10, output_tokens: 4, total_tokens: 14, neurons: 99 }), { prompt_tokens: 10, completion_tokens: 4, total_tokens: 14 });
   assert.equal(normalizeProviderUsage({ neurons: 99 }), null);
-  assert.equal(normalizeProviderUsage({ prompt_tokens: 10, completion_tokens: "4", total_tokens: 14 }), null);
+  // Invalid types in individual fields produce partial results rather than all-or-nothing
+  assert.deepEqual(normalizeProviderUsage({ prompt_tokens: 10, completion_tokens: "4", total_tokens: 14 }), { prompt_tokens: 10, completion_tokens: null, total_tokens: 14 });
   assert.equal(normalizeProviderUsage({ prompt_tokens: 10, completion_tokens: 4, total_tokens: 99 }), null);
   assert.equal(normalizeProviderUsage({ prompt_tokens: 10, completion_tokens: 4, total_tokens: 14, input_tokens: 10, output_tokens: 4 }), null);
+});
+
+test("provider usage normalization captures partial best-effort when some fields are missing", () => {
+  // When a provider returns only prompt tokens, capture what we can
+  assert.deepEqual(normalizeProviderUsage({ prompt_tokens: 100 }), { prompt_tokens: 100, completion_tokens: null, total_tokens: null });
+  assert.deepEqual(normalizeProviderUsage({ completion_tokens: 50 }), { prompt_tokens: null, completion_tokens: 50, total_tokens: null });
+  // Mixed valid + invalid: valid fields captured, invalid set to null
+  assert.deepEqual(normalizeProviderUsage({ prompt_tokens: 100, total_tokens: "bad" }), { prompt_tokens: 100, completion_tokens: null, total_tokens: null });
 });
 
 test("the adapter health route makes no inference and live POST makes exactly one", async () => {

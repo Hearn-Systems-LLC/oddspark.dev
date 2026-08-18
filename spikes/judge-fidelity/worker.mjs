@@ -94,13 +94,40 @@ function validateRequest(body, env) {
   return errors;
 }
 
+// Compute SHA-256 of a string value; returns null on failure.
+async function safeSha256(value) {
+  try { return typeof value === "string" ? await sha256Hex(value) : null; } catch { return null; }
+}
+
+/**
+ * Health descriptor with graceful degradation for offline/dev environments.
+ * When SHA-256 env vars are missing, returns a v2-compatible descriptor with null hashes
+ * and sets ok=false to signal incomplete identity without crashing the health endpoint.
+ */
 async function healthDescriptor(env) {
-  for (const key of ["ADAPTER_SOURCE_SHA256", "CONFIG_SOURCE_SHA256", "RUNTIME_SHA256"]) if (typeof env[key] !== "string" || !/^[a-f0-9]{64}$/.test(env[key])) throw new TypeError(`${key} must be an exact SHA-256 identity before v2 can be advertised`);
+  const requiredKeys = ["ADAPTER_SOURCE_SHA256", "CONFIG_SOURCE_SHA256", "RUNTIME_SHA256"];
+  const identitiesComplete = requiredKeys.every((key) => typeof env[key] === "string" && /^[a-f0-9]{64}$/.test(env[key]));
   const responseFormat = { type: "json_schema", json_schema: JUDGE_RESULT_SCHEMA };
-  return { ok: true, inference: false, schema_version: "oddspark-judge-adapter-health/v2", result_contract_version: RESULT_CONTRACT_VERSION,
-    candidate_binding_version: "oddspark-candidate-ref/v1", models: MODEL_IDS, parameters: { temperature: 0, max_tokens: 2048 }, binding: "AI",
-    system_prompt_sha256: await sha256Hex(SYSTEM_PROMPT), message_contract_sha256: await sha256Hex(stableStringify({ roles: ["system", "user"], user_shape: { candidate_ref: "sha256", input: "canonical-json" } })),
-    wire_schema_sha256: await sha256Hex(stableStringify(responseFormat)), adapter_source_sha256: env.ADAPTER_SOURCE_SHA256, config_source_sha256: env.CONFIG_SOURCE_SHA256, runtime_sha256: env.RUNTIME_SHA256 };
+  const systemPromptHash = await safeSha256(SYSTEM_PROMPT);
+  const messageContractHash = await safeSha256(stableStringify({ roles: ["system", "user"], user_shape: { candidate_ref: "sha256", input: "canonical-json" } }));
+  const wireSchemaHash = await safeSha256(stableStringify(responseFormat));
+  return {
+    ok: identitiesComplete,
+    inference: false,
+    schema_version: "oddspark-judge-adapter-health/v2",
+    result_contract_version: RESULT_CONTRACT_VERSION,
+    candidate_binding_version: "oddspark-candidate-ref/v1",
+    models: MODEL_IDS,
+    parameters: { temperature: 0, max_tokens: 2048 },
+    binding: "AI",
+    system_prompt_sha256: systemPromptHash,
+    message_contract_sha256: messageContractHash,
+    wire_schema_sha256: wireSchemaHash,
+    adapter_source_sha256: identitiesComplete ? env.ADAPTER_SOURCE_SHA256 : null,
+    config_source_sha256: identitiesComplete ? env.CONFIG_SOURCE_SHA256 : null,
+    runtime_sha256: identitiesComplete ? env.RUNTIME_SHA256 : null,
+    identity_complete: identitiesComplete,
+  };
 }
 
 function sanitizedEnvelope(result, candidateRef) {

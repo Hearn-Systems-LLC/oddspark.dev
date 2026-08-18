@@ -5,6 +5,13 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 import { MODEL_IDS, PREDICATE_ORACLE, stableStringify } from "./contract.mjs";
 import { verifyEvidenceV2 } from "./evidence-v2.mjs";
+import {
+  PRICING_AS_OF,
+  PRICING_SOURCE,
+  NEURON_USD,
+  FREE_NEURONS_PER_DAY,
+  MODEL_PRICING,
+} from "./pricing.mjs";
 
 export const RECOVERY_PLAN_VERSION = "oddspark.judge-recovery-plan/v1";
 export const RECOVERY_APPROVAL_VERSION = "oddspark.judge-recovery-approval/v1";
@@ -17,14 +24,6 @@ export const PROVIDER = "cloudflare-workers-ai";
 export const APPROVAL_MAX_AGE_MS = 4 * 60 * 60 * 1000;
 export const APPROVAL_PLAN_MAX_DELAY_MS = 60 * 60 * 1000;
 export const RECOVERY_CALL_CAP = 42;
-export const PRICING_AS_OF = "2026-07-29";
-export const PRICING_SOURCE = "https://developers.cloudflare.com/workers-ai/platform/pricing/";
-export const NEURON_USD = 0.000011;
-export const FREE_NEURONS_PER_DAY = 10_000;
-export const MODEL_PRICING = Object.freeze({
-  "@cf/openai/gpt-oss-120b": Object.freeze({ input_per_million_usd: 0.35, output_per_million_usd: 0.75 }),
-  "@cf/openai/gpt-oss-20b": Object.freeze({ input_per_million_usd: 0.20, output_per_million_usd: 0.30 }),
-});
 
 export const TIMEOUT_POLICY = Object.freeze({
   adapter_timeout_ms: 120_000,
@@ -121,7 +120,7 @@ function safeAdd(left, right) {
 function expectedMaximumCost(requestManifest) {
   if (!exact(requestManifest, ["by_model"]) || !Array.isArray(requestManifest.by_model) || requestManifest.by_model.length !== MODEL_IDS.length) return null;
   const inputTokenUpperBound = Math.max(...requestManifest.by_model.map((entry) => Buffer.byteLength(JSON.stringify(entry?.body), "utf8")));
-  const callsPerModel = 21;
+  const callsPerModel = 21; // 1 probe + 20 trials per model
   let grossUsd = 0;
   const byModel = {};
   for (const model of MODEL_IDS) {
@@ -376,7 +375,7 @@ function summarizeModel(evidence, model, plan) {
         gross_usd: observedGrossUsd,
         gross_neurons: overflow ? null : observedGrossUsd / NEURON_USD,
       },
-      maximum_cost: { pricing_as_of: plan.maximum_cost.pricing_as_of, gross_usd: cost.input_usd + cost.output_usd, gross_neurons: (cost.input_usd + cost.output_usd) / 0.000011 },
+      maximum_cost: { pricing_as_of: plan.maximum_cost.pricing_as_of, gross_usd: cost.input_usd + cost.output_usd, gross_neurons: (cost.input_usd + cost.output_usd) / NEURON_USD },
     },
   };
 }

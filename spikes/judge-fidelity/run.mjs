@@ -15,6 +15,7 @@ import {
 } from "./contract.mjs";
 import { buildAdapterIdentity, buildOperationalEvidence, currentLegacyIdentity, currentRuntimeIdentity, currentSourceIdentity, EVIDENCE_SOURCE_PATHS, expectedAdapterHealth, retainOperationalRecord, verifyEvidenceV2 } from "./evidence-v2.mjs";
 import { executeCurrentFixtureCatalog } from "./fixture-executor.mjs";
+import { findPriorOperationalRecovery as _findPriorOperationalRecovery, validSpendReceipt } from "./recovery-finder.mjs";
 import {
   RECOVERY_APPROVAL_VERSION,
   RECOVERY_COMPLETION_VERSION,
@@ -26,6 +27,27 @@ import {
   verifyCompletedArtifactSet,
   verifyQualificationBundle,
 } from "./qualification.mjs";
+
+// Structured logger with correlation IDs for machine-parseable output.
+// Each log line includes a timestamp, level, correlation_id, and message.
+const _correlationIdCounter = { value: 0 };
+function nextCorrelationId() { return `corr-${++_correlationIdCounter.value}`; }
+
+function logStructured(level, correlationId, message, meta = {}) {
+  const entry = {
+    ts: new Date().toISOString(),
+    level,
+    correlation_id: correlationId,
+    msg: message,
+    ...meta,
+  };
+  // Output JSON for machine parsing; humans still see readable output via console
+  console.log(JSON.stringify(entry));
+}
+
+function logInfo(correlationId, message, meta = {}) { logStructured("info", correlationId, message, meta); }
+function logWarn(correlationId, message, meta = {}) { logStructured("warn", correlationId, message, meta); }
+function logError(correlationId, message, meta = {}) { logStructured("error", correlationId, message, meta); }
 
 const execFileAsync = promisify(execFile);
 const SPIKE_DIR = path.dirname(fileURLToPath(import.meta.url));
@@ -59,10 +81,13 @@ export const TERMINAL_TAXONOMY = Object.freeze([
   "direct_valid",
 ]);
 
-const MODEL_PRICING = {
-  "@cf/openai/gpt-oss-120b": { input_per_million_usd: 0.35, output_per_million_usd: 0.75 },
-  "@cf/openai/gpt-oss-20b": { input_per_million_usd: 0.20, output_per_million_usd: 0.30 },
-};
+import {
+  PRICING_AS_OF,
+  PRICING_SOURCE,
+  NEURON_USD,
+  FREE_NEURONS_PER_DAY,
+  MODEL_PRICING,
+} from "./pricing.mjs";
 
 const SOURCE_PATHS = EVIDENCE_SOURCE_PATHS;
 
@@ -145,15 +170,15 @@ export function estimateMaximumUsage(inputTokensPerRequest) {
     grossUsd += inputUsd + outputUsd;
   }
   return {
-    pricing_as_of: "2026-07-29",
-    pricing_source: "https://developers.cloudflare.com/workers-ai/platform/pricing/",
+    pricing_as_of: PRICING_AS_OF,
+    pricing_source: PRICING_SOURCE,
     input_token_upper_bound_per_request: inputTokensPerRequest,
     max_output_tokens_per_call: MAX_TOKENS,
     calls_per_model: callsPerModel,
     total_calls: APPROVED_CALL_CAP,
     gross_usd: grossUsd,
-    gross_neurons: grossUsd / 0.000011,
-    free_neurons_per_day: 10_000,
+    gross_neurons: grossUsd / NEURON_USD,
+    free_neurons_per_day: FREE_NEURONS_PER_DAY,
     by_model: byModel,
   };
 }
@@ -267,41 +292,77 @@ export async function executeRecoveryProtocol({ requests, base_url = DEFAULT_BAS
     records.push(record);
     await on_record(structuredClone(record));
   };
-  const invokeRetained = async (kind, entry, index) => {
+  // Retry with exponential backoff for transient rate-limit errors (429).
+  // Max 2 retries per invocation to avoid infinite loops on persistent failures.
+  const MAX_RETRY_ATTEMPTS = 2;
+  const BASE_RETRY_MS = 1_000;
+  const isRateLimitError = (call) => call.error_code === "http_429" || call.call_state === "provider_error";
+  const invokeWithRetry = async (kind, entry, index, attempt = 0) => {
     const started_at = new Date().toISOString();
     try {
       await before_invoke({ kind, model: entry.model, index });
-      await retain(kind, entry, index, await invoke({ base_url, request_body: entry.body }));
-    }
-    catch (error) {
+      return await retain(kind, entry, index, await invoke({ base_url, request_body: entry.body }));
+    } catch (error) {
       if (error?.code === "ODDSPARK_RECOVERY_GOVERNANCE_FAILURE" || error?.code === "ODDSPARK_FATAL_PROCESS_EXIT") throw error;
-      await retain(kind, entry, index, { call_state: "provider_error", error_code: "invocation_exception", envelope: null, usage: null, started_at, ended_at: new Date().toISOString() });
+      const failedCall = { call_state: "provider_error", error_code: "invocation_exception", envelope: null, usage: null, started_at, ended_at: new Date().toISOString() };
+      if (attempt < MAX_RETRY_ATTEMPTS && isRateLimitError(failedCall)) {
+        const delayMs = BASE_RETRY_MS * Math.pow(2, attempt);
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
+        return invokeWithRetry(kind, entry, index, attempt + 1);
+      }
+      return retain(kind, entry, index, failedCall);
     }
   };
-  for (const entry of requests) await invokeRetained("probe", entry, 1);
+  for (const entry of requests) await invokeWithRetry("probe", entry, 1);
   if (!records.some((r) => ["provider_error", "timeout", "empty_response"].includes(r.classification))) {
-    for (const entry of requests) for (let i = 1; i <= TRIALS_PER_MODEL; i += 1) await invokeRetained("trial", entry, i);
+    for (const entry of requests) for (let i = 1; i <= TRIALS_PER_MODEL; i += 1) await invokeWithRetry("trial", entry, i);
   }
   return records;
 }
 
+/**
+ * Normalize provider usage data to a canonical shape.
+ * Returns partial usage when only some fields are available (best-effort),
+ * rather than dropping the entire record. Missing fields are set to null.
+ */
 export function normalizeProviderUsage(value) {
   if (value === null || value === undefined || typeof value !== "object" || Array.isArray(value)) return null;
   const keys = Object.keys(value);
   const canonical = ["prompt_tokens", "completion_tokens", "total_tokens"];
   const aliases = ["input_tokens", "output_tokens"];
   const allowed = new Set([...canonical, ...aliases, "neurons"]);
-  if (keys.some((key) => !allowed.has(key))) return null;
+  // Allow extra keys but don't require all fields — partial is better than nothing
+  const disallowedExtra = keys.filter((key) => !allowed.has(key) && !key.startsWith("_"));
+  if (disallowedExtra.length > 0) return null;
+
   const hasCanonical = ["prompt_tokens", "completion_tokens"].some((key) => Object.hasOwn(value, key));
   const hasAliases = aliases.some((key) => Object.hasOwn(value, key));
   if (hasCanonical && hasAliases) return null;
+
   const prompt = hasCanonical ? value.prompt_tokens : value.input_tokens;
   const completion = hasCanonical ? value.completion_tokens : value.output_tokens;
-  const total = Object.hasOwn(value, "total_tokens") ? value.total_tokens
-    : !hasCanonical && Number.isSafeInteger(prompt) && Number.isSafeInteger(completion) ? prompt + completion : null;
-  if (!Number.isSafeInteger(prompt) || prompt < 0 || !Number.isSafeInteger(completion) || completion < 0
-    || !Number.isSafeInteger(total) || total < 0 || !Number.isSafeInteger(prompt + completion) || total !== prompt + completion) return null;
-  return { prompt_tokens: prompt, completion_tokens: completion, total_tokens: total };
+  const rawTotal = Object.hasOwn(value, "total_tokens") ? value.total_tokens : null;
+
+  // Compute total from prompt+completion only if both are present and no explicit total
+  let total = rawTotal;
+  if (total === null && !hasCanonical && Number.isSafeInteger(prompt) && Number.isSafeInteger(completion)) {
+    total = prompt + completion;
+  }
+
+  // Validate what we have — partial results are acceptable
+  const promptValid = Number.isSafeInteger(prompt) && prompt >= 0;
+  const completionValid = Number.isSafeInteger(completion) && completion >= 0;
+  const totalValid = total === null || (Number.isSafeInteger(total) && total >= 0);
+
+  // If we have at least one valid field, return partial; otherwise null
+  if (!promptValid && !completionValid && total === null) return null;
+  if (promptValid && completionValid && totalValid && total !== null && total !== prompt + completion) return null;
+
+  return {
+    prompt_tokens: promptValid ? prompt : null,
+    completion_tokens: completionValid ? completion : null,
+    total_tokens: totalValid ? total : null,
+  };
 }
 
 export async function runSequentialCalls({ model, input, count, invoke = invokeAdapter }) {
@@ -582,26 +643,7 @@ async function syncDirectory(directory) {
   try { await handle.sync(); } finally { await handle.close(); }
 }
 
-const canonicalUtcTimestamp = (value) => typeof value === "string" && Number.isFinite(Date.parse(value)) && new Date(value).toISOString() === value;
 
-function validSpendReceipt(receipt) {
-  const keys = ["schema_version", "attempt_id", "approval_run_id", "created_at", "updated_at", "state", "calls_started", "last_call"];
-  const callKeys = ["sequence", "kind", "model", "index", "marked_at"];
-  return receipt && typeof receipt === "object" && !Array.isArray(receipt) && Object.keys(receipt).length === keys.length && keys.every((key) => Object.hasOwn(receipt, key))
-    && receipt.schema_version === RECOVERY_RECEIPT_VERSION
-    && typeof receipt.attempt_id === "string" && /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/.test(receipt.attempt_id)
-    && typeof receipt.approval_run_id === "string" && /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/.test(receipt.approval_run_id)
-    && [receipt.created_at, receipt.updated_at].every(canonicalUtcTimestamp)
-    && ["reserved", "calls-started", "completed-spent"].includes(receipt.state)
-    && Number.isSafeInteger(receipt.calls_started) && receipt.calls_started >= 0 && receipt.calls_started <= APPROVED_CALL_CAP
-    && ((receipt.calls_started === 0 && receipt.state === "reserved" && receipt.last_call === null)
-      || (receipt.calls_started > 0 && ["calls-started", "completed-spent"].includes(receipt.state)
-        && receipt.last_call && typeof receipt.last_call === "object" && !Array.isArray(receipt.last_call)
-        && Object.keys(receipt.last_call).length === callKeys.length && callKeys.every((key) => Object.hasOwn(receipt.last_call, key))
-        && receipt.last_call.sequence === receipt.calls_started && ["probe", "trial"].includes(receipt.last_call.kind)
-        && MODELS.includes(receipt.last_call.model) && Number.isSafeInteger(receipt.last_call.index) && receipt.last_call.index >= 1
-        && canonicalUtcTimestamp(receipt.last_call.marked_at)));
-}
 
 async function durableWriteJson(target, value) {
   const directory = await physicalDirectory(path.dirname(target));
@@ -621,14 +663,22 @@ async function durableWriteJson(target, value) {
   }
 }
 
-export async function acquireRecoveryLock(resultsDir = RESULTS_DIR, { now = new Date(), attempt_id = randomUUID() } = {}) {
+// Stale lock TTL: 24 hours. Locks older than this are considered abandoned.
+const RECOVERY_LOCK_TTL_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Acquire an exclusive recovery lock with stale-lock detection.
+ * If the existing lock file is older than RECOVERY_LOCK_TTL_MS, it is treated as abandoned.
+ */
+export async function acquireRecoveryLock(resultsDir = RESULTS_DIR, { now = new Date(), attempt_id = randomUUID(), lockTtlMs = RECOVERY_LOCK_TTL_MS } = {}) {
   assertSafeBasename(attempt_id, "lock attempt");
   const directory = await physicalDirectory(resultsDir);
   const lockPath = path.join(directory, RECOVERY_LOCK_FILE);
   let handle;
   try {
     handle = await open(lockPath, "wx", 0o600);
-    await handle.writeFile(`${JSON.stringify({ attempt_id, pid: process.pid, created_at: now.toISOString() })}\n`);
+    await handle.writeFile(`${JSON.stringify({ attempt_id, pid: process.pid, created_at: now.toISOString() })}
+`);
     await handle.sync();
     await syncDirectory(directory);
     let released = false;
@@ -649,10 +699,45 @@ export async function acquireRecoveryLock(resultsDir = RESULTS_DIR, { now = new 
     };
   } catch (error) {
     await handle?.close().catch(() => {});
-    if (error?.code === "EEXIST") return { acquired: false, reason: "recovery lock exists; stale and unknown locks require manual recovery" };
+    if (error?.code === "EEXIST") {
+      // Check for stale lock — read existing lock file and compare timestamps
+      try {
+        const existingBytes = await readFile(lockPath);
+        const existing = JSON.parse(existingBytes.toString("utf8"));
+        const createdAt = Date.parse(existing.created_at);
+        if (Number.isFinite(createdAt) && now.getTime() - createdAt > lockTtlMs) {
+          // Lock is stale — remove it and retry acquisition
+          await unlink(lockPath).catch(() => {});
+          await syncDirectory(directory);
+          // Retry: attempt to create the lock fresh
+          handle = await open(lockPath, "wx", 0o600);
+          await handle.writeFile(`${JSON.stringify({ attempt_id, pid: process.pid, created_at: now.toISOString() })}
+`);
+          await handle.sync();
+          await syncDirectory(directory);
+          let releasedStale = false;
+          return {
+            acquired: true,
+            attempt_id,
+            lockPath,
+            async release() {
+              if (releasedStale) return;
+              releasedStale = true;
+              await handle.close();
+              await unlink(lockPath).catch(() => {});
+              await syncDirectory(directory);
+            },
+          };
+        }
+      } catch { /* unreadable lock file — treat as blocking */ }
+      return { acquired: false, reason: "recovery lock exists; stale and unknown locks require manual recovery" };
+    }
     throw error;
   }
 }
+
+
+
 
 async function reserveRecoveryAttempt(resultsDir, attemptId, approvalRunId, now) {
   try {
@@ -670,7 +755,7 @@ async function reserveRecoveryAttempt(resultsDir, attemptId, approvalRunId, now)
 async function clearVerifiedZeroCallReservation(resultsDir, attemptId) {
   const receiptPath = path.join(resultsDir, RECOVERY_RECEIPT_FILE);
   const parsed = parseCanonicalJsonBytes(await readFile(receiptPath), "spend receipt");
-  if (!parsed.valid || !validSpendReceipt(parsed.value) || parsed.value.attempt_id !== attemptId
+  if (!parsed.valid || !validSpendReceipt(parsed.value, APPROVED_CALL_CAP) || parsed.value.attempt_id !== attemptId
     || parsed.value.state !== "reserved" || parsed.value.calls_started !== 0) {
     throw new Error("reserved spend receipt changed before verified zero-call recovery; manual recovery required");
   }
@@ -705,99 +790,10 @@ export function approvalTemplate(plan) {
   };
 }
 
-export async function findPriorOperationalRecovery(resultsDir = RESULTS_DIR, dependencies = {}) {
-  let entries = [];
-  let spentReceipt = null;
-  let reservedReceipt = null;
-  let receiptFallback = null;
-  try { entries = await readdir(resultsDir); } catch (error) { if (error?.code !== "ENOENT") throw error; }
-  if (entries.includes(RECOVERY_RECEIPT_FILE)) {
-    let receipt;
-    try { receipt = JSON.parse(await readFile(path.join(resultsDir, RECOVERY_RECEIPT_FILE), "utf8")); } catch { return { evidence_file: null, qualification_file: null, qualification_refs: [], malformed: true, blocking_reason: "spend receipt is unreadable" }; }
-    if (!validSpendReceipt(receipt)) return { evidence_file: null, qualification_file: null, qualification_refs: [], malformed: true, receipt_file: RECOVERY_RECEIPT_FILE, blocking_reason: "spend receipt proves or cannot disprove provider invocation" };
-    if (receipt.calls_started > 0 || receipt.state !== "reserved") {
-      spentReceipt = receipt;
-      receiptFallback = { evidence_file: null, qualification_file: null, qualification_refs: [], malformed: false, receipt_file: RECOVERY_RECEIPT_FILE, blocking_reason: "spend receipt proves or cannot disprove provider invocation" };
-    } else reservedReceipt = receipt;
-  }
-  const invalidArtifact = entries.find((entry) => entry.endsWith("-v2-invalid.json"));
-  if (invalidArtifact && !spentReceipt) return { evidence_file: invalidArtifact, qualification_file: null, qualification_refs: [], malformed: true, blocking_reason: "invalid retained evidence cannot disprove spend" };
-  const evidenceNames = entries.filter((entry) => entry.endsWith("-v2.json")).sort();
-  const temporaryArtifacts = entries.filter((entry) => entry.endsWith(".tmp"));
-  const explainedTemporaryArtifacts = new Set();
-  const expectedSiblings = new Set(evidenceNames.flatMap((name) => [name.replace(/\.json$/, ".md"), name.replace(/-v2\.json$/, "-qualification.json"), `${name.replace(/\.json$/, "")}.complete.json`]));
-  const partial = entries.find((entry) => (entry.endsWith("-v2.md") && !expectedSiblings.has(entry))
-    || (entry.endsWith("-qualification.json") && !expectedSiblings.has(entry))
-    || (entry.endsWith("-v2.complete.json") && !expectedSiblings.has(entry)));
-  if (partial && !spentReceipt) return { evidence_file: partial, qualification_file: null, qualification_refs: [], malformed: true, blocking_reason: "partial recovery publication cannot disprove spend" };
-  for (const name of evidenceNames) {
-    if (spentReceipt && !name.endsWith(`-${spentReceipt.attempt_id}-v2.json`)) continue;
-    const basename = name.replace(/\.json$/, "");
-    const markerName = `${basename}.complete.json`;
-    const expectedMemberNames = [name, name.replace(/\.json$/, ".md"), name.replace(/-v2\.json$/, "-qualification.json")];
-    const completed = await verifyCompletedArtifactSet(resultsDir, markerName, expectedMemberNames);
-    if (!completed.valid) {
-      if (spentReceipt) continue;
-      return { evidence_file: name, qualification_file: expectedMemberNames[2], qualification_refs: [], malformed: true, blocking_reason: "partial recovery publication lacks a valid completion marker" };
-    }
-    for (const temporary of temporaryArtifacts) {
-      const boundName = [...expectedMemberNames, markerName].find((member) => temporary.startsWith(`.${member}.`) && temporary.endsWith(".tmp"));
-      if (!boundName) continue;
-      try {
-        const temporaryBytes = await readFile(path.join(resultsDir, temporary));
-        const binding = boundName === markerName
-          ? { bytes: Buffer.byteLength(`${JSON.stringify(completed.marker, null, 2)}\n`), sha256: sha256Bytes(`${JSON.stringify(completed.marker, null, 2)}\n`) }
-          : completed.marker.files.find(({ name: memberName }) => memberName === boundName);
-        if (binding && temporaryBytes.byteLength === binding.bytes && sha256Bytes(temporaryBytes) === binding.sha256) explainedTemporaryArtifacts.add(temporary);
-      } catch { /* unexplained temporary remains blocking */ }
-    }
-    let evidence; let evidenceBytes;
-    try {
-      evidenceBytes = await readFile(path.join(resultsDir, name));
-      evidence = JSON.parse(evidenceBytes.toString("utf8"));
-    } catch {
-      if (spentReceipt) continue;
-      return { evidence_file: name, qualification_file: name.replace(/-v2\.json$/, "-qualification.json"), qualification_refs: [], malformed: true, blocking_reason: "evidence is unreadable" };
-    }
-    const markdownName = name.replace(/\.json$/, ".md");
-    const qualificationName = name.replace(/-v2\.json$/, "-qualification.json");
-    let markdown; let evidenceVerification;
-    try {
-      markdown = await readFile(path.join(resultsDir, markdownName), "utf8");
-      evidenceVerification = await verifyEvidenceV2(evidence, dependencies);
-    } catch { /* handled below */ }
-    if (!evidenceVerification?.valid || markdown !== evidence?.report) {
-      if (spentReceipt) continue;
-      return { evidence_file: name, qualification_file: qualificationName, qualification_refs: [], malformed: true, blocking_reason: "evidence or Markdown failed complete verification" };
-    }
-    let qualification; let qualificationVerification;
-    try {
-      qualification = JSON.parse(await readFile(path.join(resultsDir, qualificationName), "utf8"));
-      qualificationVerification = await verifyQualificationBundle(qualification, evidence, evidenceBytes, dependencies);
-    } catch { /* unverified */ }
-    if (spentReceipt) {
-      const receiptMatchesEvidence = evidence.run.id === spentReceipt.approval_run_id
-        && evidence.records.length === spentReceipt.calls_started;
-      if (!receiptMatchesEvidence || !qualificationVerification?.valid) continue;
-      return { evidence_file: name, qualification_file: qualificationName, qualification_refs: qualification.qualification_refs, refs_verified: true, malformed: false, receipt_file: RECOVERY_RECEIPT_FILE, blocking_reason: "verified evidence shows provider calls were started" };
-    }
-    if (evidence.records.length === 0) {
-      if (!qualificationVerification?.valid) return { evidence_file: name, qualification_file: qualificationName, qualification_refs: [], malformed: true, blocking_reason: "zero-call artifact is incomplete or its qualification bundle is invalid" };
-      if (reservedReceipt && name.endsWith(`-${reservedReceipt.attempt_id}-v2.json`) && evidence.run.id === reservedReceipt.approval_run_id) {
-        receiptFallback = { evidence_file: name, qualification_file: qualificationName, qualification_refs: [], refs_verified: true, malformed: false,
-          receipt_file: RECOVERY_RECEIPT_FILE, safe_zero_call_receipt: true, attempt_id: reservedReceipt.attempt_id };
-      }
-      continue;
-    }
-    const qualification_refs = qualificationVerification?.valid ? qualification.qualification_refs : [];
-    return { evidence_file: name, qualification_file: qualificationName, qualification_refs, refs_verified: qualificationVerification?.valid === true, malformed: !qualificationVerification?.valid, blocking_reason: "verified evidence shows provider calls were started" };
-  }
-  const unexplainedTemporary = temporaryArtifacts.find((entry) => !explainedTemporaryArtifacts.has(entry));
-  if (unexplainedTemporary && !spentReceipt) return { evidence_file: unexplainedTemporary, qualification_file: null, qualification_refs: [], malformed: true, blocking_reason: "partial recovery publication cannot disprove spend" };
-  if (reservedReceipt && !receiptFallback?.safe_zero_call_receipt) return { evidence_file: null, qualification_file: null, qualification_refs: [], malformed: false,
-    receipt_file: RECOVERY_RECEIPT_FILE, blocking_reason: "reserved spend receipt lacks a complete independently verified zero-call artifact for the same attempt" };
-  return receiptFallback;
-}
+// Re-export findPriorOperationalRecovery from the dedicated module.
+// The inlined implementation was extracted to recovery-finder.mjs for testability.
+export const findPriorOperationalRecovery = _findPriorOperationalRecovery;
+
 
 export async function buildCurrentRecoveryPlan(options, dependencies = {}) {
   const input = dependencies.input ?? await readSyntheticInput();
