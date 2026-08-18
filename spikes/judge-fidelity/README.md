@@ -7,7 +7,7 @@ This is a non-production, opt-in structural-fidelity test for the configured Wor
 - The Worker runtime stays local on `127.0.0.1:8788`; only the `AI` binding is remote.
 - Start it with `npm run spike:judge:dev`. Do not add `--remote`, `--local`, or run `wrangler deploy` with this config.
 - `GET /health` makes no inference. Only an exact JSON `POST /run` can call an allowlisted model, and each accepted POST performs exactly one `AI.run` call.
-- The live command is capped at 42 calls: one probe and 20 counted trials for each of the two configured models. It never retries. A timeout stops the matrix because aborting the local fetch does not prove the remote inference stopped.
+- The live command is capped at exactly 42 calls: both model probes first, then 20 counted trials for each model. It never retries. A timeout or provider error during a counted trial is retained in the denominator and the remaining scheduled trials continue.
 - Results retain only allowlisted answer locations, sanitized provider errors, allowlisted numeric usage, and provider-reported effective values. Credentials, headers, account IDs, raw provider envelopes, tool calls, and reasoning are excluded.
 
 The fixture is synthetic and uses `example.invalid`. Its `synthetic-grounding-report/v1` object is fixture-only; Story 1.5 owns the production Brief/grounding contract. This spike measures structural output fidelity, not whether the model shares the intended taste or applies the gates correctly.
@@ -16,18 +16,19 @@ The fixture is synthetic and uses `example.invalid`. Its `synthetic-grounding-re
 
 ```sh
 npm run spike:judge:self-test
-npm test
 ```
 
-The self-test covers the strict AD-2 schema, complete AD-5-shaped synthetic input, envelope ambiguity, the 64 KiB bound, exactly-one repair rules, hard-fail shapes, call counting, result arithmetic, and the 95% per-model threshold. It uses no network.
+The self-test executes the complete 79-case shared fixture catalog and tests all 18 frozen evidence-v2 predicates, including mutation routing. It produces synthetic NO-GO proof only; it does not verify a supplied artifact and uses no network.
 
-After a live run, verify all retained evidence with:
+Verify one or more explicit evidence-v2 JSON artifacts with the same shared fixture executor used by the self-test:
 
 ```sh
-npm run spike:judge:verify
+npm run spike:judge:verify:v2 -- path/to/evidence-v2.json [another-evidence-v2.json]
 ```
 
-The verifier recomputes executable-source and semantic hashes, fixture results, per-call classifications, counts, rates, outcome, and the Markdown decision record. Source drift is an explicit failure.
+The v2 verifier independently reconstructs provider requests and adapter inputs, executes the fixture catalog, recomputes source/runtime/legacy identities, classifications, counts, rates, predicates, outcome, and Markdown. It accepts an exact permitted loopback health endpoint, including a non-default port. A supplied v1 artifact remains immutable historical evidence and is never dispatched through v2 rules; `npm run spike:judge:verify` remains the legacy v1 verifier.
+
+The ordered v2 predicate oracle is versioned and hashed. Any predicate identity, ordering, description, or behavior change requires a new evidence version; it must not reinterpret retained v1 or v2 bytes in place.
 
 ## Authorized live protocol
 
@@ -52,9 +53,11 @@ The verifier recomputes executable-source and semantic hashes, fixture results, 
 
    For a paid plan, use `--plan paid`; the conservative gross estimate is printed before any inference. The flags are operator assertions and do not persist the account/profile identity.
 
-5. Stop the local adapter and run `npm run spike:judge:verify`.
+5. Stop the local adapter and run `npm run spike:judge:verify:v2 -- <the printed evidence-v2.json path>`.
 
-The runner records one probe per model first. If either request is rejected or returns no judge content, it writes `NO-GO` evidence and makes no matrix calls. If both return content, it performs exactly 20 sequential trials per model. `GO` requires both models to reach at least 19 direct-valid outputs out of 20, plus complete fixture and evidence integrity. Repaired results are reported separately and never inflate direct fidelity.
+The runner records both probes before any trial. If either probe is a provider error, timeout, or empty response, it writes verifiable `NO-GO` evidence with both probe records and makes no matrix calls. Otherwise it performs exactly 20 sequential trials per model; every scheduled timeout/provider error remains counted and does not stop the matrix. Adapter identity or authorization preflight failure writes verifiable zero-call `NO-GO` evidence. Evidence is written before a post-call integrity failure is surfaced, so authorized spend always leaves an inspectable fail-closed artifact. Missing provider usage remains `null` and is reported as missing, never as zero usage.
+
+`GO` requires both models to reach at least 19 direct-valid outputs out of 20 plus complete fixture and evidence integrity. Repaired results are reported separately and never inflate direct fidelity. Story 1.3 defines the judge recovery contract and offline verifier; Story 1.4 alone owns authorization and execution of any live provider run. Neither offline command authorizes inference.
 
 ## Story 1.8 handoff
 

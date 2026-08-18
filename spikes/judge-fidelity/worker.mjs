@@ -1,7 +1,10 @@
 import {
   MODEL_IDS,
+  JUDGE_RESULT_SCHEMA,
+  RESULT_CONTRACT_VERSION,
   SYSTEM_PROMPT,
-  VERDICT_RESPONSE_FORMAT,
+  deriveCandidateRef,
+  sha256Hex,
   stableStringify,
   validateSpikeInput,
 } from "./contract.mjs";
@@ -44,7 +47,7 @@ function allowlistedNumbers(value, keys) {
 
 function validateRequest(body, env) {
   const errors = [];
-  const keys = ["model", "messages", "max_tokens", "temperature", "response_format"];
+  const keys = ["model", "messages", "max_tokens", "temperature", "response_format", "candidate_schema_version", "candidate", "candidate_ref"];
   if (!body || typeof body !== "object" || Array.isArray(body)) return ["body must be an object"];
   for (const key of keys) if (!Object.hasOwn(body, key)) errors.push(`${key} is required`);
   for (const key of Object.keys(body)) if (!keys.includes(key)) errors.push(`${key} is not allowed`);
@@ -58,8 +61,8 @@ function validateRequest(body, env) {
   }
   if (body.temperature !== 0) errors.push("temperature must be exactly 0");
   if (body.max_tokens !== 2048) errors.push("max_tokens must be exactly 2048");
-  if (stableStringify(body.response_format) !== stableStringify(VERDICT_RESPONSE_FORMAT)) {
-    errors.push("response_format does not match the frozen verdict schema");
+  if (stableStringify(body.response_format) !== stableStringify({ type: "json_schema", json_schema: JUDGE_RESULT_SCHEMA })) {
+    errors.push("response_format does not match the frozen candidate-bound result schema");
   }
 
   if (!Array.isArray(body.messages) || body.messages.length !== 2) {
@@ -72,10 +75,12 @@ function validateRequest(body, env) {
       errors.push("user message must be serialized synthetic input");
     } else {
       try {
-        const input = JSON.parse(body.messages[1].content);
+        const wrapped = JSON.parse(body.messages[1].content);
+        if (!wrapped || typeof wrapped !== "object" || Array.isArray(wrapped) || Object.keys(wrapped).sort().join(",") !== "candidate_ref,input" || wrapped.candidate_ref !== body.candidate_ref) errors.push("user message does not bind the exact candidate_ref");
+        const input = wrapped.input;
         const validation = validateSpikeInput(input);
         if (!validation.valid) errors.push(...validation.errors);
-        if (stableStringify(input) !== body.messages[1].content) {
+        if (stableStringify(wrapped) !== body.messages[1].content) {
           errors.push("user message is not the canonical frozen serialization");
         }
       } catch {
@@ -84,6 +89,15 @@ function validateRequest(body, env) {
     }
   }
   return errors;
+}
+
+async function healthDescriptor(env) {
+  for (const key of ["ADAPTER_SOURCE_SHA256", "CONFIG_SOURCE_SHA256", "RUNTIME_SHA256"]) if (typeof env[key] !== "string" || !/^[a-f0-9]{64}$/.test(env[key])) throw new TypeError(`${key} must be an exact SHA-256 identity before v2 can be advertised`);
+  const responseFormat = { type: "json_schema", json_schema: JUDGE_RESULT_SCHEMA };
+  return { ok: true, inference: false, schema_version: "oddspark-judge-adapter-health/v2", result_contract_version: RESULT_CONTRACT_VERSION,
+    candidate_binding_version: "oddspark-candidate-ref/v1", models: MODEL_IDS, parameters: { temperature: 0, max_tokens: 2048 }, binding: "AI",
+    system_prompt_sha256: await sha256Hex(SYSTEM_PROMPT), message_contract_sha256: await sha256Hex(stableStringify({ roles: ["system", "user"], user_shape: { candidate_ref: "sha256", input: "canonical-json" } })),
+    wire_schema_sha256: await sha256Hex(stableStringify(responseFormat)), adapter_source_sha256: env.ADAPTER_SOURCE_SHA256, config_source_sha256: env.CONFIG_SOURCE_SHA256, runtime_sha256: env.RUNTIME_SHA256 };
 }
 
 function sanitizedEnvelope(result) {
@@ -119,6 +133,8 @@ async function handleRun(request, env) {
     return json({ ok: false, error: { code: "invalid_json" } }, 400);
   }
   const errors = validateRequest(body, env);
+  try { if (await deriveCandidateRef(body.candidate_schema_version, body.candidate) !== body.candidate_ref) errors.push("candidate_ref does not match the frozen candidate"); }
+  catch (error) { errors.push(String(error?.message ?? error)); }
   if (errors.length > 0) return json({ ok: false, error: { code: "invalid_request", details: errors } }, 400);
 
   let result;
@@ -140,7 +156,9 @@ async function handleRun(request, env) {
     ok: true,
     model: body.model,
     envelope: sanitizedEnvelope(result),
-    usage: allowlistedNumbers(result?.usage, USAGE_KEYS),
+    usage: Object.keys(allowlistedNumbers(result?.usage, USAGE_KEYS)).length
+      ? allowlistedNumbers(result?.usage, USAGE_KEYS)
+      : null,
     reported_effective_values: allowlistedNumbers(result, ["temperature", "max_tokens"]),
   });
 }
@@ -149,7 +167,8 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     if (request.method === "GET" && url.pathname === "/health") {
-      return json({ ok: true, inference: false });
+      try { return json(await healthDescriptor(env)); }
+      catch (error) { return json({ ok: false, inference: false, error: { code: "identity_unavailable", message: safeErrorMessage(error) } }, 503); }
     }
     if (request.method === "POST" && url.pathname === "/run") {
       return handleRun(request, env);

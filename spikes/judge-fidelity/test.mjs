@@ -1,5 +1,10 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { execFile } from "node:child_process";
+import { createHash } from "node:crypto";
+import { mkdtemp, readFile, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
+import { promisify } from "node:util";
 
 import {
   CONTRACT_VERSION,
@@ -7,10 +12,12 @@ import {
   SYSTEM_PROMPT,
   VERDICT_RESPONSE_FORMAT,
   VERDICT_SCHEMA,
+  PREDICATE_ORACLE,
   buildJudgeMessages,
   classifyJudgeCall,
   extractJudgeContent,
   fingerprintContractInput,
+  stableStringify,
   validateSpikeInput,
   validateVerdict,
 } from "./contract.mjs";
@@ -22,12 +29,25 @@ import {
   RESULT_SCHEMA_VERSION,
   assertLoopbackBaseUrl,
   buildModelRequest,
+  buildRequestManifest,
   decideOutcome,
   estimateMaximumUsage,
   renderMarkdown,
   runSequentialCalls,
+  executeRecoveryProtocol,
+  runLive,
   summarizeTrials,
 } from "./run.mjs";
+import { executeCurrentFixtureCatalog } from "./fixture-executor.mjs";
+import {
+  EVIDENCE_SOURCE_PATHS,
+  buildAdapterIdentity,
+  buildOperationalEvidence,
+  currentRuntimeIdentity,
+  currentSourceIdentity,
+  expectedAdapterHealth,
+  verifyEvidenceV2,
+} from "./evidence-v2.mjs";
 
 const fixtures = JSON.parse(
   await readFile(new URL("./fixtures.json", import.meta.url), "utf8"),
@@ -38,6 +58,7 @@ const packageJson = JSON.parse(
 const spikeWrangler = await readFile(new URL("./wrangler.toml", import.meta.url), "utf8");
 
 const tests = [];
+const execFileAsync = promisify(execFile);
 
 function test(name, fn) {
   tests.push({ name, fn });
@@ -316,6 +337,9 @@ test("the live request is frozen to both configured models and exact parameters"
   assert.equal(DEFAULT_BASE_URL, "http://127.0.0.1:8788");
   const request = buildModelRequest(MODELS[0], fixtures.synthetic_input);
   assert.deepEqual(Object.keys(request).sort(), [
+    "candidate",
+    "candidate_ref",
+    "candidate_schema_version",
     "max_tokens",
     "messages",
     "model",
@@ -324,7 +348,7 @@ test("the live request is frozen to both configured models and exact parameters"
   ]);
   assert.equal(request.temperature, 0);
   assert.equal(request.max_tokens, 2048);
-  assert.equal(request.response_format, VERDICT_RESPONSE_FORMAT);
+  assert.equal(request.response_format.type, "json_schema");
 });
 
 test("the spike config and scripts cannot deploy or touch production bindings", () => {
@@ -333,7 +357,7 @@ test("the spike config and scripts cannot deploy or touch production bindings", 
   assert.match(spikeWrangler, /AI_MODEL = "@cf\/openai\/gpt-oss-120b"/);
   assert.match(spikeWrangler, /AI_MODEL_FALLBACK = "@cf\/openai\/gpt-oss-20b"/);
   assert.doesNotMatch(spikeWrangler, /\b(?:routes?|kv_namespaces|durable_objects|assets|r2_buckets|d1_databases)\b/i);
-  assert.equal(packageJson.scripts.dev, "wrangler dev");
+  assert.equal(packageJson.scripts.dev, "wrangler dev --config wrangler.offline.toml");
   assert.equal(packageJson.scripts.test, "node test.mjs");
   assert.equal(packageJson.scripts.deploy, "wrangler deploy");
   assert.doesNotMatch(packageJson.scripts["spike:judge:dev"], /--remote|--local|deploy/);
@@ -361,11 +385,14 @@ test("the adapter health route makes no inference and live POST makes exactly on
   const env = {
     AI_MODEL: MODELS[0],
     AI_MODEL_FALLBACK: MODELS[1],
+    ADAPTER_SOURCE_SHA256: "a".repeat(64),
+    CONFIG_SOURCE_SHA256: "b".repeat(64),
+    RUNTIME_SHA256: "c".repeat(64),
     AI: {
       async run(model, input) {
         calls.push({ model, input });
         return {
-          response: clone(fixtures.valid_verdict),
+          response: { candidate_ref: buildModelRequest(model, fixtures.synthetic_input).candidate_ref, result: clone(fixtures.valid_verdict) },
           usage: { prompt_tokens: 100, completion_tokens: 200, total_tokens: 300, secret: 1 },
         };
       },
@@ -391,9 +418,10 @@ test("the adapter health route makes no inference and live POST makes exactly on
   }), env);
   assert.equal(response.status, 200);
   assert.equal(calls.length, 1);
+  assert.deepEqual(calls[0].input, buildRequestManifest(fixtures.synthetic_input).by_model[0].adapter_input);
   const body = await response.json();
   assert.equal(body.ok, true);
-  assert.deepEqual(body.envelope.response, fixtures.valid_verdict);
+  assert.deepEqual(body.envelope.response.result, fixtures.valid_verdict);
   assert.deepEqual(body.usage, { prompt_tokens: 100, completion_tokens: 200, total_tokens: 300 });
   assert.equal(Object.hasOwn(body, "tool_calls"), false);
 });
@@ -441,8 +469,8 @@ test("the sequential runner counts every invocation and never retries", async ()
       return { call_state: "timeout" };
     },
   });
-  assert.equal(invoked, 1);
-  assert.equal(timedOut.length, 1);
+  assert.equal(invoked, 3);
+  assert.equal(timedOut.length, 3);
 });
 
 function classifiedRecords(perModelDirect = 20) {
@@ -493,6 +521,213 @@ test("the Markdown decision record is deterministic and carries the Story 1.8 bo
   assert.match(first, /ambiguous envelopes/i);
 });
 
+test("the shared exhaustive v2 catalog executes all 79 declared fixtures", async () => {
+  const result = await executeCurrentFixtureCatalog();
+  assert.equal(result.declared_ids.length, 79);
+  assert.deepEqual(result.passing_ids, result.declared_ids);
+  assert.deepEqual(result.failures, []);
+  const altered = clone(fixtures);
+  altered.v2_cases[0].classification = "timeout";
+  const alteredResult = await executeCurrentFixtureCatalog(altered);
+  assert.equal(alteredResult.failures.length, 1);
+  const duplicated = clone(fixtures);
+  duplicated.v2_cases[1].id = duplicated.v2_cases[0].id;
+  const duplicateResult = await executeCurrentFixtureCatalog(duplicated);
+  assert.match(duplicateResult.failures.join("\n"), /unique/);
+});
+
+test("the live protocol runs both probes first and counts timeout and provider errors without retries", async () => {
+  const manifest = buildRequestManifest(fixtures.synthetic_input);
+  const order = [];
+  let tick = Date.parse("2026-08-17T01:00:00.000Z");
+  const records = await executeRecoveryProtocol({
+    requests: manifest.by_model,
+    async invoke({ request_body }) {
+      const position = order.length;
+      order.push(request_body.model);
+      const started_at = new Date(tick).toISOString();
+      tick += 10;
+      const ended_at = new Date(tick).toISOString();
+      tick += 10;
+      if (position === 6) return { call_state: "timeout", started_at, ended_at };
+      if (position === 29) return { call_state: "provider_error", error_code: "counted-provider-error", started_at, ended_at };
+      return { call_state: "received", envelope: { response: { candidate_ref: request_body.candidate_ref, verdict: clone(fixtures.valid_verdict) } }, usage: null, started_at, ended_at };
+    },
+  });
+  assert.equal(records.length, 42);
+  assert.deepEqual(records.slice(0, 2).map(({ kind, model }) => [kind, model]), MODELS.map((model) => ["probe", model]));
+  assert.equal(records[6].classification, "timeout");
+  assert.equal(records[29].classification, "provider_error");
+  assert.deepEqual(records.filter(({ kind, model }) => kind === "trial" && model === MODELS[0]).map(({ index }) => index), Array.from({ length: 20 }, (_, i) => i + 1));
+  assert.deepEqual(records.filter(({ kind, model }) => kind === "trial" && model === MODELS[1]).map(({ index }) => index), Array.from({ length: 20 }, (_, i) => i + 1));
+  assert.ok(records.every(({ usage }) => usage === null));
+});
+
+test("request and adapter-input divergence is rejected before inference", async () => {
+  for (const mutate of [
+    (manifest) => { manifest.by_model[1].body.candidate.title = "divergent"; },
+    (manifest) => { manifest.by_model[1].body.candidate_ref = "0".repeat(64); },
+    (manifest) => { manifest.by_model[1].body.candidate_schema_version = "oddspark-candidate/v999"; },
+    (manifest) => { manifest.by_model[1].adapter_input.max_tokens = 1; },
+  ]) {
+    const manifest = buildRequestManifest(fixtures.synthetic_input);
+    mutate(manifest);
+    let calls = 0;
+    await assert.rejects(executeRecoveryProtocol({ requests: manifest.by_model, async invoke() { calls += 1; } }), /before inference/);
+    assert.equal(calls, 0);
+  }
+});
+
+async function operationalEvidence({ blocked = false, endpoint = "http://127.0.0.1:9127/health", missingUsage = false } = {}) {
+  const [sources, runtime, fixtureResult] = await Promise.all([
+    currentSourceIdentity(EVIDENCE_SOURCE_PATHS), currentRuntimeIdentity(), executeCurrentFixtureCatalog(),
+  ]);
+  const manifest = buildRequestManifest(fixtures.synthetic_input);
+  const health = expectedAdapterHealth(sources, runtime);
+  const adapterIdentity = buildAdapterIdentity({ observed_health: blocked ? null : health, http_status: blocked ? 503 : 200, endpoint, outbound_request: manifest, sources, runtime });
+  let tick = Date.parse("2026-08-17T02:00:00.010Z");
+  const records = blocked ? [] : await executeRecoveryProtocol({ requests: manifest.by_model, async invoke({ request_body }) {
+    const started_at = new Date(tick).toISOString(); tick += 10;
+    const ended_at = new Date(tick).toISOString(); tick += 10;
+    return { call_state: "received", started_at, ended_at, envelope: { response: { candidate_ref: request_body.candidate_ref, verdict: clone(fixtures.valid_verdict) } }, usage: missingUsage ? undefined : { prompt_tokens: 1, completion_tokens: 2, total_tokens: 3 } };
+  } });
+  const evidence = await buildOperationalEvidence({
+    candidate_schema_version: `oddspark-candidate/v${fixtures.synthetic_input.candidate.version}`,
+    candidate: fixtures.synthetic_input.candidate,
+    request_input: fixtures.synthetic_input,
+    source_paths: EVIDENCE_SOURCE_PATHS,
+    fixtures: fixtureResult,
+    adapter: adapterIdentity,
+    run: { id: "operational-fixture", started_at: "2026-08-17T02:00:00.000Z", ended_at: new Date(tick + 10).toISOString(), models: MODELS,
+      authorization: { operator_approved: !blocked, profile_confirmed: !blocked, headroom_confirmed: !blocked, approved_call_cap: blocked ? 0 : 42, estimated_calls: 42, calls_made: records.length, plan: blocked ? null : "paid", remaining_free_neurons: null, estimated_gross_neurons: 11000 },
+      preflight_blockers: blocked ? ["adapter identity preflight failed"] : [] },
+    records,
+  }, { currentSourceIdentity: async () => sources, currentRuntimeIdentity: async () => runtime });
+  return { evidence, sources, runtime, fixtureResult };
+}
+
+test("operational evidence validates exact nondefault loopback health, 42 calls, order, and missing-usage honesty", async () => {
+  const { evidence, sources, runtime, fixtureResult } = await operationalEvidence({ missingUsage: true });
+  const verified = await verifyEvidenceV2(evidence, { currentSourceIdentity: async () => sources, currentRuntimeIdentity: async () => runtime, executeFixtures: async () => fixtureResult });
+  assert.equal(verified.valid, true);
+  assert.equal(evidence.records.length, 42);
+  assert.match(evidence.report, /42 calls missing usage/);
+  assert.doesNotMatch(evidence.report, /42 calls missing usage[\s\S]*reported tokens; 0 calls missing usage/);
+
+  const badRuntime = clone(runtime);
+  badRuntime.execution.wrangler = "0.0.0";
+  const runtimeMismatch = clone(evidence);
+  runtimeMismatch.runtime = badRuntime;
+  const runtimeResult = await verifyEvidenceV2(runtimeMismatch, { currentSourceIdentity: async () => sources, currentRuntimeIdentity: async () => badRuntime, executeFixtures: async () => fixtureResult });
+  assert.equal(runtimeResult.predicate_results.find(({ id }) => id === "runtime.identity").pass, false);
+
+  const forbiddenEndpoint = clone(evidence);
+  forbiddenEndpoint.adapter.endpoint = "http://192.0.2.1:9127/health";
+  const endpointResult = await verifyEvidenceV2(forbiddenEndpoint, { currentSourceIdentity: async () => sources, currentRuntimeIdentity: async () => runtime, executeFixtures: async () => fixtureResult });
+  assert.equal(endpointResult.predicate_results.find(({ id }) => id === "adapter.identity").pass, false);
+});
+
+test("preflight identity failure is retained as a verifiable zero-call NO-GO artifact", async () => {
+  const { evidence, sources, runtime, fixtureResult } = await operationalEvidence({ blocked: true });
+  const verified = await verifyEvidenceV2(evidence, { currentSourceIdentity: async () => sources, currentRuntimeIdentity: async () => runtime, executeFixtures: async () => fixtureResult });
+  assert.equal(verified.valid, true);
+  assert.equal(evidence.records.length, 0);
+  assert.equal(evidence.outcome.decision, "NO-GO");
+  assert.deepEqual(evidence.run.preflight_blockers, ["adapter identity preflight failed"]);
+});
+
+test("independent reconstruction catches a self-consistent mutated request manifest", async () => {
+  const { evidence, sources, runtime, fixtureResult } = await operationalEvidence();
+  evidence.adapter.outbound_request.by_model[0].body.max_tokens = 1024;
+  evidence.adapter.outbound_request.by_model[0].sha256 = createHash("sha256").update(stableStringify(evidence.adapter.outbound_request.by_model[0].body)).digest("hex");
+  evidence.adapter.outbound_request_sha256 = createHash("sha256").update(stableStringify(evidence.adapter.outbound_request)).digest("hex");
+  const verified = await verifyEvidenceV2(evidence, { currentSourceIdentity: async () => sources, currentRuntimeIdentity: async () => runtime, executeFixtures: async () => fixtureResult });
+  assert.equal(verified.valid, false);
+  assert.equal(verified.predicate_results.find(({ id }) => id === "adapter.identity").pass, false);
+});
+
+test("the explicit artifact verifier executes the shared fixture executor", async () => {
+  const { evidence } = await operationalEvidence();
+  const directory = await mkdtemp(path.join(tmpdir(), "oddspark-explicit-verifier-"));
+  const evidencePath = path.join(directory, "evidence-v2.json");
+  await writeFile(evidencePath, `${JSON.stringify(evidence)}\n`);
+  const { stdout } = await execFileAsync(process.execPath, [new URL("./verify-v2.mjs", import.meta.url).pathname, evidencePath], { cwd: new URL("../..", import.meta.url).pathname });
+  assert.match(stdout, /PASS \(18 predicates, 79 fixtures\)/);
+});
+
+test("all 18 frozen predicates are retained and malformed input is contained without throwing", async () => {
+  const { evidence, sources, runtime, fixtureResult } = await operationalEvidence();
+  assert.deepEqual(evidence.predicate_results.map(({ id }) => id), PREDICATE_ORACLE.map(({ id }) => id));
+  assert.equal(PREDICATE_ORACLE.length, 18);
+  for (const malformed of [null, [], { schema_version: "wrong" }, { ...evidence, records: { length: 42 } }]) {
+    const result = await verifyEvidenceV2(malformed, { currentSourceIdentity: async () => sources, currentRuntimeIdentity: async () => runtime, executeFixtures: async () => fixtureResult });
+    assert.equal(result.valid, false);
+    assert.equal(result.predicate_results.length, 18);
+  }
+  const unknownVersion = clone(evidence);
+  unknownVersion.schema_version = "oddspark.judge-recovery-evidence/v999";
+  const rejectedVersion = await verifyEvidenceV2(unknownVersion, { currentSourceIdentity: async () => sources, currentRuntimeIdentity: async () => runtime, executeFixtures: async () => fixtureResult });
+  assert.equal(rejectedVersion.valid, false);
+  assert.match(rejectedVersion.diagnostics["evidence.shape"].join("\n"), /shape/);
+});
+
+test("each frozen predicate has a direct mutation route", async () => {
+  const { evidence, sources, runtime, fixtureResult } = await operationalEvidence();
+  const mutations = {
+    "evidence.shape": (x) => { x.unexpected = true; },
+    "oracle.identity": (x) => { x.oracle.hash = "0".repeat(64); },
+    "legacy.immutable": (x) => { x.legacy[0].observed_sha256 = "0".repeat(64); },
+    "runtime.identity": (x) => { x.runtime.execution.wrangler = "0.0.0"; },
+    "source.identity": (x) => { x.sources[0].sha256 = "0".repeat(64); },
+    "adapter.identity": (x) => { x.adapter.endpoint = "https://example.com/health"; },
+    "candidate.binding": (x) => { x.candidate.ref = "0".repeat(64); },
+    "fixtures.executed": (x) => { x.fixtures.passing_ids.pop(); },
+    "records.classified": (x) => { x.records[0].classification = "timeout"; },
+    "records.closed": (x) => { x.records[0].unexpected = true; },
+    "run.authorization": (x) => { x.run.authorization.calls_made = 41; },
+    "run.cardinality": (x) => { x.records.pop(); x.run.authorization.calls_made = 41; },
+    "run.ordering": (x) => { x.records[2].started_at = "2026-08-17T01:00:00.000Z"; },
+    "run.common_request": (x) => { x.records[0].request_sha256 = "0".repeat(64); },
+    "summary.rates": (x) => { x.summary.by_model[MODELS[0]].total = 999; },
+    "outcome.deterministic": (x) => { x.outcome.decision = "NO-GO"; },
+    "predicates.retained": (x) => { x.predicate_results[0].pass = false; },
+    "report.deterministic": (x) => { x.report += "mutation\n"; },
+  };
+  assert.deepEqual(Object.keys(mutations), PREDICATE_ORACLE.map(({ id }) => id));
+  for (const [target, mutate] of Object.entries(mutations)) {
+    const changed = clone(evidence); mutate(changed);
+    const result = await verifyEvidenceV2(changed, { currentSourceIdentity: async () => sources, currentRuntimeIdentity: async () => runtime, executeFixtures: async () => fixtureResult });
+    assert.equal(result.predicate_results.find(({ id }) => id === target).pass, false, `${target} mutation did not route to its predicate`);
+  }
+});
+
+test("post-call verification failure retains the evidence file before failing closed", async () => {
+  const [sources, runtime] = await Promise.all([currentSourceIdentity(EVIDENCE_SOURCE_PATHS), currentRuntimeIdentity()]);
+  const health = expectedAdapterHealth(sources, runtime);
+  const directory = await mkdtemp(path.join(tmpdir(), "oddspark-evidence-retention-"));
+  let retainedPath;
+  let tick = Date.parse("2026-08-17T03:00:00.000Z");
+  await assert.rejects(runLive({ approved_call_cap: 42, profile_confirmed: true, headroom_confirmed: true, plan: "paid", base_url: "http://127.0.0.1:9567" }, {
+    currentSourceIdentity: async () => sources,
+    currentRuntimeIdentity: async () => runtime,
+    observeHealth: async () => ({ endpoint: "http://127.0.0.1:9567/health", http_status: 200, body: health }),
+    async invoke({ request_body }) {
+      const started_at = new Date(tick).toISOString(); tick += 10;
+      const ended_at = new Date(tick).toISOString(); tick += 10;
+      return { call_state: "received", started_at, ended_at, envelope: { response: { candidate_ref: request_body.candidate_ref, verdict: clone(fixtures.valid_verdict) } }, usage: null };
+    },
+    async writeEvidence(evidence) {
+      evidence.records[0].classification = "timeout";
+      retainedPath = path.join(directory, "retained.json");
+      await writeFile(retainedPath, `${JSON.stringify(evidence)}\n`);
+      return { jsonPath: retainedPath, markdownPath: path.join(directory, "retained.md") };
+    },
+  }), /retained evidence failed verification/);
+  const retained = JSON.parse(await readFile(retainedPath, "utf8"));
+  assert.equal(retained.records.length, 42);
+  assert.equal(retained.records[0].classification, "timeout");
+});
+
 let passed = 0;
 for (const { name, fn } of tests) {
   try {
@@ -506,3 +741,6 @@ for (const { name, fn } of tests) {
 }
 
 console.log(`\n${passed}/${tests.length} spike tests passed`);
+const finalFixtureCoverage = await executeCurrentFixtureCatalog();
+console.log(`${finalFixtureCoverage.passing_ids.length}/${finalFixtureCoverage.declared_ids.length} shared fixtures passed`);
+console.log(`${PREDICATE_ORACLE.length}/${PREDICATE_ORACLE.length} evidence predicates covered`);
