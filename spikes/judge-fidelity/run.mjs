@@ -1,6 +1,6 @@
 import { execFile } from "node:child_process";
 import { createHash, randomUUID } from "node:crypto";
-import { link, mkdir, readFile, readdir, unlink, writeFile } from "node:fs/promises";
+import { link, mkdir, open, readFile, readdir, realpath, rename, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { promisify } from "node:util";
@@ -15,11 +15,25 @@ import {
 } from "./contract.mjs";
 import { buildAdapterIdentity, buildOperationalEvidence, currentLegacyIdentity, currentRuntimeIdentity, currentSourceIdentity, EVIDENCE_SOURCE_PATHS, expectedAdapterHealth, retainOperationalRecord, verifyEvidenceV2 } from "./evidence-v2.mjs";
 import { executeCurrentFixtureCatalog } from "./fixture-executor.mjs";
+import {
+  RECOVERY_APPROVAL_VERSION,
+  RECOVERY_COMPLETION_VERSION,
+  buildQualificationBundle,
+  createRecoveryPlan,
+  parseCanonicalJsonBytes,
+  validateApproval,
+  validateRecoveryPlan,
+  verifyCompletedArtifactSet,
+  verifyQualificationBundle,
+} from "./qualification.mjs";
 
 const execFileAsync = promisify(execFile);
 const SPIKE_DIR = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(SPIKE_DIR, "../..");
 const RESULTS_DIR = path.join(SPIKE_DIR, "results");
+const RECOVERY_LOCK_FILE = ".judge-recovery.lock";
+const RECOVERY_RECEIPT_FILE = ".judge-recovery-spend.json";
+const RECOVERY_RECEIPT_VERSION = "oddspark.judge-recovery-spend/v1";
 const FIXTURES_PATH = path.join(SPIKE_DIR, "fixtures.json");
 const TEST_PATH = path.join(SPIKE_DIR, "test.mjs");
 
@@ -226,7 +240,7 @@ export async function invokeAdapter({
   }
 }
 
-export async function executeRecoveryProtocol({ requests, base_url = DEFAULT_BASE_URL, invoke = invokeAdapter, on_record = () => {} }) {
+export async function executeRecoveryProtocol({ requests, base_url = DEFAULT_BASE_URL, invoke = invokeAdapter, before_invoke = async () => {}, on_record = () => {} }) {
   if (!Array.isArray(requests) || requests.length !== MODELS.length || requests.some((entry, i) => entry.model !== MODELS[i])) throw new TypeError("requests must bind the frozen ordered model pair");
   const canonicalCandidate = stableStringify(requests[0].body.candidate); const schema = requests[0].body.candidate_schema_version; const ref = requests[0].body.candidate_ref;
   for (const entry of requests) {
@@ -247,7 +261,7 @@ export async function executeRecoveryProtocol({ requests, base_url = DEFAULT_BAS
   }
   const records = [];
   const retain = async (kind, entry, index, call) => {
-    const usage = call.usage === undefined ? null : call.usage;
+    const usage = normalizeProviderUsage(call.usage);
     const record = await retainOperationalRecord({ kind, model: entry.model, index, started_at: call.started_at, ended_at: call.ended_at, call_state: call.call_state,
       error_code: call.error_code ?? null, envelope: call.envelope ?? null, usage, request_sha256: entry.sha256, candidate_ref: ref });
     records.push(record);
@@ -255,8 +269,12 @@ export async function executeRecoveryProtocol({ requests, base_url = DEFAULT_BAS
   };
   const invokeRetained = async (kind, entry, index) => {
     const started_at = new Date().toISOString();
-    try { await retain(kind, entry, index, await invoke({ base_url, request_body: entry.body })); }
+    try {
+      await before_invoke({ kind, model: entry.model, index });
+      await retain(kind, entry, index, await invoke({ base_url, request_body: entry.body }));
+    }
     catch (error) {
+      if (error?.code === "ODDSPARK_RECOVERY_GOVERNANCE_FAILURE" || error?.code === "ODDSPARK_FATAL_PROCESS_EXIT") throw error;
       await retain(kind, entry, index, { call_state: "provider_error", error_code: "invocation_exception", envelope: null, usage: null, started_at, ended_at: new Date().toISOString() });
     }
   };
@@ -265,6 +283,25 @@ export async function executeRecoveryProtocol({ requests, base_url = DEFAULT_BAS
     for (const entry of requests) for (let i = 1; i <= TRIALS_PER_MODEL; i += 1) await invokeRetained("trial", entry, i);
   }
   return records;
+}
+
+export function normalizeProviderUsage(value) {
+  if (value === null || value === undefined || typeof value !== "object" || Array.isArray(value)) return null;
+  const keys = Object.keys(value);
+  const canonical = ["prompt_tokens", "completion_tokens", "total_tokens"];
+  const aliases = ["input_tokens", "output_tokens"];
+  const allowed = new Set([...canonical, ...aliases, "neurons"]);
+  if (keys.some((key) => !allowed.has(key))) return null;
+  const hasCanonical = ["prompt_tokens", "completion_tokens"].some((key) => Object.hasOwn(value, key));
+  const hasAliases = aliases.some((key) => Object.hasOwn(value, key));
+  if (hasCanonical && hasAliases) return null;
+  const prompt = hasCanonical ? value.prompt_tokens : value.input_tokens;
+  const completion = hasCanonical ? value.completion_tokens : value.output_tokens;
+  const total = Object.hasOwn(value, "total_tokens") ? value.total_tokens
+    : !hasCanonical && Number.isSafeInteger(prompt) && Number.isSafeInteger(completion) ? prompt + completion : null;
+  if (!Number.isSafeInteger(prompt) || prompt < 0 || !Number.isSafeInteger(completion) || completion < 0
+    || !Number.isSafeInteger(total) || total < 0 || !Number.isSafeInteger(prompt + completion) || total !== prompt + completion) return null;
+  return { prompt_tokens: prompt, completion_tokens: completion, total_tokens: total };
 }
 
 export async function runSequentialCalls({ model, input, count, invoke = invokeAdapter }) {
@@ -393,13 +430,13 @@ export function renderMarkdown(result) {
   else for (const reason of result.outcome.reasons) lines.push(`- ${reason}`);
   lines.push(
     "",
-    "## Story 1.8 handoff",
+    "## Structural boundary",
     "",
-    "Story 1.8 may adopt allowlisted extraction from `response`, `result`, or `choices[0].message.content`; type-sensitive byte-identical duplicate handling; the 64 KiB UTF-8 bound; and exactly one of BOM, lowercase whole-value JSON fence, one double-encoded JSON string, or bounded single-object surrounding-prose repair followed by strict validation.",
+    "Allowlisted extraction is limited to `response`, `result`, or `choices[0].message.content`; duplicate handling is type-sensitive and byte-identical; extracted content is bounded to 64 KiB UTF-8; and at most one declared repair may precede strict validation.",
     "",
     "Empty or conflicting/ambiguous envelopes, oversized output, truncated or multiple objects, guessed JSON syntax, chained wrappers, schema drift, coercion, semantic omission, and `pass: true` with any reported failure remain hard failures.",
     "",
-    "Semantic calibration still depends on Stories 1.3 and 1.8; this record establishes structural fidelity only.",
+    "Semantic calibration remains a separate governed stage; this record establishes structural fidelity only.",
     "",
   );
   return `${lines.join("\n")}\n`;
@@ -509,35 +546,323 @@ async function callRecord({ model, index, call, requestSha256, probe }) {
   return base;
 }
 
-function authorizationFromOptions(options, estimate) {
-  const plan = options.plan ?? null;
-  const remaining = options.remaining_free_neurons === undefined
-    ? null
-    : Number(options.remaining_free_neurons);
-  const authorization = {
-    operator_approved: Number(options.approved_call_cap) === APPROVED_CALL_CAP,
-    approved_call_cap: Number(options.approved_call_cap) || 0,
-    approval_scope: "2 probes plus 20 counted trials per model; no retries",
-    profile_confirmed: options.profile_confirmed === true,
-    headroom_confirmed: options.headroom_confirmed === true,
-    plan,
-    remaining_free_neurons_at_check: Number.isFinite(remaining) ? remaining : null,
-    account_identifier_persisted: false,
-  };
-  const blockers = [];
-  if (!authorization.operator_approved) blockers.push(`approved call cap must equal ${APPROVED_CALL_CAP}`);
-  if (!authorization.profile_confirmed) blockers.push("active Wrangler profile was not confirmed");
-  if (!authorization.headroom_confirmed) blockers.push("Workers AI headroom was not confirmed");
-  if (plan !== "free" && plan !== "paid") blockers.push("Workers plan must be confirmed as free or paid");
-  if (plan === "free") {
-    if (!Number.isFinite(remaining)) blockers.push("remaining free neurons were not recorded");
-    else if (remaining < estimate.gross_neurons) blockers.push("remaining free neurons are below the conservative run estimate");
-  }
-  return { authorization, blockers };
-}
-
 function inputTokenUpperBound(input) {
   return Math.max(...MODELS.map((model) => Buffer.byteLength(JSON.stringify(buildModelRequest(model, input)), "utf8")));
+}
+
+function evidenceBasename(evidence, attemptId = randomUUID()) {
+  if (typeof attemptId !== "string" || !/^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/.test(attemptId)) throw new TypeError("artifact attempt id is invalid");
+  const evidenceBytes = Buffer.from(`${JSON.stringify(evidence, null, 2)}\n`);
+  return `${evidence.run.started_at.slice(0, 10)}-${evidence.run.id.slice(0, 8)}-${sha256Bytes(evidenceBytes).slice(0, 16)}-${attemptId}-v2`;
+}
+
+function assertSafeBasename(value, label = "artifact") {
+  if (typeof value !== "string" || path.basename(value) !== value || !/^[A-Za-z0-9][A-Za-z0-9._-]{0,255}$/.test(value)) {
+    throw new TypeError(`${label} basename is unsafe`);
+  }
+  return value;
+}
+
+function canonicalSystemPath(resolved) {
+  return resolved === "/var" || resolved.startsWith("/var/") ? `/private${resolved}`
+    : resolved === "/tmp" || resolved.startsWith("/tmp/") ? `/private${resolved}` : resolved;
+}
+
+async function physicalDirectory(directory) {
+  const resolved = path.resolve(directory);
+  await mkdir(resolved, { recursive: true });
+  const physical = await realpath(resolved);
+  const systemCanonical = canonicalSystemPath(resolved);
+  if (physical !== systemCanonical) throw new Error("output directory must not contain symlink aliases");
+  return physical;
+}
+
+async function syncDirectory(directory) {
+  const handle = await open(directory, "r");
+  try { await handle.sync(); } finally { await handle.close(); }
+}
+
+const canonicalUtcTimestamp = (value) => typeof value === "string" && Number.isFinite(Date.parse(value)) && new Date(value).toISOString() === value;
+
+function validSpendReceipt(receipt) {
+  const keys = ["schema_version", "attempt_id", "approval_run_id", "created_at", "updated_at", "state", "calls_started", "last_call"];
+  const callKeys = ["sequence", "kind", "model", "index", "marked_at"];
+  return receipt && typeof receipt === "object" && !Array.isArray(receipt) && Object.keys(receipt).length === keys.length && keys.every((key) => Object.hasOwn(receipt, key))
+    && receipt.schema_version === RECOVERY_RECEIPT_VERSION
+    && typeof receipt.attempt_id === "string" && /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/.test(receipt.attempt_id)
+    && typeof receipt.approval_run_id === "string" && /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/.test(receipt.approval_run_id)
+    && [receipt.created_at, receipt.updated_at].every(canonicalUtcTimestamp)
+    && ["reserved", "calls-started", "completed-spent"].includes(receipt.state)
+    && Number.isSafeInteger(receipt.calls_started) && receipt.calls_started >= 0 && receipt.calls_started <= APPROVED_CALL_CAP
+    && ((receipt.calls_started === 0 && receipt.state === "reserved" && receipt.last_call === null)
+      || (receipt.calls_started > 0 && ["calls-started", "completed-spent"].includes(receipt.state)
+        && receipt.last_call && typeof receipt.last_call === "object" && !Array.isArray(receipt.last_call)
+        && Object.keys(receipt.last_call).length === callKeys.length && callKeys.every((key) => Object.hasOwn(receipt.last_call, key))
+        && receipt.last_call.sequence === receipt.calls_started && ["probe", "trial"].includes(receipt.last_call.kind)
+        && MODELS.includes(receipt.last_call.model) && Number.isSafeInteger(receipt.last_call.index) && receipt.last_call.index >= 1
+        && canonicalUtcTimestamp(receipt.last_call.marked_at)));
+}
+
+async function durableWriteJson(target, value) {
+  const directory = await physicalDirectory(path.dirname(target));
+  if (canonicalSystemPath(path.dirname(path.resolve(target))) !== directory) throw new Error("durable JSON target escapes its physical output directory");
+  const temporary = `${target}.${randomUUID()}.tmp`;
+  let handle;
+  try {
+    handle = await open(temporary, "wx", 0o600);
+    await handle.writeFile(`${JSON.stringify(value, null, 2)}\n`);
+    await handle.sync();
+    await handle.close(); handle = null;
+    await rename(temporary, target);
+    await syncDirectory(directory);
+  } finally {
+    await handle?.close().catch(() => {});
+    await unlink(temporary).catch(() => {});
+  }
+}
+
+export async function acquireRecoveryLock(resultsDir = RESULTS_DIR, { now = new Date(), attempt_id = randomUUID() } = {}) {
+  assertSafeBasename(attempt_id, "lock attempt");
+  const directory = await physicalDirectory(resultsDir);
+  const lockPath = path.join(directory, RECOVERY_LOCK_FILE);
+  let handle;
+  try {
+    handle = await open(lockPath, "wx", 0o600);
+    await handle.writeFile(`${JSON.stringify({ attempt_id, pid: process.pid, created_at: now.toISOString() })}\n`);
+    await handle.sync();
+    await syncDirectory(directory);
+    let released = false;
+    return {
+      acquired: true,
+      attempt_id,
+      lockPath,
+      async release() {
+        if (released) return;
+        released = true;
+        await handle.close();
+        let retained;
+        try { retained = JSON.parse(await readFile(lockPath, "utf8")); } catch { throw new Error("recovery lock ownership became unprovable; manual recovery required"); }
+        if (retained?.attempt_id !== attempt_id) throw new Error("recovery lock ownership changed; refusing to unlink a successor lock");
+        await unlink(lockPath);
+        await syncDirectory(directory);
+      },
+    };
+  } catch (error) {
+    await handle?.close().catch(() => {});
+    if (error?.code === "EEXIST") return { acquired: false, reason: "recovery lock exists; stale and unknown locks require manual recovery" };
+    throw error;
+  }
+}
+
+async function reserveRecoveryAttempt(resultsDir, attemptId, approvalRunId, now) {
+  try {
+    await readFile(path.join(resultsDir, RECOVERY_RECEIPT_FILE));
+    throw new Error("an existing spend receipt requires manual recovery before another attempt can be reserved");
+  } catch (error) {
+    if (error?.code !== "ENOENT") throw error;
+  }
+  const timestamp = now.toISOString();
+  const receipt = { schema_version: RECOVERY_RECEIPT_VERSION, attempt_id: attemptId, approval_run_id: approvalRunId, created_at: timestamp, updated_at: timestamp, state: "reserved", calls_started: 0, last_call: null };
+  await durableWriteJson(path.join(resultsDir, RECOVERY_RECEIPT_FILE), receipt);
+  return receipt;
+}
+
+async function clearVerifiedZeroCallReservation(resultsDir, attemptId) {
+  const receiptPath = path.join(resultsDir, RECOVERY_RECEIPT_FILE);
+  const parsed = parseCanonicalJsonBytes(await readFile(receiptPath), "spend receipt");
+  if (!parsed.valid || !validSpendReceipt(parsed.value) || parsed.value.attempt_id !== attemptId
+    || parsed.value.state !== "reserved" || parsed.value.calls_started !== 0) {
+    throw new Error("reserved spend receipt changed before verified zero-call recovery; manual recovery required");
+  }
+  await unlink(receiptPath);
+  await syncDirectory(await physicalDirectory(resultsDir));
+}
+
+async function markRecoveryCallStarted(resultsDir, receipt, { kind, model, index }, now = new Date()) {
+  const sequence = receipt.calls_started + 1;
+  const markedAt = now.toISOString();
+  const next = { ...receipt, updated_at: markedAt, state: "calls-started", calls_started: sequence, last_call: { sequence, kind, model, index, marked_at: markedAt } };
+  await durableWriteJson(path.join(resultsDir, RECOVERY_RECEIPT_FILE), next);
+  return next;
+}
+
+async function completeRecoverySpend(resultsDir, receipt, now = new Date()) {
+  const completed = { ...receipt, updated_at: now.toISOString(), state: "completed-spent" };
+  await durableWriteJson(path.join(resultsDir, RECOVERY_RECEIPT_FILE), completed);
+  return completed;
+}
+
+export function approvalTemplate(plan) {
+  return {
+    schema_version: RECOVERY_APPROVAL_VERSION,
+    plan_ref: plan.plan_ref,
+    approval_run_id: plan.approval_run_id,
+    approved_at: null,
+    expires_at: null,
+    approved_call_cap: plan.call_policy.approved_call_cap,
+    maximum_cost_usd: plan.maximum_cost.gross_usd,
+    decision: "REPLACE_WITH_APPROVED_AFTER_REVIEW",
+  };
+}
+
+export async function findPriorOperationalRecovery(resultsDir = RESULTS_DIR, dependencies = {}) {
+  let entries = [];
+  let spentReceipt = null;
+  let reservedReceipt = null;
+  let receiptFallback = null;
+  try { entries = await readdir(resultsDir); } catch (error) { if (error?.code !== "ENOENT") throw error; }
+  if (entries.includes(RECOVERY_RECEIPT_FILE)) {
+    let receipt;
+    try { receipt = JSON.parse(await readFile(path.join(resultsDir, RECOVERY_RECEIPT_FILE), "utf8")); } catch { return { evidence_file: null, qualification_file: null, qualification_refs: [], malformed: true, blocking_reason: "spend receipt is unreadable" }; }
+    if (!validSpendReceipt(receipt)) return { evidence_file: null, qualification_file: null, qualification_refs: [], malformed: true, receipt_file: RECOVERY_RECEIPT_FILE, blocking_reason: "spend receipt proves or cannot disprove provider invocation" };
+    if (receipt.calls_started > 0 || receipt.state !== "reserved") {
+      spentReceipt = receipt;
+      receiptFallback = { evidence_file: null, qualification_file: null, qualification_refs: [], malformed: false, receipt_file: RECOVERY_RECEIPT_FILE, blocking_reason: "spend receipt proves or cannot disprove provider invocation" };
+    } else reservedReceipt = receipt;
+  }
+  const invalidArtifact = entries.find((entry) => entry.endsWith("-v2-invalid.json"));
+  if (invalidArtifact && !spentReceipt) return { evidence_file: invalidArtifact, qualification_file: null, qualification_refs: [], malformed: true, blocking_reason: "invalid retained evidence cannot disprove spend" };
+  const evidenceNames = entries.filter((entry) => entry.endsWith("-v2.json")).sort();
+  const temporaryArtifacts = entries.filter((entry) => entry.endsWith(".tmp"));
+  const explainedTemporaryArtifacts = new Set();
+  const expectedSiblings = new Set(evidenceNames.flatMap((name) => [name.replace(/\.json$/, ".md"), name.replace(/-v2\.json$/, "-qualification.json"), `${name.replace(/\.json$/, "")}.complete.json`]));
+  const partial = entries.find((entry) => (entry.endsWith("-v2.md") && !expectedSiblings.has(entry))
+    || (entry.endsWith("-qualification.json") && !expectedSiblings.has(entry))
+    || (entry.endsWith("-v2.complete.json") && !expectedSiblings.has(entry)));
+  if (partial && !spentReceipt) return { evidence_file: partial, qualification_file: null, qualification_refs: [], malformed: true, blocking_reason: "partial recovery publication cannot disprove spend" };
+  for (const name of evidenceNames) {
+    if (spentReceipt && !name.endsWith(`-${spentReceipt.attempt_id}-v2.json`)) continue;
+    const basename = name.replace(/\.json$/, "");
+    const markerName = `${basename}.complete.json`;
+    const expectedMemberNames = [name, name.replace(/\.json$/, ".md"), name.replace(/-v2\.json$/, "-qualification.json")];
+    const completed = await verifyCompletedArtifactSet(resultsDir, markerName, expectedMemberNames);
+    if (!completed.valid) {
+      if (spentReceipt) continue;
+      return { evidence_file: name, qualification_file: expectedMemberNames[2], qualification_refs: [], malformed: true, blocking_reason: "partial recovery publication lacks a valid completion marker" };
+    }
+    for (const temporary of temporaryArtifacts) {
+      const boundName = [...expectedMemberNames, markerName].find((member) => temporary.startsWith(`.${member}.`) && temporary.endsWith(".tmp"));
+      if (!boundName) continue;
+      try {
+        const temporaryBytes = await readFile(path.join(resultsDir, temporary));
+        const binding = boundName === markerName
+          ? { bytes: Buffer.byteLength(`${JSON.stringify(completed.marker, null, 2)}\n`), sha256: sha256Bytes(`${JSON.stringify(completed.marker, null, 2)}\n`) }
+          : completed.marker.files.find(({ name: memberName }) => memberName === boundName);
+        if (binding && temporaryBytes.byteLength === binding.bytes && sha256Bytes(temporaryBytes) === binding.sha256) explainedTemporaryArtifacts.add(temporary);
+      } catch { /* unexplained temporary remains blocking */ }
+    }
+    let evidence; let evidenceBytes;
+    try {
+      evidenceBytes = await readFile(path.join(resultsDir, name));
+      evidence = JSON.parse(evidenceBytes.toString("utf8"));
+    } catch {
+      if (spentReceipt) continue;
+      return { evidence_file: name, qualification_file: name.replace(/-v2\.json$/, "-qualification.json"), qualification_refs: [], malformed: true, blocking_reason: "evidence is unreadable" };
+    }
+    const markdownName = name.replace(/\.json$/, ".md");
+    const qualificationName = name.replace(/-v2\.json$/, "-qualification.json");
+    let markdown; let evidenceVerification;
+    try {
+      markdown = await readFile(path.join(resultsDir, markdownName), "utf8");
+      evidenceVerification = await verifyEvidenceV2(evidence, dependencies);
+    } catch { /* handled below */ }
+    if (!evidenceVerification?.valid || markdown !== evidence?.report) {
+      if (spentReceipt) continue;
+      return { evidence_file: name, qualification_file: qualificationName, qualification_refs: [], malformed: true, blocking_reason: "evidence or Markdown failed complete verification" };
+    }
+    let qualification; let qualificationVerification;
+    try {
+      qualification = JSON.parse(await readFile(path.join(resultsDir, qualificationName), "utf8"));
+      qualificationVerification = await verifyQualificationBundle(qualification, evidence, evidenceBytes, dependencies);
+    } catch { /* unverified */ }
+    if (spentReceipt) {
+      const receiptMatchesEvidence = evidence.run.id === spentReceipt.approval_run_id
+        && evidence.records.length === spentReceipt.calls_started;
+      if (!receiptMatchesEvidence || !qualificationVerification?.valid) continue;
+      return { evidence_file: name, qualification_file: qualificationName, qualification_refs: qualification.qualification_refs, refs_verified: true, malformed: false, receipt_file: RECOVERY_RECEIPT_FILE, blocking_reason: "verified evidence shows provider calls were started" };
+    }
+    if (evidence.records.length === 0) {
+      if (!qualificationVerification?.valid) return { evidence_file: name, qualification_file: qualificationName, qualification_refs: [], malformed: true, blocking_reason: "zero-call artifact is incomplete or its qualification bundle is invalid" };
+      if (reservedReceipt && name.endsWith(`-${reservedReceipt.attempt_id}-v2.json`) && evidence.run.id === reservedReceipt.approval_run_id) {
+        receiptFallback = { evidence_file: name, qualification_file: qualificationName, qualification_refs: [], refs_verified: true, malformed: false,
+          receipt_file: RECOVERY_RECEIPT_FILE, safe_zero_call_receipt: true, attempt_id: reservedReceipt.attempt_id };
+      }
+      continue;
+    }
+    const qualification_refs = qualificationVerification?.valid ? qualification.qualification_refs : [];
+    return { evidence_file: name, qualification_file: qualificationName, qualification_refs, refs_verified: qualificationVerification?.valid === true, malformed: !qualificationVerification?.valid, blocking_reason: "verified evidence shows provider calls were started" };
+  }
+  const unexplainedTemporary = temporaryArtifacts.find((entry) => !explainedTemporaryArtifacts.has(entry));
+  if (unexplainedTemporary && !spentReceipt) return { evidence_file: unexplainedTemporary, qualification_file: null, qualification_refs: [], malformed: true, blocking_reason: "partial recovery publication cannot disprove spend" };
+  if (reservedReceipt && !receiptFallback?.safe_zero_call_receipt) return { evidence_file: null, qualification_file: null, qualification_refs: [], malformed: false,
+    receipt_file: RECOVERY_RECEIPT_FILE, blocking_reason: "reserved spend receipt lacks a complete independently verified zero-call artifact for the same attempt" };
+  return receiptFallback;
+}
+
+export async function buildCurrentRecoveryPlan(options, dependencies = {}) {
+  const input = dependencies.input ?? await readSyntheticInput();
+  const estimate = estimateMaximumUsage(inputTokenUpperBound(input));
+  const requestManifest = buildRequestManifest(input);
+  const [legacy, sources, runtime] = await Promise.all([
+    (dependencies.currentLegacyIdentity ?? currentLegacyIdentity)(),
+    (dependencies.currentSourceIdentity ?? currentSourceIdentity)(SOURCE_PATHS),
+    (dependencies.currentRuntimeIdentity ?? currentRuntimeIdentity)(),
+  ]);
+  const expectedHealth = expectedAdapterHealth(sources, runtime);
+  const remaining = options.remaining_free_neurons === null || options.remaining_free_neurons === undefined
+    ? null : Number(options.remaining_free_neurons);
+  const recoveryPlan = createRecoveryPlan({
+    approval_run_id: options.approval_run_id ?? randomUUID(),
+    created_at: options.created_at ?? new Date().toISOString(),
+    account_profile: options.account_profile,
+    plan: options.plan,
+    remaining_free_neurons: remaining,
+    estimate,
+    request_manifest: requestManifest,
+    sources,
+    runtime,
+    expected_health: expectedHealth,
+    legacy,
+  });
+  return { recoveryPlan, input, estimate, requestManifest, legacy, sources, runtime, expectedHealth };
+}
+
+function offlinePreflightErrors({ legacy, runtime, fixtures }) {
+  const errors = [];
+  if (legacy.some(({ sha256, observed_sha256 }) => sha256 !== observed_sha256)) errors.push("immutable v1 evidence hash check failed");
+  const legacyFacts = legacy.find(({ path: legacyPath }) => legacyPath.endsWith(".json"))?.facts;
+  if (legacyFacts?.decision !== "NO-GO" || legacyFacts?.by_model?.some(({ total, direct_valid, repaired_valid }) => total !== 20 || direct_valid !== 0 || repaired_valid !== 0)) errors.push("immutable v1 NO-GO facts changed");
+  const minimumNode = Number(/^>=([0-9]+)/.exec(runtime?.frozen?.node_engines)?.[1]);
+  const executingNode = Number(/^v([0-9]+)/.exec(runtime?.execution?.node)?.[1]);
+  if (runtime?.execution?.wrangler !== runtime?.frozen?.wrangler || !Number.isInteger(minimumNode) || !Number.isInteger(executingNode) || executingNode < minimumNode) errors.push("frozen runtime identity check failed");
+  if (!Array.isArray(fixtures?.declared_ids) || fixtures.declared_ids.length !== 79
+    || !Array.isArray(fixtures?.passing_ids) || stableStringify(fixtures.declared_ids) !== stableStringify(fixtures.passing_ids)
+    || !Array.isArray(fixtures?.failures) || fixtures.failures.length !== 0) errors.push("shared 79-fixture gate failed");
+  return errors;
+}
+
+export async function writePlanDisclosure(plan, outputPath, options = {}) {
+  const resolved = path.resolve(outputPath);
+  const templatePath = resolved.replace(/\.json$/, "-approval-template.json");
+  if (templatePath === resolved) throw new Error("plan output path must end in .json");
+  const lexicalRelative = path.relative(REPO_ROOT, resolved);
+  if (lexicalRelative === "" || (!lexicalRelative.startsWith(`..${path.sep}`) && lexicalRelative !== ".." && !path.isAbsolute(lexicalRelative))) {
+    throw new Error("plan disclosure output must be outside the repository");
+  }
+  const physicalParent = await physicalDirectory(path.dirname(resolved));
+  const resolvedThroughParent = path.join(physicalParent, path.basename(resolved));
+  const repositoryRelative = path.relative(REPO_ROOT, resolvedThroughParent);
+  if (repositoryRelative === "" || (!repositoryRelative.startsWith(`..${path.sep}`) && repositoryRelative !== ".." && !path.isAbsolute(repositoryRelative))) {
+    throw new Error("plan disclosure output must be outside the repository");
+  }
+  assertSafeBasename(path.basename(resolved), "plan");
+  assertSafeBasename(path.basename(templatePath), "approval template");
+  const completionBase = `${path.basename(resolved, ".json")}-disclosure`;
+  const completed = await publishCompletedSet(physicalParent, completionBase, [
+    { name: path.basename(resolved), bytes: `${JSON.stringify(plan, null, 2)}\n` },
+    { name: path.basename(templatePath), bytes: `${JSON.stringify(approvalTemplate(plan), null, 2)}\n` },
+  ], options);
+  return { planPath: resolvedThroughParent, templatePath: path.join(physicalParent, path.basename(templatePath)), completionPath: completed.markerPath };
 }
 
 function resultSkeleton({ context, inputs, fixtures, authorization, estimate, blockers }) {
@@ -746,59 +1071,294 @@ export async function writeOperationalEvidence(evidence, resultsDir = RESULTS_DI
   return { jsonPath, markdownPath };
 }
 
+async function publishCompletedSet(directory, basename, members, { onBoundary = async () => {} } = {}) {
+  const physical = await physicalDirectory(directory);
+  assertSafeBasename(basename, "completion");
+  const normalized = members.map(({ name, bytes }) => {
+    assertSafeBasename(name);
+    const value = Buffer.isBuffer(bytes) ? bytes : Buffer.from(bytes);
+    return { name, bytes: value };
+  });
+  if (new Set(normalized.map(({ name }) => name)).size !== normalized.length) throw new Error("completion set contains duplicate names");
+  const nonce = randomUUID();
+  const temps = normalized.map(({ name }) => path.join(physical, `.${name}.${nonce}.tmp`));
+  const targets = normalized.map(({ name }) => path.join(physical, name));
+  const markerName = `${basename}.complete.json`;
+  assertSafeBasename(markerName, "completion marker");
+  const markerPath = path.join(physical, markerName);
+  const markerTemp = path.join(physical, `.${markerName}.${nonce}.tmp`);
+  const published = [];
+  let markerPublished = false;
+  try {
+    for (let index = 0; index < normalized.length; index += 1) {
+      const handle = await open(temps[index], "wx", 0o600);
+      try { await handle.writeFile(normalized[index].bytes); await handle.sync(); } finally { await handle.close(); }
+      await onBoundary(`prepared:${normalized[index].name}`);
+    }
+    for (let index = 0; index < targets.length; index += 1) {
+      await link(temps[index], targets[index]);
+      published.push(targets[index]);
+      await syncDirectory(physical);
+      await onBoundary(`published:${normalized[index].name}`);
+    }
+    const marker = {
+      schema_version: RECOVERY_COMPLETION_VERSION,
+      basename,
+      files: normalized.map(({ name, bytes }) => ({ name, bytes: bytes.byteLength, sha256: sha256Bytes(bytes) })),
+    };
+    const markerHandle = await open(markerTemp, "wx", 0o600);
+    try { await markerHandle.writeFile(`${JSON.stringify(marker, null, 2)}\n`); await markerHandle.sync(); } finally { await markerHandle.close(); }
+    await onBoundary("prepared:completion");
+    await link(markerTemp, markerPath); markerPublished = true;
+    await syncDirectory(physical);
+    await onBoundary("published:completion");
+    return { markerPath, marker };
+  } catch (error) {
+    if (markerPublished) await unlink(markerPath).catch(() => {});
+    await Promise.all(published.map((target) => unlink(target).catch(() => {})));
+    await syncDirectory(physical).catch(() => {});
+    throw error;
+  } finally {
+    await Promise.all([...temps, markerTemp].map((temporary) => unlink(temporary).catch(() => {})));
+  }
+}
+
+export async function writeRecoveryArtifacts(evidence, qualification, resultsDir = RESULTS_DIR, basename = evidenceBasename(evidence), options = {}) {
+  assertSafeBasename(basename, "recovery artifact");
+  if (!basename.endsWith("-v2")) throw new Error("recovery artifact basename must end in -v2");
+  if (qualification?.evidence?.file !== `${basename}.json`) throw new Error("qualification sibling does not match the execution artifact basename");
+  const members = [
+    { name: `${basename}.json`, bytes: `${JSON.stringify(evidence, null, 2)}\n` },
+    { name: `${basename}.md`, bytes: evidence.report },
+    { name: `${basename.replace(/-v2$/, "")}-qualification.json`, bytes: `${JSON.stringify(qualification, null, 2)}\n` },
+  ];
+  const completed = await publishCompletedSet(resultsDir, basename, members, options);
+  return {
+    jsonPath: path.join(resultsDir, members[0].name),
+    markdownPath: path.join(resultsDir, members[1].name),
+    qualificationPath: path.join(resultsDir, members[2].name),
+    completionPath: completed.markerPath,
+  };
+}
+
+async function retainInvalidEvidence(evidence, resultsDir = RESULTS_DIR) {
+  const directory = await physicalDirectory(resultsDir);
+  const target = path.join(directory, `${evidenceBasename(evidence)}-invalid.json`);
+  const handle = await open(target, "wx", 0o600);
+  try { await handle.writeFile(`${JSON.stringify(evidence, null, 2)}\n`); await handle.sync(); } finally { await handle.close(); }
+  await syncDirectory(directory);
+  return target;
+}
+
 export async function runLive(options, dependencies = {}) {
-  const input = await readSyntheticInput();
-  const estimate = estimateMaximumUsage(inputTokenUpperBound(input));
-  console.log(`Approved cap: ${APPROVED_CALL_CAP} calls; conservative gross maximum: ${estimate.gross_neurons.toFixed(0)} neurons / $${estimate.gross_usd.toFixed(4)}.`);
-  const { authorization, blockers } = authorizationFromOptions(options, estimate);
-  const [legacy, sources, runtime, fixtures] = await Promise.all([
-    (dependencies.currentLegacyIdentity ?? currentLegacyIdentity)(),
-    (dependencies.currentSourceIdentity ?? currentSourceIdentity)(SOURCE_PATHS),
-    (dependencies.currentRuntimeIdentity ?? currentRuntimeIdentity)(),
-    (dependencies.executeFixtures ?? executeCurrentFixtureCatalog)(),
-  ]);
+  if ((dependencies.ci ?? process.env.CI) && dependencies.allowCi !== true) throw new Error("live recovery is forbidden in CI");
+  const operatorPresent = dependencies.operatorPresent ?? (process.stdin.isTTY === true && process.stdout.isTTY === true);
+  if (!operatorPresent) throw new Error("live recovery requires an interactive operator terminal");
+  const resultsDir = dependencies.resultsDir ?? RESULTS_DIR;
+  const filesystemGovernance = dependencies.recoveryGovernance === true || !Object.hasOwn(dependencies, "findPriorRecovery");
+  const governanceState = { receipt: null, evidence: null, retained: false };
+  const attemptId = dependencies.attemptId ?? randomUUID();
+  const lock = filesystemGovernance
+    ? await acquireRecoveryLock(resultsDir, { ...(dependencies.lockOptions ?? {}), attempt_id: attemptId })
+    : { acquired: true, attempt_id: attemptId, async release() {} };
+  if (!lock.acquired) {
+    console.log(`Recovery attempt blocked: ${lock.reason}`);
+    return "RECOVERY-LOCKED";
+  }
+  try {
+    return await runLiveExclusive(options, { ...dependencies, resultsDir, _attemptId: attemptId, _filesystemGovernance: filesystemGovernance, _governanceState: governanceState });
+  } catch (error) {
+    if (filesystemGovernance && governanceState.receipt?.calls_started > 0) {
+      governanceState.receipt = await completeRecoverySpend(resultsDir, governanceState.receipt).catch(() => governanceState.receipt);
+      if (governanceState.evidence && !governanceState.retained) {
+        await retainInvalidEvidence(governanceState.evidence, resultsDir).then(() => { governanceState.retained = true; }).catch(() => {});
+      }
+    }
+    throw error;
+  } finally {
+    await lock.release();
+  }
+}
+
+async function runLiveExclusive(options, dependencies = {}) {
+  let prior = dependencies.findPriorRecovery
+    ? await dependencies.findPriorRecovery(dependencies.resultsDir ?? RESULTS_DIR)
+    : await findPriorOperationalRecovery(dependencies.resultsDir ?? RESULTS_DIR, dependencies.evidenceDependencies ?? {});
+  if (prior?.safe_zero_call_receipt === true && dependencies._filesystemGovernance) {
+    await clearVerifiedZeroCallReservation(dependencies.resultsDir, prior.attempt_id);
+    prior = null;
+  }
+  if (prior) {
+    console.log(`Prior operational recovery already retained: ${prior.evidence_file ?? prior.receipt_file ?? "unsafe recovery state"}`);
+    if (prior.refs_verified === true && prior.qualification_refs.length) console.log(`Qualification refs: ${JSON.stringify(prior.qualification_refs)}`);
+    return "PRIOR-RECOVERY";
+  }
+  let storedPlan;
+  let immutableTemplatePath = null;
+  if (Object.hasOwn(dependencies, "plan")) storedPlan = dependencies.plan;
+  else {
+    const planPath = path.resolve(options.plan_file);
+    const planName = path.basename(planPath);
+    if (!planName.endsWith(".json")) throw new Error("recovery plan file must end in .json");
+    const directory = path.dirname(planPath);
+    const templateName = planName.replace(/\.json$/, "-approval-template.json");
+    immutableTemplatePath = path.join(directory, templateName);
+    const markerName = `${planName.slice(0, -".json".length)}-disclosure.complete.json`;
+    const completed = await verifyCompletedArtifactSet(directory, markerName, [planName, templateName]);
+    if (!completed.valid) throw new Error(`recovery disclosure is incomplete or changed: ${completed.errors.join("; ")}`);
+    const parsed = parseCanonicalJsonBytes(await readFile(planPath), "recovery plan");
+    if (!parsed.valid) throw new Error(parsed.errors.join("; "));
+    storedPlan = parsed.value;
+  }
+  let approval = dependencies.approval ?? null;
+  let approvalLoadError = null;
+  if (!Object.hasOwn(dependencies, "approval") && typeof options.approval_file === "string") {
+    try {
+      const approvalPath = path.resolve(options.approval_file);
+      if (immutableTemplatePath && approvalPath === immutableTemplatePath) throw new Error("approval must be copied to a distinct canonical approval file; the disclosed template is immutable");
+      const parsed = parseCanonicalJsonBytes(await readFile(approvalPath), "approval record");
+      if (!parsed.valid) throw new SyntaxError(parsed.errors.join("; "));
+      approval = parsed.value;
+    }
+    catch (error) {
+      if (error instanceof SyntaxError) approvalLoadError = "approval JSON is malformed";
+      else if (error?.code === "ENOENT") approvalLoadError = "approval file is missing";
+      else throw error;
+      approval = null;
+    }
+  } else if (approval === null) {
+    approvalLoadError = "approval record is missing";
+  }
+  const current = await buildCurrentRecoveryPlan({
+    approval_run_id: storedPlan.approval_run_id,
+    created_at: storedPlan.created_at,
+    account_profile: storedPlan.account.profile,
+    plan: storedPlan.account.plan,
+    remaining_free_neurons: storedPlan.account.remaining_free_neurons,
+  }, dependencies);
+  const { recoveryPlan: plan, input, estimate, requestManifest: manifest, legacy, sources, runtime, expectedHealth } = current;
+  const storedPlanValidation = validateRecoveryPlan(storedPlan, { legacy });
+  if (!storedPlanValidation.valid) throw new Error(`recovery plan is invalid: ${storedPlanValidation.errors.join("; ")}`);
+  const attemptId = dependencies._attemptId;
+  const receiptNow = dependencies.now ?? new Date();
+  let receipt = dependencies._filesystemGovernance
+    ? await reserveRecoveryAttempt(dependencies.resultsDir, attemptId, storedPlan.approval_run_id, receiptNow)
+    : { schema_version: RECOVERY_RECEIPT_VERSION, attempt_id: attemptId, approval_run_id: storedPlan.approval_run_id, created_at: receiptNow.toISOString(), updated_at: receiptNow.toISOString(), state: "reserved", calls_started: 0, last_call: null };
+  dependencies._governanceState.receipt = receipt;
+  await dependencies.afterReceiptReserved?.(structuredClone(receipt));
+  const fixtures = await (dependencies.executeFixtures ?? executeCurrentFixtureCatalog)();
+  console.log(`Frozen plan: ${plan.plan_ref}; approval run: ${plan.approval_run_id}.`);
+  console.log(`Frozen cap: ${APPROVED_CALL_CAP} calls; conservative gross maximum: ${estimate.gross_neurons.toFixed(0)} neurons / $${estimate.gross_usd.toFixed(4)}.`);
+  const planMatches = stableStringify(storedPlan) === stableStringify(plan);
+  const approvalValidation = validateApproval(approval, plan, dependencies.now ?? new Date());
+  if (approvalLoadError && !approvalValidation.errors.includes(approvalLoadError)) approvalValidation.errors.unshift(approvalLoadError);
+  approvalValidation.valid = approvalValidation.errors.length === 0;
+  const offlineErrors = offlinePreflightErrors({ legacy, runtime, fixtures });
+  const approvalPermitsPreflight = planMatches && approvalValidation.valid && offlineErrors.length === 0;
+  if (offlineErrors.length) console.log(`Offline preflight blocked: ${offlineErrors.join("; ")}`);
   const baseUrl = options.base_url ?? DEFAULT_BASE_URL;
-  const manifest = buildRequestManifest(input);
   const healthEndpoint = new URL("health", assertLoopbackBaseUrl(baseUrl)).href;
   let observed = { endpoint: healthEndpoint, http_status: 0, body: null };
-  try { observed = await (dependencies.observeHealth ?? observeAdapterHealth)(baseUrl); }
-  catch { /* retain typed failed observation */ }
-  const adapter = buildAdapterIdentity({
+  if (approvalPermitsPreflight) {
+    try { observed = await (dependencies.observeHealth ?? observeAdapterHealth)(baseUrl); }
+    catch { /* retain typed failed observation */ }
+  }
+  let adapter = buildAdapterIdentity({
     observed_health: observed.body,
     http_status: observed.http_status,
     endpoint: observed.endpoint,
     outbound_request: manifest,
     sources,
     runtime,
+    observation_attempted: approvalPermitsPreflight,
   });
-  const preflightBlockers = [...blockers];
-  if (!adapter.identity_match) preflightBlockers.push("adapter identity preflight failed");
-  const startedAt = new Date().toISOString();
+  const startedAt = (dependencies.runStartedAt ?? dependencies.now ?? new Date()).toISOString();
+  const runApprovalValidation = validateApproval(approval, plan, new Date(startedAt));
+  const approvalPermitsCalls = approvalPermitsPreflight && runApprovalValidation.valid;
+  const preflightChecks = {
+    plan_match: planMatches,
+    approval_preflight: { valid: approvalValidation.valid, errors: [...approvalValidation.errors] },
+    offline_errors: [...offlineErrors],
+    adapter: { attempted: approvalPermitsPreflight, identity_match: adapter.identity_match },
+    approval_at_run_start: { valid: runApprovalValidation.valid, errors: [...runApprovalValidation.errors] },
+  };
+  const preflightBlockers = [];
+  if (!preflightChecks.plan_match) preflightBlockers.push("frozen plan differs from current repository/runtime/request disclosure");
+  for (const error of preflightChecks.approval_preflight.errors) preflightBlockers.push(`approval: ${error}`);
+  for (const error of preflightChecks.offline_errors) preflightBlockers.push(`offline gate: ${error}`);
+  if (!preflightChecks.adapter.attempted) preflightBlockers.push("adapter identity preflight skipped because earlier authority or offline gates failed");
+  else if (!preflightChecks.adapter.identity_match) preflightBlockers.push("adapter identity preflight failed");
+  if (preflightChecks.approval_preflight.valid && !preflightChecks.approval_at_run_start.valid) {
+    for (const error of preflightChecks.approval_at_run_start.errors) preflightBlockers.push(`run-start approval: ${error}`);
+  }
   let records = [];
   if (preflightBlockers.length === 0) {
     records = await executeRecoveryProtocol({
       requests: manifest.by_model,
       base_url: baseUrl,
       invoke: dependencies.invoke ?? invokeAdapter,
+      async before_invoke(call) {
+        try {
+          receipt = dependencies._filesystemGovernance
+            ? await markRecoveryCallStarted(dependencies.resultsDir, receipt, call, dependencies.callReceiptNow?.(call) ?? new Date())
+            : { ...receipt, state: "calls-started", calls_started: receipt.calls_started + 1, last_call: { sequence: receipt.calls_started + 1, ...call, marked_at: new Date().toISOString() } };
+          dependencies._governanceState.receipt = receipt;
+          await dependencies.afterCallReceipt?.(structuredClone(receipt));
+        } catch (error) {
+          if (error?.code === "ODDSPARK_FATAL_PROCESS_EXIT") throw error;
+          const failure = error instanceof Error ? error : new Error(String(error));
+          failure.code = "ODDSPARK_RECOVERY_GOVERNANCE_FAILURE";
+          throw failure;
+        }
+      },
       on_record(record) { records.push(record); },
     });
   }
+  const postCallInput = await (dependencies.currentInput ?? readSyntheticInput)();
+  const postCallManifest = buildRequestManifest(postCallInput);
+  const [postCallLegacy, postCallSources, postCallRuntime] = await Promise.all([
+    (dependencies.currentLegacyIdentity ?? currentLegacyIdentity)(),
+    (dependencies.currentSourceIdentity ?? currentSourceIdentity)(SOURCE_PATHS),
+    (dependencies.currentRuntimeIdentity ?? currentRuntimeIdentity)(),
+  ]);
+  const postCallDrift = stableStringify(postCallManifest) !== stableStringify(manifest)
+    || stableStringify(postCallSources) !== stableStringify(sources)
+    || stableStringify(postCallRuntime) !== stableStringify(runtime)
+    || stableStringify(postCallLegacy) !== stableStringify(legacy);
+  if (postCallDrift && records.length > 0) {
+    adapter = buildAdapterIdentity({
+      observed_health: observed.body,
+      http_status: observed.http_status,
+      endpoint: observed.endpoint,
+      outbound_request: manifest,
+      sources: postCallSources,
+      runtime: postCallRuntime,
+      observation_attempted: approvalPermitsPreflight,
+    });
+    if (adapter.identity_match && stableStringify(postCallManifest) !== stableStringify(manifest)) adapter.identity_match = false;
+  }
+  const endedAt = new Date(Math.max(
+    Date.now(),
+    Date.parse(startedAt),
+    ...records.map((record) => Date.parse(record.ended_at)).filter(Number.isFinite),
+  )).toISOString();
   const run = {
-    id: randomUUID(),
+    id: plan.approval_run_id,
     started_at: startedAt,
-    ended_at: new Date().toISOString(),
+    ended_at: endedAt,
     models: MODELS,
     authorization: {
-      operator_approved: authorization.operator_approved,
-      profile_confirmed: authorization.profile_confirmed,
-      headroom_confirmed: authorization.headroom_confirmed,
-      approved_call_cap: authorization.approved_call_cap,
+      operator_approved: approvalPermitsCalls,
+      profile_confirmed: true,
+      headroom_confirmed: true,
+      approved_call_cap: approvalPermitsCalls ? plan.call_policy.approved_call_cap : 0,
       estimated_calls: APPROVED_CALL_CAP,
       calls_made: records.length,
-      plan: authorization.plan,
-      remaining_free_neurons: authorization.remaining_free_neurons_at_check,
+      plan: plan.account.plan,
+      remaining_free_neurons: plan.account.remaining_free_neurons,
       estimated_gross_neurons: estimate.gross_neurons,
     },
+    preflight_checks: preflightChecks,
     preflight_blockers: preflightBlockers,
   };
   const evidence = await buildOperationalEvidence({
@@ -811,26 +1371,57 @@ export async function runLive(options, dependencies = {}) {
     run,
     records,
   }, {
-    currentLegacyIdentity: async () => legacy,
-    currentSourceIdentity: async () => sources,
-    currentRuntimeIdentity: async () => runtime,
+    currentLegacyIdentity: async () => postCallLegacy,
+    currentSourceIdentity: async () => postCallSources,
+    currentRuntimeIdentity: async () => postCallRuntime,
     ...(dependencies.evidenceDependencies ?? {}),
   });
-  const files = await (dependencies.writeEvidence ?? writeOperationalEvidence)(evidence, dependencies.resultsDir);
+  dependencies._governanceState.evidence = evidence;
   const verification = await verifyEvidenceV2(evidence, {
-    currentLegacyIdentity: async () => legacy,
+    currentLegacyIdentity: async () => postCallLegacy,
     executeFixtures: async () => fixtures,
-    currentSourceIdentity: async () => sources,
-    currentRuntimeIdentity: async () => runtime,
+    currentSourceIdentity: async () => postCallSources,
+    currentRuntimeIdentity: async () => postCallRuntime,
     ...(dependencies.evidenceDependencies ?? {}),
   });
-  console.log(`Decision: ${evidence.outcome.decision}`);
-  console.log(`Evidence: ${files.jsonPath}`);
   if (!verification.valid) {
+    const retainedPath = await (dependencies.retainInvalidEvidence ?? retainInvalidEvidence)(evidence, dependencies.resultsDir);
+    dependencies._governanceState.retained = true;
     const failed = verification.predicate_results.filter(({ pass }) => !pass).map(({ id }) => id);
-    throw new Error(`retained evidence failed verification: ${failed.join(", ")}`);
+    throw new Error(`retained evidence failed verification at ${retainedPath}: ${failed.join(", ")}`);
   }
-  return evidence.outcome.decision;
+  const artifactBasename = evidenceBasename(evidence, attemptId);
+  const evidenceFile = `${artifactBasename}.json`;
+  const evidenceBytes = Buffer.from(`${JSON.stringify(evidence, null, 2)}\n`);
+  const qualification = await (dependencies.buildQualificationBundle ?? buildQualificationBundle)({ plan, approval, evidence, evidence_file: evidenceFile, evidence_bytes: evidenceBytes }, {
+    currentLegacyIdentity: async () => postCallLegacy,
+    executeFixtures: async () => fixtures,
+    currentSourceIdentity: async () => postCallSources,
+    currentRuntimeIdentity: async () => postCallRuntime,
+    ...(dependencies.evidenceDependencies ?? {}),
+  });
+  const qualificationVerification = await (dependencies.verifyQualificationBundle ?? verifyQualificationBundle)(qualification, evidence, evidenceBytes, {
+    currentLegacyIdentity: async () => postCallLegacy,
+    executeFixtures: async () => fixtures,
+    currentSourceIdentity: async () => postCallSources,
+    currentRuntimeIdentity: async () => postCallRuntime,
+    ...(dependencies.evidenceDependencies ?? {}),
+  });
+  if (!qualificationVerification.valid) throw new Error(`qualification bundle failed verification: ${qualificationVerification.errors.join(", ")}`);
+  const files = await (dependencies.writeArtifacts ?? writeRecoveryArtifacts)(evidence, qualification, dependencies.resultsDir, artifactBasename, dependencies.publicationOptions);
+  if (dependencies._filesystemGovernance) {
+    if (receipt.calls_started > 0) receipt = await completeRecoverySpend(dependencies.resultsDir, receipt);
+    else {
+      await unlink(path.join(dependencies.resultsDir, RECOVERY_RECEIPT_FILE)).catch(() => {});
+      await syncDirectory(await physicalDirectory(dependencies.resultsDir));
+    }
+    dependencies._governanceState.receipt = receipt.calls_started > 0 ? receipt : null;
+  }
+  console.log(`Decision: ${qualification.outcome.decision}`);
+  console.log(`Evidence: ${files.jsonPath}`);
+  console.log(`Qualification: ${files.qualificationPath}`);
+  for (const ref of qualification.qualification_refs) console.log(`STRUCT-JUDGE ${ref.model}: ${ref.qualification_ref}`);
+  return qualification.outcome.decision;
 }
 
 async function verifyCommand(options) {
@@ -846,9 +1437,35 @@ async function verifyCommand(options) {
   }
 }
 
+async function planCommand(options, dependencies = {}) {
+  const prior = await (dependencies.findPriorRecovery ?? findPriorOperationalRecovery)(dependencies.resultsDir ?? RESULTS_DIR);
+  if (prior && prior.safe_zero_call_receipt !== true) throw new Error(`prior operational recovery already retained: ${prior.evidence_file}`);
+  if (typeof options.output !== "string" || typeof options.account_profile !== "string" || !["free", "paid"].includes(options.plan)) {
+    throw new Error("plan requires --output, --account-profile, and --plan <free|paid>");
+  }
+  const current = await buildCurrentRecoveryPlan({
+    account_profile: options.account_profile,
+    plan: options.plan,
+    remaining_free_neurons: options.remaining_free_neurons,
+    approval_run_id: options.approval_run_id,
+  }, dependencies);
+  const fixtures = await (dependencies.executeFixtures ?? executeCurrentFixtureCatalog)();
+  const offlineErrors = offlinePreflightErrors({ legacy: current.legacy, runtime: current.runtime, fixtures });
+  if (offlineErrors.length) throw new Error(`offline plan gates failed: ${offlineErrors.join("; ")}`);
+  const { recoveryPlan } = current;
+  const files = await writePlanDisclosure(recoveryPlan, options.output);
+  console.log(`Plan: ${files.planPath}`);
+  console.log(`Plan ref: ${recoveryPlan.plan_ref}`);
+  console.log(`Approval run id: ${recoveryPlan.approval_run_id}`);
+  console.log(`Maximum: ${recoveryPlan.call_policy.approved_call_cap} calls / $${recoveryPlan.maximum_cost.gross_usd.toFixed(4)} / ${recoveryPlan.maximum_cost.gross_neurons.toFixed(0)} neurons.`);
+  console.log(`Approval template (not authority until reviewed, timestamps are filled, and decision is changed to approved): ${files.templatePath}`);
+  console.log(`Disclosure completion marker: ${files.completionPath}`);
+}
+
 function printUsage() {
   console.log("Usage:");
-  console.log("  node spikes/judge-fidelity/run.mjs live --approved-call-cap 42 --profile-confirmed --headroom-confirmed --plan <free|paid> [--remaining-free-neurons N]");
+  console.log("  node spikes/judge-fidelity/run.mjs plan --output <plan.json> --account-profile <label> --plan <free|paid> [--remaining-free-neurons N]");
+  console.log("  node spikes/judge-fidelity/run.mjs live --plan-file <plan.json> [--approval-file <approval.json>] [--base-url http://127.0.0.1:8788]");
   console.log("  node spikes/judge-fidelity/run.mjs verify [result.json ...]");
 }
 
@@ -859,10 +1476,15 @@ export async function main(argv = process.argv.slice(2)) {
   }
   const command = argv[0];
   const options = parseOptions(argv.slice(1));
+  if (command === "plan") {
+    await planCommand(options);
+    return 0;
+  }
   if (command === "live") {
+    if (typeof options.plan_file !== "string") throw new Error("live requires --plan-file");
     const decision = await runLive(options);
     if (decision === "GO") return 0;
-    return decision === "NO-GO" ? 2 : 3;
+    return decision === "NO-GO" ? 2 : decision === "PRIOR-RECOVERY" ? 4 : 3;
   }
   if (command === "verify") {
     await verifyCommand(options);
