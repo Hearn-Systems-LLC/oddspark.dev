@@ -1,6 +1,7 @@
 name = "oddspark-judge-fidelity-spike-local-only"
 main = "worker.mjs"
 compatibility_date = "2026-07-01"
+compatibility_flags = ["nodejs_compat"]
 
 [ai]
 binding = "AI"

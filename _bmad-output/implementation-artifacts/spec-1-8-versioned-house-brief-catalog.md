@@ -2,7 +2,7 @@
 title: 'Versioned House Brief Catalog'
 type: 'feature'
 created: '2026-08-18'
-status: 'awaiting-operator'
+status: 'done'
 review_loop_iteration: 0
 baseline_revision: '9667b3414e9b6bd4457ed0d8a0fb3c7be98de7ae'
 followup_review_recommended: true
@@ -12,7 +12,7 @@ warnings: []
 deferred: []
 operator_actions:
   - 'Review and approve the exact semantic voice rubric and corpus in semantic/voice/v1 using its documented hash-bound owner-approval workflow.'
-  - 'Review all eight house Briefs against the approved rubric, then record Justin approval in content/house-briefs/v1/approval.json for catalog hash 7a24d3b391820dcac1f2098ae130da627de0047e7dcc14909a4908074be5afd2.'
+  - 'Review all eight house Briefs against the approved rubric, then record Justin approval in content/house-briefs/v1/approval.json for catalog hash 06f74672f2005a33c6ad030ac38d709e7021b70c45cf01dbd5d31741323ebc9b.'
   - 'Run npm run house-briefs:verify and confirm it reports production_ready true after both exact approvals are recorded.'
 ---
 
@@ -129,3 +129,14 @@ Verification performed:
 - Matrix audit -- every intent-contract row is exercised by the 17-test focused suite.
 
 Residual risks: Semantic Gate passage and production readiness depend on Justin reviewing the authored prose under the exact approved voice rubric and recording the two hash-bound approvals. No live semantic qualification, runtime wiring, deployment, or sprint-state mutation was claimed or performed.
+
+## Operator Confirmation
+
+Confirmed by Justin on 2026-08-19 and recorded in pushed commit `c827295`:
+
+- Approved voice-v1 semantic identity `b387b27c7fd91062ae7b0aec39ada8103b579655b5161e2556b614b1d2f6694e` after revising invitations to be confident, bounded, and low-pressure.
+- Approved house Brief catalog hash `06f74672f2005a33c6ad030ac38d709e7021b70c45cf01dbd5d31741323ebc9b` covering all eight reviewed Briefs.
+- `npm run semantic:voice:verify` reports `valid: true` and `readiness: approved`.
+- `npm run house-briefs:verify` reports `structure_valid: true`, `readiness: approved`, and `production_ready: true`.
+
+Story 1.8 is complete. This confirmation authorizes the exact approved voice and house-catalog artifacts only; it does not authorize provider calls, runtime activation, deployment, or release.

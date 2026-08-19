@@ -1,0 +1,230 @@
+{
+  "manifests": {
+    "primary": {
+      "schema_version": "STRUCT-GENERATION/v1",
+      "role": "primary",
+      "provider": "cloudflare-workers-ai",
+      "resolved_model": "@cf/openai/gpt-oss-120b",
+      "decision": "NO-GO",
+      "reasons": [
+        "probe did not return a direct Candidate",
+        "expected 20 trials, found 0",
+        "direct-valid threshold 19/20 not met"
+      ],
+      "evidence_sha256": "7d746f0cf2da04fa669395870489c8a6926f45ef4e0c28ef1c29b48032fe86c0",
+      "source_manifest_sha256": "11c3de4aa17ad802b49cffe1cf208a1fbc463902b63c45cb346296b9f6117a96",
+      "runtime_identity_sha256": "5d14ca5fc8cfbb9d307d066944454fc336a0f86698f9368debe57cbab6958189",
+      "request_sha256": "fae773de138bc9ed3d4432347748f5ab79165bf0b3cf80fa77e135c97965958e",
+      "plan_ref": "5d372eaa391223059e64c95a7c4cf311ceb5313cca9a769bd9736d21e8cfe028",
+      "predicate_results": [
+        {
+          "id": "evidence.shape",
+          "pass": true
+        },
+        {
+          "id": "oracle.identity",
+          "pass": true
+        },
+        {
+          "id": "legacy.immutable",
+          "pass": true
+        },
+        {
+          "id": "runtime.identity",
+          "pass": true
+        },
+        {
+          "id": "source.identity",
+          "pass": true
+        },
+        {
+          "id": "adapter.identity",
+          "pass": true
+        },
+        {
+          "id": "candidate.binding",
+          "pass": true
+        },
+        {
+          "id": "fixtures.executed",
+          "pass": true
+        },
+        {
+          "id": "records.classified",
+          "pass": true
+        },
+        {
+          "id": "records.closed",
+          "pass": true
+        },
+        {
+          "id": "run.authorization",
+          "pass": true
+        },
+        {
+          "id": "run.cardinality",
+          "pass": true
+        },
+        {
+          "id": "run.ordering",
+          "pass": true
+        },
+        {
+          "id": "run.common_request",
+          "pass": true
+        },
+        {
+          "id": "summary.rates",
+          "pass": true
+        },
+        {
+          "id": "outcome.deterministic",
+          "pass": true
+        },
+        {
+          "id": "predicates.retained",
+          "pass": true
+        },
+        {
+          "id": "report.deterministic",
+          "pass": true
+        },
+        {
+          "id": "roles.independent",
+          "pass": true
+        },
+        {
+          "id": "output.direct_candidate",
+          "pass": true
+        },
+        {
+          "id": "schedule.zero_retry",
+          "pass": true
+        },
+        {
+          "id": "cost.recomputed",
+          "pass": true
+        },
+        {
+          "id": "manifest.independent",
+          "pass": true
+        }
+      ]
+    },
+    "fallback": {
+      "schema_version": "STRUCT-GENERATION/v1",
+      "role": "fallback",
+      "provider": "cloudflare-workers-ai",
+      "resolved_model": "@cf/openai/gpt-oss-20b",
+      "decision": "NO-GO",
+      "reasons": [
+        "probe did not return a direct Candidate",
+        "expected 20 trials, found 0",
+        "direct-valid threshold 19/20 not met"
+      ],
+      "evidence_sha256": "7d746f0cf2da04fa669395870489c8a6926f45ef4e0c28ef1c29b48032fe86c0",
+      "source_manifest_sha256": "11c3de4aa17ad802b49cffe1cf208a1fbc463902b63c45cb346296b9f6117a96",
+      "runtime_identity_sha256": "5d14ca5fc8cfbb9d307d066944454fc336a0f86698f9368debe57cbab6958189",
+      "request_sha256": "fa0f6d616e8735f0274fcc31627b07612df0cbd3c4f9ad04d9db9c750b5ffa5a",
+      "plan_ref": "5d372eaa391223059e64c95a7c4cf311ceb5313cca9a769bd9736d21e8cfe028",
+      "predicate_results": [
+        {
+          "id": "evidence.shape",
+          "pass": true
+        },
+        {
+          "id": "oracle.identity",
+          "pass": true
+        },
+        {
+          "id": "legacy.immutable",
+          "pass": true
+        },
+        {
+          "id": "runtime.identity",
+          "pass": true
+        },
+        {
+          "id": "source.identity",
+          "pass": true
+        },
+        {
+          "id": "adapter.identity",
+          "pass": true
+        },
+        {
+          "id": "candidate.binding",
+          "pass": true
+        },
+        {
+          "id": "fixtures.executed",
+          "pass": true
+        },
+        {
+          "id": "records.classified",
+          "pass": true
+        },
+        {
+          "id": "records.closed",
+          "pass": true
+        },
+        {
+          "id": "run.authorization",
+          "pass": true
+        },
+        {
+          "id": "run.cardinality",
+          "pass": true
+        },
+        {
+          "id": "run.ordering",
+          "pass": true
+        },
+        {
+          "id": "run.common_request",
+          "pass": true
+        },
+        {
+          "id": "summary.rates",
+          "pass": true
+        },
+        {
+          "id": "outcome.deterministic",
+          "pass": true
+        },
+        {
+          "id": "predicates.retained",
+          "pass": true
+        },
+        {
+          "id": "report.deterministic",
+          "pass": true
+        },
+        {
+          "id": "roles.independent",
+          "pass": true
+        },
+        {
+          "id": "output.direct_candidate",
+          "pass": true
+        },
+        {
+          "id": "schedule.zero_retry",
+          "pass": true
+        },
+        {
+          "id": "cost.recomputed",
+          "pass": true
+        },
+        {
+          "id": "manifest.independent",
+          "pass": true
+        }
+      ]
+    }
+  },
+  "qualification_refs": {
+    "primary": "8e7b5af63836cc92716bac3a38070fb4d277ae637c4d610598d6ab446017b88b",
+    "fallback": "19121defec98367d7a4225d0ad90895898244b4f4e0bcd61c89fdb8556057e96"
+  }
+}

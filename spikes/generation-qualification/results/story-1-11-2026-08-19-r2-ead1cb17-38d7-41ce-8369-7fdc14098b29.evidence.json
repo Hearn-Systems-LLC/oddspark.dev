@@ -1,0 +1,1692 @@
+{
+  "schema_version": "oddspark.generation-qualification-evidence/v2",
+  "run": {
+    "id": "ead1cb17-38d7-41ce-8369-7fdc14098b29",
+    "started_at": "2026-08-19T16:03:42.879Z",
+    "ended_at": "2026-08-19T16:04:16.569Z",
+    "call_cap": 42,
+    "calls_made": 2
+  },
+  "plan": {
+    "schema_version": "oddspark.generation-qualification-plan/v1",
+    "plan_ref": "17e06418b5d7cb35a7c5d673f1a5e9aa8d4aeeef9b636ca92ccb96b6908f5031",
+    "approval_run_id": "story-1-11-2026-08-19-r2",
+    "created_at": "2026-08-19T16:00:10.757Z",
+    "provider": "cloudflare-workers-ai",
+    "authority": {
+      "account_profile": "operator-reviewed-profile",
+      "credential_path": "wrangler-remote-binding",
+      "headroom_confirmed": true
+    },
+    "roles": [
+      {
+        "role": "primary",
+        "resolved_model": "@cf/openai/gpt-oss-120b"
+      },
+      {
+        "role": "fallback",
+        "resolved_model": "@cf/openai/gpt-oss-20b"
+      }
+    ],
+    "parameters": {
+      "temperature": 0,
+      "max_tokens": 2048
+    },
+    "timeout_policy": {
+      "adapter_timeout_ms": 120000,
+      "preflight_timeout_ms": 10000,
+      "execution": "sequential",
+      "retries": 0,
+      "replacements": 0
+    },
+    "input": {
+      "evidence": {
+        "version": 1,
+        "mode": "local",
+        "priors": {
+          "region": "Blue Water Area",
+          "season": "summer",
+          "date": "2026-08-18",
+          "situation": "repeated inquiries",
+          "capability_bundle": [
+            "software",
+            "workflow automation"
+          ]
+        }
+      },
+      "seed": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "requests": [
+      {
+        "role": "primary",
+        "resolved_model": "@cf/openai/gpt-oss-120b",
+        "body": {
+          "role": "primary",
+          "model": "@cf/openai/gpt-oss-120b",
+          "messages": [
+            {
+              "role": "system",
+              "content": "Return exactly one JSON Candidate object matching the supplied JSON Schema. Do not wrap it, explain it, fence it, repair it, or include a candidate_ref. Preserve the supplied Evidence faithfully and produce only a closed Story 1.7 Candidate."
+            },
+            {
+              "role": "user",
+              "content": "{\"evidence\":{\"mode\":\"local\",\"priors\":{\"capability_bundle\":[\"software\",\"workflow automation\"],\"date\":\"2026-08-18\",\"region\":\"Blue Water Area\",\"season\":\"summer\",\"situation\":\"repeated inquiries\"},\"version\":1},\"seed\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}"
+            }
+          ],
+          "temperature": 0,
+          "max_tokens": 2048,
+          "response_format": {
+            "type": "json_schema",
+            "json_schema": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "version",
+                "mode",
+                "title",
+                "plan",
+                "why_fits",
+                "what_gets_better",
+                "before_after",
+                "change_level",
+                "stays_same",
+                "invitation",
+                "grounded_numbers"
+              ],
+              "properties": {
+                "version": {
+                  "const": 1
+                },
+                "mode": {
+                  "enum": [
+                    "local",
+                    "domain"
+                  ]
+                },
+                "title": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "plan": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "why_fits": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "text"
+                  ],
+                  "properties": {
+                    "text": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "breadcrumb": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  }
+                },
+                "what_gets_better": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "before_after": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "before",
+                    "after"
+                  ],
+                  "properties": {
+                    "before": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "after": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  }
+                },
+                "change_level": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "time_range",
+                    "steps_changed",
+                    "steps_removed",
+                    "preliminary"
+                  ],
+                  "properties": {
+                    "time_range": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "steps_changed": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "steps_removed": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "preliminary": {
+                      "const": true
+                    }
+                  }
+                },
+                "stays_same": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "tools",
+                    "authority",
+                    "steps"
+                  ],
+                  "properties": {
+                    "tools": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "authority": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "steps": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    }
+                  }
+                },
+                "invitation": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "grounded_numbers": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "notice": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "allOf": [
+                {
+                  "if": {
+                    "properties": {
+                      "mode": {
+                        "const": "domain"
+                      }
+                    }
+                  },
+                  "then": {
+                    "properties": {
+                      "why_fits": {
+                        "required": [
+                          "text",
+                          "breadcrumb"
+                        ]
+                      }
+                    }
+                  },
+                  "else": {
+                    "properties": {
+                      "why_fits": {
+                        "not": {
+                          "required": [
+                            "breadcrumb"
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        },
+        "request_sha256": "fae773de138bc9ed3d4432347748f5ab79165bf0b3cf80fa77e135c97965958e",
+        "adapter_input_sha256": "5651ef53a9c4bcf76aa8a2353a11917fced33344c6b6a6330664d913efc7fa8e"
+      },
+      {
+        "role": "fallback",
+        "resolved_model": "@cf/openai/gpt-oss-20b",
+        "body": {
+          "role": "fallback",
+          "model": "@cf/openai/gpt-oss-20b",
+          "messages": [
+            {
+              "role": "system",
+              "content": "Return exactly one JSON Candidate object matching the supplied JSON Schema. Do not wrap it, explain it, fence it, repair it, or include a candidate_ref. Preserve the supplied Evidence faithfully and produce only a closed Story 1.7 Candidate."
+            },
+            {
+              "role": "user",
+              "content": "{\"evidence\":{\"mode\":\"local\",\"priors\":{\"capability_bundle\":[\"software\",\"workflow automation\"],\"date\":\"2026-08-18\",\"region\":\"Blue Water Area\",\"season\":\"summer\",\"situation\":\"repeated inquiries\"},\"version\":1},\"seed\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}"
+            }
+          ],
+          "temperature": 0,
+          "max_tokens": 2048,
+          "response_format": {
+            "type": "json_schema",
+            "json_schema": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "version",
+                "mode",
+                "title",
+                "plan",
+                "why_fits",
+                "what_gets_better",
+                "before_after",
+                "change_level",
+                "stays_same",
+                "invitation",
+                "grounded_numbers"
+              ],
+              "properties": {
+                "version": {
+                  "const": 1
+                },
+                "mode": {
+                  "enum": [
+                    "local",
+                    "domain"
+                  ]
+                },
+                "title": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "plan": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "why_fits": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "text"
+                  ],
+                  "properties": {
+                    "text": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "breadcrumb": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  }
+                },
+                "what_gets_better": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "before_after": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "before",
+                    "after"
+                  ],
+                  "properties": {
+                    "before": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "after": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  }
+                },
+                "change_level": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "time_range",
+                    "steps_changed",
+                    "steps_removed",
+                    "preliminary"
+                  ],
+                  "properties": {
+                    "time_range": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "steps_changed": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "steps_removed": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "preliminary": {
+                      "const": true
+                    }
+                  }
+                },
+                "stays_same": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "tools",
+                    "authority",
+                    "steps"
+                  ],
+                  "properties": {
+                    "tools": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "authority": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "steps": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    }
+                  }
+                },
+                "invitation": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "grounded_numbers": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "notice": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "allOf": [
+                {
+                  "if": {
+                    "properties": {
+                      "mode": {
+                        "const": "domain"
+                      }
+                    }
+                  },
+                  "then": {
+                    "properties": {
+                      "why_fits": {
+                        "required": [
+                          "text",
+                          "breadcrumb"
+                        ]
+                      }
+                    }
+                  },
+                  "else": {
+                    "properties": {
+                      "why_fits": {
+                        "not": {
+                          "required": [
+                            "breadcrumb"
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        },
+        "request_sha256": "fa0f6d616e8735f0274fcc31627b07612df0cbd3c4f9ad04d9db9c750b5ffa5a",
+        "adapter_input_sha256": "5651ef53a9c4bcf76aa8a2353a11917fced33344c6b6a6330664d913efc7fa8e"
+      }
+    ],
+    "sources": [
+      {
+        "path": "package.json",
+        "bytes": 3309,
+        "sha256": "7e27ada2f1a76f11d883ecda3e32d26bee54aeef4b44b2636385ffa69201439c"
+      },
+      {
+        "path": "runtime-baseline.json",
+        "bytes": 2254,
+        "sha256": "3c9b0860c8dd9760e7883f5c9aed54aa5a2878518fb55c1e5fe5e0f4e17a52a5"
+      },
+      {
+        "path": "scripts/generation.mjs",
+        "bytes": 10830,
+        "sha256": "fe90dce280366e4207b78edd52a93d4dc57e1e40b899122d084d7d7b61993bb5"
+      },
+      {
+        "path": "scripts/brief-contracts.mjs",
+        "bytes": 28020,
+        "sha256": "38f85a381dbe6735a7851ec46e5af7d0edff70d64607943b96325c704c43c431"
+      },
+      {
+        "path": "spikes/judge-fidelity/contract.mjs",
+        "bytes": 28206,
+        "sha256": "02bfb84840c69806bc495360840d4af89cfc6e16f964ad95e46d15ce30d41f1e"
+      },
+      {
+        "path": "spikes/generation-qualification/contract.mjs",
+        "bytes": 8041,
+        "sha256": "9283b83a2f91b90e3bc3717fba972af89054fdd38d3a6348a341983333a89727"
+      },
+      {
+        "path": "spikes/generation-qualification/evidence-v2.mjs",
+        "bytes": 16216,
+        "sha256": "aef97e82da82e6f82196251a2d8b78b2de5ec0f141a491d2b3bf6afe62084723"
+      },
+      {
+        "path": "spikes/generation-qualification/fixture-executor.mjs",
+        "bytes": 2890,
+        "sha256": "60f950c422a0bd567b4753a645b754e3b67b514547241a72a13af52b00a90ab5"
+      },
+      {
+        "path": "spikes/generation-qualification/fixtures.json",
+        "bytes": 1147,
+        "sha256": "bc7a49026898e60c0717590ee6b2575b0f4dc32363322c2e06326b05f2ede9a3"
+      },
+      {
+        "path": "spikes/generation-qualification/qualification.mjs",
+        "bytes": 8774,
+        "sha256": "cabd85ca981fdfc45894491d398311242145eb596f444488fc0ea697bf9debc7"
+      },
+      {
+        "path": "spikes/generation-qualification/run.mjs",
+        "bytes": 9160,
+        "sha256": "c52b29799f1a158d9052feb4746535f73b1554e9083fc8ae90f8079a9e7ff2ef"
+      },
+      {
+        "path": "spikes/generation-qualification/start-adapter.mjs",
+        "bytes": 1523,
+        "sha256": "062ec48f442b4986b6556961fcfa164a51a3c9d6f94e5d1574c4aed686866baa"
+      },
+      {
+        "path": "spikes/generation-qualification/test.mjs",
+        "bytes": 13995,
+        "sha256": "2dbdfa16c8a9a3d4eb7a11ea231868be19bd40cc00ced411376797cffc7f2ca6"
+      },
+      {
+        "path": "spikes/generation-qualification/verify-v2.mjs",
+        "bytes": 805,
+        "sha256": "ae223fa409035d9efa535b2af9efd42f0f367980b3dc896c27167621c66d857c"
+      },
+      {
+        "path": "spikes/generation-qualification/worker.mjs",
+        "bytes": 4309,
+        "sha256": "3027dd2470ad31efd53a1118f37825f932b27652cb50fd954f9d5c9c27ca4912"
+      },
+      {
+        "path": "spikes/generation-qualification/wrangler.toml",
+        "bytes": 275,
+        "sha256": "69ef703d626f5200b2a06e82843760f5d1d663079ac46788d4b6de8109064b60"
+      }
+    ],
+    "runtime": {
+      "path": "runtime-baseline.json",
+      "bytes": 2254,
+      "sha256": "3c9b0860c8dd9760e7883f5c9aed54aa5a2878518fb55c1e5fe5e0f4e17a52a5",
+      "runtime_identity_sha256": "5d14ca5fc8cfbb9d307d066944454fc336a0f86698f9368debe57cbab6958189",
+      "node": "v24.18.0",
+      "wrangler": "4.123.0"
+    },
+    "expected_health": {
+      "ok": true,
+      "inference": false,
+      "schema_version": "oddspark.generation-adapter-health/v1",
+      "provider": "cloudflare-workers-ai",
+      "roles": [
+        {
+          "role": "primary",
+          "resolved_model": "@cf/openai/gpt-oss-120b"
+        },
+        {
+          "role": "fallback",
+          "resolved_model": "@cf/openai/gpt-oss-20b"
+        }
+      ],
+      "parameters": {
+        "temperature": 0,
+        "max_tokens": 2048
+      },
+      "binding": "AI",
+      "worker_sha256": "3027dd2470ad31efd53a1118f37825f932b27652cb50fd954f9d5c9c27ca4912",
+      "config_sha256": "69ef703d626f5200b2a06e82843760f5d1d663079ac46788d4b6de8109064b60",
+      "runtime_sha256": "5d14ca5fc8cfbb9d307d066944454fc336a0f86698f9368debe57cbab6958189"
+    },
+    "estimate": {
+      "pricing": {
+        "as_of": "2026-08-18",
+        "source": "https://developers.cloudflare.com/workers-ai/platform/pricing/",
+        "currency": "USD",
+        "input_per_million": {
+          "@cf/openai/gpt-oss-120b": 0.35,
+          "@cf/openai/gpt-oss-20b": 0.2
+        },
+        "output_per_million": {
+          "@cf/openai/gpt-oss-120b": 0.75,
+          "@cf/openai/gpt-oss-20b": 0.3
+        }
+      },
+      "roles": [
+        {
+          "role": "primary",
+          "resolved_model": "@cf/openai/gpt-oss-120b",
+          "calls": 21,
+          "input_tokens_upper_bound": 2529,
+          "max_output_tokens_per_call": 2048,
+          "input_usd": 0.018588149999999998,
+          "output_usd": 0.032256,
+          "maximum_usd": 0.05084415
+        },
+        {
+          "role": "fallback",
+          "resolved_model": "@cf/openai/gpt-oss-20b",
+          "calls": 21,
+          "input_tokens_upper_bound": 2529,
+          "max_output_tokens_per_call": 2048,
+          "input_usd": 0.0106218,
+          "output_usd": 0.0129024,
+          "maximum_usd": 0.023524200000000002
+        }
+      ],
+      "call_cap": 42,
+      "maximum_usd": 0.07436835
+    },
+    "retention": {
+      "provider_retention_disclosed": true,
+      "retained_locally": [
+        "plan",
+        "approval",
+        "records",
+        "bounded output envelopes",
+        "usage",
+        "latency",
+        "cost",
+        "source/runtime/adapter identities",
+        "predicate results",
+        "manifests",
+        "completion marker"
+      ],
+      "forbidden": [
+        "credentials",
+        "account identifiers",
+        "provider reasoning",
+        "unbounded raw output"
+      ]
+    },
+    "schedule": [
+      {
+        "role": "primary",
+        "probe": 1,
+        "trials_after_successful_probe": 20,
+        "sequential": true,
+        "retries": 0,
+        "replacements": 0
+      },
+      {
+        "role": "fallback",
+        "probe": 1,
+        "trials_after_successful_probe": 20,
+        "sequential": true,
+        "retries": 0,
+        "replacements": 0
+      }
+    ],
+    "call_cap": 42,
+    "predicate_ids": [
+      "evidence.shape",
+      "oracle.identity",
+      "legacy.immutable",
+      "runtime.identity",
+      "source.identity",
+      "adapter.identity",
+      "candidate.binding",
+      "fixtures.executed",
+      "records.classified",
+      "records.closed",
+      "run.authorization",
+      "run.cardinality",
+      "run.ordering",
+      "run.common_request",
+      "summary.rates",
+      "outcome.deterministic",
+      "predicates.retained",
+      "report.deterministic",
+      "roles.independent",
+      "output.direct_candidate",
+      "schedule.zero_retry",
+      "cost.recomputed",
+      "manifest.independent"
+    ]
+  },
+  "input": {
+    "evidence": {
+      "version": 1,
+      "mode": "local",
+      "priors": {
+        "region": "Blue Water Area",
+        "season": "summer",
+        "date": "2026-08-18",
+        "situation": "repeated inquiries",
+        "capability_bundle": [
+          "software",
+          "workflow automation"
+        ]
+      }
+    },
+    "seed": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  "requests": [
+    {
+      "role": "primary",
+      "resolved_model": "@cf/openai/gpt-oss-120b",
+      "body": {
+        "role": "primary",
+        "model": "@cf/openai/gpt-oss-120b",
+        "messages": [
+          {
+            "role": "system",
+            "content": "Return exactly one JSON Candidate object matching the supplied JSON Schema. Do not wrap it, explain it, fence it, repair it, or include a candidate_ref. Preserve the supplied Evidence faithfully and produce only a closed Story 1.7 Candidate."
+          },
+          {
+            "role": "user",
+            "content": "{\"evidence\":{\"mode\":\"local\",\"priors\":{\"capability_bundle\":[\"software\",\"workflow automation\"],\"date\":\"2026-08-18\",\"region\":\"Blue Water Area\",\"season\":\"summer\",\"situation\":\"repeated inquiries\"},\"version\":1},\"seed\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}"
+          }
+        ],
+        "temperature": 0,
+        "max_tokens": 2048,
+        "response_format": {
+          "type": "json_schema",
+          "json_schema": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "version",
+              "mode",
+              "title",
+              "plan",
+              "why_fits",
+              "what_gets_better",
+              "before_after",
+              "change_level",
+              "stays_same",
+              "invitation",
+              "grounded_numbers"
+            ],
+            "properties": {
+              "version": {
+                "const": 1
+              },
+              "mode": {
+                "enum": [
+                  "local",
+                  "domain"
+                ]
+              },
+              "title": {
+                "type": "string",
+                "minLength": 1
+              },
+              "plan": {
+                "type": "string",
+                "minLength": 1
+              },
+              "why_fits": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "text"
+                ],
+                "properties": {
+                  "text": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "breadcrumb": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
+              },
+              "what_gets_better": {
+                "type": "string",
+                "minLength": 1
+              },
+              "before_after": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "before",
+                  "after"
+                ],
+                "properties": {
+                  "before": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "after": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
+              },
+              "change_level": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "time_range",
+                  "steps_changed",
+                  "steps_removed",
+                  "preliminary"
+                ],
+                "properties": {
+                  "time_range": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "steps_changed": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "steps_removed": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "preliminary": {
+                    "const": true
+                  }
+                }
+              },
+              "stays_same": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "tools",
+                  "authority",
+                  "steps"
+                ],
+                "properties": {
+                  "tools": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "authority": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "steps": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  }
+                }
+              },
+              "invitation": {
+                "type": "string",
+                "minLength": 1
+              },
+              "grounded_numbers": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "notice": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "allOf": [
+              {
+                "if": {
+                  "properties": {
+                    "mode": {
+                      "const": "domain"
+                    }
+                  }
+                },
+                "then": {
+                  "properties": {
+                    "why_fits": {
+                      "required": [
+                        "text",
+                        "breadcrumb"
+                      ]
+                    }
+                  }
+                },
+                "else": {
+                  "properties": {
+                    "why_fits": {
+                      "not": {
+                        "required": [
+                          "breadcrumb"
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "request_sha256": "fae773de138bc9ed3d4432347748f5ab79165bf0b3cf80fa77e135c97965958e",
+      "adapter_input_sha256": "5651ef53a9c4bcf76aa8a2353a11917fced33344c6b6a6330664d913efc7fa8e"
+    },
+    {
+      "role": "fallback",
+      "resolved_model": "@cf/openai/gpt-oss-20b",
+      "body": {
+        "role": "fallback",
+        "model": "@cf/openai/gpt-oss-20b",
+        "messages": [
+          {
+            "role": "system",
+            "content": "Return exactly one JSON Candidate object matching the supplied JSON Schema. Do not wrap it, explain it, fence it, repair it, or include a candidate_ref. Preserve the supplied Evidence faithfully and produce only a closed Story 1.7 Candidate."
+          },
+          {
+            "role": "user",
+            "content": "{\"evidence\":{\"mode\":\"local\",\"priors\":{\"capability_bundle\":[\"software\",\"workflow automation\"],\"date\":\"2026-08-18\",\"region\":\"Blue Water Area\",\"season\":\"summer\",\"situation\":\"repeated inquiries\"},\"version\":1},\"seed\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}"
+          }
+        ],
+        "temperature": 0,
+        "max_tokens": 2048,
+        "response_format": {
+          "type": "json_schema",
+          "json_schema": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "version",
+              "mode",
+              "title",
+              "plan",
+              "why_fits",
+              "what_gets_better",
+              "before_after",
+              "change_level",
+              "stays_same",
+              "invitation",
+              "grounded_numbers"
+            ],
+            "properties": {
+              "version": {
+                "const": 1
+              },
+              "mode": {
+                "enum": [
+                  "local",
+                  "domain"
+                ]
+              },
+              "title": {
+                "type": "string",
+                "minLength": 1
+              },
+              "plan": {
+                "type": "string",
+                "minLength": 1
+              },
+              "why_fits": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "text"
+                ],
+                "properties": {
+                  "text": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "breadcrumb": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
+              },
+              "what_gets_better": {
+                "type": "string",
+                "minLength": 1
+              },
+              "before_after": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "before",
+                  "after"
+                ],
+                "properties": {
+                  "before": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "after": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
+              },
+              "change_level": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "time_range",
+                  "steps_changed",
+                  "steps_removed",
+                  "preliminary"
+                ],
+                "properties": {
+                  "time_range": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "steps_changed": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "steps_removed": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "preliminary": {
+                    "const": true
+                  }
+                }
+              },
+              "stays_same": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "tools",
+                  "authority",
+                  "steps"
+                ],
+                "properties": {
+                  "tools": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "authority": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "steps": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  }
+                }
+              },
+              "invitation": {
+                "type": "string",
+                "minLength": 1
+              },
+              "grounded_numbers": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "notice": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "allOf": [
+              {
+                "if": {
+                  "properties": {
+                    "mode": {
+                      "const": "domain"
+                    }
+                  }
+                },
+                "then": {
+                  "properties": {
+                    "why_fits": {
+                      "required": [
+                        "text",
+                        "breadcrumb"
+                      ]
+                    }
+                  }
+                },
+                "else": {
+                  "properties": {
+                    "why_fits": {
+                      "not": {
+                        "required": [
+                          "breadcrumb"
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "request_sha256": "fa0f6d616e8735f0274fcc31627b07612df0cbd3c4f9ad04d9db9c750b5ffa5a",
+      "adapter_input_sha256": "5651ef53a9c4bcf76aa8a2353a11917fced33344c6b6a6330664d913efc7fa8e"
+    }
+  ],
+  "approval": {
+    "schema_version": "oddspark.generation-qualification-approval/v1",
+    "plan_ref": "17e06418b5d7cb35a7c5d673f1a5e9aa8d4aeeef9b636ca92ccb96b6908f5031",
+    "approval_run_id": "story-1-11-2026-08-19-r2",
+    "approved_at": "2026-08-19T16:03:13.399Z",
+    "approved_by": "Justin",
+    "approved_call_cap": 42,
+    "approved_maximum_usd": 0.07436835,
+    "authorization": "execute-exact-plan-once"
+  },
+  "pricing": {
+    "pricing": {
+      "as_of": "2026-08-18",
+      "source": "https://developers.cloudflare.com/workers-ai/platform/pricing/",
+      "currency": "USD",
+      "input_per_million": {
+        "@cf/openai/gpt-oss-120b": 0.35,
+        "@cf/openai/gpt-oss-20b": 0.2
+      },
+      "output_per_million": {
+        "@cf/openai/gpt-oss-120b": 0.75,
+        "@cf/openai/gpt-oss-20b": 0.3
+      }
+    },
+    "roles": [
+      {
+        "role": "primary",
+        "resolved_model": "@cf/openai/gpt-oss-120b",
+        "calls": 21,
+        "input_tokens_upper_bound": 2529,
+        "max_output_tokens_per_call": 2048,
+        "input_usd": 0.018588149999999998,
+        "output_usd": 0.032256,
+        "maximum_usd": 0.05084415
+      },
+      {
+        "role": "fallback",
+        "resolved_model": "@cf/openai/gpt-oss-20b",
+        "calls": 21,
+        "input_tokens_upper_bound": 2529,
+        "max_output_tokens_per_call": 2048,
+        "input_usd": 0.0106218,
+        "output_usd": 0.0129024,
+        "maximum_usd": 0.023524200000000002
+      }
+    ],
+    "call_cap": 42,
+    "maximum_usd": 0.07436835
+  },
+  "sources": [
+    {
+      "path": "package.json",
+      "bytes": 3309,
+      "sha256": "7e27ada2f1a76f11d883ecda3e32d26bee54aeef4b44b2636385ffa69201439c"
+    },
+    {
+      "path": "runtime-baseline.json",
+      "bytes": 2254,
+      "sha256": "3c9b0860c8dd9760e7883f5c9aed54aa5a2878518fb55c1e5fe5e0f4e17a52a5"
+    },
+    {
+      "path": "scripts/generation.mjs",
+      "bytes": 10830,
+      "sha256": "fe90dce280366e4207b78edd52a93d4dc57e1e40b899122d084d7d7b61993bb5"
+    },
+    {
+      "path": "scripts/brief-contracts.mjs",
+      "bytes": 28020,
+      "sha256": "38f85a381dbe6735a7851ec46e5af7d0edff70d64607943b96325c704c43c431"
+    },
+    {
+      "path": "spikes/judge-fidelity/contract.mjs",
+      "bytes": 28206,
+      "sha256": "02bfb84840c69806bc495360840d4af89cfc6e16f964ad95e46d15ce30d41f1e"
+    },
+    {
+      "path": "spikes/generation-qualification/contract.mjs",
+      "bytes": 8041,
+      "sha256": "9283b83a2f91b90e3bc3717fba972af89054fdd38d3a6348a341983333a89727"
+    },
+    {
+      "path": "spikes/generation-qualification/evidence-v2.mjs",
+      "bytes": 16216,
+      "sha256": "aef97e82da82e6f82196251a2d8b78b2de5ec0f141a491d2b3bf6afe62084723"
+    },
+    {
+      "path": "spikes/generation-qualification/fixture-executor.mjs",
+      "bytes": 2890,
+      "sha256": "60f950c422a0bd567b4753a645b754e3b67b514547241a72a13af52b00a90ab5"
+    },
+    {
+      "path": "spikes/generation-qualification/fixtures.json",
+      "bytes": 1147,
+      "sha256": "bc7a49026898e60c0717590ee6b2575b0f4dc32363322c2e06326b05f2ede9a3"
+    },
+    {
+      "path": "spikes/generation-qualification/qualification.mjs",
+      "bytes": 8774,
+      "sha256": "cabd85ca981fdfc45894491d398311242145eb596f444488fc0ea697bf9debc7"
+    },
+    {
+      "path": "spikes/generation-qualification/run.mjs",
+      "bytes": 9160,
+      "sha256": "c52b29799f1a158d9052feb4746535f73b1554e9083fc8ae90f8079a9e7ff2ef"
+    },
+    {
+      "path": "spikes/generation-qualification/start-adapter.mjs",
+      "bytes": 1523,
+      "sha256": "062ec48f442b4986b6556961fcfa164a51a3c9d6f94e5d1574c4aed686866baa"
+    },
+    {
+      "path": "spikes/generation-qualification/test.mjs",
+      "bytes": 13995,
+      "sha256": "2dbdfa16c8a9a3d4eb7a11ea231868be19bd40cc00ced411376797cffc7f2ca6"
+    },
+    {
+      "path": "spikes/generation-qualification/verify-v2.mjs",
+      "bytes": 805,
+      "sha256": "ae223fa409035d9efa535b2af9efd42f0f367980b3dc896c27167621c66d857c"
+    },
+    {
+      "path": "spikes/generation-qualification/worker.mjs",
+      "bytes": 4309,
+      "sha256": "3027dd2470ad31efd53a1118f37825f932b27652cb50fd954f9d5c9c27ca4912"
+    },
+    {
+      "path": "spikes/generation-qualification/wrangler.toml",
+      "bytes": 275,
+      "sha256": "69ef703d626f5200b2a06e82843760f5d1d663079ac46788d4b6de8109064b60"
+    }
+  ],
+  "runtime": {
+    "path": "runtime-baseline.json",
+    "bytes": 2254,
+    "sha256": "3c9b0860c8dd9760e7883f5c9aed54aa5a2878518fb55c1e5fe5e0f4e17a52a5",
+    "runtime_identity_sha256": "5d14ca5fc8cfbb9d307d066944454fc336a0f86698f9368debe57cbab6958189",
+    "node": "v24.18.0",
+    "wrangler": "4.123.0"
+  },
+  "legacy": [
+    {
+      "path": "spikes/judge-fidelity/results/2026-08-16-d2b84005.json",
+      "sha256": "1cc4431088e37ba069e128e0059f19229551de2398db0d686524bc70aa752377",
+      "observed_sha256": "1cc4431088e37ba069e128e0059f19229551de2398db0d686524bc70aa752377",
+      "immutable": true
+    },
+    {
+      "path": "spikes/judge-fidelity/results/2026-08-16-d2b84005.md",
+      "sha256": "0fde75016daa6556ece35be8abd54faaebc4eed6a82156fd834bd127fd263562",
+      "observed_sha256": "0fde75016daa6556ece35be8abd54faaebc4eed6a82156fd834bd127fd263562",
+      "immutable": true
+    },
+    {
+      "path": "spikes/judge-fidelity/results/2026-08-16-d2b84005-audit.md",
+      "sha256": "4695bae9056e14e8b961111f9be6802c8faab2ebf932963e6425315c43d4e16b",
+      "observed_sha256": "4695bae9056e14e8b961111f9be6802c8faab2ebf932963e6425315c43d4e16b",
+      "immutable": true
+    }
+  ],
+  "adapter": {
+    "endpoint": "http://127.0.0.1:8789/",
+    "expected_health": {
+      "ok": true,
+      "inference": false,
+      "schema_version": "oddspark.generation-adapter-health/v1",
+      "provider": "cloudflare-workers-ai",
+      "roles": [
+        {
+          "role": "primary",
+          "resolved_model": "@cf/openai/gpt-oss-120b"
+        },
+        {
+          "role": "fallback",
+          "resolved_model": "@cf/openai/gpt-oss-20b"
+        }
+      ],
+      "parameters": {
+        "temperature": 0,
+        "max_tokens": 2048
+      },
+      "binding": "AI",
+      "worker_sha256": "3027dd2470ad31efd53a1118f37825f932b27652cb50fd954f9d5c9c27ca4912",
+      "config_sha256": "69ef703d626f5200b2a06e82843760f5d1d663079ac46788d4b6de8109064b60",
+      "runtime_sha256": "5d14ca5fc8cfbb9d307d066944454fc336a0f86698f9368debe57cbab6958189"
+    },
+    "observed_health": {
+      "ok": true,
+      "inference": false,
+      "schema_version": "oddspark.generation-adapter-health/v1",
+      "provider": "cloudflare-workers-ai",
+      "roles": [
+        {
+          "role": "primary",
+          "resolved_model": "@cf/openai/gpt-oss-120b"
+        },
+        {
+          "role": "fallback",
+          "resolved_model": "@cf/openai/gpt-oss-20b"
+        }
+      ],
+      "parameters": {
+        "temperature": 0,
+        "max_tokens": 2048
+      },
+      "binding": "AI",
+      "worker_sha256": "3027dd2470ad31efd53a1118f37825f932b27652cb50fd954f9d5c9c27ca4912",
+      "config_sha256": "69ef703d626f5200b2a06e82843760f5d1d663079ac46788d4b6de8109064b60",
+      "runtime_sha256": "5d14ca5fc8cfbb9d307d066944454fc336a0f86698f9368debe57cbab6958189"
+    },
+    "identity_match": true
+  },
+  "fixtures": {
+    "declared_ids": [
+      "direct",
+      "missing",
+      "extra",
+      "mistyped",
+      "wrapped",
+      "text",
+      "fenced",
+      "coerced",
+      "repaired",
+      "ambiguous",
+      "oversized",
+      "provider-error",
+      "timeout"
+    ],
+    "passing_ids": [
+      "direct",
+      "missing",
+      "extra",
+      "mistyped",
+      "wrapped",
+      "text",
+      "fenced",
+      "coerced",
+      "repaired",
+      "ambiguous",
+      "oversized",
+      "provider-error",
+      "timeout"
+    ],
+    "failures": [],
+    "passed": true
+  },
+  "records": [
+    {
+      "kind": "probe",
+      "role": "primary",
+      "resolved_model": "@cf/openai/gpt-oss-120b",
+      "index": 1,
+      "started_at": "2026-08-19T16:03:42.879Z",
+      "ended_at": "2026-08-19T16:03:59.065Z",
+      "latency_ms": 16186,
+      "call_state": "received",
+      "classification": "invalid_output",
+      "candidate": null,
+      "candidate_ref": null,
+      "issues": [
+        {
+          "path": "brief",
+          "rule": "closed_schema",
+          "message": "keys differ; missing=[version, mode, title, plan, why_fits, what_gets_better, before_after, change_level, stays_same, invitation, grounded_numbers], unknown=[choices, created, ec_transfer_params, id, kv_transfer_params, metrics, model, object, prompt_logprobs, prompt_text, prompt_token_ids, service_tier, usage]"
+        }
+      ],
+      "retained": {
+        "choices": [
+          {
+            "finish_reason": "stop",
+            "index": 0,
+            "logprobs": null,
+            "message": {
+              "annotations": null,
+              "audio": null,
+              "content": "{\n  \"evidence\": {\n    \"mode\": \"local\",\n    \"priors\": {\n      \"capability_bundle\": [\n        \"software\",\n        \"workflow automation\"\n      ],\n      \"date\": \"2026-08-18\",\n      \"region\": \"Blue Water Area\",\n      \"season\": \"summer\",\n      \"situation\": \"repeated inquiries\"\n    },\n    \"version\": 1\n  },\n  \"seed\": \"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\n  \"story\": {\n    \"title\": \"Summer of Automated Answers\",\n    \"summary\": \"In the bustling Blue Water Area, a new workflow‑automation platform tackles a flood of repeated summer inquiries, turning chaos into calm.\",\n    \"content\": \"The heat of August 2026 settled over the Blue Water Area, and with it came a relentless tide of questions. Tourists, locals, and businesses alike flooded the municipal help desk with the same queries: parking permits, beach safety alerts, and ferry schedules. The staff, already stretched thin, found their inboxes swelling faster than the tide.\\n\\nEnter the \\\"BlueWave\\\" software suite, a workflow‑automation bundle designed for exactly this kind of seasonal surge. Powered by AI‑driven routing and a library of pre‑written response templates, BlueWave intercepted each incoming message, identified its intent, and either answered instantly or escalated it to a human operator with a concise briefing.\\n\\nWithin hours, the number of unanswered tickets dropped from hundreds to single digits. Tourists received instant confirmations for their parking permits, beachgoers were warned of sudden rip currents, and ferry operators saw their schedules updated in real time. The system also logged every interaction, providing the city with a living FAQ that grew smarter each day.\\n\\nBy the end of the summer, the repeated inquiries that once threatened to overwhelm the office had become a smooth, self‑sustaining conversation. The staff could finally focus on the few truly unique problems that required a human touch, while BlueWave kept the routine flow humming like the gentle surf along the coast.\\n\\nThe success of this automation experiment spread beyond the Blue Water Area, inspiring neighboring regions to adopt similar solutions for their own seasonal peaks. In the end, a summer of repeated questions turned into a showcase of how software and workflow automation can turn pressure into performance.\"\n  }\n}",
+              "function_call": null,
+              "reasoning": "We need to produce a JSON Candidate object matching the supplied JSON Schema. We need to know the schema. Not provided directly, but we can infer typical \"Story 1.7 Candidate\" schema. Likely includes fields like \"story\", \"title\", \"characters\", \"setting\", \"conflict\", \"resolution\", maybe \"evidence\" field? The evidence is given in the prompt, we must preserve it faithfully. So the candidate must include the evidence object exactly as given.\n\nWe need to output a closed Story 1.7 Candidate. Probably fields: \"evidence\", \"seed\", \"story\". Let's assume schema: { \"evidence\": {...}, \"seed\": string, \"story\": { \"title\": string, \"summary\": string, \"content\": string } }. Must be closed (no extra fields). We'll include those.\n\nWe need to incorporate the evidence: mode local, priors: capability_bundle includes software, workflow automation; date 2026-08-18; region Blue Water Area; season summer; situation repeated inquiries. version 1. seed is given.\n\nNow craft a story: maybe about a software automation system handling repeated inquiries in Blue Water Area during summer. Title: \"Automation Waves\". Provide summary and content.\n\nMake sure JSON is valid, no extra fields.\n\nLet's produce:\n\n{\n  \"evidence\": { ... },\n  \"seed\": \"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\n  \"story\": {\n    \"title\": \"...\",\n    \"summary\": \"...\",\n    \"content\": \"...\"\n  }\n}\n\nMake sure to preserve evidence exactly as given (order maybe). Provide content as a short narrative.\n\nLet's write.\n\n",
+              "reasoning_content": "We need to produce a JSON Candidate object matching the supplied JSON Schema. We need to know the schema. Not provided directly, but we can infer typical \"Story 1.7 Candidate\" schema. Likely includes fields like \"story\", \"title\", \"characters\", \"setting\", \"conflict\", \"resolution\", maybe \"evidence\" field? The evidence is given in the prompt, we must preserve it faithfully. So the candidate must include the evidence object exactly as given.\n\nWe need to output a closed Story 1.7 Candidate. Probably fields: \"evidence\", \"seed\", \"story\". Let's assume schema: { \"evidence\": {...}, \"seed\": string, \"story\": { \"title\": string, \"summary\": string, \"content\": string } }. Must be closed (no extra fields). We'll include those.\n\nWe need to incorporate the evidence: mode local, priors: capability_bundle includes software, workflow automation; date 2026-08-18; region Blue Water Area; season summer; situation repeated inquiries. version 1. seed is given.\n\nNow craft a story: maybe about a software automation system handling repeated inquiries in Blue Water Area during summer. Title: \"Automation Waves\". Provide summary and content.\n\nMake sure JSON is valid, no extra fields.\n\nLet's produce:\n\n{\n  \"evidence\": { ... },\n  \"seed\": \"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\n  \"story\": {\n    \"title\": \"...\",\n    \"summary\": \"...\",\n    \"content\": \"...\"\n  }\n}\n\nMake sure to preserve evidence exactly as given (order maybe). Provide content as a short narrative.\n\nLet's write.\n\n",
+              "refusal": null,
+              "role": "assistant"
+            },
+            "routed_experts": null,
+            "stop_reason": null,
+            "token_ids": null
+          }
+        ],
+        "created": 1787155423,
+        "ec_transfer_params": null,
+        "id": "chatcmpl-ec38adcf-744b-43d9-bbcd-89e6fe06a397",
+        "kv_transfer_params": null,
+        "metrics": null,
+        "model": "@cf/openai/gpt-oss-120b",
+        "object": "chat.completion",
+        "prompt_logprobs": null,
+        "prompt_text": null,
+        "prompt_token_ids": null,
+        "service_tier": null,
+        "usage": {
+          "prompt_tokens": 179,
+          "completion_tokens": 827,
+          "total_tokens": 1006,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "neurons": 62.08177185058594
+        }
+      },
+      "retained_sha256": "0671e58d103b9e95fd99c9842aae75ea522331729c160e61af42d35df444a3ee",
+      "retained_bytes": 6264,
+      "usage": {
+        "input_tokens": 179,
+        "output_tokens": 827
+      },
+      "cost_usd": 0.0006829000000000001,
+      "request_sha256": "fae773de138bc9ed3d4432347748f5ab79165bf0b3cf80fa77e135c97965958e"
+    },
+    {
+      "kind": "probe",
+      "role": "fallback",
+      "resolved_model": "@cf/openai/gpt-oss-20b",
+      "index": 1,
+      "started_at": "2026-08-19T16:03:59.066Z",
+      "ended_at": "2026-08-19T16:04:16.569Z",
+      "latency_ms": 17503,
+      "call_state": "received",
+      "classification": "invalid_output",
+      "candidate": null,
+      "candidate_ref": null,
+      "issues": [
+        {
+          "path": "brief",
+          "rule": "closed_schema",
+          "message": "keys differ; missing=[version, mode, title, plan, why_fits, what_gets_better, before_after, change_level, stays_same, invitation, grounded_numbers], unknown=[id, object, created, model, choices, service_tier, system_fingerprint, usage, prompt_logprobs, prompt_token_ids, kv_transfer_params]"
+        }
+      ],
+      "retained": {
+        "id": "chatcmpl-0fc672f3f6954f9882fabf47f16749e5",
+        "object": "chat.completion",
+        "created": 1787155439,
+        "model": "@cf/openai/gpt-oss-20b",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "{\"evidence\":{\"mode\":\"local\",\"priors\":{\"capability_bundle\":[\"software\",\"workflow automation\"],\"date\":\"2026-08-18\",\"region\":\"Blue Water Area\",\"season\":\"summer\",\"situation\":\"repeated inquiries\"},\"version\":1},\"seed\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"candidate\":{\"story\":\"In the Blue Water Area, on a warm summer day in 2026, the local community was buzzing with repeated inquiries about the new software workflow automation system. The team had rolled out a beta version, but users kept asking the same questions about integration and best practices. After a week of persistent questions, the developers added an automated FAQ module that answered the most common concerns. The update was a hit—questions dwindled, and the community felt empowered by the quick, helpful responses.\",\"closed\":true,\"version\":1.7}}",
+              "refusal": null,
+              "annotations": null,
+              "audio": null,
+              "function_call": null,
+              "tool_calls": [],
+              "reasoning_content": "We need to produce a JSON Candidate object matching the supplied JSON Schema. The schema is not provided explicitly, but we have to produce a \"closed Story 1.7 Candidate\". The instructions: \"Return exactly one JSON Candidate object matching the supplied JSON Schema. Do not wrap it, explain it, fence it, repair it, or include a candidate_ref. Preserve the supplied Evidence faithfully and produce only a closed Story 1.7 Candidate.\"\n\nWe need to produce a JSON object with fields: \"candidate_ref\" maybe? But they said do not include a candidate_ref. So we must not include candidate_ref. The schema likely expects fields like \"evidence\", \"seed\", \"candidate\" maybe? But we need to produce a closed Story 1.7 Candidate. The evidence is given. The seed is given. We need to produce a candidate that is a story. The schema likely expects something like:\n\n{\n  \"evidence\": {...},\n  \"seed\": \"...\",\n  \"candidate\": {\n    \"story\": \"...\",\n    \"closed\": true,\n    \"version\": 1.7\n  }\n}\n\nBut we need to confirm. The instruction: \"produce only a closed Story 1.7 Candidate.\" So the candidate must be closed, meaning it's a final story. The schema might require fields: \"candidate_ref\" (but we must not include it), \"evidence\", \"seed\", \"candidate\" with \"story\" and maybe \"closed\" flag. But we don't know the exact schema. We need to guess based on typical patterns.\n\nWe can search memory: In previous tasks, the schema for \"Candidate\" might be:\n\n{\n  \"$schema\": \"http://json-schema.org/draft-07/schema#\",\n  \"type\": \"object\",\n  \"properties\": {\n    \"candidate_ref\": {\"type\": \"string\"},\n    \"evidence\": {\"type\": \"object\"},\n    \"seed\": {\"type\": \"string\"},\n    \"candidate\": {\"type\": \"object\"}\n  },\n  \"required\": [\"evidence\", \"seed\", \"candidate\"]\n}\n\nBut they said do not include candidate_ref. So we omit that property. The candidate object likely contains \"story\" and maybe \"closed\" boolean. But we need to produce a closed story. So we set \"closed\": true. The story content: We need to produce a story based on the evidence: local mode, priors: capability_bundle: software, workflow automation; date: 2026-08-18; region: Blue Water Area; season: summer; situation: repeated inquiries. The seed is a long string of 'a's. We need to produce a story that is closed, maybe a narrative about repeated inquiries about software workflow automation in Blue Water Area during summer 2026. The story should be plausible and incorporate the evidence. The story length? Not specified. But we can produce a short story.\n\nWe need to preserve the supplied Evidence faithfully. So we must include the evidence exactly as given. The evidence object must be identical. So we need to copy the evidence object exactly. The seed must be exactly the same string. The candidate must be closed. So we produce:\n\n{\n  \"evidence\": { ... },\n  \"seed\": \"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\n  \"candidate\": {\n    \"story\": \"...\",\n    \"closed\": true,\n    \"version\": 1.7\n  }\n}\n\nBut the schema might require \"candidate\" to have \"story\" and \"closed\" fields. We also might need \"candidate_ref\" but we must not include it. So we omit it.\n\nWe need to produce exactly one JSON object. No explanation. No fences. Just the JSON.\n\nLet's craft a story: \"In the Blue Water Area, summer 2026, the local community repeatedly inquired about the new software workflow automation system. The team responded with detailed guides, but the questions persisted. After a week of persistent inquiries, the system was updated to include a FAQ module that automatically answered common questions. The community appreciated the quick resolution, and the repeated inquiries turned into positive feedback.\"\n\nWe can incorporate the evidence: \"mode\":\"local\", \"priors\" etc. The story should mention local, software, workflow automation, date, region, season, repeated inquiries.\n\nLet's produce a story string. We need to escape quotes properly. We'll produce a JSON string with the story.\n\nWe need to ensure the JSON is valid. We'll produce:\n\n{\n  \"evidence\": {\"mode\":\"local\",\"priors\":{\"capability_bundle\":[\"software\",\"workflow automation\"],\"date\":\"2026-08-18\",\"region\":\"Blue Water Area\",\"season\":\"summer\",\"situation\":\"repeated inquiries\"},\"version\":1},\n  \"seed\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\n  \"candidate\":{\"story\":\"In the Blue Water Area, on a warm summer day in 2026, the local community was buzzing with repeated inquiries about the new software workflow automation system. The team had rolled out a beta version, but users kept asking the same questions about integration and best practices. After a week of persistent questions, the developers added an automated FAQ module that answered the most common concerns. The update was a hit—questions dwindled, and the community felt empowered by the quick, helpful responses.\",\"closed\":true,\"version\":1.7}\n}\n\nWe need to ensure the JSON is valid. The \"story\" string contains quotes? It contains no quotes. Good. The \"seed\" string is correct. The evidence object is exactly as given. The \"candidate\" object has \"story\", \"closed\", \"version\". That should satisfy.\n\nWe must not include candidate_ref. Good.\n\nReturn exactly that JSON."
+            },
+            "logprobs": null,
+            "finish_reason": "stop",
+            "stop_reason": null,
+            "token_ids": null
+          }
+        ],
+        "service_tier": null,
+        "system_fingerprint": null,
+        "usage": {
+          "prompt_tokens": 185,
+          "completion_tokens": 1346,
+          "total_tokens": 1531,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "neurons": 40.0726872
+        },
+        "prompt_logprobs": null,
+        "prompt_token_ids": null,
+        "kv_transfer_params": null
+      },
+      "retained_sha256": "779010603427141800bdba8bc9c88047907e4f07834cea7f7967a097d0bef218",
+      "retained_bytes": 6939,
+      "usage": {
+        "input_tokens": 185,
+        "output_tokens": 1346
+      },
+      "cost_usd": 0.0004408,
+      "request_sha256": "fa0f6d616e8735f0274fcc31627b07612df0cbd3c4f9ad04d9db9c750b5ffa5a"
+    }
+  ],
+  "summary": {
+    "by_role": {
+      "primary": {
+        "resolved_model": "@cf/openai/gpt-oss-120b",
+        "total": 0,
+        "direct_valid": 0,
+        "invalid_output": 0,
+        "output_too_large": 0,
+        "provider_error": 0,
+        "timeout": 0,
+        "direct_rate": {
+          "numerator": 0,
+          "denominator": 0,
+          "percent": 0
+        },
+        "latency_ms": [],
+        "usage": [],
+        "cost_usd": 0,
+        "missing_usage": 0
+      },
+      "fallback": {
+        "resolved_model": "@cf/openai/gpt-oss-20b",
+        "total": 0,
+        "direct_valid": 0,
+        "invalid_output": 0,
+        "output_too_large": 0,
+        "provider_error": 0,
+        "timeout": 0,
+        "direct_rate": {
+          "numerator": 0,
+          "denominator": 0,
+          "percent": 0
+        },
+        "latency_ms": [],
+        "usage": [],
+        "cost_usd": 0,
+        "missing_usage": 0
+      }
+    }
+  },
+  "oracle": {
+    "version": "oddspark-judge-evidence-predicates/v2",
+    "hash": "87e15af7b9ad5477862de03bf9b2b049f68932d41eb1cbbf2eaacee1c9ee7ade",
+    "predicate_ids": [
+      "evidence.shape",
+      "oracle.identity",
+      "legacy.immutable",
+      "runtime.identity",
+      "source.identity",
+      "adapter.identity",
+      "candidate.binding",
+      "fixtures.executed",
+      "records.classified",
+      "records.closed",
+      "run.authorization",
+      "run.cardinality",
+      "run.ordering",
+      "run.common_request",
+      "summary.rates",
+      "outcome.deterministic",
+      "predicates.retained",
+      "report.deterministic",
+      "roles.independent",
+      "output.direct_candidate",
+      "schedule.zero_retry",
+      "cost.recomputed",
+      "manifest.independent"
+    ]
+  },
+  "outcome": {
+    "by_role": {
+      "primary": {
+        "decision": "NO-GO",
+        "reasons": [
+          "probe did not return a direct Candidate",
+          "expected 20 trials, found 0",
+          "direct-valid threshold 19/20 not met"
+        ]
+      },
+      "fallback": {
+        "decision": "NO-GO",
+        "reasons": [
+          "probe did not return a direct Candidate",
+          "expected 20 trials, found 0",
+          "direct-valid threshold 19/20 not met"
+        ]
+      }
+    }
+  },
+  "predicate_results": [
+    {
+      "id": "evidence.shape",
+      "pass": true
+    },
+    {
+      "id": "oracle.identity",
+      "pass": true
+    },
+    {
+      "id": "legacy.immutable",
+      "pass": true
+    },
+    {
+      "id": "runtime.identity",
+      "pass": true
+    },
+    {
+      "id": "source.identity",
+      "pass": true
+    },
+    {
+      "id": "adapter.identity",
+      "pass": true
+    },
+    {
+      "id": "candidate.binding",
+      "pass": true
+    },
+    {
+      "id": "fixtures.executed",
+      "pass": true
+    },
+    {
+      "id": "records.classified",
+      "pass": true
+    },
+    {
+      "id": "records.closed",
+      "pass": true
+    },
+    {
+      "id": "run.authorization",
+      "pass": true
+    },
+    {
+      "id": "run.cardinality",
+      "pass": true
+    },
+    {
+      "id": "run.ordering",
+      "pass": true
+    },
+    {
+      "id": "run.common_request",
+      "pass": true
+    },
+    {
+      "id": "summary.rates",
+      "pass": true
+    },
+    {
+      "id": "outcome.deterministic",
+      "pass": true
+    },
+    {
+      "id": "predicates.retained",
+      "pass": true
+    },
+    {
+      "id": "report.deterministic",
+      "pass": true
+    },
+    {
+      "id": "roles.independent",
+      "pass": true
+    },
+    {
+      "id": "output.direct_candidate",
+      "pass": true
+    },
+    {
+      "id": "schedule.zero_retry",
+      "pass": true
+    },
+    {
+      "id": "cost.recomputed",
+      "pass": true
+    },
+    {
+      "id": "manifest.independent",
+      "pass": true
+    }
+  ],
+  "report": "# Generation Structural Qualification\n\n- Run: `ead1cb17-38d7-41ce-8369-7fdc14098b29`\n- Calls: 2/42\n\n| Role | Model | Trials | Direct valid | Decision |\n| --- | --- | ---: | ---: | --- |\n| primary | `@cf/openai/gpt-oss-120b` | 0 | 0/0 | NO-GO |\n| fallback | `@cf/openai/gpt-oss-20b` | 0 | 0/0 | NO-GO |\n\nPrimary and fallback results are independent. Failures remain in their role denominator; no retry, replacement, repair, coercion, or prose extraction is allowed.\n\n"
+}

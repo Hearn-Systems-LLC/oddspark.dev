@@ -121,12 +121,20 @@ operator_actions:
   - `spikes/generation-qualification/contract.mjs`, `fixtures.json`, and `fixture-executor.mjs`: closed generation request/response, identity, taxonomy, oracle, and adversarial fixture contracts.
   - `spikes/generation-qualification/evidence-v2.mjs`, `qualification.mjs`, and `verify-v2.mjs`: independent evidence, plan, approval, pricing, manifest, and public-verifier logic.
   - `spikes/generation-qualification/run.mjs`, `worker.mjs`, `start-adapter.mjs`, and `wrangler.toml`: isolated interactive runner, loopback adapter, strict preflight, spend receipt, and rollback-safe publication.
-  - `spikes/generation-qualification/test.mjs`: 16 focused no-network tests covering matrix rows, arbitrary-byte verification, tampering, scheduling, costs, publication, and receipts.
-  - `spikes/generation-qualification/README.md` and `results/story-1-11-2026-08-18.plan.json`: operator procedure and frozen review plan (`plan_ref` `055aa0d346a7d60ea567be3cb3886b195e90b3241844b33f87c8fbb89f034f11`, 42 calls, maximum `$0.07436835`).
+  - `spikes/generation-qualification/test.mjs`: 17 focused no-network tests covering matrix rows, strict transport decoding, arbitrary-byte verification, tampering, scheduling, costs, publication, and receipts.
+  - `spikes/generation-qualification/README.md` and `results/story-1-11-2026-08-19-r3.plan.json`: operator procedure and current unapproved frozen review plan (`plan_ref` `5d372eaa391223059e64c95a7c4cf311ceb5313cca9a769bd9736d21e8cfe028`, run ID `story-1-11-2026-08-19-r3`, 42 calls, maximum `$0.07436835`).
   - `package.json`: added offline verification, plan, adapter, and live command entry points; only the no-network self-test joins `npm run check`.
   - `_bmad-output/implementation-artifacts/epic-1-context.md`: refreshed the workflow-required Epic 1 context from newer planning artifacts.
   - `_bmad-output/implementation-artifacts/spec-1-11-generation-structural-qualification.md`: captured the implementation contract, review repairs, verification, and operator handoff.
 - **Review findings breakdown:** 12 patches applied (high 8, medium 4, low 0), 0 deferred, 5 rejected.
 - **Follow-up review recommendation:** `true` (patched high: 8, medium: 4, low: 0; score: 12 plus high-severity trigger).
-- **Verification performed:** `node --test spikes/generation-qualification/test.mjs` passed 16/16; `npm run check` passed, including 31/31 application tests, 57/57 baseline tests, 76/76 judge spike tests with 79/79 fixtures and 18/18 predicates, and every remaining offline suite/config/type/baseline gate; `git diff --check` passed. No live inference, deployment, or remote mutation occurred.
+- **Verification performed:** `node --test spikes/generation-qualification/test.mjs` passed 17/17; the corrected judge suite passed 77/77 with 79/79 fixtures and 18/18 predicates; final repository-wide verification is recorded in the correct-course handoff. No live inference, deployment, or remote mutation occurred.
 - **Residual risks:** The exact metered live qualification has not run. Fresh operator approval and interactive execution are required; resulting role decisions may be GO or NO-GO, and every NO-GO role requires architecture review.
+
+## Correct-Course Amendment — 2026-08-19
+
+- Run `story-1-11-2026-08-19-r2` remains immutable historical evidence: two probes were called and both retained `NO-GO` because the adapter passed the provider chat envelope, rather than its single complete structured content value, to the Candidate classifier.
+- Justin approved transport-envelope decoding as the adapter's responsibility, limited to exactly one complete JSON object at the frozen single-choice response location. Prose/fence extraction, alternate locations, ambiguity, repair, coercion, omission filling, and Candidate-schema weakening remain forbidden.
+- The adapter now performs only that transport decode; `classifyGenerationResult` remains the authoritative closed Candidate validator.
+- The r2 evidence is not overwritten or reclassified. One fresh replacement plan may be prepared from corrected source identity, but execution requires new exact approval.
+- Prepared, not executed: generation r3 plan `5d372eaa391223059e64c95a7c4cf311ceb5313cca9a769bd9736d21e8cfe028`, run ID `story-1-11-2026-08-19-r3`, cap 42, maximum `$0.07436835`.

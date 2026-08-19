@@ -1,0 +1,21 @@
+{
+  "schema_version": "oddspark.judge-recovery-completion/v1",
+  "basename": "2026-08-19-025daf8e-00eb8b18890d3d90-8631654a-4c0e-4976-8361-16205d25cd92-v2",
+  "files": [
+    {
+      "name": "2026-08-19-025daf8e-00eb8b18890d3d90-8631654a-4c0e-4976-8361-16205d25cd92-v2.json",
+      "bytes": 90426,
+      "sha256": "00eb8b18890d3d90121d86b31bbc568b052245bb158a69d6efb39615e4d034e3"
+    },
+    {
+      "name": "2026-08-19-025daf8e-00eb8b18890d3d90-8631654a-4c0e-4976-8361-16205d25cd92-v2.md",
+      "bytes": 3114,
+      "sha256": "cf9a3c033f42ecfdf69c0e28b01fe49bbe6bcdcef3fc2309629bd36852de77a5"
+    },
+    {
+      "name": "2026-08-19-025daf8e-00eb8b18890d3d90-8631654a-4c0e-4976-8361-16205d25cd92-qualification.json",
+      "bytes": 83023,
+      "sha256": "85ad43c60931a706b21790a2671ed7e62dd96c4ee963b1694e7cd62f16dd4ca4"
+    }
+  ]
+}

@@ -6,11 +6,15 @@ import { createHash, randomUUID } from "node:crypto";
 import { readFile, readdir, unlink } from "node:fs/promises";
 import path from "node:path";
 
-import { MODEL_IDS } from "./contract.mjs";
+import { MODEL_IDS, stableStringify } from "./contract.mjs";
 import { verifyEvidenceV2 } from "./evidence-v2.mjs";
 import {
   RECOVERY_COMPLETION_VERSION,
   parseCanonicalJsonBytes,
+  derivePlanRef,
+  sourceIdentity,
+  validateApproval,
+  validateRecoveryPlan,
   verifyCompletedArtifactSet,
   verifyQualificationBundle,
 } from "./qualification.mjs";
@@ -18,6 +22,80 @@ import {
 const hex = (value) => typeof value === "string" && /^[a-f0-9]{64}$/.test(value);
 const hash = (value) => createHash("sha256").update(value).digest("hex");
 const same = (a, b) => JSON.stringify(a, Object.keys(a).sort()) === JSON.stringify(b, Object.keys(b).sort());
+const plain = (value) => value !== null && typeof value === "object" && !Array.isArray(value);
+const exact = (value, keys) => plain(value) && Object.keys(value).length === keys.length && keys.every((key) => Object.hasOwn(value, key));
+const zeroRate = (rate) => exact(rate, ["numerator", "denominator", "percent"]) && rate.numerator === 0 && rate.denominator === 0 && rate.percent === 0;
+function retainedPreflightBlockers(checks) {
+  if (!plain(checks) || !plain(checks.approval_preflight) || !plain(checks.adapter) || !plain(checks.approval_at_run_start)
+    || !Array.isArray(checks.offline_errors) || !Array.isArray(checks.approval_preflight.errors) || !Array.isArray(checks.approval_at_run_start.errors)) return null;
+  const blockers = [];
+  if (!checks.plan_match) blockers.push("frozen plan differs from current repository/runtime/request disclosure");
+  for (const error of checks.approval_preflight.errors) blockers.push(`approval: ${error}`);
+  for (const error of checks.offline_errors) blockers.push(`offline gate: ${error}`);
+  if (!checks.adapter.attempted) blockers.push("adapter identity preflight skipped because earlier authority or offline gates failed");
+  else if (!checks.adapter.identity_match) blockers.push("adapter identity preflight failed");
+  if (checks.approval_preflight.valid && !checks.approval_at_run_start.valid) {
+    for (const error of checks.approval_at_run_start.errors) blockers.push(`run-start approval: ${error}`);
+  }
+  return blockers;
+}
+
+export function verifyHistoricalZeroCall({ evidence, evidenceBytes, evidenceFile, markdown, qualification }) {
+  const errors = [];
+  const fail = (condition, message) => { if (!condition) errors.push(message); };
+  try {
+    const run = evidence?.run;
+    const auth = run?.authorization;
+    const checks = run?.preflight_checks;
+    fail(evidence?.schema_version === "oddspark.judge-recovery-evidence/v2" && evidence?.profile === "operational", "not operational evidence-v2");
+    fail(Array.isArray(evidence?.records) && evidence.records.length === 0, "records do not prove zero calls");
+    fail(auth?.calls_made === 0 && Number.isSafeInteger(auth?.approved_call_cap), "authorization does not prove zero calls");
+    fail(Array.isArray(run?.preflight_blockers) && run.preflight_blockers.length > 0, "run was not preflight blocked");
+    const derivedBlockers = retainedPreflightBlockers(checks);
+    fail(Array.isArray(derivedBlockers) && stableStringify(derivedBlockers) === stableStringify(run?.preflight_blockers), "preflight blockers do not derive from retained checks");
+    fail(typeof evidence?.report === "string" && markdown === evidence.report, "Markdown does not equal retained report");
+    fail(Array.isArray(evidence?.predicate_results) && evidence.predicate_results.length > 0
+      && evidence.predicate_results.every((item) => exact(item, ["id", "pass"]) && typeof item.id === "string" && item.pass === true), "retained predicate result is not a historical pass");
+
+    fail(qualification?.schema_version === "oddspark.judge-qualification-bundle/v1", "qualification bundle version mismatch");
+    fail(qualification?.evidence?.file === evidenceFile
+      && qualification?.evidence?.sha256 === hash(evidenceBytes)
+      && qualification?.evidence?.schema_version === evidence.schema_version
+      && qualification?.evidence?.run_id === run?.id
+      && stableStringify(qualification?.evidence?.predicate_results) === stableStringify(evidence?.predicate_results), "qualification evidence binding mismatch");
+    fail(Array.isArray(qualification?.qualification_refs) && qualification.qualification_refs.length === 0, "zero-call bundle contains qualification refs");
+    fail(qualification?.outcome?.decision === "NO-GO" && qualification?.outcome?.third_matrix_permitted === true, "zero-call bundle does not preserve allowance");
+
+    const plan = qualification?.plan;
+    fail(plan?.approval_run_id === run?.id && plan?.plan_ref === derivePlanRef(plan), "plan is not bound to the zero-call run");
+    fail(validateRecoveryPlan(plan, { legacy: evidence?.legacy }).valid, "retained plan is invalid");
+    fail(plan?.identities?.source_identity_sha256 === sourceIdentity(evidence?.sources ?? []).manifest_sha256, "plan is not bound to retained sources");
+    if (qualification?.approval !== null) {
+      fail(validateApproval(qualification.approval, plan, new Date(run?.started_at)).valid, "retained approval was not valid at preflight");
+      fail(qualification?.approval_check?.valid === true, "approval check was not retained as valid");
+    }
+
+    fail(Array.isArray(qualification?.manifests) && qualification.manifests.length === MODEL_IDS.length, "zero-call manifests are incomplete");
+    for (const [index, manifest] of (qualification?.manifests ?? []).entries()) {
+      const counts = manifest?.trial_counts;
+      const rates = manifest?.rates;
+      const usage = manifest?.latency_cost?.usage;
+      const observed = manifest?.latency_cost?.observed_cost;
+      fail(manifest?.resolved_model === MODEL_IDS[index] && manifest?.approval_run_id === run?.id && manifest?.outcome === "NO-GO", "zero-call manifest identity or outcome mismatch");
+      fail(counts?.probes === 0 && counts?.trials === 0 && plain(counts?.classifications)
+        && Object.values(counts.classifications).every((value) => value === 0), "zero-call manifest contains calls");
+      fail(rates?.total === 0 && rates?.direct_valid === 0 && rates?.repaired_valid === 0
+        && zeroRate(rates?.direct_rate) && zeroRate(rates?.post_repair_rate), "zero-call rates are nonzero");
+      fail(usage?.reported_calls === 0 && usage?.missing_calls === 0 && usage?.prompt_tokens === 0
+        && usage?.completion_tokens === 0 && usage?.total_tokens === 0, "zero-call usage is nonzero");
+      fail(observed?.computable === true && observed?.partial === false && observed?.input_usd === 0
+        && observed?.output_usd === 0 && observed?.gross_usd === 0 && observed?.gross_neurons === 0, "zero-call observed cost is nonzero");
+    }
+  } catch (error) {
+    errors.push(`historical zero-call verification contained malformed input: ${String(error?.message ?? error)}`);
+  }
+  return { valid: errors.length === 0, errors };
+}
 
 /**
  * Scan the results directory for evidence of prior operational recoveries.
@@ -151,11 +229,6 @@ export async function findPriorOperationalRecovery(resultsDir, options = {}) {
     } catch {
       /* handled below */
     }
-    if (!evidenceVerification?.valid || markdown !== evidence?.report) {
-      if (spentReceipt) continue;
-      return { evidence_file: name, qualification_file: qualificationName, qualification_refs: [], malformed: true, blocking_reason: "evidence or Markdown failed complete verification" };
-    }
-
     // Read and verify qualification bundle
     let qualification;
     let qualificationVerification;
@@ -164,6 +237,15 @@ export async function findPriorOperationalRecovery(resultsDir, options = {}) {
       qualificationVerification = await verifyQualFn(qualification, evidence, evidenceBytes, evidenceDeps ?? {});
     } catch {
       /* unverified */
+    }
+
+    const historicalZeroCallVerification = evidence?.records?.length === 0
+      ? verifyHistoricalZeroCall({ evidence, evidenceBytes, evidenceFile: name, markdown, qualification })
+      : { valid: false, errors: ["not a zero-call artifact"] };
+    const currentVerificationValid = evidenceVerification?.valid === true && markdown === evidence?.report && qualificationVerification?.valid === true;
+    if (!currentVerificationValid && !historicalZeroCallVerification.valid) {
+      if (spentReceipt) continue;
+      return { evidence_file: name, qualification_file: qualificationName, qualification_refs: [], malformed: true, blocking_reason: "evidence or Markdown failed complete verification and historical zero-call proof is invalid" };
     }
 
     if (spentReceipt) {
@@ -181,13 +263,10 @@ export async function findPriorOperationalRecovery(resultsDir, options = {}) {
 
     // Zero-call artifact check
     if (evidence.records.length === 0) {
-      if (!qualificationVerification?.valid) {
-        return { evidence_file: name, qualification_file: qualificationName, qualification_refs: [], malformed: true, blocking_reason: "zero-call artifact is incomplete or its qualification bundle is invalid" };
-      }
       if (reservedReceipt && name.endsWith(`-${reservedReceipt.attempt_id}-v2.json`) && evidence.run.id === reservedReceipt.approval_run_id) {
         receiptFallback = {
           evidence_file: name, qualification_file: qualificationName, qualification_refs: [], refs_verified: true,
-          malformed: false, receipt_file: RECOVERY_RECEIPT_FILE, safe_zero_call_receipt: true, attempt_id: reservedReceipt.attempt_id,
+          malformed: false, receipt_file: RECOVERY_RECEIPT_FILE, safe_zero_call_receipt: true, historical_zero_call: !currentVerificationValid, attempt_id: reservedReceipt.attempt_id,
         };
       }
       continue;

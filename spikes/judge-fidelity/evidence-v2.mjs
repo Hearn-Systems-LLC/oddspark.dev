@@ -116,6 +116,7 @@ export function expectedAdapterHealth(sources, runtime) {
     candidate_binding_version: "oddspark-candidate-ref/v1", models: MODEL_IDS, parameters: { temperature: 0, max_tokens: 2048 }, binding: "AI",
     system_prompt_sha256: hash(SYSTEM_PROMPT), message_contract_sha256: hash(stableStringify({ roles: ["system", "user"], user_shape: { candidate_ref: "sha256", input: "canonical-json" } })), wire_schema_sha256: hash(stableStringify({ type: "json_schema", json_schema: JUDGE_RESULT_SCHEMA })),
     adapter_source_sha256: sourceHash("spikes/judge-fidelity/worker.mjs"), config_source_sha256: sourceHash("spikes/judge-fidelity/wrangler.toml"), runtime_sha256: runtime.runtime_identity_sha256,
+    identity_complete: true,
   };
 }
 
@@ -231,7 +232,7 @@ export async function verifyEvidenceV2(evidence, dependencies = {}) {
     if (!exact(evidence?.candidate, ["schema_version", "value", "ref", "request_input"]) || evidence.candidate.ref !== candidateRef
       || evidence.candidate.schema_version !== expectedCandidateSchemaVersion || !inputValidation.valid
       || !same(evidence.candidate.request_input?.candidate, evidence.candidate.value)) fail("candidate.binding", "candidate reference, schema version, or complete request input mismatch");
-    const expectedHealthKeys = ["ok", "inference", "schema_version", "result_contract_version", "candidate_binding_version", "models", "parameters", "binding", "system_prompt_sha256", "message_contract_sha256", "wire_schema_sha256", "adapter_source_sha256", "config_source_sha256", "runtime_sha256"];
+    const expectedHealthKeys = ["ok", "inference", "schema_version", "result_contract_version", "candidate_binding_version", "models", "parameters", "binding", "system_prompt_sha256", "message_contract_sha256", "wire_schema_sha256", "adapter_source_sha256", "config_source_sha256", "runtime_sha256", "identity_complete"];
     const expectedHealth = evidence?.adapter?.expected_health;
     const workerSource = sources.find(({ path: sourcePath }) => sourcePath === "spikes/judge-fidelity/worker.mjs");
     const configSource = sources.find(({ path: sourcePath }) => sourcePath === "spikes/judge-fidelity/wrangler.toml");

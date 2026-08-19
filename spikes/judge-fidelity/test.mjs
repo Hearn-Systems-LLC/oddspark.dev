@@ -1720,6 +1720,36 @@ test("prior recovery discovery ignores verified zero-call blocks but fails close
   assert.equal((await findPriorOperationalRecovery(malformedDirectory)).malformed, true);
 });
 
+test("marker-bound zero-call preflight remains retained and does not consume allowance after source-verifier drift", async () => {
+  const directory = await mkdtemp(path.join(tmpdir(), "oddspark-historical-zero-"));
+  const setup = await approvedRecovery({ approvalRunId: "historical-zero-run" });
+  const zero = await operationalEvidence({ blocked: true, runId: "historical-zero-run" });
+  const bytes = Buffer.from(`${JSON.stringify(zero.evidence, null, 2)}\n`);
+  const dependencies = { currentSourceIdentity: async () => zero.sources, currentRuntimeIdentity: async () => zero.runtime, executeFixtures: async () => zero.fixtureResult };
+  const basename = "2026-08-19-historical-zero-preflight-v2";
+  const bundle = await buildQualificationBundle({ plan: setup.recoveryPlan, approval: null, evidence: zero.evidence, evidence_file: `${basename}.json`, evidence_bytes: bytes }, dependencies);
+  await writeRecoveryArtifacts(zero.evidence, bundle, directory, basename);
+
+  const drifted = await findPriorOperationalRecovery(directory, {
+    ...dependencies,
+    verifyEvidenceV2: async () => ({ valid: false }),
+    verifyQualificationBundle: async () => ({ valid: false }),
+  });
+  assert.equal(drifted, null);
+  assert.ok((await readdir(directory)).includes(`${basename}.json`));
+
+  const files = await readdir(directory);
+  const markerPath = path.join(directory, `${basename}.complete.json`);
+  const marker = JSON.parse(await readFile(markerPath, "utf8"));
+  const evidencePath = path.join(directory, `${basename}.json`);
+  const tampered = clone(zero.evidence);
+  tampered.records = [{}];
+  await writeFile(evidencePath, `${JSON.stringify(tampered, null, 2)}\n`);
+  assert.match((await findPriorOperationalRecovery(directory, dependencies)).blocking_reason, /completion marker|verification/);
+  assert.ok(files.includes(`${basename.replace(/-v2$/, "")}-qualification.json`));
+  assert.equal(marker.files.length, 3);
+});
+
 test("reserved receipts reopen only for a complete independently verified zero-call artifact from the same attempt", async () => {
   const attempt = "reserved-match-attempt";
   const runId = "reserved-match-run";

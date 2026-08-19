@@ -1,0 +1,12 @@
+{
+  "schema_version": "oddspark.generation-spend-receipt/v1",
+  "plan_ref": "17e06418b5d7cb35a7c5d673f1a5e9aa8d4aeeef9b636ca92ccb96b6908f5031",
+  "approval_run_id": "story-1-11-2026-08-19-r2",
+  "reserved_at": "2026-08-19T16:03:42.878Z",
+  "call_cap": 42,
+  "state": "completed",
+  "completed_at": "2026-08-19T16:04:16.599Z",
+  "calls_made": 2,
+  "actual_spend_usd": 0.0011237,
+  "completion_marker": "story-1-11-2026-08-19-r2-ead1cb17-38d7-41ce-8369-7fdc14098b29.complete.json"
+}

@@ -1,0 +1,16 @@
+{
+  "schema_version": "oddspark.judge-recovery-spend/v1",
+  "attempt_id": "f7be9a39-6142-416e-8b1f-b97f179eefdd",
+  "approval_run_id": "3725e58d-de60-4204-bb9f-8aabe8b40396",
+  "created_at": "2026-08-19T17:32:05.771Z",
+  "updated_at": "2026-08-19T17:41:35.535Z",
+  "state": "completed-spent",
+  "calls_started": 42,
+  "last_call": {
+    "sequence": 42,
+    "kind": "trial",
+    "model": "@cf/openai/gpt-oss-20b",
+    "index": 20,
+    "marked_at": "2026-08-19T17:41:22.858Z"
+  }
+}

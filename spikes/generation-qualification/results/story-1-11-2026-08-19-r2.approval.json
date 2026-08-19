@@ -1,0 +1,10 @@
+{
+  "schema_version": "oddspark.generation-qualification-approval/v1",
+  "plan_ref": "17e06418b5d7cb35a7c5d673f1a5e9aa8d4aeeef9b636ca92ccb96b6908f5031",
+  "approval_run_id": "story-1-11-2026-08-19-r2",
+  "approved_at": "2026-08-19T16:03:13.399Z",
+  "approved_by": "Justin",
+  "approved_call_cap": 42,
+  "approved_maximum_usd": 0.07436835,
+  "authorization": "execute-exact-plan-once"
+}

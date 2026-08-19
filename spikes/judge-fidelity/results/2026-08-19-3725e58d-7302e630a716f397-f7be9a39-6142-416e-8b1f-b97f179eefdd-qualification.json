@@ -1,0 +1,1867 @@
+{
+  "schema_version": "oddspark.judge-qualification-bundle/v1",
+  "plan": {
+    "schema_version": "oddspark.judge-recovery-plan/v1",
+    "plan_ref": "858ac871ca73dc95f52dc28444f518f40fde05e51271c453a1784b6c305c4c08",
+    "approval_run_id": "3725e58d-de60-4204-bb9f-8aabe8b40396",
+    "created_at": "2026-08-19T17:28:49.320Z",
+    "provider": "cloudflare-workers-ai",
+    "account": {
+      "profile": "default",
+      "plan": "paid",
+      "headroom_confirmed": true,
+      "remaining_free_neurons": null
+    },
+    "models": [
+      {
+        "position": "primary",
+        "resolved_model": "@cf/openai/gpt-oss-120b",
+        "request_sha256": "2534d537a22b811049b2008521f8490d21a7ea4189cc89cbdb7d69ce676c53c3",
+        "adapter_input_sha256": "6efa2a67b01ca530d856309dfb60c19fb926361f743ca9b45499acc2bd43e6d0"
+      },
+      {
+        "position": "fallback",
+        "resolved_model": "@cf/openai/gpt-oss-20b",
+        "request_sha256": "433b210b3e463a134c24f184dbf1207a5769c5523131df6240ef1e5c747eafdd",
+        "adapter_input_sha256": "6efa2a67b01ca530d856309dfb60c19fb926361f743ca9b45499acc2bd43e6d0"
+      }
+    ],
+    "request_parameters": {
+      "temperature": 0,
+      "max_tokens": 2048,
+      "response_format_type": "json_schema"
+    },
+    "request_manifest": {
+      "by_model": [
+        {
+          "model": "@cf/openai/gpt-oss-120b",
+          "body": {
+            "model": "@cf/openai/gpt-oss-120b",
+            "messages": [
+              {
+                "role": "system",
+                "content": "You are the independent Oddspark judge. Evaluate the supplied synthetic Candidate Brief against every check below.\n\n1. Recognizable routine: starts from a credible routine and recurring annoyance.\n2. Constructive intervention: every friction leads to an imaginable solution.\n3. Capability inventory: does not duplicate an existing capability.\n4. Channel fit: uses an observed channel or clearly introduces a fitting one.\n5. Proportionality: matches likely scale, complexity, and maintenance capacity.\n6. Delivery fit: Hearn Systems could implement it as software, AI automation, integration, data workflow, or adjacent digital system.\n7. Preservation: retains helpful tools, workflow steps, and decision rights it need not change.\n8. Natural retelling: a person could naturally explain the situation, capability, and payoff.\n9. Novel but imaginable: goes beyond the obvious while remaining concrete.\n\nAlso evaluate tone (confident plan, plain language, no pitch, no consultant-speak, no bare-mush effects) and claims (qualitative unless supplied evidence grounds a number). Use the supplied grounding report; do not add a grounding field or a tenth gate.\n\nReturn only one JSON value matching the supplied schema. Include gates 1 through 9 exactly once. Set top-level pass to true only when all nine gates, tone, and claims pass."
+              },
+              {
+                "role": "user",
+                "content": "{\"candidate_ref\":\"36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891\",\"input\":{\"candidate\":{\"before_after\":{\"after\":\"The same request enters the same form and appears in a short staff-approved follow-up queue.\",\"before\":\"A request enters the current form and staff remember to revisit it between other work.\"},\"change_level\":{\"preliminary\":true,\"steps_changed\":2,\"steps_removed\":1,\"time_range\":\"1–2 weeks\"},\"grounded_numbers\":[],\"invitation\":\"Hearn Systems can map the smallest version of this Spark around the existing form and show exactly how the relay would work.\",\"mode\":\"domain\",\"plan\":\"Add a small staff-approved follow-up queue around the existing appointment-request form so unanswered requests return to the front desk at the next useful moment.\",\"stays_same\":{\"authority\":[\"Front-desk staff decide when and how to contact a requester\"],\"steps\":[\"Patients use the existing form\",\"Staff confirm appointments in the current calendar\"],\"tools\":[\"Existing website request form\",\"Current appointment calendar\"]},\"title\":\"Monday Follow-Up Relay\",\"version\":1,\"what_gets_better\":\"Requests are less likely to sit between the website and the front desk, while staff keep control of every patient conversation.\",\"why_fits\":{\"breadcrumb\":\"Open late on Mondays\",\"text\":\"The practice already accepts appointment requests online and keeps a later Monday window, so the smallest useful change is a follow-up relay around that familiar routine.\"}},\"evidence_bundle\":{\"capabilities\":[\"Online appointment requests\",\"Existing appointment calendar\"],\"channels\":[\"Website request form\",\"Phone\"],\"clarity\":\"clear\",\"observation\":{\"text\":\"Request an appointment online. Open late on Mondays. Call the front desk with questions.\",\"url\":\"https://synthetic.example.invalid/appointments\"},\"scanned_urls\":[\"https://synthetic.example.invalid/\",\"https://synthetic.example.invalid/appointments\"],\"vertical\":\"Family dental practice\"},\"grounding_report\":{\"breadcrumb_count\":1,\"claims\":[{\"field\":\"candidate.why_fits.breadcrumb\",\"matched_text\":\"Open late on Mondays\",\"source\":\"evidence_bundle.observation.text\"}],\"fixture_only\":true,\"issues\":[],\"numeric_claims\":[],\"pii_free\":true,\"schema_version\":\"synthetic-grounding-report/v1\",\"valid\":true},\"synthetic\":true}}"
+              }
+            ],
+            "max_tokens": 2048,
+            "temperature": 0,
+            "response_format": {
+              "type": "json_schema",
+              "json_schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "candidate_ref",
+                  "verdict"
+                ],
+                "properties": {
+                  "candidate_ref": {
+                    "type": "string",
+                    "pattern": "^[a-f0-9]{64}$"
+                  },
+                  "verdict": {
+                    "$schema": "https://json-schema.org/draft/2020-12/schema",
+                    "title": "Oddspark judge verdict v1",
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "pass",
+                      "gates",
+                      "tone",
+                      "claims"
+                    ],
+                    "properties": {
+                      "pass": {
+                        "type": "boolean"
+                      },
+                      "gates": {
+                        "type": "array",
+                        "minItems": 9,
+                        "maxItems": 9,
+                        "allOf": [
+                          {
+                            "contains": {
+                              "type": "object",
+                              "required": [
+                                "gate"
+                              ],
+                              "properties": {
+                                "gate": {
+                                  "const": 1
+                                }
+                              }
+                            },
+                            "minContains": 1,
+                            "maxContains": 1
+                          },
+                          {
+                            "contains": {
+                              "type": "object",
+                              "required": [
+                                "gate"
+                              ],
+                              "properties": {
+                                "gate": {
+                                  "const": 2
+                                }
+                              }
+                            },
+                            "minContains": 1,
+                            "maxContains": 1
+                          },
+                          {
+                            "contains": {
+                              "type": "object",
+                              "required": [
+                                "gate"
+                              ],
+                              "properties": {
+                                "gate": {
+                                  "const": 3
+                                }
+                              }
+                            },
+                            "minContains": 1,
+                            "maxContains": 1
+                          },
+                          {
+                            "contains": {
+                              "type": "object",
+                              "required": [
+                                "gate"
+                              ],
+                              "properties": {
+                                "gate": {
+                                  "const": 4
+                                }
+                              }
+                            },
+                            "minContains": 1,
+                            "maxContains": 1
+                          },
+                          {
+                            "contains": {
+                              "type": "object",
+                              "required": [
+                                "gate"
+                              ],
+                              "properties": {
+                                "gate": {
+                                  "const": 5
+                                }
+                              }
+                            },
+                            "minContains": 1,
+                            "maxContains": 1
+                          },
+                          {
+                            "contains": {
+                              "type": "object",
+                              "required": [
+                                "gate"
+                              ],
+                              "properties": {
+                                "gate": {
+                                  "const": 6
+                                }
+                              }
+                            },
+                            "minContains": 1,
+                            "maxContains": 1
+                          },
+                          {
+                            "contains": {
+                              "type": "object",
+                              "required": [
+                                "gate"
+                              ],
+                              "properties": {
+                                "gate": {
+                                  "const": 7
+                                }
+                              }
+                            },
+                            "minContains": 1,
+                            "maxContains": 1
+                          },
+                          {
+                            "contains": {
+                              "type": "object",
+                              "required": [
+                                "gate"
+                              ],
+                              "properties": {
+                                "gate": {
+                                  "const": 8
+                                }
+                              }
+                            },
+                            "minContains": 1,
+                            "maxContains": 1
+                          },
+                          {
+                            "contains": {
+                              "type": "object",
+                              "required": [
+                                "gate"
+                              ],
+                              "properties": {
+                                "gate": {
+                                  "const": 9
+                                }
+                              }
+                            },
+                            "minContains": 1,
+                            "maxContains": 1
+                          }
+                        ],
+                        "items": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "gate",
+                            "pass",
+                            "reason"
+                          ],
+                          "properties": {
+                            "gate": {
+                              "type": "integer",
+                              "minimum": 1,
+                              "maximum": 9
+                            },
+                            "pass": {
+                              "type": "boolean"
+                            },
+                            "reason": {
+                              "type": "string",
+                              "minLength": 1,
+                              "pattern": "\\S"
+                            }
+                          }
+                        }
+                      },
+                      "tone": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                          "pass",
+                          "reason"
+                        ],
+                        "properties": {
+                          "pass": {
+                            "type": "boolean"
+                          },
+                          "reason": {
+                            "type": "string",
+                            "minLength": 1,
+                            "pattern": "\\S"
+                          }
+                        }
+                      },
+                      "claims": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                          "pass",
+                          "reason"
+                        ],
+                        "properties": {
+                          "pass": {
+                            "type": "boolean"
+                          },
+                          "reason": {
+                            "type": "string",
+                            "minLength": 1,
+                            "pattern": "\\S"
+                          }
+                        }
+                      }
+                    },
+                    "allOf": [
+                      {
+                        "if": {
+                          "required": [
+                            "pass"
+                          ],
+                          "properties": {
+                            "pass": {
+                              "const": true
+                            }
+                          }
+                        },
+                        "then": {
+                          "properties": {
+                            "gates": {
+                              "items": {
+                                "required": [
+                                  "pass"
+                                ],
+                                "properties": {
+                                  "pass": {
+                                    "const": true
+                                  }
+                                }
+                              }
+                            },
+                            "tone": {
+                              "required": [
+                                "pass"
+                              ],
+                              "properties": {
+                                "pass": {
+                                  "const": true
+                                }
+                              }
+                            },
+                            "claims": {
+                              "required": [
+                                "pass"
+                              ],
+                              "properties": {
+                                "pass": {
+                                  "const": true
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            },
+            "candidate_schema_version": "oddspark-candidate/v1",
+            "candidate": {
+              "version": 1,
+              "mode": "domain",
+              "title": "Monday Follow-Up Relay",
+              "plan": "Add a small staff-approved follow-up queue around the existing appointment-request form so unanswered requests return to the front desk at the next useful moment.",
+              "why_fits": {
+                "text": "The practice already accepts appointment requests online and keeps a later Monday window, so the smallest useful change is a follow-up relay around that familiar routine.",
+                "breadcrumb": "Open late on Mondays"
+              },
+              "what_gets_better": "Requests are less likely to sit between the website and the front desk, while staff keep control of every patient conversation.",
+              "before_after": {
+                "before": "A request enters the current form and staff remember to revisit it between other work.",
+                "after": "The same request enters the same form and appears in a short staff-approved follow-up queue."
+              },
+              "change_level": {
+                "time_range": "1–2 weeks",
+                "steps_changed": 2,
+                "steps_removed": 1,
+                "preliminary": true
+              },
+              "stays_same": {
+                "tools": [
+                  "Existing website request form",
+                  "Current appointment calendar"
+                ],
+                "authority": [
+                  "Front-desk staff decide when and how to contact a requester"
+                ],
+                "steps": [
+                  "Patients use the existing form",
+                  "Staff confirm appointments in the current calendar"
+                ]
+              },
+              "invitation": "Hearn Systems can map the smallest version of this Spark around the existing form and show exactly how the relay would work.",
+              "grounded_numbers": []
+            },
+            "candidate_ref": "36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891"
+          },
+          "sha256": "2534d537a22b811049b2008521f8490d21a7ea4189cc89cbdb7d69ce676c53c3",
+          "adapter_input": {
+            "messages": [
+              {
+                "role": "system",
+                "content": "You are the independent Oddspark judge. Evaluate the supplied synthetic Candidate Brief against every check below.\n\n1. Recognizable routine: starts from a credible routine and recurring annoyance.\n2. Constructive intervention: every friction leads to an imaginable solution.\n3. Capability inventory: does not duplicate an existing capability.\n4. Channel fit: uses an observed channel or clearly introduces a fitting one.\n5. Proportionality: matches likely scale, complexity, and maintenance capacity.\n6. Delivery fit: Hearn Systems could implement it as software, AI automation, integration, data workflow, or adjacent digital system.\n7. Preservation: retains helpful tools, workflow steps, and decision rights it need not change.\n8. Natural retelling: a person could naturally explain the situation, capability, and payoff.\n9. Novel but imaginable: goes beyond the obvious while remaining concrete.\n\nAlso evaluate tone (confident plan, plain language, no pitch, no consultant-speak, no bare-mush effects) and claims (qualitative unless supplied evidence grounds a number). Use the supplied grounding report; do not add a grounding field or a tenth gate.\n\nReturn only one JSON value matching the supplied schema. Include gates 1 through 9 exactly once. Set top-level pass to true only when all nine gates, tone, and claims pass."
+              },
+              {
+                "role": "user",
+                "content": "{\"candidate_ref\":\"36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891\",\"input\":{\"candidate\":{\"before_after\":{\"after\":\"The same request enters the same form and appears in a short staff-approved follow-up queue.\",\"before\":\"A request enters the current form and staff remember to revisit it between other work.\"},\"change_level\":{\"preliminary\":true,\"steps_changed\":2,\"steps_removed\":1,\"time_range\":\"1–2 weeks\"},\"grounded_numbers\":[],\"invitation\":\"Hearn Systems can map the smallest version of this Spark around the existing form and show exactly how the relay would work.\",\"mode\":\"domain\",\"plan\":\"Add a small staff-approved follow-up queue around the existing appointment-request form so unanswered requests return to the front desk at the next useful moment.\",\"stays_same\":{\"authority\":[\"Front-desk staff decide when and how to contact a requester\"],\"steps\":[\"Patients use the existing form\",\"Staff confirm appointments in the current calendar\"],\"tools\":[\"Existing website request form\",\"Current appointment calendar\"]},\"title\":\"Monday Follow-Up Relay\",\"version\":1,\"what_gets_better\":\"Requests are less likely to sit between the website and the front desk, while staff keep control of every patient conversation.\",\"why_fits\":{\"breadcrumb\":\"Open late on Mondays\",\"text\":\"The practice already accepts appointment requests online and keeps a later Monday window, so the smallest useful change is a follow-up relay around that familiar routine.\"}},\"evidence_bundle\":{\"capabilities\":[\"Online appointment requests\",\"Existing appointment calendar\"],\"channels\":[\"Website request form\",\"Phone\"],\"clarity\":\"clear\",\"observation\":{\"text\":\"Request an appointment online. Open late on Mondays. Call the front desk with questions.\",\"url\":\"https://synthetic.example.invalid/appointments\"},\"scanned_urls\":[\"https://synthetic.example.invalid/\",\"https://synthetic.example.invalid/appointments\"],\"vertical\":\"Family dental practice\"},\"grounding_report\":{\"breadcrumb_count\":1,\"claims\":[{\"field\":\"candidate.why_fits.breadcrumb\",\"matched_text\":\"Open late on Mondays\",\"source\":\"evidence_bundle.observation.text\"}],\"fixture_only\":true,\"issues\":[],\"numeric_claims\":[],\"pii_free\":true,\"schema_version\":\"synthetic-grounding-report/v1\",\"valid\":true},\"synthetic\":true}}"
+              }
+            ],
+            "max_tokens": 2048,
+            "temperature": 0,
+            "response_format": {
+              "type": "json_schema",
+              "json_schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "candidate_ref",
+                  "verdict"
+                ],
+                "properties": {
+                  "candidate_ref": {
+                    "type": "string",
+                    "pattern": "^[a-f0-9]{64}$"
+                  },
+                  "verdict": {
+                    "$schema": "https://json-schema.org/draft/2020-12/schema",
+                    "title": "Oddspark judge verdict v1",
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "pass",
+                      "gates",
+                      "tone",
+                      "claims"
+                    ],
+                    "properties": {
+                      "pass": {
+                        "type": "boolean"
+                      },
+                      "gates": {
+                        "type": "array",
+                        "minItems": 9,
+                        "maxItems": 9,
+                        "allOf": [
+                          {
+                            "contains": {
+                              "type": "object",
+                              "required": [
+                                "gate"
+                              ],
+                              "properties": {
+                                "gate": {
+                                  "const": 1
+                                }
+                              }
+                            },
+                            "minContains": 1,
+                            "maxContains": 1
+                          },
+                          {
+                            "contains": {
+                              "type": "object",
+                              "required": [
+                                "gate"
+                              ],
+                              "properties": {
+                                "gate": {
+                                  "const": 2
+                                }
+                              }
+                            },
+                            "minContains": 1,
+                            "maxContains": 1
+                          },
+                          {
+                            "contains": {
+                              "type": "object",
+                              "required": [
+                                "gate"
+                              ],
+                              "properties": {
+                                "gate": {
+                                  "const": 3
+                                }
+                              }
+                            },
+                            "minContains": 1,
+                            "maxContains": 1
+                          },
+                          {
+                            "contains": {
+                              "type": "object",
+                              "required": [
+                                "gate"
+                              ],
+                              "properties": {
+                                "gate": {
+                                  "const": 4
+                                }
+                              }
+                            },
+                            "minContains": 1,
+                            "maxContains": 1
+                          },
+                          {
+                            "contains": {
+                              "type": "object",
+                              "required": [
+                                "gate"
+                              ],
+                              "properties": {
+                                "gate": {
+                                  "const": 5
+                                }
+                              }
+                            },
+                            "minContains": 1,
+                            "maxContains": 1
+                          },
+                          {
+                            "contains": {
+                              "type": "object",
+                              "required": [
+                                "gate"
+                              ],
+                              "properties": {
+                                "gate": {
+                                  "const": 6
+                                }
+                              }
+                            },
+                            "minContains": 1,
+                            "maxContains": 1
+                          },
+                          {
+                            "contains": {
+                              "type": "object",
+                              "required": [
+                                "gate"
+                              ],
+                              "properties": {
+                                "gate": {
+                                  "const": 7
+                                }
+                              }
+                            },
+                            "minContains": 1,
+                            "maxContains": 1
+                          },
+                          {
+                            "contains": {
+                              "type": "object",
+                              "required": [
+                                "gate"
+                              ],
+                              "properties": {
+                                "gate": {
+                                  "const": 8
+                                }
+                              }
+                            },
+                            "minContains": 1,
+                            "maxContains": 1
+                          },
+                          {
+                            "contains": {
+                              "type": "object",
+                              "required": [
+                                "gate"
+                              ],
+                              "properties": {
+                                "gate": {
+                                  "const": 9
+                                }
+                              }
+                            },
+                            "minContains": 1,
+                            "maxContains": 1
+                          }
+                        ],
+                        "items": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "gate",
+                            "pass",
+                            "reason"
+                          ],
+                          "properties": {
+                            "gate": {
+                              "type": "integer",
+                              "minimum": 1,
+                              "maximum": 9
+                            },
+                            "pass": {
+                              "type": "boolean"
+                            },
+                            "reason": {
+                              "type": "string",
+                              "minLength": 1,
+                              "pattern": "\\S"
+                            }
+                          }
+                        }
+                      },
+                      "tone": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                          "pass",
+                          "reason"
+                        ],
+                        "properties": {
+                          "pass": {
+                            "type": "boolean"
+                          },
+                          "reason": {
+                            "type": "string",
+                            "minLength": 1,
+                            "pattern": "\\S"
+                          }
+                        }
+                      },
+                      "claims": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                          "pass",
+                          "reason"
+                        ],
+                        "properties": {
+                          "pass": {
+                            "type": "boolean"
+                          },
+                          "reason": {
+                            "type": "string",
+                            "minLength": 1,
+                            "pattern": "\\S"
+                          }
+                        }
+                      }
+                    },
+                    "allOf": [
+                      {
+                        "if": {
+                          "required": [
+                            "pass"
+                          ],
+                          "properties": {
+                            "pass": {
+                              "const": true
+                            }
+                          }
+                        },
+                        "then": {
+                          "properties": {
+                            "gates": {
+                              "items": {
+                                "required": [
+                                  "pass"
+                                ],
+                                "properties": {
+                                  "pass": {
+                                    "const": true
+                                  }
+                                }
+                              }
+                            },
+                            "tone": {
+                              "required": [
+                                "pass"
+                              ],
+                              "properties": {
+                                "pass": {
+                                  "const": true
+                                }
+                              }
+                            },
+                            "claims": {
+                              "required": [
+                                "pass"
+                              ],
+                              "properties": {
+                                "pass": {
+                                  "const": true
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "adapter_input_sha256": "6efa2a67b01ca530d856309dfb60c19fb926361f743ca9b45499acc2bd43e6d0"
+        },
+        {
+          "model": "@cf/openai/gpt-oss-20b",
+          "body": {
+            "model": "@cf/openai/gpt-oss-20b",
+            "messages": [
+              {
+                "role": "system",
+                "content": "You are the independent Oddspark judge. Evaluate the supplied synthetic Candidate Brief against every check below.\n\n1. Recognizable routine: starts from a credible routine and recurring annoyance.\n2. Constructive intervention: every friction leads to an imaginable solution.\n3. Capability inventory: does not duplicate an existing capability.\n4. Channel fit: uses an observed channel or clearly introduces a fitting one.\n5. Proportionality: matches likely scale, complexity, and maintenance capacity.\n6. Delivery fit: Hearn Systems could implement it as software, AI automation, integration, data workflow, or adjacent digital system.\n7. Preservation: retains helpful tools, workflow steps, and decision rights it need not change.\n8. Natural retelling: a person could naturally explain the situation, capability, and payoff.\n9. Novel but imaginable: goes beyond the obvious while remaining concrete.\n\nAlso evaluate tone (confident plan, plain language, no pitch, no consultant-speak, no bare-mush effects) and claims (qualitative unless supplied evidence grounds a number). Use the supplied grounding report; do not add a grounding field or a tenth gate.\n\nReturn only one JSON value matching the supplied schema. Include gates 1 through 9 exactly once. Set top-level pass to true only when all nine gates, tone, and claims pass."
+              },
+              {
+                "role": "user",
+                "content": "{\"candidate_ref\":\"36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891\",\"input\":{\"candidate\":{\"before_after\":{\"after\":\"The same request enters the same form and appears in a short staff-approved follow-up queue.\",\"before\":\"A request enters the current form and staff remember to revisit it between other work.\"},\"change_level\":{\"preliminary\":true,\"steps_changed\":2,\"steps_removed\":1,\"time_range\":\"1–2 weeks\"},\"grounded_numbers\":[],\"invitation\":\"Hearn Systems can map the smallest version of this Spark around the existing form and show exactly how the relay would work.\",\"mode\":\"domain\",\"plan\":\"Add a small staff-approved follow-up queue around the existing appointment-request form so unanswered requests return to the front desk at the next useful moment.\",\"stays_same\":{\"authority\":[\"Front-desk staff decide when and how to contact a requester\"],\"steps\":[\"Patients use the existing form\",\"Staff confirm appointments in the current calendar\"],\"tools\":[\"Existing website request form\",\"Current appointment calendar\"]},\"title\":\"Monday Follow-Up Relay\",\"version\":1,\"what_gets_better\":\"Requests are less likely to sit between the website and the front desk, while staff keep control of every patient conversation.\",\"why_fits\":{\"breadcrumb\":\"Open late on Mondays\",\"text\":\"The practice already accepts appointment requests online and keeps a later Monday window, so the smallest useful change is a follow-up relay around that familiar routine.\"}},\"evidence_bundle\":{\"capabilities\":[\"Online appointment requests\",\"Existing appointment calendar\"],\"channels\":[\"Website request form\",\"Phone\"],\"clarity\":\"clear\",\"observation\":{\"text\":\"Request an appointment online. Open late on Mondays. Call the front desk with questions.\",\"url\":\"https://synthetic.example.invalid/appointments\"},\"scanned_urls\":[\"https://synthetic.example.invalid/\",\"https://synthetic.example.invalid/appointments\"],\"vertical\":\"Family dental practice\"},\"grounding_report\":{\"breadcrumb_count\":1,\"claims\":[{\"field\":\"candidate.why_fits.breadcrumb\",\"matched_text\":\"Open late on Mondays\",\"source\":\"evidence_bundle.observation.text\"}],\"fixture_only\":true,\"issues\":[],\"numeric_claims\":[],\"pii_free\":true,\"schema_version\":\"synthetic-grounding-report/v1\",\"valid\":true},\"synthetic\":true}}"
+              }
+            ],
+            "max_tokens": 2048,
+            "temperature": 0,
+            "response_format": {
+              "type": "json_schema",
+              "json_schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "candidate_ref",
+                  "verdict"
+                ],
+                "properties": {
+                  "candidate_ref": {
+                    "type": "string",
+                    "pattern": "^[a-f0-9]{64}$"
+                  },
+                  "verdict": {
+                    "$schema": "https://json-schema.org/draft/2020-12/schema",
+                    "title": "Oddspark judge verdict v1",
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "pass",
+                      "gates",
+                      "tone",
+                      "claims"
+                    ],
+                    "properties": {
+                      "pass": {
+                        "type": "boolean"
+                      },
+                      "gates": {
+                        "type": "array",
+                        "minItems": 9,
+                        "maxItems": 9,
+                        "allOf": [
+                          {
+                            "contains": {
+                              "type": "object",
+                              "required": [
+                                "gate"
+                              ],
+                              "properties": {
+                                "gate": {
+                                  "const": 1
+                                }
+                              }
+                            },
+                            "minContains": 1,
+                            "maxContains": 1
+                          },
+                          {
+                            "contains": {
+                              "type": "object",
+                              "required": [
+                                "gate"
+                              ],
+                              "properties": {
+                                "gate": {
+                                  "const": 2
+                                }
+                              }
+                            },
+                            "minContains": 1,
+                            "maxContains": 1
+                          },
+                          {
+                            "contains": {
+                              "type": "object",
+                              "required": [
+                                "gate"
+                              ],
+                              "properties": {
+                                "gate": {
+                                  "const": 3
+                                }
+                              }
+                            },
+                            "minContains": 1,
+                            "maxContains": 1
+                          },
+                          {
+                            "contains": {
+                              "type": "object",
+                              "required": [
+                                "gate"
+                              ],
+                              "properties": {
+                                "gate": {
+                                  "const": 4
+                                }
+                              }
+                            },
+                            "minContains": 1,
+                            "maxContains": 1
+                          },
+                          {
+                            "contains": {
+                              "type": "object",
+                              "required": [
+                                "gate"
+                              ],
+                              "properties": {
+                                "gate": {
+                                  "const": 5
+                                }
+                              }
+                            },
+                            "minContains": 1,
+                            "maxContains": 1
+                          },
+                          {
+                            "contains": {
+                              "type": "object",
+                              "required": [
+                                "gate"
+                              ],
+                              "properties": {
+                                "gate": {
+                                  "const": 6
+                                }
+                              }
+                            },
+                            "minContains": 1,
+                            "maxContains": 1
+                          },
+                          {
+                            "contains": {
+                              "type": "object",
+                              "required": [
+                                "gate"
+                              ],
+                              "properties": {
+                                "gate": {
+                                  "const": 7
+                                }
+                              }
+                            },
+                            "minContains": 1,
+                            "maxContains": 1
+                          },
+                          {
+                            "contains": {
+                              "type": "object",
+                              "required": [
+                                "gate"
+                              ],
+                              "properties": {
+                                "gate": {
+                                  "const": 8
+                                }
+                              }
+                            },
+                            "minContains": 1,
+                            "maxContains": 1
+                          },
+                          {
+                            "contains": {
+                              "type": "object",
+                              "required": [
+                                "gate"
+                              ],
+                              "properties": {
+                                "gate": {
+                                  "const": 9
+                                }
+                              }
+                            },
+                            "minContains": 1,
+                            "maxContains": 1
+                          }
+                        ],
+                        "items": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "gate",
+                            "pass",
+                            "reason"
+                          ],
+                          "properties": {
+                            "gate": {
+                              "type": "integer",
+                              "minimum": 1,
+                              "maximum": 9
+                            },
+                            "pass": {
+                              "type": "boolean"
+                            },
+                            "reason": {
+                              "type": "string",
+                              "minLength": 1,
+                              "pattern": "\\S"
+                            }
+                          }
+                        }
+                      },
+                      "tone": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                          "pass",
+                          "reason"
+                        ],
+                        "properties": {
+                          "pass": {
+                            "type": "boolean"
+                          },
+                          "reason": {
+                            "type": "string",
+                            "minLength": 1,
+                            "pattern": "\\S"
+                          }
+                        }
+                      },
+                      "claims": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                          "pass",
+                          "reason"
+                        ],
+                        "properties": {
+                          "pass": {
+                            "type": "boolean"
+                          },
+                          "reason": {
+                            "type": "string",
+                            "minLength": 1,
+                            "pattern": "\\S"
+                          }
+                        }
+                      }
+                    },
+                    "allOf": [
+                      {
+                        "if": {
+                          "required": [
+                            "pass"
+                          ],
+                          "properties": {
+                            "pass": {
+                              "const": true
+                            }
+                          }
+                        },
+                        "then": {
+                          "properties": {
+                            "gates": {
+                              "items": {
+                                "required": [
+                                  "pass"
+                                ],
+                                "properties": {
+                                  "pass": {
+                                    "const": true
+                                  }
+                                }
+                              }
+                            },
+                            "tone": {
+                              "required": [
+                                "pass"
+                              ],
+                              "properties": {
+                                "pass": {
+                                  "const": true
+                                }
+                              }
+                            },
+                            "claims": {
+                              "required": [
+                                "pass"
+                              ],
+                              "properties": {
+                                "pass": {
+                                  "const": true
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            },
+            "candidate_schema_version": "oddspark-candidate/v1",
+            "candidate": {
+              "version": 1,
+              "mode": "domain",
+              "title": "Monday Follow-Up Relay",
+              "plan": "Add a small staff-approved follow-up queue around the existing appointment-request form so unanswered requests return to the front desk at the next useful moment.",
+              "why_fits": {
+                "text": "The practice already accepts appointment requests online and keeps a later Monday window, so the smallest useful change is a follow-up relay around that familiar routine.",
+                "breadcrumb": "Open late on Mondays"
+              },
+              "what_gets_better": "Requests are less likely to sit between the website and the front desk, while staff keep control of every patient conversation.",
+              "before_after": {
+                "before": "A request enters the current form and staff remember to revisit it between other work.",
+                "after": "The same request enters the same form and appears in a short staff-approved follow-up queue."
+              },
+              "change_level": {
+                "time_range": "1–2 weeks",
+                "steps_changed": 2,
+                "steps_removed": 1,
+                "preliminary": true
+              },
+              "stays_same": {
+                "tools": [
+                  "Existing website request form",
+                  "Current appointment calendar"
+                ],
+                "authority": [
+                  "Front-desk staff decide when and how to contact a requester"
+                ],
+                "steps": [
+                  "Patients use the existing form",
+                  "Staff confirm appointments in the current calendar"
+                ]
+              },
+              "invitation": "Hearn Systems can map the smallest version of this Spark around the existing form and show exactly how the relay would work.",
+              "grounded_numbers": []
+            },
+            "candidate_ref": "36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891"
+          },
+          "sha256": "433b210b3e463a134c24f184dbf1207a5769c5523131df6240ef1e5c747eafdd",
+          "adapter_input": {
+            "messages": [
+              {
+                "role": "system",
+                "content": "You are the independent Oddspark judge. Evaluate the supplied synthetic Candidate Brief against every check below.\n\n1. Recognizable routine: starts from a credible routine and recurring annoyance.\n2. Constructive intervention: every friction leads to an imaginable solution.\n3. Capability inventory: does not duplicate an existing capability.\n4. Channel fit: uses an observed channel or clearly introduces a fitting one.\n5. Proportionality: matches likely scale, complexity, and maintenance capacity.\n6. Delivery fit: Hearn Systems could implement it as software, AI automation, integration, data workflow, or adjacent digital system.\n7. Preservation: retains helpful tools, workflow steps, and decision rights it need not change.\n8. Natural retelling: a person could naturally explain the situation, capability, and payoff.\n9. Novel but imaginable: goes beyond the obvious while remaining concrete.\n\nAlso evaluate tone (confident plan, plain language, no pitch, no consultant-speak, no bare-mush effects) and claims (qualitative unless supplied evidence grounds a number). Use the supplied grounding report; do not add a grounding field or a tenth gate.\n\nReturn only one JSON value matching the supplied schema. Include gates 1 through 9 exactly once. Set top-level pass to true only when all nine gates, tone, and claims pass."
+              },
+              {
+                "role": "user",
+                "content": "{\"candidate_ref\":\"36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891\",\"input\":{\"candidate\":{\"before_after\":{\"after\":\"The same request enters the same form and appears in a short staff-approved follow-up queue.\",\"before\":\"A request enters the current form and staff remember to revisit it between other work.\"},\"change_level\":{\"preliminary\":true,\"steps_changed\":2,\"steps_removed\":1,\"time_range\":\"1–2 weeks\"},\"grounded_numbers\":[],\"invitation\":\"Hearn Systems can map the smallest version of this Spark around the existing form and show exactly how the relay would work.\",\"mode\":\"domain\",\"plan\":\"Add a small staff-approved follow-up queue around the existing appointment-request form so unanswered requests return to the front desk at the next useful moment.\",\"stays_same\":{\"authority\":[\"Front-desk staff decide when and how to contact a requester\"],\"steps\":[\"Patients use the existing form\",\"Staff confirm appointments in the current calendar\"],\"tools\":[\"Existing website request form\",\"Current appointment calendar\"]},\"title\":\"Monday Follow-Up Relay\",\"version\":1,\"what_gets_better\":\"Requests are less likely to sit between the website and the front desk, while staff keep control of every patient conversation.\",\"why_fits\":{\"breadcrumb\":\"Open late on Mondays\",\"text\":\"The practice already accepts appointment requests online and keeps a later Monday window, so the smallest useful change is a follow-up relay around that familiar routine.\"}},\"evidence_bundle\":{\"capabilities\":[\"Online appointment requests\",\"Existing appointment calendar\"],\"channels\":[\"Website request form\",\"Phone\"],\"clarity\":\"clear\",\"observation\":{\"text\":\"Request an appointment online. Open late on Mondays. Call the front desk with questions.\",\"url\":\"https://synthetic.example.invalid/appointments\"},\"scanned_urls\":[\"https://synthetic.example.invalid/\",\"https://synthetic.example.invalid/appointments\"],\"vertical\":\"Family dental practice\"},\"grounding_report\":{\"breadcrumb_count\":1,\"claims\":[{\"field\":\"candidate.why_fits.breadcrumb\",\"matched_text\":\"Open late on Mondays\",\"source\":\"evidence_bundle.observation.text\"}],\"fixture_only\":true,\"issues\":[],\"numeric_claims\":[],\"pii_free\":true,\"schema_version\":\"synthetic-grounding-report/v1\",\"valid\":true},\"synthetic\":true}}"
+              }
+            ],
+            "max_tokens": 2048,
+            "temperature": 0,
+            "response_format": {
+              "type": "json_schema",
+              "json_schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "candidate_ref",
+                  "verdict"
+                ],
+                "properties": {
+                  "candidate_ref": {
+                    "type": "string",
+                    "pattern": "^[a-f0-9]{64}$"
+                  },
+                  "verdict": {
+                    "$schema": "https://json-schema.org/draft/2020-12/schema",
+                    "title": "Oddspark judge verdict v1",
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "pass",
+                      "gates",
+                      "tone",
+                      "claims"
+                    ],
+                    "properties": {
+                      "pass": {
+                        "type": "boolean"
+                      },
+                      "gates": {
+                        "type": "array",
+                        "minItems": 9,
+                        "maxItems": 9,
+                        "allOf": [
+                          {
+                            "contains": {
+                              "type": "object",
+                              "required": [
+                                "gate"
+                              ],
+                              "properties": {
+                                "gate": {
+                                  "const": 1
+                                }
+                              }
+                            },
+                            "minContains": 1,
+                            "maxContains": 1
+                          },
+                          {
+                            "contains": {
+                              "type": "object",
+                              "required": [
+                                "gate"
+                              ],
+                              "properties": {
+                                "gate": {
+                                  "const": 2
+                                }
+                              }
+                            },
+                            "minContains": 1,
+                            "maxContains": 1
+                          },
+                          {
+                            "contains": {
+                              "type": "object",
+                              "required": [
+                                "gate"
+                              ],
+                              "properties": {
+                                "gate": {
+                                  "const": 3
+                                }
+                              }
+                            },
+                            "minContains": 1,
+                            "maxContains": 1
+                          },
+                          {
+                            "contains": {
+                              "type": "object",
+                              "required": [
+                                "gate"
+                              ],
+                              "properties": {
+                                "gate": {
+                                  "const": 4
+                                }
+                              }
+                            },
+                            "minContains": 1,
+                            "maxContains": 1
+                          },
+                          {
+                            "contains": {
+                              "type": "object",
+                              "required": [
+                                "gate"
+                              ],
+                              "properties": {
+                                "gate": {
+                                  "const": 5
+                                }
+                              }
+                            },
+                            "minContains": 1,
+                            "maxContains": 1
+                          },
+                          {
+                            "contains": {
+                              "type": "object",
+                              "required": [
+                                "gate"
+                              ],
+                              "properties": {
+                                "gate": {
+                                  "const": 6
+                                }
+                              }
+                            },
+                            "minContains": 1,
+                            "maxContains": 1
+                          },
+                          {
+                            "contains": {
+                              "type": "object",
+                              "required": [
+                                "gate"
+                              ],
+                              "properties": {
+                                "gate": {
+                                  "const": 7
+                                }
+                              }
+                            },
+                            "minContains": 1,
+                            "maxContains": 1
+                          },
+                          {
+                            "contains": {
+                              "type": "object",
+                              "required": [
+                                "gate"
+                              ],
+                              "properties": {
+                                "gate": {
+                                  "const": 8
+                                }
+                              }
+                            },
+                            "minContains": 1,
+                            "maxContains": 1
+                          },
+                          {
+                            "contains": {
+                              "type": "object",
+                              "required": [
+                                "gate"
+                              ],
+                              "properties": {
+                                "gate": {
+                                  "const": 9
+                                }
+                              }
+                            },
+                            "minContains": 1,
+                            "maxContains": 1
+                          }
+                        ],
+                        "items": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "gate",
+                            "pass",
+                            "reason"
+                          ],
+                          "properties": {
+                            "gate": {
+                              "type": "integer",
+                              "minimum": 1,
+                              "maximum": 9
+                            },
+                            "pass": {
+                              "type": "boolean"
+                            },
+                            "reason": {
+                              "type": "string",
+                              "minLength": 1,
+                              "pattern": "\\S"
+                            }
+                          }
+                        }
+                      },
+                      "tone": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                          "pass",
+                          "reason"
+                        ],
+                        "properties": {
+                          "pass": {
+                            "type": "boolean"
+                          },
+                          "reason": {
+                            "type": "string",
+                            "minLength": 1,
+                            "pattern": "\\S"
+                          }
+                        }
+                      },
+                      "claims": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                          "pass",
+                          "reason"
+                        ],
+                        "properties": {
+                          "pass": {
+                            "type": "boolean"
+                          },
+                          "reason": {
+                            "type": "string",
+                            "minLength": 1,
+                            "pattern": "\\S"
+                          }
+                        }
+                      }
+                    },
+                    "allOf": [
+                      {
+                        "if": {
+                          "required": [
+                            "pass"
+                          ],
+                          "properties": {
+                            "pass": {
+                              "const": true
+                            }
+                          }
+                        },
+                        "then": {
+                          "properties": {
+                            "gates": {
+                              "items": {
+                                "required": [
+                                  "pass"
+                                ],
+                                "properties": {
+                                  "pass": {
+                                    "const": true
+                                  }
+                                }
+                              }
+                            },
+                            "tone": {
+                              "required": [
+                                "pass"
+                              ],
+                              "properties": {
+                                "pass": {
+                                  "const": true
+                                }
+                              }
+                            },
+                            "claims": {
+                              "required": [
+                                "pass"
+                              ],
+                              "properties": {
+                                "pass": {
+                                  "const": true
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "adapter_input_sha256": "6efa2a67b01ca530d856309dfb60c19fb926361f743ca9b45499acc2bd43e6d0"
+        }
+      ]
+    },
+    "identities": {
+      "prompt_template_sha256": "796a7bb6a54ee637314e1b0d4342614e151c8fe4726ed1ffd8c6a38f6c173587",
+      "wire_schema_sha256": "8dd321c119e0a4cc5c7789bc837f264e8885d952eafcd95169513fc0f167a2a1",
+      "adapter_sha256": "cfde74de613619ab1edcdb65c20a4660f3960f256a627930635897105b23b98d",
+      "binding_version": "oddspark-candidate-ref/v1",
+      "runtime_identity_sha256": "5d14ca5fc8cfbb9d307d066944454fc336a0f86698f9368debe57cbab6958189",
+      "source_identity_sha256": "d428561a1902eb05f2212e1b2924e4d279196d4052a394f27733f2b9ace411db",
+      "timeout_policy_sha256": "57d8315fea241529825c3c1865f7e1129fe2f59c1f49b81d594acf27aed7a9cc",
+      "retained_fields_sha256": "a83a34e4819bcae6680f5921f385e24c49c3bdb7abfdc08d2dff6d14a2c1f326"
+    },
+    "timeout_policy": {
+      "adapter_timeout_ms": 120000,
+      "preflight_timeout_ms": 10000,
+      "probes_must_complete_before_trials": true,
+      "execution": "sequential",
+      "retries": 0,
+      "replacements": 0
+    },
+    "retained_fields": [
+      "plan (full closed recovery plan)",
+      "approval (full closed approval record)",
+      "qualification (full closed bundle)",
+      "qualification.approval_check",
+      "qualification.evidence",
+      "qualification.manifests",
+      "qualification.qualification_refs",
+      "qualification.outcome",
+      "evidence.candidate.schema_version",
+      "evidence.candidate.value",
+      "evidence.candidate.ref",
+      "evidence.candidate.request_input",
+      "evidence.run.id",
+      "evidence.run.started_at",
+      "evidence.run.ended_at",
+      "evidence.run.models",
+      "evidence.run.authorization",
+      "evidence.run.preflight_checks",
+      "evidence.run.preflight_blockers",
+      "record.kind",
+      "record.model",
+      "record.index",
+      "record.started_at",
+      "record.ended_at",
+      "record.call_state",
+      "record.error_code",
+      "record.envelope",
+      "record.usage",
+      "record.request_sha256",
+      "record.candidate_ref",
+      "record.classification",
+      "record.repair_kind",
+      "record.verdict_sha256",
+      "evidence.runtime",
+      "evidence.sources",
+      "evidence.adapter",
+      "evidence.fixtures",
+      "evidence.summary",
+      "evidence.outcome",
+      "evidence.predicate_results",
+      "evidence.report",
+      "evidence.oracle",
+      "evidence.legacy"
+    ],
+    "call_policy": {
+      "probes_per_model": 1,
+      "trials_per_model": 20,
+      "approved_call_cap": 42,
+      "stop_after_probe_failure": true,
+      "ci_permitted": false,
+      "deployment_permitted": false,
+      "persistent_resources_permitted": false
+    },
+    "maximum_cost": {
+      "pricing_as_of": "2026-07-29",
+      "pricing_source": "https://developers.cloudflare.com/workers-ai/platform/pricing/",
+      "input_token_upper_bound_per_request": 7867,
+      "max_output_tokens_per_call": 2048,
+      "calls_per_model": 21,
+      "total_calls": 42,
+      "gross_usd": 0.13602225,
+      "gross_neurons": 12365.659090909092,
+      "free_neurons_per_day": 10000,
+      "by_model": {
+        "@cf/openai/gpt-oss-120b": {
+          "calls": 21,
+          "input_usd": 0.05782245,
+          "output_usd": 0.032256
+        },
+        "@cf/openai/gpt-oss-20b": {
+          "calls": 21,
+          "input_usd": 0.0330414,
+          "output_usd": 0.0129024
+        }
+      }
+    },
+    "governance": {
+      "recovery_allowance": 1,
+      "prior_operational_recovery": null,
+      "legacy_v1_evidence_sha256": "1cc4431088e37ba069e128e0059f19229551de2398db0d686524bc70aa752377",
+      "third_matrix_permitted": false
+    }
+  },
+  "approval": {
+    "schema_version": "oddspark.judge-recovery-approval/v1",
+    "plan_ref": "858ac871ca73dc95f52dc28444f518f40fde05e51271c453a1784b6c305c4c08",
+    "approval_run_id": "3725e58d-de60-4204-bb9f-8aabe8b40396",
+    "approved_at": "2026-08-19T17:31:33.000Z",
+    "expires_at": "2026-08-19T21:31:33.000Z",
+    "approved_call_cap": 42,
+    "maximum_cost_usd": 0.13602225,
+    "decision": "approved"
+  },
+  "approval_check": {
+    "observed_at": "2026-08-19T17:32:05.895Z",
+    "valid": true,
+    "errors": []
+  },
+  "evidence": {
+    "file": "2026-08-19-3725e58d-7302e630a716f397-f7be9a39-6142-416e-8b1f-b97f179eefdd-v2.json",
+    "sha256": "7302e630a716f3977088abc3e30d0f009213b0d4a2a5260fa1b9884bc7245227",
+    "schema_version": "oddspark.judge-recovery-evidence/v2",
+    "run_id": "3725e58d-de60-4204-bb9f-8aabe8b40396",
+    "predicate_results": [
+      {
+        "id": "evidence.shape",
+        "pass": true
+      },
+      {
+        "id": "oracle.identity",
+        "pass": true
+      },
+      {
+        "id": "legacy.immutable",
+        "pass": true
+      },
+      {
+        "id": "runtime.identity",
+        "pass": true
+      },
+      {
+        "id": "source.identity",
+        "pass": true
+      },
+      {
+        "id": "adapter.identity",
+        "pass": true
+      },
+      {
+        "id": "candidate.binding",
+        "pass": true
+      },
+      {
+        "id": "fixtures.executed",
+        "pass": true
+      },
+      {
+        "id": "records.classified",
+        "pass": true
+      },
+      {
+        "id": "records.closed",
+        "pass": true
+      },
+      {
+        "id": "run.authorization",
+        "pass": true
+      },
+      {
+        "id": "run.cardinality",
+        "pass": true
+      },
+      {
+        "id": "run.ordering",
+        "pass": true
+      },
+      {
+        "id": "run.common_request",
+        "pass": true
+      },
+      {
+        "id": "summary.rates",
+        "pass": true
+      },
+      {
+        "id": "outcome.deterministic",
+        "pass": true
+      },
+      {
+        "id": "predicates.retained",
+        "pass": true
+      },
+      {
+        "id": "report.deterministic",
+        "pass": true
+      }
+    ]
+  },
+  "manifests": [
+    {
+      "version": 1,
+      "role": "judge",
+      "provider": "cloudflare-workers-ai",
+      "resolved_model": "@cf/openai/gpt-oss-120b",
+      "request_parameters": {
+        "temperature": 0,
+        "max_tokens": 2048,
+        "response_format_type": "json_schema"
+      },
+      "prompt_template_sha256": "796a7bb6a54ee637314e1b0d4342614e151c8fe4726ed1ffd8c6a38f6c173587",
+      "wire_schema_sha256": "8dd321c119e0a4cc5c7789bc837f264e8885d952eafcd95169513fc0f167a2a1",
+      "adapter_sha256": "cfde74de613619ab1edcdb65c20a4660f3960f256a627930635897105b23b98d",
+      "binding_version": "oddspark-candidate-ref/v1",
+      "runtime": {
+        "path": "runtime-baseline.json",
+        "bytes": 2254,
+        "sha256": "3c9b0860c8dd9760e7883f5c9aed54aa5a2878518fb55c1e5fe5e0f4e17a52a5",
+        "runtime_identity_sha256": "5d14ca5fc8cfbb9d307d066944454fc336a0f86698f9368debe57cbab6958189",
+        "frozen": {
+          "node_engines": ">=20",
+          "wrangler": "4.123.0",
+          "workerd": "1.20260811.1"
+        },
+        "execution": {
+          "node": "v24.18.0",
+          "wrangler": "4.123.0"
+        }
+      },
+      "timeout_policy_sha256": "57d8315fea241529825c3c1865f7e1129fe2f59c1f49b81d594acf27aed7a9cc",
+      "semantic_identity_sha256": null,
+      "fixture_result_sha256": "4f820de763e27150c473d3ee30f1bf31254a001218d353c31991d05403129bd2",
+      "trial_counts": {
+        "probes": 1,
+        "trials": 20,
+        "classifications": {
+          "provider_error": 0,
+          "timeout": 0,
+          "empty_response": 0,
+          "ambiguous_envelope": 0,
+          "output_too_large": 0,
+          "unrecoverable_json": 0,
+          "schema_invalid": 20,
+          "repaired_valid": 0,
+          "direct_valid": 0
+        }
+      },
+      "rates": {
+        "total": 20,
+        "direct_valid": 0,
+        "repaired_valid": 0,
+        "direct_rate": {
+          "numerator": 0,
+          "denominator": 20,
+          "percent": 0
+        },
+        "post_repair_rate": {
+          "numerator": 0,
+          "denominator": 20,
+          "percent": 0
+        }
+      },
+      "latency_cost": {
+        "latency_ms": {
+          "minimum": 5950,
+          "maximum": 33156,
+          "total": 324372,
+          "mean": 15446.29
+        },
+        "usage": {
+          "reported_calls": 21,
+          "missing_calls": 0,
+          "overflow": false,
+          "prompt_tokens": 17073,
+          "completion_tokens": 17629,
+          "total_tokens": 34702
+        },
+        "observed_cost": {
+          "pricing_as_of": "2026-07-29",
+          "computable": true,
+          "partial": false,
+          "input_usd": 0.00597555,
+          "output_usd": 0.01322175,
+          "gross_usd": 0.0191973,
+          "gross_neurons": 1745.209090909091
+        },
+        "maximum_cost": {
+          "pricing_as_of": "2026-07-29",
+          "gross_usd": 0.09007845,
+          "gross_neurons": 8188.950000000001
+        }
+      },
+      "outcome": "NO-GO",
+      "approval_run_id": "3725e58d-de60-4204-bb9f-8aabe8b40396",
+      "tested_source_identity": {
+        "manifest_sha256": "d428561a1902eb05f2212e1b2924e4d279196d4052a394f27733f2b9ace411db",
+        "entries": [
+          {
+            "path": "package.json",
+            "bytes": 3309,
+            "sha256": "7e27ada2f1a76f11d883ecda3e32d26bee54aeef4b44b2636385ffa69201439c"
+          },
+          {
+            "path": "spikes/judge-fidelity/contract.mjs",
+            "bytes": 28206,
+            "sha256": "02bfb84840c69806bc495360840d4af89cfc6e16f964ad95e46d15ce30d41f1e"
+          },
+          {
+            "path": "spikes/judge-fidelity/evidence-v2.mjs",
+            "bytes": 38525,
+            "sha256": "4fc03f580898e10f1dee364c6d1e4487a741e68e5f2f235c7a26a8dfeeee4456"
+          },
+          {
+            "path": "spikes/judge-fidelity/fixture-executor.mjs",
+            "bytes": 9257,
+            "sha256": "6c1504661b3bca904b8d1fdf214e4e4796ca0c82a6041e6433da66c94d142e38"
+          },
+          {
+            "path": "spikes/judge-fidelity/fixtures.json",
+            "bytes": 11555,
+            "sha256": "7a5020883ec817809fabc797a6e1bd4af34a24d9bb369a7cce626ca95a97d2e5"
+          },
+          {
+            "path": "spikes/judge-fidelity/qualification.mjs",
+            "bytes": 37051,
+            "sha256": "99999838916071673c8d4881182f2a4c975e09bdf36036879a3fd91c69ff013f"
+          },
+          {
+            "path": "spikes/judge-fidelity/run.mjs",
+            "bytes": 68696,
+            "sha256": "e4b38f79300471f32761f17c3e6a531a3a85a7758c5bf4747c5bf13096697345"
+          },
+          {
+            "path": "spikes/judge-fidelity/start-adapter.mjs",
+            "bytes": 1986,
+            "sha256": "be5e8958f40c9b1f217cbf3bc6310c19bdc9276c5f5efc7e672b7b05baab7939"
+          },
+          {
+            "path": "spikes/judge-fidelity/test.mjs",
+            "bytes": 126001,
+            "sha256": "e07a42aa27cade09eb931bf5ffc43eb2326c29a3dbece3a6f0de77594ec50f76"
+          },
+          {
+            "path": "spikes/judge-fidelity/worker.mjs",
+            "bytes": 8757,
+            "sha256": "cfde74de613619ab1edcdb65c20a4660f3960f256a627930635897105b23b98d"
+          },
+          {
+            "path": "spikes/judge-fidelity/verify-launcher.mjs",
+            "bytes": 1964,
+            "sha256": "4b493214762dfe77fa813fa0f4c3e1c23e1e1164ce2a7e2de8c63b88f2a8e6b3"
+          },
+          {
+            "path": "spikes/judge-fidelity/verify-v2.mjs",
+            "bytes": 2956,
+            "sha256": "fad9e45e6acc5266516ef92d67678bad3b3fcdd97a588f90d6eca7e8c71e48a5"
+          },
+          {
+            "path": "spikes/judge-fidelity/wrangler.toml",
+            "bytes": 269,
+            "sha256": "ae407fcff6709f0843ebdc7e1370e8cc2eef3df3ed45b9a0e7f56390d1d434db"
+          }
+        ]
+      }
+    },
+    {
+      "version": 1,
+      "role": "judge",
+      "provider": "cloudflare-workers-ai",
+      "resolved_model": "@cf/openai/gpt-oss-20b",
+      "request_parameters": {
+        "temperature": 0,
+        "max_tokens": 2048,
+        "response_format_type": "json_schema"
+      },
+      "prompt_template_sha256": "796a7bb6a54ee637314e1b0d4342614e151c8fe4726ed1ffd8c6a38f6c173587",
+      "wire_schema_sha256": "8dd321c119e0a4cc5c7789bc837f264e8885d952eafcd95169513fc0f167a2a1",
+      "adapter_sha256": "cfde74de613619ab1edcdb65c20a4660f3960f256a627930635897105b23b98d",
+      "binding_version": "oddspark-candidate-ref/v1",
+      "runtime": {
+        "path": "runtime-baseline.json",
+        "bytes": 2254,
+        "sha256": "3c9b0860c8dd9760e7883f5c9aed54aa5a2878518fb55c1e5fe5e0f4e17a52a5",
+        "runtime_identity_sha256": "5d14ca5fc8cfbb9d307d066944454fc336a0f86698f9368debe57cbab6958189",
+        "frozen": {
+          "node_engines": ">=20",
+          "wrangler": "4.123.0",
+          "workerd": "1.20260811.1"
+        },
+        "execution": {
+          "node": "v24.18.0",
+          "wrangler": "4.123.0"
+        }
+      },
+      "timeout_policy_sha256": "57d8315fea241529825c3c1865f7e1129fe2f59c1f49b81d594acf27aed7a9cc",
+      "semantic_identity_sha256": null,
+      "fixture_result_sha256": "4f820de763e27150c473d3ee30f1bf31254a001218d353c31991d05403129bd2",
+      "trial_counts": {
+        "probes": 1,
+        "trials": 20,
+        "classifications": {
+          "provider_error": 0,
+          "timeout": 0,
+          "empty_response": 0,
+          "ambiguous_envelope": 0,
+          "output_too_large": 0,
+          "unrecoverable_json": 0,
+          "schema_invalid": 20,
+          "repaired_valid": 0,
+          "direct_valid": 0
+        }
+      },
+      "rates": {
+        "total": 20,
+        "direct_valid": 0,
+        "repaired_valid": 0,
+        "direct_rate": {
+          "numerator": 0,
+          "denominator": 20,
+          "percent": 0
+        },
+        "post_repair_rate": {
+          "numerator": 0,
+          "denominator": 20,
+          "percent": 0
+        }
+      },
+      "latency_cost": {
+        "latency_ms": {
+          "minimum": 6553,
+          "maximum": 16724,
+          "total": 241871,
+          "mean": 11517.67
+        },
+        "usage": {
+          "reported_calls": 21,
+          "missing_calls": 0,
+          "overflow": false,
+          "prompt_tokens": 17199,
+          "completion_tokens": 19353,
+          "total_tokens": 36552
+        },
+        "observed_cost": {
+          "pricing_as_of": "2026-07-29",
+          "computable": true,
+          "partial": false,
+          "input_usd": 0.0034398000000000002,
+          "output_usd": 0.005805899999999999,
+          "gross_usd": 0.009245699999999999,
+          "gross_neurons": 840.5181818181818
+        },
+        "maximum_cost": {
+          "pricing_as_of": "2026-07-29",
+          "gross_usd": 0.0459438,
+          "gross_neurons": 4176.709090909091
+        }
+      },
+      "outcome": "NO-GO",
+      "approval_run_id": "3725e58d-de60-4204-bb9f-8aabe8b40396",
+      "tested_source_identity": {
+        "manifest_sha256": "d428561a1902eb05f2212e1b2924e4d279196d4052a394f27733f2b9ace411db",
+        "entries": [
+          {
+            "path": "package.json",
+            "bytes": 3309,
+            "sha256": "7e27ada2f1a76f11d883ecda3e32d26bee54aeef4b44b2636385ffa69201439c"
+          },
+          {
+            "path": "spikes/judge-fidelity/contract.mjs",
+            "bytes": 28206,
+            "sha256": "02bfb84840c69806bc495360840d4af89cfc6e16f964ad95e46d15ce30d41f1e"
+          },
+          {
+            "path": "spikes/judge-fidelity/evidence-v2.mjs",
+            "bytes": 38525,
+            "sha256": "4fc03f580898e10f1dee364c6d1e4487a741e68e5f2f235c7a26a8dfeeee4456"
+          },
+          {
+            "path": "spikes/judge-fidelity/fixture-executor.mjs",
+            "bytes": 9257,
+            "sha256": "6c1504661b3bca904b8d1fdf214e4e4796ca0c82a6041e6433da66c94d142e38"
+          },
+          {
+            "path": "spikes/judge-fidelity/fixtures.json",
+            "bytes": 11555,
+            "sha256": "7a5020883ec817809fabc797a6e1bd4af34a24d9bb369a7cce626ca95a97d2e5"
+          },
+          {
+            "path": "spikes/judge-fidelity/qualification.mjs",
+            "bytes": 37051,
+            "sha256": "99999838916071673c8d4881182f2a4c975e09bdf36036879a3fd91c69ff013f"
+          },
+          {
+            "path": "spikes/judge-fidelity/run.mjs",
+            "bytes": 68696,
+            "sha256": "e4b38f79300471f32761f17c3e6a531a3a85a7758c5bf4747c5bf13096697345"
+          },
+          {
+            "path": "spikes/judge-fidelity/start-adapter.mjs",
+            "bytes": 1986,
+            "sha256": "be5e8958f40c9b1f217cbf3bc6310c19bdc9276c5f5efc7e672b7b05baab7939"
+          },
+          {
+            "path": "spikes/judge-fidelity/test.mjs",
+            "bytes": 126001,
+            "sha256": "e07a42aa27cade09eb931bf5ffc43eb2326c29a3dbece3a6f0de77594ec50f76"
+          },
+          {
+            "path": "spikes/judge-fidelity/worker.mjs",
+            "bytes": 8757,
+            "sha256": "cfde74de613619ab1edcdb65c20a4660f3960f256a627930635897105b23b98d"
+          },
+          {
+            "path": "spikes/judge-fidelity/verify-launcher.mjs",
+            "bytes": 1964,
+            "sha256": "4b493214762dfe77fa813fa0f4c3e1c23e1e1164ce2a7e2de8c63b88f2a8e6b3"
+          },
+          {
+            "path": "spikes/judge-fidelity/verify-v2.mjs",
+            "bytes": 2956,
+            "sha256": "fad9e45e6acc5266516ef92d67678bad3b3fcdd97a588f90d6eca7e8c71e48a5"
+          },
+          {
+            "path": "spikes/judge-fidelity/wrangler.toml",
+            "bytes": 269,
+            "sha256": "ae407fcff6709f0843ebdc7e1370e8cc2eef3df3ed45b9a0e7f56390d1d434db"
+          }
+        ]
+      }
+    }
+  ],
+  "qualification_refs": [],
+  "outcome": {
+    "decision": "NO-GO",
+    "reasons": [
+      "@cf/openai/gpt-oss-120b: independent direct-valid threshold was not met",
+      "@cf/openai/gpt-oss-20b: independent direct-valid threshold was not met",
+      "@cf/openai/gpt-oss-120b: direct-valid rate is below 95%.",
+      "@cf/openai/gpt-oss-20b: direct-valid rate is below 95%."
+    ],
+    "mvp_review_required": true,
+    "third_matrix_permitted": false
+  }
+}

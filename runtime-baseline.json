@@ -49,7 +49,9 @@
     },
     "spike": {
       "compatibility_date": "2026-07-01",
-      "compatibility_flags": [],
+      "compatibility_flags": [
+        "nodejs_compat"
+      ],
       "has_remote_binding": true,
       "main": "worker.mjs",
       "name": "oddspark-judge-fidelity-spike-local-only",
@@ -61,15 +63,15 @@
         "ai",
         "vars"
       ],
-      "sha256": "4261707d3ba17e285f2b73bf84049f65b691a8fb5101b403640fd57648dc6c21"
+      "sha256": "ae407fcff6709f0843ebdc7e1370e8cc2eef3df3ed45b9a0e7f56390d1d434db"
     }
   },
-  "frozen_at": "2026-08-17T19:05:44.544Z",
-  "frozen_from_commit": "51743b4720172d66d7f86d7cd61c440ec606585f",
+  "frozen_at": "2026-08-19T15:59:26.874Z",
+  "frozen_from_commit": "c827295c59b60eb45d0f9b2abe0e3a77dde3c063",
   "main": "src/worker.js",
   "node_engines": ">=20",
   "package_lock_sha256": "c5c31aa5474ec9d04a96a4744c5f41c4ffb2e644cbb0ec28950041edc60301ba",
-  "runtime_identity_sha256": "4c9c52065a99596617970c3620b5d873c6465bfd6ab589681ef2fb13f3b311b8",
+  "runtime_identity_sha256": "5d14ca5fc8cfbb9d307d066944454fc336a0f86698f9368debe57cbab6958189",
   "schema_version": "oddspark.runtime-baseline/v1",
   "worker_types_sha256": "3aa45eadbc4c641afa2aa0174adbb1b1387b0bb7d06aa5d3ad662dfc0135873b",
   "workerd": "1.20260811.1",

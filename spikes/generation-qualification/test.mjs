@@ -10,6 +10,7 @@ import { executeFixtures } from "./fixture-executor.mjs";
 import { buildEvidence, expectedHealth, runtimeIdentity, sourceIdentity, verifyEvidence } from "./evidence-v2.mjs";
 import { completeSpendReceipt, executeSchedule, publishArtifactSet } from "./run.mjs";
 import { verifyBytes } from "./verify-v2.mjs";
+import { decodeStructuredResponse } from "./worker.mjs";
 
 const at = (offset) => new Date(Date.parse("2026-08-18T20:00:00.000Z") + offset).toISOString();
 function retained(kind, index, request, call, offset) { const result = classifyCall(call); const usage = { input_tokens: 1, output_tokens: 1 }; return { kind, role: request.role, resolved_model: request.resolved_model, index, started_at: at(offset), ended_at: at(offset + 1), latency_ms: 1, call_state: call.call_state, classification: result.classification, candidate: result.candidate, candidate_ref: result.candidate_ref, issues: result.issues, retained: result.retained, retained_sha256: result.retained_sha256, retained_bytes: result.retained_bytes, usage, cost_usd: costForUsage(request.resolved_model, usage), request_sha256: request.request_sha256 }; }
@@ -23,6 +24,26 @@ async function validEvidence({ primaryFailures = 0 } = {}) {
 test("the declared direct-output fixture catalog executes through the authoritative classifier", async () => { const result = await executeFixtures(); assert.equal(result.passed, true); assert.equal(result.passing_ids.length, 13); });
 test("request identities bind role, resolved model, prompt, schema, parameters, and exact input", () => { const request = buildRequest(ROLE_IDENTITIES[0], fixtureInput()); assert.equal(request.role, "primary"); assert.equal(request.body.model, ROLE_IDENTITIES[0].resolved_model); assert.match(request.request_sha256, /^[a-f0-9]{64}$/); assert.notEqual(request.request_sha256, buildRequest(ROLE_IDENTITIES[1], fixtureInput()).request_sha256); });
 test("classification accepts direct Candidates and rejects text, wrappers, ambiguity, repair, errors, and timeout", () => { assert.equal(classifyCall({ call_state: "received", output: fixtureCandidate() }).classification, "direct_valid"); for (const output of [JSON.stringify(fixtureCandidate()), { candidate: fixtureCandidate() }, [fixtureCandidate(), fixtureCandidate()], ` \n${fixtureCandidate().title}`]) assert.equal(classifyCall({ call_state: "received", output }).classification, "invalid_output"); assert.equal(classifyCall({ call_state: "provider_error" }).classification, "provider_error"); assert.equal(classifyCall({ call_state: "timeout" }).classification, "timeout"); });
+test("adapter decodes exactly one complete structured transport value without repair or coercion", () => {
+  const candidate = fixtureCandidate();
+  assert.deepEqual(decodeStructuredResponse({ choices: [{ index: 0, message: { role: "assistant", content: JSON.stringify(candidate) } }], usage: {} }), candidate);
+  const rejected = [
+    null,
+    candidate,
+    { response: candidate },
+    { choices: [] },
+    { choices: [{ index: 0, message: { content: JSON.stringify(candidate) } }, { index: 1, message: { content: JSON.stringify(candidate) } }] },
+    { choices: [{ index: 1, message: { content: JSON.stringify(candidate) } }] },
+    { choices: [{ index: 0, message: { content: candidate } }] },
+    { choices: [{ index: 0, message: { content: `Here is the result: ${JSON.stringify(candidate)}` } }] },
+    { choices: [{ index: 0, message: { content: `\`\`\`json\n${JSON.stringify(candidate)}\n\`\`\`` } }] },
+    { choices: [{ index: 0, message: { content: `${JSON.stringify(candidate)} trailing` } }] },
+    { choices: [{ index: 0, message: { content: JSON.stringify([candidate]) } }] },
+    { choices: [{ index: 0, message: { content: JSON.stringify("structured-looking text") } }] },
+  ];
+  for (const value of rejected) assert.throws(() => decodeStructuredResponse(value));
+  assert.equal(classifyCall({ call_state: "received", output: decodeStructuredResponse({ choices: [{ index: 0, message: { content: JSON.stringify({ ...candidate, extra: true }) } }] }) }).classification, "invalid_output");
+});
 test("schedule is sequential, zero retry/replacement, and bounded to 42 calls", async () => { let active = 0; let maximum = 0; let calls = 0; const records = await executeSchedule(ROLE_IDENTITIES.map((role) => buildRequest(role, fixtureInput())), async () => { calls += 1; active += 1; maximum = Math.max(maximum, active); active -= 1; return { started_at: at(calls * 2), ended_at: at(calls * 2 + 1), latency_ms: 1, call_state: "received", output: fixtureCandidate(), usage: null }; }); assert.equal(calls, 42); assert.equal(records.length, 42); assert.equal(maximum, 1); });
 test("a failed probe prevents trials only for its own role", async () => { let calls = 0; const records = await executeSchedule(ROLE_IDENTITIES.map((role) => buildRequest(role, fixtureInput())), async (request) => { calls += 1; return { started_at: at(calls * 2), ended_at: at(calls * 2 + 1), latency_ms: 1, call_state: request.role === "primary" ? "provider_error" : "received", output: request.role === "primary" ? null : fixtureCandidate(), usage: null }; }); assert.equal(records.filter(({ role }) => role === "primary").length, 1); assert.equal(records.filter(({ role }) => role === "fallback").length, 21); });
 test("plans are deterministic, source-bound, cost-bounded, and approvals are exact and fresh", async () => { const created = at(0); const plan = await createPlan({ approval_run_id: "test-plan", created_at: created, input: fixtureInput(), authority: { account_profile: "reviewed", credential_path: "wrangler-remote-binding", headroom_confirmed: true } }); assert.equal(plan.call_cap, 42); const approval = { schema_version: APPROVAL_VERSION, plan_ref: plan.plan_ref, approval_run_id: plan.approval_run_id, approved_at: at(100), approved_by: "operator", approved_call_cap: 42, approved_maximum_usd: plan.estimate.maximum_usd, authorization: "execute-exact-plan-once" }; assert.equal(validateApproval(approval, plan, Date.parse(at(200))).valid, true); assert.equal(validateApproval({ ...approval, plan_ref: "0".repeat(64) }, plan, Date.parse(at(200))).valid, false); });

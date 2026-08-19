@@ -665,14 +665,11 @@ async function durableWriteJson(target, value) {
   }
 }
 
-// Stale lock TTL: 24 hours. Locks older than this are considered abandoned.
-const RECOVERY_LOCK_TTL_MS = 24 * 60 * 60 * 1000;
-
 /**
- * Acquire an exclusive recovery lock with stale-lock detection.
- * If the existing lock file is older than RECOVERY_LOCK_TTL_MS, it is treated as abandoned.
+ * Acquire an exclusive recovery lock. Existing lock ownership is never inferred
+ * from age; stale and unknown locks require explicit manual recovery.
  */
-export async function acquireRecoveryLock(resultsDir = RESULTS_DIR, { now = new Date(), attempt_id = randomUUID(), lockTtlMs = RECOVERY_LOCK_TTL_MS } = {}) {
+export async function acquireRecoveryLock(resultsDir = RESULTS_DIR, { now = new Date(), attempt_id = randomUUID() } = {}) {
   assertSafeBasename(attempt_id, "lock attempt");
   const directory = await physicalDirectory(resultsDir);
   const lockPath = path.join(directory, RECOVERY_LOCK_FILE);
@@ -702,36 +699,6 @@ export async function acquireRecoveryLock(resultsDir = RESULTS_DIR, { now = new 
   } catch (error) {
     await handle?.close().catch(() => {});
     if (error?.code === "EEXIST") {
-      // Check for stale lock — read existing lock file and compare timestamps
-      try {
-        const existingBytes = await readFile(lockPath);
-        const existing = JSON.parse(existingBytes.toString("utf8"));
-        const createdAt = Date.parse(existing.created_at);
-        if (Number.isFinite(createdAt) && now.getTime() - createdAt > lockTtlMs) {
-          // Lock is stale — remove it and retry acquisition
-          await unlink(lockPath).catch(() => {});
-          await syncDirectory(directory);
-          // Retry: attempt to create the lock fresh
-          handle = await open(lockPath, "wx", 0o600);
-          await handle.writeFile(`${JSON.stringify({ attempt_id, pid: process.pid, created_at: now.toISOString() })}
-`);
-          await handle.sync();
-          await syncDirectory(directory);
-          let releasedStale = false;
-          return {
-            acquired: true,
-            attempt_id,
-            lockPath,
-            async release() {
-              if (releasedStale) return;
-              releasedStale = true;
-              await handle.close();
-              await unlink(lockPath).catch(() => {});
-              await syncDirectory(directory);
-            },
-          };
-        }
-      } catch { /* unreadable lock file — treat as blocking */ }
       return { acquired: false, reason: "recovery lock exists; stale and unknown locks require manual recovery" };
     }
     throw error;
