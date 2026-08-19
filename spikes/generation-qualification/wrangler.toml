@@ -1,0 +1,11 @@
+name = "oddspark-generation-qualification-local-only"
+main = "worker.mjs"
+compatibility_date = "2026-07-01"
+
+[ai]
+binding = "AI"
+remote = true
+
+[vars]
+PRIMARY_MODEL = "@cf/openai/gpt-oss-120b"
+FALLBACK_MODEL = "@cf/openai/gpt-oss-20b"
