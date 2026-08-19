@@ -34,7 +34,7 @@ const ANTI_GOLDEN_RULES = {
   weak_preservation: { gates: [7], rules: ["preserved_tools", "decision_authority", "untouched_steps"] },
   capability_duplication: { gates: [3], rules: ["capability_inventory"] },
   poor_scope: { gates: [5, 6], rules: ["proportionality", "delivery_envelope"] },
-  invitation_pressure: { gates: [8], rules: ["counter_level_invitation", "no_pressure", "not_worth_changing_exit"] },
+  invitation_pressure: { gates: [8], rules: ["counter_level_invitation", "no_pressure", "confident_bounded_next_step"] },
 };
 
 function issue(artifact, rule, message, fixture = null) {
@@ -240,7 +240,7 @@ function validateGolden(fixture, rubric, errors) {
     else if (parsedChange.minimum <= 0 || parsedChange.maximum <= 0 || parsedChange.minimum > parsedChange.maximum || parsedChange.changed < 0 || parsedChange.disappeared < 0) errors.push(issue("goldens", "change_level_bounds", "Change Level range must be positive and ordered; workflow-step counts must be nonnegative", id));
     const invitation = fixture.elements.find((element) => isObject(element) && element.element === "implementation_invitation")?.text;
     if (!isNonblank(invitation) || invitation.includes("?")) errors.push(issue("goldens", "rhetorical_invitation", "implementation invitation must be confident and not a rhetorical question", id));
-    if (isNonblank(invitation) && !/\bnot worth changing\b/i.test(invitation)) errors.push(issue("goldens", "invitation_exit", "implementation invitation must explicitly say when it is not worth changing", id));
+    if (isNonblank(invitation) && /\b(?:not worth changing|call it off|if it is worth|if it sounds useful)\b/i.test(invitation)) errors.push(issue("goldens", "invitation_confidence", "implementation invitation must offer a confident bounded next step without undermining the Spark", id));
     if (isNonblank(invitation) && PRESSURE_LANGUAGE.test(invitation)) errors.push(issue("goldens", "invitation_pressure", "implementation invitation cannot use urgency, funnel, or pressure language", id));
   }
   if (!Array.isArray(fixture.expected_gates) || fixture.expected_gates.length !== 9 || fixture.expected_gates.some((value) => value !== true)) errors.push(issue("goldens", "expected_gates", "all nine gates must expect pass", id));

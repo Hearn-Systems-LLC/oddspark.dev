@@ -28,7 +28,7 @@ const localBrief = () => ({
   before_after: { before: "The team rewrites similar replies.", after: "The team reviews one prepared reply." },
   change_level: { time_range: "a short setup window", steps_changed: 2, steps_removed: 1, preliminary: true },
   stays_same: { tools: ["Current inbox"], authority: ["The team approves every reply"], steps: ["Staff handle exceptions"] },
-  invitation: "We can inspect this Spark together, including whether it is not worth changing.", grounded_numbers: [],
+  invitation: "We can inspect this Spark together and map a clear first step.", grounded_numbers: [],
 });
 const domainBrief = () => ({ ...localBrief(), mode: "domain", why_fits: { text: "The site emphasizes quick response.", breadcrumb: "Replies arrive within 24 hours" }, grounded_numbers: ["24"] });
 const localEvidence = () => ({ version: 1, mode: "local", priors: { region: "Blue Water Area", season: "summer", date: "current", situation: "repeated inquiries", capability_bundle: ["software"] } });
@@ -60,7 +60,7 @@ test("valid local and domain Brief unions enforce eight semantic elements and op
 test("Briefs reject unsupported versions, unknown and missing fields, nested drift, bad mode cardinality, pricing, pitch, and untracked numbers", () => {
   const mutations = [
     (b) => { b.version = 2; }, (b) => { b.extra = true; }, (b) => { delete b.plan; }, (b) => { b.before_after.extra = true; },
-    (b) => { b.why_fits.breadcrumb = "not local"; }, (b) => { b.title = "$50 setup"; }, (b) => { b.invitation = "Book now for this Spark; not worth changing is okay."; },
+    (b) => { b.why_fits.breadcrumb = "not local"; }, (b) => { b.title = "$50 setup"; }, (b) => { b.invitation = "Book now for this Spark."; },
     (b) => { b.plan = "Save 20 hours."; },
   ];
   for (const mutate of mutations) { const value = localBrief(); mutate(value); assert.equal(validateBrief(value).valid, false); }

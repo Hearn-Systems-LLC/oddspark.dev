@@ -12,7 +12,7 @@ function fixture({ id, mode = "local", requestScope = mode, notice, hostile = fa
     why_fits: { text: `Fit ${x}`, ...(mode === "domain" ? { breadcrumb: `Crumb ${x}` } : {}) }, what_gets_better: `Better ${x}`,
     before_after: { before: `Before ${x}`, after: `After ${x}` }, change_level: { time_range: `Short ${x}`, steps_changed: 1, steps_removed: 0, preliminary: true },
     stays_same: empty ? { tools: [], authority: [], steps: [] } : { tools: [`Tool ${x}`], authority: [`Authority ${x}`], steps: [`Step ${x}`] },
-    invitation: `Bring this Spark ${x} to decide whether it is not worth changing.`, grounded_numbers: [], ...(notice ? { notice } : {}) };
+    invitation: `Bring this Spark ${x} and map a clear first step.`, grounded_numbers: [], ...(notice ? { notice } : {}) };
   return buildCommittedBrief({ artifact_version: 1, id, request_scope: requestScope, brief, brief_schema_version: 1, policy_identity: HASH, rubric_identity: HASH,
     provenance: { attempt_id: `attempt-${id}`, candidate_ref: deriveCandidateRef(CANDIDATE_SCHEMA_VERSION, brief), evidence_ref: HASH, grounding_report_version: 1, effective_mode: mode } });
 }

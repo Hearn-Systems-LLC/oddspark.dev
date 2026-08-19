@@ -7,7 +7,7 @@
     "status": "pending_owner_approval",
     "production_authorized": false,
     "canonical_priors_hash": "03a64c80a5caea0b7fb512950496b0c06513be11f8dc3d95fdc37e59b95b1282",
-    "canonical_voice_rubric_hash": "a1d93318813a0c5f52f32534b1b1f22f3a85a275db54c560087177b2b3807726"
+    "canonical_voice_rubric_hash": "11a7811fb9e1949e8eeb273583a2ca66e4b39d0974640ae6f5877d0b164c7da0"
   },
   "entries": [
     {
@@ -21,7 +21,7 @@
         "before_after": { "before": "A person waits for the team to repeat familiar details.", "after": "The person reads an approved answer and arrives at the existing contact step better prepared." },
         "change_level": { "time_range": "A short, focused build", "steps_changed": 1, "steps_removed": 0, "preliminary": true },
         "stays_same": { "tools": ["The current website and inbox stay in place."], "authority": ["The owner approves every answer and update."], "steps": ["The team keeps handling the real conversation and final response."] },
-        "invitation": "We can look at this Spark together, choose one useful starting topic, and decide that it is not worth changing if the fit is weak.",
+        "invitation": "We can choose one useful starting topic for this Spark and shape it into a clear, owner-approved answer path.",
         "grounded_numbers": []
       },
       "expected_outcome": { "gates": { "1": "pass", "2": "pass", "3": "pass", "4": "pass", "5": "pass", "6": "pass", "7": "pass", "8": "pass", "9": "pass" }, "tone": "pass", "claims": "pass" }
@@ -37,7 +37,7 @@
         "before_after": { "before": "Details arrive across a loose exchange and must be gathered again.", "after": "A compact summary waits beside the original message for human review." },
         "change_level": { "time_range": "A compact implementation", "steps_changed": 1, "steps_removed": 0, "preliminary": true },
         "stays_same": { "tools": ["The current inbox and contact channel remain."], "authority": ["The team decides how every inquiry is handled."], "steps": ["Personal follow-up stays with the people who do it now."] },
-        "invitation": "We can sketch this Spark around the existing handoff, then call it not worth changing if it adds no real clarity.",
+        "invitation": "We can sketch this Spark around the existing handoff and leave the team with a clear, workable first version.",
         "grounded_numbers": []
       },
       "expected_outcome": { "gates": { "1": "pass", "2": "pass", "3": "pass", "4": "pass", "5": "pass", "6": "pass", "7": "pass", "8": "pass", "9": "pass" }, "tone": "pass", "claims": "pass" }
@@ -53,7 +53,7 @@
         "before_after": { "before": "The same wording is found and adjusted separately each time.", "after": "An approved source feeds a clear update through the familiar publishing path." },
         "change_level": { "time_range": "A light workflow setup", "steps_changed": 1, "steps_removed": 0, "preliminary": true },
         "stays_same": { "tools": ["The current website and publishing tool remain."], "authority": ["The owner controls source wording and publication."], "steps": ["Specialized advice stays with the team."] },
-        "invitation": "We can review this Spark against one recurring update and decide it is not worth changing if the current path is already clear.",
+        "invitation": "We can map this Spark onto one recurring update and show how the review path stays simple and controlled.",
         "grounded_numbers": []
       },
       "expected_outcome": { "gates": { "1": "pass", "2": "pass", "3": "pass", "4": "pass", "5": "pass", "6": "pass", "7": "pass", "8": "pass", "9": "pass" }, "tone": "pass", "claims": "pass" }
@@ -69,7 +69,7 @@
         "before_after": { "before": "Each message must be read from the beginning before its next step is clear.", "after": "A suggested label and concise details sit with the message for review." },
         "change_level": { "time_range": "A focused workflow addition", "steps_changed": 1, "steps_removed": 0, "preliminary": true },
         "stays_same": { "tools": ["The current form and inbox stay in service."], "authority": ["A person confirms every label and route."], "steps": ["The team writes and sends the response."] },
-        "invitation": "We can test this Spark on a familiar inquiry and decide it is not worth changing if review feels heavier than the current routine.",
+        "invitation": "We can test this Spark on a familiar inquiry and give the team a concrete sorting flow to evaluate.",
         "grounded_numbers": []
       },
       "expected_outcome": { "gates": { "1": "pass", "2": "pass", "3": "pass", "4": "pass", "5": "pass", "6": "pass", "7": "pass", "8": "pass", "9": "pass" }, "tone": "pass", "claims": "pass" }
@@ -85,7 +85,7 @@
         "before_after": { "before": "Useful details are spread across pages that take attention to piece together.", "after": "A compact guide points to the right existing contact action." },
         "change_level": { "time_range": "A small mobile-first build", "steps_changed": 1, "steps_removed": 0, "preliminary": true },
         "stays_same": { "tools": ["The website and contact tools remain."], "authority": ["The owner chooses every explanation and next step."], "steps": ["The team keeps the personal conversation after contact."] },
-        "invitation": "We can walk through this Spark on a phone and decide it is not worth changing if the current path already feels easy.",
+        "invitation": "We can walk through this Spark on a phone and shape a compact path that is ready for a real visitor to use.",
         "grounded_numbers": []
       },
       "expected_outcome": { "gates": { "1": "pass", "2": "pass", "3": "pass", "4": "pass", "5": "pass", "6": "pass", "7": "pass", "8": "pass", "9": "pass" }, "tone": "pass", "claims": "pass" }
@@ -101,7 +101,7 @@
         "before_after": { "before": "Someone copies the same request from one tool into another.", "after": "The details cross a small bridge and wait for a person to confirm them." },
         "change_level": { "time_range": "A narrow integration", "steps_changed": 1, "steps_removed": 1, "preliminary": true },
         "stays_same": { "tools": ["Both existing tools stay in place."], "authority": ["The team reviews exceptions and controls final action."], "steps": ["Judgment-heavy work remains manual."] },
-        "invitation": "We can trace this Spark through one normal handoff and decide it is not worth changing if the bridge would be fragile.",
+        "invitation": "We can trace this Spark through one normal handoff and design a dependable bridge with a visible fallback.",
         "grounded_numbers": []
       },
       "expected_outcome": { "gates": { "1": "pass", "2": "pass", "3": "pass", "4": "pass", "5": "pass", "6": "pass", "7": "pass", "8": "pass", "9": "pass" }, "tone": "pass", "claims": "pass" }
@@ -117,7 +117,7 @@
         "before_after": { "before": "A useful explanation is recreated or hunted down each time.", "after": "A reviewed explanation waits on a simple shelf for the team to adapt." },
         "change_level": { "time_range": "A compact content workflow", "steps_changed": 1, "steps_removed": 0, "preliminary": true },
         "stays_same": { "tools": ["The current documents and response tools stay."], "authority": ["The owner approves the source and each public use."], "steps": ["The team adapts the final answer to the conversation."] },
-        "invitation": "We can compare this Spark with one repeated explanation and decide it is not worth changing if reuse brings no relief.",
+        "invitation": "We can turn one repeated explanation into the first reusable answer for this Spark and show the team how to keep it current.",
         "grounded_numbers": []
       },
       "expected_outcome": { "gates": { "1": "pass", "2": "pass", "3": "pass", "4": "pass", "5": "pass", "6": "pass", "7": "pass", "8": "pass", "9": "pass" }, "tone": "pass", "claims": "pass" }
@@ -133,7 +133,7 @@
         "before_after": { "before": "Recurring follow-up begins from an empty page or an old message.", "after": "An approved starting draft waits for review in the familiar tool." },
         "change_level": { "time_range": "A modest assisted workflow", "steps_changed": 1, "steps_removed": 0, "preliminary": true },
         "stays_same": { "tools": ["The current communication tool remains."], "authority": ["A person chooses the wording, timing, and recipient."], "steps": ["Review and sending stay manual."] },
-        "invitation": "We can examine this Spark beside the current follow-up routine and decide it is not worth changing if the draft saves no useful effort.",
+        "invitation": "We can map this Spark onto the current follow-up routine and produce one useful, review-ready draft as the starting point.",
         "grounded_numbers": []
       },
       "expected_outcome": { "gates": { "1": "pass", "2": "pass", "3": "pass", "4": "pass", "5": "pass", "6": "pass", "7": "pass", "8": "pass", "9": "pass" }, "tone": "pass", "claims": "pass" }

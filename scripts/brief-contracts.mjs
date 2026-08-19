@@ -153,7 +153,7 @@ export function validateBrief(value) {
   });
   const text = collectStrings(value).join(" ");
   if (PRICE.test(text)) issues.push(issue("brief", "pricing", "pricing is forbidden"));
-  if (!/\bSpark\b/.test(value.invitation ?? "") || !/not worth changing/i.test(value.invitation ?? "") || PITCH.test(value.invitation ?? "")) issues.push(issue("brief.invitation", "invitation", "must name the Spark, permit 'not worth changing', and avoid pitch language"));
+  if (!/\bSpark\b/.test(value.invitation ?? "") || /\b(?:not worth changing|call it off|if it is worth|if it sounds useful)\b/i.test(value.invitation ?? "") || PITCH.test(value.invitation ?? "")) issues.push(issue("brief.invitation", "invitation", "must name the Spark, offer a confident bounded next step, and avoid pitch language"));
   if (value.mode === "local") {
     if (value.grounded_numbers?.length) issues.push(issue("brief.grounded_numbers", "local_qualitative", "must be empty in local mode"));
     const qualitative = collectStrings({ ...value, change_level: null }).flatMap(numberTokens);

@@ -15,7 +15,7 @@ const candidate = {
   before_after: { before: "The team rewrites similar replies.", after: "The team reviews one prepared reply." },
   change_level: { time_range: "a short setup window", steps_changed: 2, steps_removed: 1, preliminary: true },
   stays_same: { tools: ["Current inbox"], authority: ["The team approves every reply"], steps: ["Staff handle exceptions"] },
-  invitation: "We can inspect this Spark together, including whether it is not worth changing.", grounded_numbers: [],
+  invitation: "We can inspect this Spark together and map a clear first step.", grounded_numbers: [],
 };
 const candidateRef = (value = candidate) => deriveCandidateRef(CANDIDATE_SCHEMA_VERSION, value);
 const passingGate = (request, overrides = {}) => ({

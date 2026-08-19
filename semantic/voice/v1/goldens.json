@@ -17,7 +17,7 @@
         {"element": "before_after", "text": "Before: morning starts by reconstructing who called. After: each caller is already on a plain callback card."},
         {"element": "change_level", "text": "Preliminary change: 2-4 days to connect the voicemail handoff; 1 existing step changes and 1 repetitive replay step disappears."},
         {"element": "what_stays_the_same", "text": "Keep the current phone number and calendar. The owner still decides which jobs to take; live calls, scheduling, and the work itself stay untouched."},
-        {"element": "implementation_invitation", "text": "We can kick around the smallest version of The Morning Call Card, map the handoff, and say so if it is not worth changing."}
+        {"element": "implementation_invitation", "text": "We can map the smallest version of The Morning Call Card together and leave you with a clear first-step plan."}
       ],
       "expected_gates": [true, true, true, true, true, true, true, true, true]
     },
@@ -35,7 +35,7 @@
         {"element": "before_after", "text": "Before: a weather change triggers schedule edits and separate customer messages. After: the chosen move carries its update with it."},
         {"element": "change_level", "text": "Preliminary change: 3-5 days; 1 morning scheduling step changes and 1 duplicate message-writing step disappears."},
         {"element": "what_stays_the_same", "text": "Keep the existing schedule and customer text channel. The crew lead still calls every move; route planning, field work, and invoicing stay untouched."},
-        {"element": "implementation_invitation", "text": "We can sketch the smallest Lake-Wind Shuffle around the schedule you already trust, and call it off if it is not worth changing."}
+        {"element": "implementation_invitation", "text": "We can sketch the smallest Lake-Wind Shuffle around the schedule you already trust and show exactly how the handoff would work."}
       ],
       "expected_gates": [true, true, true, true, true, true, true, true, true]
     },
@@ -53,7 +53,7 @@
         {"element": "before_after", "text": "Before: the last tray and tomorrow's sheet live in different moments. After: closing leaves one useful note for opening."},
         {"element": "change_level", "text": "Preliminary change: 2-4 days; 1 closing step changes and 0 production steps disappear."},
         {"element": "what_stays_the_same", "text": "Keep the current register and paper production sheet. The owner still sets the special and quantity; making, serving, and register close stay untouched."},
-        {"element": "implementation_invitation", "text": "If Yesterday's Last Crumb sounds useful, we can test the one-tap version together and say plainly if it is not worth changing."}
+        {"element": "implementation_invitation", "text": "We can test the one-tap version of Yesterday's Last Crumb together and turn the result into a practical next step."}
       ],
       "expected_gates": [true, true, true, true, true, true, true, true, true]
     },
@@ -71,7 +71,7 @@
         {"element": "before_after", "text": "Before: the tray empties before the menu catches up. After: one counter tap keeps the ordering view honest."},
         {"element": "change_level", "text": "Preliminary change: 3-5 days; 1 sell-out step changes and 1 repeated availability explanation disappears."},
         {"element": "what_stays_the_same", "text": "Keep the existing public menu and phone ordering. The baker still chooses flavors and batches; baking, counter service, and taking calls stay untouched."},
-        {"element": "implementation_invitation", "text": "We can try the smallest Last Hand Pie Tap around the menu you have, and say so if the handoff is not worth changing."}
+        {"element": "implementation_invitation", "text": "We can fit the smallest Last Hand Pie Tap around the menu you have and map a clean handoff for the counter."}
       ],
       "expected_gates": [true, true, true, true, true, true, true, true, true]
     },
@@ -89,7 +89,7 @@
         {"element": "before_after", "text": "Before: a changed morning means repeated explanations. After: the lead's one decision carries a ready, human update."},
         {"element": "change_level", "text": "Preliminary change: 1-2 weeks; 1 trip-update step changes and 1 repetitive message-drafting step disappears."},
         {"element": "what_stays_the_same", "text": "Keep the trips page and email channel. The trip lead still makes every weather call; check-in, safety briefing, and guiding stay untouched."},
-        {"element": "implementation_invitation", "text": "We can map First-Light Trip Note onto one outing first, and be honest if it is not worth changing."}
+        {"element": "implementation_invitation", "text": "We can map First-Light Trip Note onto one outing and give the trip lead a concrete version to evaluate."}
       ],
       "expected_gates": [true, true, true, true, true, true, true, true, true]
     },
@@ -107,7 +107,7 @@
         {"element": "before_after", "text": "Before: every thoughtful reply starts from nothing. After: the exhibit and the message arrive together on one editable card."},
         {"element": "change_level", "text": "Preliminary change: 3-5 days; 1 response step changes and 1 repetitive first-draft step disappears."},
         {"element": "what_stays_the_same", "text": "Keep the support page and contact form. Staff still decide each reply and sponsorship fit; review, conversations, and gift records stay untouched."},
-        {"element": "implementation_invitation", "text": "We can build one Exhibit Reply Card as a small test, then say so if it is not worth changing."}
+        {"element": "implementation_invitation", "text": "We can build one Exhibit Reply Card as a focused test and show the team how it would strengthen the first response."}
       ],
       "expected_gates": [true, true, true, true, true, true, true, true, true]
     }

@@ -170,10 +170,10 @@ test("quantity validation covers every claim-bearing element and resists token b
   const cases = [
     ["local_numeric_claim", 0, "spark_title", "Five Calls Saved"],
     ["local_numeric_claim", 0, "what_stays_the_same", "Keep several customers in the old list."],
-    ["local_numeric_claim", 0, "implementation_invitation", "We can save ten hours and say if it is not worth changing."],
+    ["local_numeric_claim", 0, "implementation_invitation", "We can save ten hours with this Spark and map a clear first step."],
     ["number_provenance", 3, "spark_title", "The 20-Call Card"],
     ["number_provenance", 3, "what_stays_the_same", "Keep 40 customers in the old system."],
-    ["number_provenance", 3, "implementation_invitation", "We can save five hours and say if it is not worth changing."],
+    ["number_provenance", 3, "implementation_invitation", "We can save five hours with this Spark and map a clear first step."],
   ];
   for (const [rule, fixtureIndex, elementName, text] of cases) {
     const changed = clone(corpus);
@@ -219,22 +219,22 @@ test("Change Level rejects invalid ranges and accepts exact boundaries", () => {
   assert.ok(!validateCorpus(boundary).errors.some(({ rule }) => ["change_level_shape", "change_level_bounds"].includes(rule)));
 });
 
-test("invitation requires the explicit exit and rejects pressure language", () => {
+test("invitation rejects confidence-undermining and pressure language", () => {
   const cases = [
-    ["invitation_exit", "We can map the smallest version together."],
-    ["invitation_pressure", "Book now before this disappears; we can stop if it is not worth changing."],
-    ["invitation_pressure", "Schedule a call today; we can stop if it is not worth changing."],
-    ["invitation_pressure", "Schedule your call today; we can stop if it is not worth changing."],
-    ["invitation_pressure", "Book a call with us; we can stop if it is not worth changing."],
-    ["invitation_pressure", "Apply now while spots last; we can stop if it is not worth changing."],
-    ["invitation_pressure", "This is a limited time offer; stop if it is not worth changing."],
+    ["invitation_confidence", "We can map the smallest version together and decide if it is not worth changing."],
+    ["invitation_pressure", "Book now before this Spark disappears."],
+    ["invitation_pressure", "Schedule a call today about this Spark."],
+    ["invitation_pressure", "Schedule your call today about this Spark."],
+    ["invitation_pressure", "Book a call with us about this Spark."],
+    ["invitation_pressure", "Apply now while spots last for this Spark."],
+    ["invitation_pressure", "This Spark is a limited time offer."],
   ];
   for (const [rule, text] of cases) {
     const changed = clone(corpus);
     changed.goldens.fixtures[0].elements[7].text = text;
     assert.ok(validateCorpus(changed).errors.some((error) => error.rule === rule), `missing ${rule} for "${text}"`);
   }
-  assert.ok(corpus.goldens.fixtures.every((fixture) => !validateCorpus({ ...clone(corpus), goldens: { ...clone(corpus.goldens), fixtures: [fixture, ...clone(corpus.goldens.fixtures.filter((other) => other.id !== fixture.id))] } }).errors.some(({ rule }) => ["invitation_exit", "invitation_pressure"].includes(rule))));
+  assert.ok(corpus.goldens.fixtures.every((fixture) => !validateCorpus({ ...clone(corpus), goldens: { ...clone(corpus.goldens), fixtures: [fixture, ...clone(corpus.goldens.fixtures.filter((other) => other.id !== fixture.id))] } }).errors.some(({ rule }) => ["invitation_confidence", "invitation_pressure"].includes(rule))));
 });
 
 test("website sources reject special-use IP literals and accept public hosts offline", () => {

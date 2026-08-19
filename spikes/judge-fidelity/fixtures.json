@@ -27,7 +27,7 @@
         "authority": ["Front-desk staff decide when and how to contact a requester"],
         "steps": ["Patients use the existing form", "Staff confirm appointments in the current calendar"]
       },
-      "invitation": "If this relay sounds useful, Hearn Systems can map the smallest version around the existing form and say plainly if it is not worth changing—no pitch attached.",
+      "invitation": "Hearn Systems can map the smallest version of this Spark around the existing form and show exactly how the relay would work.",
       "grounded_numbers": []
     },
     "evidence_bundle": {

@@ -43,7 +43,7 @@
       "category": "invitation_pressure",
       "mode": "website",
       "sample": "Book your transformation call today before this opportunity disappears.",
-      "expected_rejection": {"gates": [8], "rubric_rules": ["counter_level_invitation", "no_pressure", "not_worth_changing_exit"], "reason": "The invitation applies urgency, sounds like a funnel, and offers no honest exit."}
+      "expected_rejection": {"gates": [8], "rubric_rules": ["counter_level_invitation", "no_pressure", "confident_bounded_next_step"], "reason": "The invitation applies urgency, sounds like a funnel, and offers no bounded, useful next step."}
     }
   ]
 }

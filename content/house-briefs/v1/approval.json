@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "catalog_version": 1,
-  "status": "pending_owner_approval",
-  "approver": null,
-  "content_hash": "7a24d3b391820dcac1f2098ae130da627de0047e7dcc14909a4908074be5afd2",
-  "identity": null,
-  "approved_at": null
+  "status": "approved",
+  "approver": "Justin",
+  "content_hash": "06f74672f2005a33c6ad030ac38d709e7021b70c45cf01dbd5d31741323ebc9b",
+  "identity": "9334910e17f7fa610ee2a18d54b1485bf19d00b866f8e7cd8f5258a0d17e9ad8",
+  "approved_at": "2026-08-19T15:44:16.836Z"
 }

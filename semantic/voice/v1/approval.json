@@ -1,9 +1,14 @@
 {
   "schema_version": 1,
-  "status": "pending_owner_approval",
-  "owner": null,
+  "status": "approved",
+  "owner": "Justin",
   "corpus_version": "voice-v1",
-  "hashes": null,
-  "semantic_identity": null,
-  "approved_at": null
+  "hashes": {
+    "rubric": "3095066ef0bb56245b8a183ded6d07308fa83838c07f2c55455fd2b8905c29ff",
+    "goldens": "da2203361ac3adde67c1a6972e4358bea49a84e3b83c5b2f38648ef979699915",
+    "anti_goldens": "0727894e09348838403e921e1ac22f6b8a02dcfca86ea3bd7e0b9581a72525e0",
+    "thresholds": "6c7b182ebf786e18a205818e5e89d25e9c809959f88d2bd3f8f25b85fffeb5ff"
+  },
+  "semantic_identity": "b387b27c7fd91062ae7b0aec39ada8103b579655b5161e2556b614b1d2f6694e",
+  "approved_at": "2026-08-19T15:44:16.836Z"
 }

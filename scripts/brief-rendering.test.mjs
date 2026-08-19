@@ -11,7 +11,7 @@ function fixture({ id = "brief-1", mode = "local", requestScope = mode, notice, 
     what_gets_better: "The next action becomes clear.", before_after: { before: "A caller waits.", after: "A caller can act." },
     change_level: { time_range: "one short work session", steps_changed: 1, steps_removed: 0, preliminary: true },
     stays_same: empty ? { tools: [], authority: [], steps: [] } : { tools: ["The & ledger"], authority: ["Owner <approval>"], steps: ["Final review"] },
-    invitation: "Bring this Spark to Hearn to decide whether it is not worth changing.", grounded_numbers: [], ...(notice ? { notice } : {}),
+    invitation: "Bring this Spark to Hearn and map a clear first step.", grounded_numbers: [], ...(notice ? { notice } : {}),
   };
   return buildCommittedBrief({ artifact_version: 1, id, request_scope: requestScope, brief, brief_schema_version: 1,
     policy_identity: hash, rubric_identity: hash, provenance: { attempt_id: "attempt-1", candidate_ref: deriveCandidateRef(CANDIDATE_SCHEMA_VERSION, brief), evidence_ref: hash, grounding_report_version: 1, effective_mode: mode } });
