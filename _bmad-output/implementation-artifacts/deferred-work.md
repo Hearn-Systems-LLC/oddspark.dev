@@ -21,3 +21,11 @@ source_spec: `spec-1-2-toolchain-and-isolated-runtime-baseline.md`
 severity: low
 reason: The follow-up-review damping cap (limits.max_followup_reviews = 1) was spent with the story finalized (status: done, verify green) while the review pass still recommended an independent follow-up. The work was committed by bmad-loop run 20260817-142403-84c0; this entry preserves the lingering recommendation for a deliberate later review.
 status: open
+
+### DW-4: Domain Evidence and GroundingReport contracts accept declared non-HTTP, credential-bearing, or private-network source URLs.
+origin: spec-deferred 7184ecebddd6
+location: scripts/brief-contracts.mjs:227
+source_spec: `spec-1-12-composite-gate-and-qualified-judge-integration.md`
+severity: medium
+reason: Composite Gate correctly reuses the Story 1.7 validators, but those pre-existing contracts require only a nonblank source URL that belongs to the declared Evidence URL set; URL safety is not enforced at that authority boundary.
+status: open
