@@ -90,7 +90,7 @@ development_status:
   1-10-generation-contract-and-offline-adapter: done
   1-11-generation-structural-qualification: awaiting-operator
   1-12-composite-gate-and-qualified-judge-integration: awaiting-operator
-  1-13-strike-orchestrator-and-house-fallbacks: backlog
+  1-13-strike-orchestrator-and-house-fallbacks: awaiting-operator
   1-14-authoritative-commit-and-compatibility-reader: backlog
   1-15-committed-brief-rendering: backlog
   1-16-request-hardening-and-domain-downgrade-seam: backlog
