@@ -1,3 +1,11 @@
+import {
+  canonicalScopeKey,
+  classifyCompatibleArtifact,
+  parseReceipt,
+  parseRequestScope,
+  validateCommitPayload,
+} from "../scripts/brief-receipts.mjs";
+
 /**
  * oddspark.dev
  *
@@ -41,6 +49,18 @@ const SPARK_ID_RE = /^(?:[0-9a-f]{8}|p-[0-9a-f]{16})$/;
 const UNAVAILABLE_WARNING = "Site context was unavailable; showing the generic spark.";
 const LIMITED_WARNING = "Site scanning is limited; showing the generic spark.";
 const CLARITY_WARNING = "The site's purpose was unclear on the scanned pages.";
+
+function keysMetricInput(input) {
+  return input && typeof input === "object" && !Array.isArray(input)
+    && Object.keys(input).length === 2
+    && ["normal", "house"].includes(input.outcome)
+    && ["json", "domain_html", "local_permalink"].includes(input.delivery);
+}
+
+function closedInput(input, keys) {
+  return input && typeof input === "object" && !Array.isArray(input)
+    && Object.keys(input).length === keys.length && keys.every((key) => Object.hasOwn(input, key));
+}
 
 /* ------------------------------------------------------------------ *
  * Seed vocabulary
@@ -688,6 +708,36 @@ export class SparkCoordinator {
       );
     }
 
+    if (url.pathname === "/read") {
+      const byScope = closedInput(input, ["scope"]);
+      const byId = closedInput(input, ["id"]);
+      const scope = byScope ? parseRequestScope(input.scope) : null;
+      if ((!scope && !byId) || (byId && !SPARK_ID_RE.test(input.id || ""))) return Response.json({ error: "invalid coordinator read" }, { status: 400 });
+      const key = scope ? "receipt:" + canonicalScopeKey(scope) : "artifact:" + input.id;
+      const receipt = await this.state.storage.get(key);
+      if (!receipt || receipt.status === "claimed") return Response.json({ status: "missing" });
+      if (receipt.status === "ambiguous") return Response.json({ error: "ambiguous coordinator artifact" }, { status: 409 });
+      const parsed = parseReceipt(receipt, scope || receipt.scope);
+      return parsed ? Response.json(parsed) : Response.json({ error: "invalid coordinator receipt" }, { status: 500 });
+    }
+
+    if (url.pathname === "/claim" && input.scope) {
+      const scope = parseRequestScope(input.scope);
+      if (!closedInput(input, ["scope", "owner"]) || !scope || !/^[a-zA-Z0-9][a-zA-Z0-9._:-]{0,127}$/.test(input.owner || "")) {
+        return Response.json({ error: "invalid coordinator claim" }, { status: 400 });
+      }
+      const key = "receipt:" + canonicalScopeKey(scope);
+      return Response.json(await this.state.storage.transaction(async (txn) => {
+        const existing = await txn.get(key);
+        if (existing?.status === "committed") return existing;
+        const now = Date.now();
+        if (existing?.status === "claimed" && existing.owner !== input.owner && existing.lease_until > now) return existing;
+        const claimed = { status: "claimed", scope, owner: input.owner, lease_until: now + CLAIM_LEASE_MS };
+        await txn.put(key, claimed);
+        return claimed;
+      }));
+    }
+
     if (url.pathname === "/claim") {
       const key = "dom:" + input.round + ":" + input.domain;
       return Response.json(
@@ -702,6 +752,28 @@ export class SparkCoordinator {
           return claimed;
         })
       );
+    }
+
+    if (url.pathname === "/commit" && input.scope) {
+      const commit = validateCommitPayload(input);
+      if (!commit) return Response.json({ error: "invalid coordinator commit" }, { status: 400 });
+      const key = "receipt:" + canonicalScopeKey(commit.scope);
+      return Response.json(await this.state.storage.transaction(async (txn) => {
+        const existing = await txn.get(key);
+        if (existing?.status === "committed") return existing;
+        if (!existing || existing.status !== "claimed" || existing.owner !== commit.owner) return existing || { status: "missing" };
+        const receipt = { status: "committed", scope: commit.scope, artifact: commit.artifact, artifact_kind: commit.artifact_kind, committed_at: Date.now() };
+        await txn.put(key, receipt);
+        if (commit.artifact.id) {
+          const idKey = "artifact:" + commit.artifact.id;
+          const indexed = await txn.get(idKey);
+          if (!indexed) await txn.put(idKey, receipt);
+          else if (indexed.status === "ambiguous" || canonicalScopeKey(indexed.scope) !== canonicalScopeKey(receipt.scope)) {
+            await txn.put(idKey, { status: "ambiguous" });
+          }
+        }
+        return receipt;
+      }));
     }
 
     if (url.pathname === "/commit") {
@@ -732,6 +804,19 @@ export class SparkCoordinator {
       );
     }
 
+    if (url.pathname === "/release" && input.scope) {
+      const scope = parseRequestScope(input.scope);
+      if (!closedInput(input, ["scope", "owner"]) || !scope || !/^[a-zA-Z0-9][a-zA-Z0-9._:-]{0,127}$/.test(input.owner || "")) {
+        return Response.json({ error: "invalid coordinator release" }, { status: 400 });
+      }
+      const key = "receipt:" + canonicalScopeKey(scope);
+      return Response.json(await this.state.storage.transaction(async (txn) => {
+        const existing = await txn.get(key);
+        if (existing?.status === "claimed" && existing.owner === input.owner) await txn.delete(key);
+        return { released: true };
+      }));
+    }
+
     if (url.pathname === "/release") {
       const key = "dom:" + input.round + ":" + input.domain;
       return Response.json(
@@ -741,6 +826,22 @@ export class SparkCoordinator {
           return { released: true };
         })
       );
+    }
+
+    if (url.pathname === "/metric") {
+      if (!keysMetricInput(input)) return Response.json({ error: "invalid coordinator metric" }, { status: 400 });
+      const result = await this.state.storage.transaction(async (txn) => {
+        const storedBriefs = (await txn.get("metric:briefs_served")) ?? 0;
+        const storedHouses = (await txn.get("metric:house_briefs_served")) ?? 0;
+        if (!Number.isSafeInteger(storedBriefs) || storedBriefs < 0 || !Number.isSafeInteger(storedHouses) || storedHouses < 0 || storedHouses > storedBriefs) return null;
+        const briefs = storedBriefs + 1;
+        const houses = storedHouses + (input.outcome === "house" ? 1 : 0);
+        if (!Number.isSafeInteger(briefs) || !Number.isSafeInteger(houses)) return null;
+        await txn.put("metric:briefs_served", briefs);
+        await txn.put("metric:house_briefs_served", houses);
+        return { briefs_served: briefs, house_briefs_served: houses };
+      });
+      return result ? Response.json(result) : Response.json({ error: "invalid coordinator metric state" }, { status: 500 });
     }
 
     if (url.pathname === "/profile") {
@@ -973,6 +1074,54 @@ async function coordPost(env, path, body) {
   return response.json();
 }
 
+async function readAuthoritative(env, scopeOrId) {
+  const body = typeof scopeOrId === "string" ? { id: scopeOrId } : { scope: scopeOrId };
+  const value = await coordPost(env, "/read", body);
+  if (value.status === "missing") return null;
+  const receipt = parseReceipt(value, typeof scopeOrId === "object" ? scopeOrId : undefined);
+  if (!receipt) throw new Error("invalid coordinator receipt");
+  return receipt;
+}
+
+async function claimScope(env, scope, owner) {
+  for (let attempt = 0; attempt < 50; attempt++) {
+    const result = await coordPost(env, "/claim", { scope, owner });
+    if (result.status === "committed") {
+      if (!parseReceipt(result, scope)) throw new Error("coordinator uncertainty: malformed committed claim");
+      return result;
+    }
+    const validClaim = closedInput(result, ["status", "scope", "owner", "lease_until"]) && result.status === "claimed"
+      && canonicalScopeKey(result.scope) === canonicalScopeKey(scope) && typeof result.owner === "string"
+      && Number.isSafeInteger(result.lease_until) && result.lease_until >= 0;
+    if (!validClaim) throw new Error("coordinator uncertainty: malformed claim");
+    if (result.owner === owner) return result;
+    const remaining = Math.max(0, Number(result.lease_until || 0) - Date.now());
+    await pause(Math.max(10, Math.min(100, remaining || 10)));
+  }
+  throw new Error("coordinator uncertainty: claim deadline exceeded");
+}
+
+async function commitScope(env, scope, owner, artifact) {
+  for (let attempt = 0; attempt < 50; attempt++) {
+    const result = await coordPost(env, "/commit", { scope, owner, artifact });
+    if (result.status === "committed") {
+      const receipt = parseReceipt(result, scope);
+      if (!receipt) throw new Error("invalid coordinator receipt");
+      return receipt;
+    }
+    if (!(result.status === "missing" || (result.status === "claimed" && canonicalScopeKey(result.scope) === canonicalScopeKey(scope)))) {
+      throw new Error("coordinator uncertainty: malformed commit response");
+    }
+    const claim = await claimScope(env, scope, owner);
+    if (claim.status === "committed") {
+      const receipt = parseReceipt(claim, scope);
+      if (!receipt) throw new Error("invalid coordinator receipt");
+      return receipt;
+    }
+  }
+  throw new Error("coordinator uncertainty: commit deadline exceeded");
+}
+
 function claimOwner() {
   const bytes = new Uint8Array(16);
   crypto.getRandomValues(bytes);
@@ -984,17 +1133,12 @@ function pause(ms) {
 }
 
 async function acquireDomainClaim(env, round, domain, owner) {
-  while (true) {
-    const claim = await coordPost(env, "/claim", { round, domain, owner });
-    if (claim.status === "committed" || claim.owner === owner) return claim;
-    const remaining = Math.max(0, Number(claim.lease_until || 0) - Date.now());
-    await pause(Math.max(10, Math.min(100, remaining || 10)));
-  }
+  return claimScope(env, { kind: "domain", round, domain }, owner);
 }
 
 async function visitorKeyFor(request) {
   const first = (request.headers.get("cf-connecting-ip") || "").split(",")[0].trim();
-  return first ? sha256Hex(first) : null;
+  return first ? await sha256Hex(first) : null;
 }
 
 function fallbackWithContext(spark, status, domain, warning) {
@@ -1079,7 +1223,7 @@ async function readCommittedSpark(env, id) {
 }
 
 async function genericFallback(env, round, status, domain, warning) {
-  return fallbackWithContext(await buildSpark(env, round), status, domain, warning);
+  return fallbackWithContext(await buildSparkCandidate(env, round, false), status, domain, warning);
 }
 
 async function persistPersonalizedSpark(env, spark, round, domain) {
@@ -1088,6 +1232,12 @@ async function persistPersonalizedSpark(env, spark, round, domain) {
 }
 
 async function resolveCommit(env, commit, round, domain) {
+  if (commit.artifact) {
+    const receipt = parseReceipt(commit, { kind: "domain", round, domain });
+    if (!receipt) throw new Error("invalid coordinator receipt");
+    await repairProjection(env, receipt.scope, receipt.artifact);
+    return { ...receipt.artifact, cached: true };
+  }
   if (commit.result === "personalized" && /^p-[0-9a-f]{16}$/.test(commit.id || "")) {
     if (commit.spark && commit.spark.id === commit.id) {
       try {
@@ -1106,12 +1256,8 @@ async function resolveCommit(env, commit, round, domain) {
 }
 
 async function finalizeClaim(env, round, domain, owner, result, id, spark) {
-  while (true) {
-    const committed = await coordPost(env, "/commit", { round, domain, owner, result, id, spark });
-    if (committed.status === "committed") return committed;
-    const claim = await acquireDomainClaim(env, round, domain, owner);
-    if (claim.status === "committed") return claim;
-  }
+  const { cached, ...artifact } = spark;
+  return commitScope(env, { kind: "domain", round, domain }, owner, artifact);
 }
 
 async function commitUnavailable(env, round, domain, owner) {
@@ -1119,7 +1265,7 @@ async function commitUnavailable(env, round, domain, owner) {
   if (claim.status === "committed") return claim;
   const fallback = await genericFallback(env, round, "unavailable", domain, UNAVAILABLE_WARNING);
   const commit = await finalizeClaim(env, round, domain, owner, "unavailable", undefined, fallback);
-  if (commit.result === "unavailable") {
+  if (commit.artifact?.personalization?.status === "unavailable") {
     try {
       await env.SPARKS.put("pw:" + round + ":" + domain, "unavailable");
     } catch (err) {
@@ -1129,12 +1275,22 @@ async function commitUnavailable(env, round, domain, owner) {
   return commit;
 }
 
+async function authoritativeDomainFallback(env, round, domain, status, warning) {
+  const owner = claimOwner();
+  const claim = await acquireDomainClaim(env, round, domain, owner);
+  if (claim.status === "committed") return resolveCommit(env, claim, round, domain);
+  const fallback = await genericFallback(env, round, status, domain, warning);
+  const receipt = await finalizeClaim(env, round, domain, owner, "unavailable", undefined, fallback);
+  return resolveCommit(env, receipt, round, domain);
+}
+
 async function buildDomainSpark(request, env, website, round, visitorKey) {
   const pointerKey = "pw:" + round + ":" + website.domain;
   const pointer = await env.SPARKS.get(pointerKey);
   if (pointer && /^p-[0-9a-f]{16}$/.test(pointer)) {
     const hit = await env.SPARKS.get(pointer, { type: "json" });
-    if (hit) return { ...hit, cached: true };
+    const compatible = classifyCompatibleArtifact(hit);
+    if (compatible.status === "supported") return { ...compatible.value, cached: true };
   }
 
   let profile = await validCachedProfile(env, website.domain);
@@ -1143,7 +1299,7 @@ async function buildDomainSpark(request, env, website, round, visitorKey) {
   try {
     claim = await acquireDomainClaim(env, round, website.domain, owner);
   } catch (err) {
-    return genericFallback(env, round, "unavailable", website.domain, UNAVAILABLE_WARNING);
+    throw err;
   }
   if (claim.status === "committed") return resolveCommit(env, claim, round, website.domain);
 
@@ -1153,15 +1309,15 @@ async function buildDomainSpark(request, env, website, round, visitorKey) {
       slot = await coordPost(env, "/slot", { visitorKey, domain: website.domain });
     } catch (err) {
       try {
-        await coordPost(env, "/release", { round, domain: website.domain, owner });
+        await coordPost(env, "/release", { scope: { kind: "domain", round, domain: website.domain }, owner });
       } catch (releaseError) {
         /* The lease will expire if the coordinator remains unavailable. */
       }
-      return genericFallback(env, round, "unavailable", website.domain, UNAVAILABLE_WARNING);
+      throw err;
     }
     if (!slot.allowed) {
       try {
-        await coordPost(env, "/release", { round, domain: website.domain, owner });
+        await coordPost(env, "/release", { scope: { kind: "domain", round, domain: website.domain }, owner });
       } catch (err) {
         /* The lease will expire. */
       }
@@ -1177,7 +1333,7 @@ async function buildDomainSpark(request, env, website, round, visitorKey) {
     } catch (err) {
       if (err instanceof WebsiteInputError) {
         try {
-          await coordPost(env, "/release", { round, domain: website.domain, owner });
+          await coordPost(env, "/release", { scope: { kind: "domain", round, domain: website.domain }, owner });
         } catch (releaseError) {
           /* The lease will expire. */
         }
@@ -1187,9 +1343,8 @@ async function buildDomainSpark(request, env, website, round, visitorKey) {
         const committed = await commitUnavailable(env, round, website.domain, owner);
         return resolveCommit(env, committed, round, website.domain);
       } catch (commitError) {
-        /* A coordinator failure still degrades to the generic result. */
+        throw commitError;
       }
-      return genericFallback(env, round, "unavailable", website.domain, UNAVAILABLE_WARNING);
     }
   }
 
@@ -1225,7 +1380,7 @@ async function buildDomainSpark(request, env, website, round, visitorKey) {
     };
 
     const committed = await finalizeClaim(env, round, website.domain, owner, "personalized", id, spark);
-    if (committed.result !== "personalized" || committed.id !== id) return resolveCommit(env, committed, round, website.domain);
+    if (committed.artifact?.personalization?.status !== "personalized" || committed.artifact.id !== id) return resolveCommit(env, committed, round, website.domain);
     await persistPersonalizedSpark(env, spark, round, website.domain);
     return { ...spark, cached: false };
   } catch (err) {
@@ -1233,9 +1388,8 @@ async function buildDomainSpark(request, env, website, round, visitorKey) {
       const committed = await commitUnavailable(env, round, website.domain, owner);
       return resolveCommit(env, committed, round, website.domain);
     } catch (commitError) {
-      /* A coordinator failure still degrades to the generic result. */
+      throw commitError;
     }
-    return genericFallback(env, round, "unavailable", website.domain, UNAVAILABLE_WARNING);
   }
 }
 
@@ -1243,7 +1397,7 @@ async function buildDomainSpark(request, env, website, round, visitorKey) {
  * Spark assembly
  * ------------------------------------------------------------------ */
 
-async function buildSpark(env, requestedRound) {
+async function buildSparkCandidate(env, requestedRound, project = true) {
   const round = requestedRound === undefined ? await currentWindow() : requestedRound;
 
   // The first strike in a window defines the spark for that whole window.
@@ -1260,8 +1414,11 @@ async function buildSpark(env, requestedRound) {
 
   const cached = await env.SPARKS.get(d.id, { type: "json" });
   if (cached) {
-    await env.SPARKS.put("w:" + round, d.id);
-    return { ...cached, cached: true };
+    const compatible = classifyCompatibleArtifact(cached);
+    if (compatible.status === "supported") {
+      if (project) await env.SPARKS.put("w:" + round, d.id);
+      return { ...compatible.value, cached: true };
+    }
   }
 
   const idea = await generate(env, d);
@@ -1300,9 +1457,58 @@ async function buildSpark(env, requestedRound) {
     generated: idea.generated,
   };
 
-  await env.SPARKS.put(d.id, JSON.stringify(spark));
-  await env.SPARKS.put("w:" + round, d.id);
+  if (project) {
+    await env.SPARKS.put(d.id, JSON.stringify(spark));
+    await env.SPARKS.put("w:" + round, d.id);
+  }
   return { ...spark, cached: false };
+}
+
+async function repairProjection(env, scope, artifact) {
+  try {
+    await env.SPARKS.put(artifact.id, JSON.stringify(artifact));
+    const pointer = scope.kind === "local" ? "w:" + scope.round : "pw:" + scope.round + ":" + scope.domain;
+    await env.SPARKS.put(pointer, artifact.id);
+  } catch { /* Authority is already durable; projection repair is best effort. */ }
+}
+
+async function buildSpark(env, requestedRound) {
+  const round = requestedRound === undefined ? await currentWindow() : requestedRound;
+  const scope = { kind: "local", round };
+  const current = await readAuthoritative(env, scope);
+  if (current) {
+    await repairProjection(env, scope, current.artifact);
+    return { ...current.artifact, cached: true };
+  }
+  const owner = claimOwner();
+  const claim = await claimScope(env, scope, owner);
+  if (claim.status === "committed") {
+    const receipt = parseReceipt(claim, scope);
+    if (!receipt) throw new Error("invalid coordinator receipt");
+    await repairProjection(env, scope, receipt.artifact);
+    return { ...receipt.artifact, cached: true };
+  }
+  const candidate = await buildSparkCandidate(env, round, false);
+  const { cached: candidateCached, ...committable } = candidate;
+  const receipt = await commitScope(env, scope, owner, committable);
+  await repairProjection(env, scope, receipt.artifact);
+  return { ...receipt.artifact, cached: receipt.artifact.id !== candidate.id };
+}
+
+async function compatibleArtifactById(env, id) {
+  let projected = null;
+  try { projected = await env.SPARKS.get(id, { type: "json" }); } catch { /* consult authority */ }
+  const classification = classifyCompatibleArtifact(projected);
+  const receipt = await readAuthoritative(env, id);
+  if (!receipt) return ["supported", "unsupported"].includes(classification.status) ? classification : { status: "miss" };
+  if (receipt.artifact.id !== id) throw new Error("coordinator artifact identity mismatch");
+  try { await env.SPARKS.put(id, JSON.stringify(receipt.artifact)); } catch { /* best effort */ }
+  return classifyCompatibleArtifact(receipt.artifact);
+}
+
+async function recordServed(env, artifact, delivery) {
+  const outcome = artifact?.source?.kind === "house" ? "house" : "normal";
+  await coordPost(env, "/metric", { outcome, delivery });
 }
 
 /* ------------------------------------------------------------------ *
@@ -2441,9 +2647,10 @@ export default {
       if (path.startsWith("/api/spark/")) {
         const id = path.split("/").pop();
         if (!SPARK_ID_RE.test(id || "")) return apiJson(request, { error: "no spark with that id" }, 404);
-        const s = await env.SPARKS.get(id, { type: "json" });
-        if (!s) return apiJson(request, { error: "no spark with that id" }, 404);
-        return apiJson(request, s);
+        const compatible = await compatibleArtifactById(env, id);
+        if (compatible.status !== "supported") return apiJson(request, { error: compatible.status === "unsupported" ? "unsupported spark artifact" : "no spark with that id" }, 404);
+        await recordServed(env, compatible.value, "json");
+        return apiJson(request, compatible.value);
       }
 
       // Strike
@@ -2455,14 +2662,22 @@ export default {
           if (err instanceof WebsiteInputError) return apiJson(request, { error: err.message, field: "website" }, 400);
           throw err;
         }
-        if (!intent.website) return apiJson(request, await buildSpark(env));
+        if (!intent.website) {
+          const artifact = await buildSpark(env);
+          await recordServed(env, artifact, "json");
+          return apiJson(request, artifact);
+        }
 
         const round = await currentWindow();
         const visitorKey = await visitorKeyFor(request);
         if (!visitorKey) {
-          return apiJson(request, await genericFallback(env, round, "limited", intent.website.domain, LIMITED_WARNING));
+          const artifact = await authoritativeDomainFallback(env, round, intent.website.domain, "limited", LIMITED_WARNING);
+          await recordServed(env, artifact, "json");
+          return apiJson(request, artifact);
         }
-        return apiJson(request, await buildDomainSpark(request, env, intent.website, round, visitorKey));
+        const artifact = await buildDomainSpark(request, env, intent.website, round, visitorKey);
+        await recordServed(env, artifact, "json");
+        return apiJson(request, artifact);
       }
 
       // Live solar readout only
@@ -2486,8 +2701,10 @@ export default {
       if (path.startsWith("/s/")) {
         const id = path.split("/").pop();
         if (!SPARK_ID_RE.test(id || "")) return new Response("404", { status: 404 });
-        const s = await env.SPARKS.get(id, { type: "json" });
-        if (!s) return id.startsWith("p-") ? new Response("404", { status: 404 }) : Response.redirect(origin + "/", 302);
+        const compatible = await compatibleArtifactById(env, id);
+        if (compatible.status !== "supported") return id.startsWith("p-") || compatible.status === "unsupported" ? new Response("404", { status: 404 }) : Response.redirect(origin + "/", 302);
+        const s = compatible.value;
+        await recordServed(env, s, s.personalization ? "domain_html" : "local_permalink");
         if (wantsText(request)) {
           return new Response(asText(s, origin), {
             headers: { "content-type": "text/plain; charset=utf-8" },

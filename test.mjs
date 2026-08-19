@@ -362,6 +362,140 @@ await test("generic provenance and legacy public surfaces remain reproducible", 
   assert.equal(typeof (await sun.json()).flux, "number");
 });
 
+await test("local contenders converge on COORD and repair missing projections", async () => {
+  createNetwork();
+  const h = createEnvironment({ varyGeneric: true });
+  const [one, two] = await Promise.all([strike(h.env, undefined), strike(h.env, undefined)]);
+  assert.equal(one.response.status, 200);
+  assert.deepEqual(comparableSpark(one.body), comparableSpark(two.body));
+  assert.equal(h.aiCalls.filter((call) => call.kind === "generic").length, 1);
+  const scopeKey = "receipt:local:" + one.body.window.round;
+  assert.equal(h.coordStorage.map.get(scopeKey).status, "committed");
+  assert.equal(h.coordStorage.map.get("metric:briefs_served"), 2);
+  assert.equal(h.coordStorage.map.get("metric:house_briefs_served"), 0);
+
+  h.kv.delete(one.body.id);
+  h.kv.delete("w:" + one.body.window.round);
+  const repaired = await strike(h.env, undefined);
+  assert.deepEqual(comparableSpark(repaired.body), comparableSpark(one.body));
+  assert.equal(JSON.parse(h.kv.get(one.body.id)).id, one.body.id);
+  assert.equal(h.kv.get("w:" + one.body.window.round), one.body.id);
+  assert.equal(h.aiCalls.filter((call) => call.kind === "generic").length, 1);
+});
+
+await test("first-strike KV failure cannot precede authority and later repair succeeds", async () => {
+  createNetwork();
+  const h = createEnvironment();
+  const originalPut = h.env.SPARKS.put;
+  h.env.SPARKS.put = async () => { throw new Error("KV put unavailable"); };
+  const first = await strike(h.env, undefined);
+  assert.equal(first.response.status, 200);
+  assert.equal(h.coordStorage.map.get("receipt:local:" + first.body.window.round).status, "committed");
+  assert.equal(h.kv.has(first.body.id), false);
+  h.env.SPARKS.put = originalPut;
+  const repaired = await strike(h.env, undefined);
+  assert.deepEqual(comparableSpark(repaired.body), comparableSpark(first.body));
+  assert.equal(JSON.parse(h.kv.get(first.body.id)).id, first.body.id);
+  assert.equal(h.kv.get("w:" + first.body.window.round), first.body.id);
+});
+
+await test("authoritative ID reads override stale, malformed, failed, and unsupported projections", async () => {
+  createNetwork();
+  const h = createEnvironment();
+  const first = await strike(h.env, undefined);
+  const authoritative = comparableSpark(first.body);
+  h.kv.set(first.body.id, JSON.stringify({ artifact_version: 2, id: first.body.id }));
+  let response = await worker.fetch(new Request("https://oddspark.dev/api/spark/" + first.body.id), h.env);
+  assert.equal(response.status, 200); assert.deepEqual(await response.json(), authoritative);
+  assert.deepEqual(JSON.parse(h.kv.get(first.body.id)), authoritative);
+  h.kv.set(first.body.id, "{}");
+  response = await worker.fetch(new Request("https://oddspark.dev/s/" + first.body.id, { headers: { accept: "text/html" } }), h.env);
+  assert.equal(response.status, 200); assert.deepEqual(JSON.parse(h.kv.get(first.body.id)), authoritative);
+  const originalGet = h.env.SPARKS.get;
+  h.env.SPARKS.get = async () => { throw new Error("KV read unavailable"); };
+  response = await worker.fetch(new Request("https://oddspark.dev/api/spark/" + first.body.id), h.env);
+  assert.equal(response.status, 200); assert.deepEqual(await response.json(), authoritative);
+  h.env.SPARKS.get = originalGet;
+});
+
+await test("COORD read uncertainty fails closed even for a valid pre-writer projection", async () => {
+  createNetwork();
+  const h = createEnvironment();
+  const first = await strike(h.env, undefined);
+  const baseGet = h.env.COORD.get;
+  h.env.COORD.get = () => ({ async fetch(input, init) {
+    const request = input instanceof Request ? input : new Request(input, init);
+    if (new URL(request.url).pathname === "/read") throw new Error("coordinator read unavailable");
+    return baseGet().fetch(request);
+  } });
+  const response = await worker.fetch(new Request("https://oddspark.dev/api/spark/" + first.body.id), h.env);
+  assert.equal(response.status, 502);
+  assert.match((await response.json()).error, /coordinator read unavailable/);
+});
+
+await test("malformed and perpetually contended scoped responses terminate as coordinator uncertainty", async () => {
+  createNetwork();
+  for (const mode of ["malformed-claim", "malformed-commit", "contended"]) {
+    const h = createEnvironment(); let claims = 0;
+    h.env.COORD.get = () => ({ async fetch(input, init = {}) {
+      const request = input instanceof Request ? input : new Request(input, init);
+      const path = new URL(request.url).pathname; const body = request.method === "POST" ? await request.json() : {};
+      if (path === "/read") return jsonResponse({ status: "missing" });
+      if (path === "/claim") {
+        claims++;
+        if (mode === "malformed-claim") return jsonResponse({ status: "claimed", owner: body.owner });
+        if (mode === "contended") return jsonResponse({ status: "claimed", scope: body.scope, owner: "other-owner", lease_until: 0 });
+        return jsonResponse({ status: "claimed", scope: body.scope, owner: body.owner, lease_until: Date.now() + 1000 });
+      }
+      if (path === "/commit" && mode === "malformed-commit") return jsonResponse({ status: "mystery" });
+      throw new Error("unexpected coordinator operation " + path);
+    } });
+    const result = await strike(h.env, undefined);
+    assert.equal(result.response.status, 502);
+    assert.match(result.body.error, /coordinator uncertainty/);
+    if (mode === "contended") assert.equal(claims, 50);
+  }
+});
+
+await test("unsupported future projections fail closed and remain untouched", async () => {
+  createNetwork();
+  const h = createEnvironment();
+  const future = JSON.stringify({ artifact_version: 2, id: "00000000" });
+  h.kv.set("00000000", future);
+  const response = await worker.fetch(new Request("https://oddspark.dev/api/spark/00000000"), h.env);
+  assert.equal(response.status, 404);
+  assert.deepEqual(await response.json(), { error: "unsupported spark artifact" });
+  assert.equal(h.kv.get("00000000"), future);
+  assert.equal(h.coordStorage.map.get("metric:briefs_served"), undefined);
+});
+
+await test("artifact ID collisions preserve scoped receipts and make ID reads ambiguous", async () => {
+  createNetwork();
+  const h = createEnvironment();
+  const local = await strike(h.env, undefined);
+  const scope = { kind: "domain", round: local.body.window.round, domain: "example.com" };
+  const fallback = {
+    ...comparableSpark(local.body),
+    personalization: { version: 1, status: "unavailable", domain: "example.com", warning: "Context unavailable." },
+  };
+  const stub = h.env.COORD.get(h.env.COORD.idFromName("global"));
+  const post = (path, body) => stub.fetch("https://coord" + path, {
+    method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body),
+  });
+  assert.equal((await post("/claim", { scope, owner: "domain-owner" })).status, 200);
+  const committed = await post("/commit", { scope, owner: "domain-owner", artifact: fallback });
+  assert.equal(committed.status, 200);
+  assert.equal(h.coordStorage.map.get("artifact:" + local.body.id).status, "ambiguous");
+  for (const scoped of [{ kind: "local", round: local.body.window.round }, scope]) {
+    const response = await post("/read", { scope: scoped });
+    assert.equal(response.status, 200); assert.equal((await response.json()).status, "committed");
+  }
+  const api = await worker.fetch(new Request("https://oddspark.dev/api/spark/" + local.body.id), h.env);
+  assert.equal(api.status, 502);
+  const permalink = await worker.fetch(new Request("https://oddspark.dev/s/" + local.body.id), h.env);
+  assert.equal(permalink.status, 502);
+});
+
 await test("router normalization and 404 variants preserve their response contracts", async () => {
   createNetwork();
   const h = createEnvironment();
@@ -498,6 +632,54 @@ await test("Durable Objects pin meter and coordinator direct operations", async 
   response = await post("/unknown", {});
   assert.equal(response.status, 404);
   assert.deepEqual(await response.json(), { error: "unknown coordinator operation" });
+
+  for (const [path, body] of [
+    ["/read", { scope: { kind: "local", round: ROUND }, id: "00000000" }],
+    ["/read", { id: "00000000", extra: true }],
+    ["/claim", { scope: { kind: "local", round: ROUND }, owner: "owner-a", extra: true }],
+    ["/release", { scope: { kind: "local", round: ROUND }, owner: "owner-a", extra: true }],
+  ]) assert.equal((await post(path, body)).status, 400);
+
+  assert.equal((await post("/claim", { scope: { kind: "local", round: ROUND }, owner: "holder-x" })).status, 200);
+  const inFlightRead = await post("/read", { scope: { kind: "local", round: ROUND } });
+  assert.equal(inFlightRead.status, 200);
+  assert.deepEqual(await inFlightRead.json(), { status: "missing" });
+});
+
+await test("COORD house metrics atomically update the served total and house subset", async () => {
+  const storage = createStorage();
+  const coordinator = new SparkCoordinator({ storage });
+  const post = (body) => coordinator.fetch(new Request("https://coord/metric", {
+    method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body),
+  }));
+  for (const malformed of [
+    {}, { outcome: "house" }, { outcome: "unknown", delivery: "json" },
+    { outcome: "house", delivery: "redirect" }, { outcome: "house", delivery: "json", extra: true },
+  ]) assert.equal((await post(malformed)).status, 400);
+  assert.equal(storage.map.get("metric:briefs_served"), undefined);
+  assert.equal(storage.map.get("metric:house_briefs_served"), undefined);
+
+  const [first, second] = await Promise.all([
+    post({ outcome: "house", delivery: "json" }),
+    post({ outcome: "house", delivery: "local_permalink" }),
+  ]);
+  assert.deepEqual(await first.json(), { briefs_served: 1, house_briefs_served: 1 });
+  assert.deepEqual(await second.json(), { briefs_served: 2, house_briefs_served: 2 });
+  assert.equal(storage.map.get("metric:briefs_served"), 2);
+  assert.equal(storage.map.get("metric:house_briefs_served"), 2);
+});
+
+await test("COORD rejects corrupt metric state without partial writes", async () => {
+  for (const initial of [["NaN", 0], [2, 3], [-1, 0], [Number.MAX_SAFE_INTEGER, 0]]) {
+    const storage = createStorage([["metric:briefs_served", initial[0]], ["metric:house_briefs_served", initial[1]]]);
+    const coordinator = new SparkCoordinator({ storage });
+    const response = await coordinator.fetch(new Request("https://coord/metric", {
+      method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ outcome: "house", delivery: "json" }),
+    }));
+    assert.equal(response.status, 500);
+    assert.equal(storage.map.get("metric:briefs_served"), initial[0]);
+    assert.equal(storage.map.get("metric:house_briefs_served"), initial[1]);
+  }
 });
 
 await test("the footer meter is same-origin only and the former API route is retired", async () => {
@@ -667,23 +849,26 @@ await test("unsafe and oversized website values return field 400 before any fetc
   assert.equal(network.calls.length, 0);
 });
 
-await test("missing visitor signal and COORD failure degrade without scanning", async () => {
+await test("missing visitor signal degrades, while COORD uncertainty fails closed without scanning", async () => {
   const network = createNetwork();
   addSimpleSite(network);
   const missing = createEnvironment();
   const limited = await strike(missing.env, "acmebakery.com", { ip: null });
   assert.equal(limited.body.personalization.status, "limited");
   assert.equal(limited.body.personalization.warning, "Site scanning is limited; showing the generic spark.");
+  assert.equal(missing.coordStorage.map.get("metric:briefs_served"), 1);
+  assert.equal(missing.coordStorage.map.get("metric:house_briefs_served"), 0);
   assert.equal(network.siteCalls.length, 0);
 
   const down = createEnvironment({ coordDown: true });
   const unavailable = await strike(down.env, "acmebakery.com");
-  assert.equal(unavailable.body.personalization.status, "unavailable");
+  assert.equal(unavailable.response.status, 502);
+  assert.match(unavailable.body.error, /coordinator down/);
   assert.equal(network.siteCalls.length, 0);
 
   const slotDown = createEnvironment({ slotDown: true });
   const released = await strike(slotDown.env, "acmebakery.com");
-  assert.equal(released.body.personalization.status, "unavailable");
+  assert.equal(released.response.status, 502);
   assert.equal(slotDown.coordStorage.map.has("dom:" + ROUND + ":acmebakery.com"), false);
 });
 
@@ -859,14 +1044,15 @@ await test("an expired domain lease can be taken over", async () => {
   const network = createNetwork();
   addSimpleSite(network);
   const h = createEnvironment();
-  h.coordStorage.map.set("dom:" + ROUND + ":acmebakery.com", {
+  h.coordStorage.map.set("receipt:domain:" + ROUND + ":acmebakery.com", {
     status: "claimed",
+    scope: { kind: "domain", round: ROUND, domain: "acmebakery.com" },
     owner: "dead-holder",
     lease_until: Date.now() - 1,
   });
   const result = await strike(h.env, "acmebakery.com");
   assert.match(result.body.id, /^p-/);
-  assert.equal(h.coordStorage.map.get("dom:" + ROUND + ":acmebakery.com").status, "committed");
+  assert.equal(h.coordStorage.map.get("receipt:domain:" + ROUND + ":acmebakery.com").status, "committed");
 });
 
 await test("site failure commits unavailable, writes no profile, and falls back generically", async () => {
@@ -878,8 +1064,8 @@ await test("site failure commits unavailable, writes no profile, and falls back 
   assert.equal(result.body.personalization.status, "unavailable");
   assert.equal(result.body.personalization.warning, "Site context was unavailable; showing the generic spark.");
   assert.equal(h.kv.has("profile:acmebakery.com"), false);
-  assert.equal(h.kv.get("pw:" + ROUND + ":acmebakery.com"), "unavailable");
-  assert.ok(h.kv.has("w:" + ROUND));
+  assert.equal(h.kv.get("pw:" + ROUND + ":acmebakery.com"), result.body.id);
+  assert.equal(h.kv.has("w:" + ROUND), false);
 });
 
 await test("unsafe redirect Location returns 400 and is never fetched", async () => {
@@ -1087,7 +1273,7 @@ await test("concurrent scan failure converges on the unavailable commit", async 
   assert.equal(one.body.id, two.body.id);
   assert.equal(one.body.personalization.status, "unavailable");
   assert.equal(two.body.personalization.status, "unavailable");
-  assert.equal(h.kv.get("pw:" + ROUND + ":acmebakery.com"), "unavailable");
+  assert.equal(h.kv.get("pw:" + ROUND + ":acmebakery.com"), one.body.id);
   assert.equal(network.siteCalls.length, 1);
   assert.equal(h.aiCalls.filter((call) => call.kind === "generic").length, 1);
   const repeat = await strike(h.env, "acmebakery.com");

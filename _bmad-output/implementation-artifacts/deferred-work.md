@@ -29,3 +29,11 @@ source_spec: `spec-1-12-composite-gate-and-qualified-judge-integration.md`
 severity: medium
 reason: Composite Gate correctly reuses the Story 1.7 validators, but those pre-existing contracts require only a nonblank source URL that belongs to the declared Evidence URL set; URL safety is not enforced at that authority boundary.
 status: open
+
+### DW-5: Follow-up review still recommended for 1-14-authoritative-commit-and-compatibility-reader after the damping cap was spent
+origin: review-budget-followup
+location: n/a
+source_spec: `spec-1-14-authoritative-commit-and-compatibility-reader.md`
+severity: low
+reason: The follow-up-review damping cap (limits.max_followup_reviews = 1) was spent with the story finalized (status: done, verify green) while the review pass still recommended an independent follow-up. The work was committed by bmad-loop run 20260818-211736-da17; this entry preserves the lingering recommendation for a deliberate later review.
+status: open
