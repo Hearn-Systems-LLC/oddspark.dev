@@ -37,3 +37,6 @@ source_spec: `spec-1-14-authoritative-commit-and-compatibility-reader.md`
 severity: low
 reason: The follow-up-review damping cap (limits.max_followup_reviews = 1) was spent with the story finalized (status: done, verify green) while the review pass still recommended an independent follow-up. The work was committed by bmad-loop run 20260818-211736-da17; this entry preserves the lingering recommendation for a deliberate later review.
 status: open
+- source_spec: none
+  summary: Reconcile Story 1.11 generation structural qualification with the approved Workers AI Llama pair and prepare its fresh governed plan.
+  evidence: Split from the current build because generation qualification has an independent contract, allowance, cost cap, evidence set, and review surface from Story 1.4 judge qualification.

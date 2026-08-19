@@ -6,7 +6,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { readFile, readdir, unlink } from "node:fs/promises";
 import path from "node:path";
 
-import { MODEL_IDS, stableStringify } from "./contract.mjs";
+import { LEGACY_MODEL_IDS, MODEL_IDS, stableStringify } from "./contract.mjs";
 import { verifyEvidenceV2 } from "./evidence-v2.mjs";
 import {
   RECOVERY_COMPLETION_VERSION,
@@ -25,6 +25,51 @@ const same = (a, b) => JSON.stringify(a, Object.keys(a).sort()) === JSON.stringi
 const plain = (value) => value !== null && typeof value === "object" && !Array.isArray(value);
 const exact = (value, keys) => plain(value) && Object.keys(value).length === keys.length && keys.every((key) => Object.hasOwn(value, key));
 const zeroRate = (rate) => exact(rate, ["numerator", "denominator", "percent"]) && rate.numerator === 0 && rate.denominator === 0 && rate.percent === 0;
+async function classifyHistoricalArtifacts(resultsDir, entries) {
+  const historical = new Set();
+  const legacyModels = (evidence) => stableStringify(evidence?.run?.models) === stableStringify(LEGACY_MODEL_IDS);
+  for (const name of entries.filter((entry) => entry.endsWith("-v2.json") || entry.endsWith("-v2-invalid.json"))) {
+    try {
+      const evidence = JSON.parse(await readFile(path.join(resultsDir, name), "utf8"));
+      if (legacyModels(evidence)) {
+        historical.add(name);
+        if (name.endsWith("-v2.json")) {
+          historical.add(name.replace(/\.json$/, ".md"));
+          historical.add(name.replace(/-v2\.json$/, "-qualification.json"));
+          historical.add(`${name.replace(/\.json$/, "")}.complete.json`);
+        }
+      }
+    } catch { /* malformed identity remains ambiguous/current and blocking */ }
+  }
+  for (const markerName of entries.filter((entry) => entry.endsWith("-v2.complete.json"))) {
+    try {
+      const markerBytes = await readFile(path.join(resultsDir, markerName));
+      const marker = JSON.parse(markerBytes.toString("utf8"));
+      const expectedBase = markerName.slice(0, -".complete.json".length);
+      const expected = [`${expectedBase}.json`, `${expectedBase}.md`, `${expectedBase.replace(/-v2$/, "")}-qualification.json`];
+      if (!exact(marker, ["schema_version", "basename", "files"]) || marker.schema_version !== "oddspark.judge-recovery-completion/v1"
+        || marker.basename !== expectedBase || !Array.isArray(marker.files) || stableStringify(marker.files.map(({ name }) => name)) !== stableStringify(expected)) continue;
+      const bytes = new Map();
+      let valid = true;
+      for (const binding of marker.files) {
+        const member = await readFile(path.join(resultsDir, binding.name));
+        if (!exact(binding, ["name", "bytes", "sha256"]) || member.byteLength !== binding.bytes || hash(member) !== binding.sha256) { valid = false; break; }
+        bytes.set(binding.name, member);
+      }
+      if (!valid) continue;
+      const evidence = JSON.parse(bytes.get(expected[0]).toString("utf8"));
+      const bundle = JSON.parse(bytes.get(expected[2]).toString("utf8"));
+      if (!legacyModels(evidence) || bundle?.schema_version !== "oddspark.judge-qualification-bundle/v1"
+        || bundle?.evidence?.file !== expected[0] || bundle.evidence.sha256 !== hash(bytes.get(expected[0]))
+        || bundle.evidence.run_id !== evidence?.run?.id || bytes.get(expected[1]).toString("utf8") !== evidence?.report) continue;
+      [markerName, ...expected].forEach((entry) => historical.add(entry));
+    } catch { /* incomplete historical-looking set remains blocking unless evidence identity classified it */ }
+  }
+  for (const temporary of entries.filter((entry) => entry.endsWith(".tmp"))) {
+    if ([...historical].some((member) => temporary.startsWith(`.${member}.`))) historical.add(temporary);
+  }
+  return historical;
+}
 function retainedPreflightBlockers(checks) {
   if (!plain(checks) || !plain(checks.approval_preflight) || !plain(checks.adapter) || !plain(checks.approval_at_run_start)
     || !Array.isArray(checks.offline_errors) || !Array.isArray(checks.approval_preflight.errors) || !Array.isArray(checks.approval_at_run_start.errors)) return null;
@@ -57,14 +102,14 @@ export function verifyHistoricalZeroCall({ evidence, evidenceBytes, evidenceFile
     fail(Array.isArray(evidence?.predicate_results) && evidence.predicate_results.length > 0
       && evidence.predicate_results.every((item) => exact(item, ["id", "pass"]) && typeof item.id === "string" && item.pass === true), "retained predicate result is not a historical pass");
 
-    fail(qualification?.schema_version === "oddspark.judge-qualification-bundle/v1", "qualification bundle version mismatch");
+    fail(qualification?.schema_version === "oddspark.judge-qualification-bundle/v2", "qualification bundle version mismatch");
     fail(qualification?.evidence?.file === evidenceFile
       && qualification?.evidence?.sha256 === hash(evidenceBytes)
       && qualification?.evidence?.schema_version === evidence.schema_version
       && qualification?.evidence?.run_id === run?.id
       && stableStringify(qualification?.evidence?.predicate_results) === stableStringify(evidence?.predicate_results), "qualification evidence binding mismatch");
     fail(Array.isArray(qualification?.qualification_refs) && qualification.qualification_refs.length === 0, "zero-call bundle contains qualification refs");
-    fail(qualification?.outcome?.decision === "NO-GO" && qualification?.outcome?.third_matrix_permitted === true, "zero-call bundle does not preserve allowance");
+    fail(qualification?.outcome?.decision === "NO-GO" && qualification?.outcome?.cycle_available === true, "zero-call bundle does not preserve cycle availability");
 
     const plan = qualification?.plan;
     fail(plan?.approval_run_id === run?.id && plan?.plan_ref === derivePlanRef(plan), "plan is not bound to the zero-call run");
@@ -88,8 +133,12 @@ export function verifyHistoricalZeroCall({ evidence, evidenceBytes, evidenceFile
         && zeroRate(rates?.direct_rate) && zeroRate(rates?.post_repair_rate), "zero-call rates are nonzero");
       fail(usage?.reported_calls === 0 && usage?.missing_calls === 0 && usage?.prompt_tokens === 0
         && usage?.completion_tokens === 0 && usage?.total_tokens === 0, "zero-call usage is nonzero");
-      fail(observed?.computable === true && observed?.partial === false && observed?.input_usd === 0
-        && observed?.output_usd === 0 && observed?.gross_usd === 0 && observed?.gross_neurons === 0, "zero-call observed cost is nonzero");
+      const exactPricePublished = index === 0;
+      fail(observed?.computable === exactPricePublished && observed?.partial === false
+        && observed?.input_usd === (exactPricePublished ? 0 : null)
+        && observed?.output_usd === (exactPricePublished ? 0 : null)
+        && observed?.gross_usd === (exactPricePublished ? 0 : null)
+        && observed?.gross_neurons === (exactPricePublished ? 0 : null), "zero-call observed cost is not truthful for its pricing basis");
     }
   } catch (error) {
     errors.push(`historical zero-call verification contained malformed input: ${String(error?.message ?? error)}`);
@@ -110,7 +159,7 @@ export async function findPriorOperationalRecovery(resultsDir, options = {}) {
   // Support both direct dependency injection and nested evidenceDependencies pattern
   const evidenceDeps = options.evidenceDependencies ?? (options.currentSourceIdentity ? options : {});
   const {
-    RECOVERY_RECEIPT_FILE = ".judge-recovery-spend.json",
+    RECOVERY_RECEIPT_FILE = ".judge-llama-cycle-spend.json",
     APPROVED_CALL_CAP = 42,
     verifyEvidenceV2: verifyFn = verifyEvidenceV2,
     verifyQualificationBundle: verifyQualFn = verifyQualificationBundle,
@@ -125,6 +174,7 @@ export async function findPriorOperationalRecovery(resultsDir, options = {}) {
   let spentReceipt = null;
   let reservedReceipt = null;
   let receiptFallback = null;
+  const historicalArtifacts = await classifyHistoricalArtifacts(resultsDir, entries);
 
   // --- Spend receipt analysis ---
   if (entries.includes(RECOVERY_RECEIPT_FILE)) {
@@ -146,13 +196,13 @@ export async function findPriorOperationalRecovery(resultsDir, options = {}) {
   }
 
   // --- Invalid artifact check ---
-  const invalidArtifact = entries.find((entry) => entry.endsWith("-v2-invalid.json"));
+  const invalidArtifact = entries.find((entry) => entry.endsWith("-v2-invalid.json") && !historicalArtifacts.has(entry));
   if (invalidArtifact && !spentReceipt) {
     return { evidence_file: invalidArtifact, qualification_file: null, qualification_refs: [], malformed: true, blocking_reason: "invalid retained evidence cannot disprove spend" };
   }
 
   // --- Evidence file enumeration ---
-  const evidenceNames = entries.filter((entry) => entry.endsWith("-v2.json")).sort();
+  const evidenceNames = entries.filter((entry) => entry.endsWith("-v2.json") && !historicalArtifacts.has(entry)).sort();
   const temporaryArtifacts = entries.filter((entry) => entry.endsWith(".tmp"));
   const explainedTemporaryArtifacts = new Set();
   const expectedSiblings = new Set(
@@ -166,9 +216,9 @@ export async function findPriorOperationalRecovery(resultsDir, options = {}) {
   // Partial publication check
   const partial = entries.find(
     (entry) =>
-      (entry.endsWith("-v2.md") && !expectedSiblings.has(entry)) ||
+      !historicalArtifacts.has(entry) && ((entry.endsWith("-v2.md") && !expectedSiblings.has(entry)) ||
       (entry.endsWith("-qualification.json") && !expectedSiblings.has(entry)) ||
-      (entry.endsWith("-v2.complete.json") && !expectedSiblings.has(entry))
+      (entry.endsWith("-v2.complete.json") && !expectedSiblings.has(entry)))
   );
   if (partial && !spentReceipt) {
     return { evidence_file: partial, qualification_file: null, qualification_refs: [], malformed: true, blocking_reason: "partial recovery publication cannot disprove spend" };
@@ -181,7 +231,6 @@ export async function findPriorOperationalRecovery(resultsDir, options = {}) {
     const basename = name.replace(/\.json$/, "");
     const markerName = `${basename}.complete.json`;
     const expectedMemberNames = [name, name.replace(/\.json$/, ".md"), name.replace(/-v2\.json$/, "-qualification.json")];
-
     const completed = await verifyCompletedArtifactSet(resultsDir, markerName, expectedMemberNames);
     if (!completed.valid) {
       if (spentReceipt) continue;
@@ -249,13 +298,17 @@ export async function findPriorOperationalRecovery(resultsDir, options = {}) {
     }
 
     if (spentReceipt) {
+      const lastRecord = evidence.records.at(-1);
       const receiptMatchesEvidence =
         evidence.run.id === spentReceipt.approval_run_id &&
-        evidence.records.length === spentReceipt.calls_started;
+        name.includes(`-${spentReceipt.attempt_id}-v2.json`) &&
+        evidence.records.length === spentReceipt.calls_started &&
+        lastRecord?.kind === spentReceipt.last_call?.kind && lastRecord?.model === spentReceipt.last_call?.model
+        && lastRecord?.index === spentReceipt.last_call?.index && spentReceipt.last_call?.sequence === evidence.records.length;
       if (!receiptMatchesEvidence || !qualificationVerification?.valid) continue;
       return {
         evidence_file: name, qualification_file: qualificationName,
-        qualification_refs: qualification.qualification_refs, refs_verified: true,
+        qualification_refs: qualification.qualification_refs, role_qualification_ref: qualification.role_qualification_ref, refs_verified: true,
         malformed: false, receipt_file: RECOVERY_RECEIPT_FILE,
         blocking_reason: "verified evidence shows provider calls were started",
       };
@@ -275,14 +328,14 @@ export async function findPriorOperationalRecovery(resultsDir, options = {}) {
     const qualificationRefs = qualificationVerification?.valid ? qualification.qualification_refs : [];
     return {
       evidence_file: name, qualification_file: qualificationName,
-      qualification_refs: qualificationRefs, refs_verified: qualificationVerification?.valid === true,
+      qualification_refs: qualificationRefs, role_qualification_ref: qualificationVerification?.valid ? qualification.role_qualification_ref : null, refs_verified: qualificationVerification?.valid === true,
       malformed: !qualificationVerification?.valid,
       blocking_reason: "verified evidence shows provider calls were started",
     };
   }
 
   // --- Unexplained temporary artifacts ---
-  const unexplainedTemporary = temporaryArtifacts.find((entry) => !explainedTemporaryArtifacts.has(entry));
+  const unexplainedTemporary = temporaryArtifacts.find((entry) => !historicalArtifacts.has(entry) && !explainedTemporaryArtifacts.has(entry));
   if (unexplainedTemporary && !spentReceipt) {
     return { evidence_file: unexplainedTemporary, qualification_file: null, qualification_refs: [], malformed: true, blocking_reason: "partial recovery publication cannot disprove spend" };
   }
@@ -320,13 +373,13 @@ export function validSpendReceipt(receipt, approvedCallCap) {
     if (!Object.hasOwn(receipt, key)) return false;
   }
 
-  if (receipt.schema_version !== "oddspark.judge-recovery-spend/v1") return false;
+  if (receipt.schema_version !== "oddspark.judge-cycle-spend/v2") return false;
   if (typeof receipt.attempt_id !== "string" || !/^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/.test(receipt.attempt_id)) return false;
   if (typeof receipt.approval_run_id !== "string" || !/^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/.test(receipt.approval_run_id)) return false;
 
   const canonicalTimestamp = (value) => typeof value === "string" && Number.isFinite(Date.parse(value)) && new Date(value).toISOString() === value;
   if (!canonicalTimestamp(receipt.created_at) || !canonicalTimestamp(receipt.updated_at)) return false;
-  if (!["reserved", "calls-started", "completed-spent"].includes(receipt.state)) return false;
+  if (!["reserved", "calls-started", "completed-spent", "consumed_incomplete"].includes(receipt.state)) return false;
   if (!Number.isSafeInteger(receipt.calls_started) || receipt.calls_started < 0 || receipt.calls_started > approvedCallCap) return false;
 
   const callKeys = ["sequence", "kind", "model", "index", "marked_at"];
@@ -335,7 +388,7 @@ export function validSpendReceipt(receipt, approvedCallCap) {
   if (receipt.calls_started === 0) {
     if (receipt.state !== "reserved" || lastCall !== null) return false;
   } else {
-    if (!["calls-started", "completed-spent"].includes(receipt.state)) return false;
+    if (!["calls-started", "completed-spent", "consumed_incomplete"].includes(receipt.state)) return false;
     if (!lastCall || typeof lastCall !== "object" || Array.isArray(lastCall)) return false;
     if (Object.keys(lastCall).length !== callKeys.length) return false;
     for (const key of callKeys) {

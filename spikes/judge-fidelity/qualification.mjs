@@ -11,15 +11,19 @@ import {
   NEURON_USD,
   FREE_NEURONS_PER_DAY,
   MODEL_PRICING,
+  BUDGET_PRICING,
+  PRICING_DISCLOSURE,
 } from "./pricing.mjs";
 
-export const RECOVERY_PLAN_VERSION = "oddspark.judge-recovery-plan/v1";
-export const RECOVERY_APPROVAL_VERSION = "oddspark.judge-recovery-approval/v1";
-export const QUALIFICATION_BUNDLE_VERSION = "oddspark.judge-qualification-bundle/v1";
-export const QUALIFICATION_MANIFEST_VERSION = 1;
-export const RECOVERY_COMPLETION_VERSION = "oddspark.judge-recovery-completion/v1";
+export const RECOVERY_PLAN_VERSION = "oddspark.judge-cycle-plan/v2";
+export const RECOVERY_APPROVAL_VERSION = "oddspark.judge-cycle-approval/v2";
+export const QUALIFICATION_BUNDLE_VERSION = "oddspark.judge-qualification-bundle/v2";
+export const QUALIFICATION_MANIFEST_VERSION = 2;
+export const RECOVERY_COMPLETION_VERSION = "oddspark.judge-cycle-completion/v2";
 export const QUALIFICATION_DOMAIN = "oddspark-qualification/v1";
 export const PLAN_DOMAIN = "oddspark-judge-recovery-plan/v1";
+export const CYCLE_DOMAIN = "oddspark-judge-role-cycle/v1";
+export const ROLE_QUALIFICATION_DOMAIN = "oddspark-role-qualification/v1";
 export const PROVIDER = "cloudflare-workers-ai";
 export const APPROVAL_MAX_AGE_MS = 4 * 60 * 60 * 1000;
 export const APPROVAL_PLAN_MAX_DELAY_MS = 60 * 60 * 1000;
@@ -38,7 +42,7 @@ export const RETAINED_FIELDS = Object.freeze([
   "plan (full closed recovery plan)", "approval (full closed approval record)",
   "qualification (full closed bundle)",
   "qualification.approval_check", "qualification.evidence", "qualification.manifests",
-  "qualification.qualification_refs", "qualification.outcome",
+  "qualification.qualification_refs", "qualification.role_qualification_set", "qualification.role_qualification_ref", "qualification.outcome",
   "evidence.candidate.schema_version", "evidence.candidate.value", "evidence.candidate.ref",
   "evidence.candidate.request_input", "evidence.run.id", "evidence.run.started_at",
   "evidence.run.ended_at", "evidence.run.models", "evidence.run.authorization",
@@ -124,7 +128,7 @@ function expectedMaximumCost(requestManifest) {
   let grossUsd = 0;
   const byModel = {};
   for (const model of MODEL_IDS) {
-    const pricing = MODEL_PRICING[model];
+    const pricing = BUDGET_PRICING[model];
     const inputUsd = callsPerModel * inputTokenUpperBound * pricing.input_per_million_usd / 1_000_000;
     const outputUsd = callsPerModel * 2048 * pricing.output_per_million_usd / 1_000_000;
     byModel[model] = { calls: callsPerModel, input_usd: inputUsd, output_usd: outputUsd };
@@ -133,6 +137,7 @@ function expectedMaximumCost(requestManifest) {
   return {
     pricing_as_of: PRICING_AS_OF,
     pricing_source: PRICING_SOURCE,
+    pricing_disclosure: PRICING_DISCLOSURE,
     input_token_upper_bound_per_request: inputTokenUpperBound,
     max_output_tokens_per_call: 2048,
     calls_per_model: callsPerModel,
@@ -169,6 +174,14 @@ export function derivePlanRef(plan) {
 
 export function deriveQualificationRef(manifest) {
   return hash(`${QUALIFICATION_DOMAIN}\n${stableStringify(manifest)}`);
+}
+
+export function deriveCycleRef({ plan_ref, evidence_sha256, manifests }) {
+  return hash(`${CYCLE_DOMAIN}\n${stableStringify({ plan_ref, evidence_sha256, manifests })}`);
+}
+
+export function deriveRoleQualificationRef(roleSet) {
+  return hash(`${ROLE_QUALIFICATION_DOMAIN}\n${stableStringify(roleSet)}`);
 }
 
 export function sourceIdentity(sources) {
@@ -234,7 +247,7 @@ export function createRecoveryPlan({
       probes_per_model: 1,
       trials_per_model: 20,
       approved_call_cap: RECOVERY_CALL_CAP,
-      stop_after_probe_failure: true,
+      continue_accepted_models_after_probe_failure: true,
       ci_permitted: false,
       deployment_permitted: false,
       persistent_resources_permitted: false,
@@ -244,7 +257,7 @@ export function createRecoveryPlan({
       recovery_allowance: 1,
       prior_operational_recovery: null,
       legacy_v1_evidence_sha256: legacy.find(({ path: legacyPath }) => legacyPath.endsWith(".json"))?.sha256 ?? null,
-      third_matrix_permitted: false,
+      cycle_available_after_calls: false,
     },
   };
   recoveryPlan.plan_ref = derivePlanRef(recoveryPlan);
@@ -283,18 +296,18 @@ export function validateRecoveryPlan(plan, { legacy } = {}) {
     || plan.identities.timeout_policy_sha256 !== hash(stableStringify(TIMEOUT_POLICY))
     || plan.identities.retained_fields_sha256 !== hash(stableStringify(RETAINED_FIELDS))) errors.push("plan identities are invalid");
   if (!same(plan.timeout_policy, TIMEOUT_POLICY) || !same(plan.retained_fields, RETAINED_FIELDS)) errors.push("timeout policy or retained fields changed");
-  if (!exact(plan.call_policy, ["probes_per_model", "trials_per_model", "approved_call_cap", "stop_after_probe_failure", "ci_permitted", "deployment_permitted", "persistent_resources_permitted"])
+  if (!exact(plan.call_policy, ["probes_per_model", "trials_per_model", "approved_call_cap", "continue_accepted_models_after_probe_failure", "ci_permitted", "deployment_permitted", "persistent_resources_permitted"])
     || plan.call_policy.probes_per_model !== 1 || plan.call_policy.trials_per_model !== 20 || plan.call_policy.approved_call_cap !== RECOVERY_CALL_CAP
-    || plan.call_policy.stop_after_probe_failure !== true || plan.call_policy.ci_permitted !== false
+    || plan.call_policy.continue_accepted_models_after_probe_failure !== true || plan.call_policy.ci_permitted !== false
     || plan.call_policy.deployment_permitted !== false || plan.call_policy.persistent_resources_permitted !== false) errors.push("call policy is invalid");
-  const maximumCostKeys = ["pricing_as_of", "pricing_source", "input_token_upper_bound_per_request", "max_output_tokens_per_call", "calls_per_model", "total_calls", "gross_usd", "gross_neurons", "free_neurons_per_day", "by_model"];
+  const maximumCostKeys = ["pricing_as_of", "pricing_source", "pricing_disclosure", "input_token_upper_bound_per_request", "max_output_tokens_per_call", "calls_per_model", "total_calls", "gross_usd", "gross_neurons", "free_neurons_per_day", "by_model"];
   const recomputedMaximumCost = validRequestManifest(plan.request_manifest) ? expectedMaximumCost(plan.request_manifest) : null;
   if (!exact(plan.maximum_cost, maximumCostKeys) || !recomputedMaximumCost || !same(plan.maximum_cost, recomputedMaximumCost)) errors.push("maximum-cost disclosure is invalid");
   if (plan.account?.plan === "free" && nonnegativeFinite(plan.account.remaining_free_neurons)
     && plan.account.remaining_free_neurons < plan.maximum_cost.gross_neurons) errors.push("free-plan headroom is below the disclosed maximum");
-  if (!exact(plan.governance, ["recovery_allowance", "prior_operational_recovery", "legacy_v1_evidence_sha256", "third_matrix_permitted"])
+  if (!exact(plan.governance, ["recovery_allowance", "prior_operational_recovery", "legacy_v1_evidence_sha256", "cycle_available_after_calls"])
     || plan.governance.recovery_allowance !== 1 || plan.governance.prior_operational_recovery !== null
-    || !hex(plan.governance.legacy_v1_evidence_sha256) || plan.governance.third_matrix_permitted !== false) errors.push("recovery governance is invalid");
+    || !hex(plan.governance.legacy_v1_evidence_sha256) || plan.governance.cycle_available_after_calls !== false) errors.push("recovery governance is invalid");
   const retainedLegacy = Array.isArray(legacy)
     ? legacy.find(({ path: legacyPath }) => typeof legacyPath === "string" && legacyPath.endsWith(".json") && legacyPath.includes("2026-08-16-d2b84005"))
     : null;
@@ -352,9 +365,10 @@ function summarizeModel(evidence, model, plan) {
   const classifications = Object.fromEntries(["provider_error", "timeout", "empty_response", "ambiguous_envelope", "output_too_large", "unrecoverable_json", "schema_invalid", "repaired_valid", "direct_valid"].map((classification) => [classification, trials.filter((record) => record.classification === classification).length]));
   const cost = plan.maximum_cost.by_model[model];
   const pricing = MODEL_PRICING[model];
-  const observedInputUsd = overflow ? null : usage.prompt_tokens * pricing.input_per_million_usd / 1_000_000;
-  const observedOutputUsd = overflow ? null : usage.completion_tokens * pricing.output_per_million_usd / 1_000_000;
-  const observedGrossUsd = overflow ? null : observedInputUsd + observedOutputUsd;
+  const observedComputable = !overflow && pricing !== null;
+  const observedInputUsd = observedComputable ? usage.prompt_tokens * pricing.input_per_million_usd / 1_000_000 : null;
+  const observedOutputUsd = observedComputable ? usage.completion_tokens * pricing.output_per_million_usd / 1_000_000 : null;
+  const observedGrossUsd = observedComputable ? observedInputUsd + observedOutputUsd : null;
   return {
     trial_counts: { probes: records.filter((record) => record.kind === "probe").length, trials: trials.length, classifications },
     rates: structuredClone(evidence.summary.by_model[model]),
@@ -368,12 +382,12 @@ function summarizeModel(evidence, model, plan) {
       usage: { reported_calls: usageRecords.length, missing_calls: records.length - usageRecords.length, overflow, ...usage },
       observed_cost: {
         pricing_as_of: plan.maximum_cost.pricing_as_of,
-        computable: !overflow,
+        computable: observedComputable,
         partial: records.length !== usageRecords.length,
         input_usd: observedInputUsd,
         output_usd: observedOutputUsd,
         gross_usd: observedGrossUsd,
-        gross_neurons: overflow ? null : observedGrossUsd / NEURON_USD,
+        gross_neurons: observedComputable ? observedGrossUsd / NEURON_USD : null,
       },
       maximum_cost: { pricing_as_of: plan.maximum_cost.pricing_as_of, gross_usd: cost.input_usd + cost.output_usd, gross_neurons: (cost.input_usd + cost.output_usd) / NEURON_USD },
     },
@@ -447,17 +461,6 @@ function deriveBundle({ plan, approval, evidence, evidence_file, evidence_bytes,
   const approvalObservedAt = evidence?.run?.started_at;
   const approvalValidation = validateApproval(approval, plan, new Date(approvalObservedAt));
   const bindingErrors = planValidation.valid ? planEvidenceErrors(plan, evidence) : ["invalid plan cannot bind evidence"];
-  const reasons = [];
-  if (!approvalValidation.valid) reasons.push(...approvalValidation.errors);
-  if (!evidence_verification.valid) reasons.push("retained evidence failed one or more Story 1.3 predicates");
-  reasons.push(...bindingErrors);
-  for (const model of MODEL_IDS) {
-    const summary = evidence?.summary?.by_model?.[model];
-    if (summary?.total !== 20 || summary?.direct_valid < 19) reasons.push(`${model}: independent direct-valid threshold was not met`);
-  }
-  if (evidence?.outcome?.decision !== "GO") reasons.push(...(evidence?.outcome?.reasons ?? ["evidence outcome was not GO"]));
-  const uniqueReasons = [...new Set(reasons)];
-  const decision = uniqueReasons.length === 0 ? "GO" : "NO-GO";
   const globalIntegrity = approvalValidation.valid && evidence_verification.valid && bindingErrors.length === 0;
   const manifests = MODEL_IDS.map((model) => {
     const summary = evidence.summary.by_model[model];
@@ -466,7 +469,39 @@ function deriveBundle({ plan, approval, evidence, evidence_file, evidence_bytes,
       && summary.total === 20 && summary.direct_valid >= 19 ? "GO" : "NO-GO";
     return buildQualificationManifest({ evidence, plan, model, outcome: modelOutcome });
   });
-  const refs = decision === "GO" ? manifests.map((manifest) => ({ model: manifest.resolved_model, qualification_ref: deriveQualificationRef(manifest) })) : [];
+  const refs = manifests.filter(({ outcome }) => outcome === "GO").map((manifest) => ({ model: manifest.resolved_model, qualification_ref: deriveQualificationRef(manifest) }));
+  const decision = refs.length > 0 ? "GO" : "NO-GO";
+  const reasons = [];
+  if (!approvalValidation.valid) reasons.push(...approvalValidation.errors.map((reason) => `approval/integrity: ${reason}`));
+  if (!evidence_verification.valid) reasons.push("evidence/integrity: retained evidence failed one or more Story 1.3 predicates");
+  reasons.push(...bindingErrors.map((reason) => `binding/integrity: ${reason}`));
+  for (const manifest of manifests) {
+    if (manifest.outcome !== "NO-GO" || !globalIntegrity) continue;
+    const probe = evidence.records.find((record) => record.kind === "probe" && record.model === manifest.resolved_model);
+    if (!probe || ["provider_error", "timeout", "empty_response"].includes(probe.classification)) {
+      reasons.push(`${manifest.resolved_model}: probe rejected (${probe?.classification ?? "missing_probe"})`);
+    } else {
+      reasons.push(`${manifest.resolved_model}: independent direct-valid threshold was not met`);
+    }
+  }
+  const uniqueReasons = [...new Set(reasons)];
+  const evidenceSha256 = hash(evidence_bytes);
+  const cycleRef = deriveCycleRef({ plan_ref: plan.plan_ref, evidence_sha256: evidenceSha256, manifests });
+  const member = (model, position) => {
+    const ref = refs.find((entry) => entry.model === model)?.qualification_ref ?? null;
+    const outcome = manifests[position].outcome === "GO" ? "go" : "no-go";
+    return { resolved_model: model, qualification_ref: ref, outcome };
+  };
+  const roleSet = {
+    version: 1,
+    role: "judge",
+    primary: member(MODEL_IDS[0], 0),
+    fallback: member(MODEL_IDS[1], 1),
+    tested_source_identity: sourceIdentity(evidence.sources),
+    cycle_ref: cycleRef,
+    outcome: decision === "GO" ? "go" : "no-go",
+  };
+  const roleRef = decision === "GO" ? deriveRoleQualificationRef(roleSet) : null;
   const spent = (evidence?.records?.length ?? 0) > 0;
   return {
     schema_version: QUALIFICATION_BUNDLE_VERSION,
@@ -475,18 +510,20 @@ function deriveBundle({ plan, approval, evidence, evidence_file, evidence_bytes,
     approval_check: { observed_at: approvalObservedAt, valid: approvalValidation.valid, errors: approvalValidation.errors },
     evidence: {
       file: evidence_file,
-      sha256: hash(evidence_bytes),
+      sha256: evidenceSha256,
       schema_version: evidence.schema_version,
       run_id: evidence.run.id,
       predicate_results: structuredClone(evidence_verification.predicate_results),
     },
     manifests,
     qualification_refs: refs,
+    role_qualification_set: roleSet,
+    role_qualification_ref: roleRef,
     outcome: {
       decision,
       reasons: uniqueReasons,
       mvp_review_required: spent && decision === "NO-GO",
-      third_matrix_permitted: !spent,
+      cycle_available: !spent,
     },
   };
 }
@@ -500,7 +537,7 @@ export async function buildQualificationBundle({ plan, approval, evidence, evide
 export async function verifyQualificationBundle(bundle, evidence, evidenceBytes, dependencies = {}) {
   const errors = [];
   try {
-    const top = ["schema_version", "plan", "approval", "approval_check", "evidence", "manifests", "qualification_refs", "outcome"];
+    const top = ["schema_version", "plan", "approval", "approval_check", "evidence", "manifests", "qualification_refs", "role_qualification_set", "role_qualification_ref", "outcome"];
     if (!exact(bundle, top) || bundle.schema_version !== QUALIFICATION_BUNDLE_VERSION) return { valid: false, errors: ["qualification bundle must be a closed supported object"] };
   const verification = await verifyEvidenceV2(evidence, dependencies);
   if (!verification.valid) errors.push("evidence failed independent verification");
@@ -513,22 +550,33 @@ export async function verifyQualificationBundle(bundle, evidence, evidenceBytes,
     const expected = deriveBundle({ plan: bundle.plan, approval: bundle.approval, evidence, evidence_file: bundle.evidence.file, evidence_bytes: evidenceBytes, evidence_verification: verification });
     if (!same(bundle, expected)) errors.push("qualification bundle differs from independent derivation");
   }
-  if (bundle.outcome?.decision === "GO") {
-    if (!Array.isArray(bundle.manifests) || bundle.manifests.length !== MODEL_IDS.length || !Array.isArray(bundle.qualification_refs) || bundle.qualification_refs.length !== MODEL_IDS.length) errors.push("GO must contain two manifests and refs");
-    for (let index = 0; index < MODEL_IDS.length; index += 1) {
-      const manifest = bundle.manifests[index]; const ref = bundle.qualification_refs[index];
-      if (!validateQualificationManifest(manifest, { evidence, plan: bundle.plan, model: MODEL_IDS[index], outcome: "GO" }).valid
-        || !exact(ref, ["model", "qualification_ref"]) || ref.model !== MODEL_IDS[index]
-        || ref.qualification_ref !== deriveQualificationRef(manifest)) errors.push(`${MODEL_IDS[index]} qualification manifest/ref is invalid`);
-    }
-  } else {
-    if (!Array.isArray(bundle.manifests) || bundle.manifests.length !== MODEL_IDS.length) errors.push("NO-GO must retain two independent manifests");
-    if ((bundle.qualification_refs?.length ?? 0) !== 0) errors.push("NO-GO must not contain qualification refs");
-    for (let index = 0; index < MODEL_IDS.length; index += 1) {
-      const manifest = bundle.manifests[index];
-      if (!validateQualificationManifest(manifest, { evidence, plan: bundle.plan, model: MODEL_IDS[index], outcome: manifest?.outcome }).valid) errors.push(`${MODEL_IDS[index]} NO-GO manifest is invalid`);
-    }
+  if (!Array.isArray(bundle.manifests) || bundle.manifests.length !== MODEL_IDS.length || !Array.isArray(bundle.qualification_refs)) errors.push("bundle must retain two independent manifests and a ref list");
+  for (let index = 0; index < MODEL_IDS.length; index += 1) {
+    const manifest = bundle.manifests?.[index];
+    if (!validateQualificationManifest(manifest, { evidence, plan: bundle.plan, model: MODEL_IDS[index], outcome: manifest?.outcome }).valid) errors.push(`${MODEL_IDS[index]} qualification manifest is invalid`);
+    const refs = bundle.qualification_refs.filter((entry) => entry?.model === MODEL_IDS[index]);
+    if (manifest?.outcome === "GO") {
+      if (refs.length !== 1 || !exact(refs[0], ["model", "qualification_ref"]) || refs[0].qualification_ref !== deriveQualificationRef(manifest)) errors.push(`${MODEL_IDS[index]} GO ref is invalid`);
+    } else if (refs.length !== 0) errors.push(`${MODEL_IDS[index]} NO-GO configuration must not emit a ref`);
   }
+  const set = bundle.role_qualification_set;
+  const memberValid = (memberValue, model, manifest) => exact(memberValue, ["resolved_model", "qualification_ref", "outcome"])
+    && memberValue.resolved_model === model
+    && ["go", "no-go"].includes(memberValue.outcome)
+    && memberValue.outcome === (manifest?.outcome === "GO" ? "go" : "no-go")
+    && (memberValue.outcome === "go"
+      ? memberValue.qualification_ref === deriveQualificationRef(manifest)
+      : memberValue.qualification_ref === null);
+  if (!exact(set, ["version", "role", "primary", "fallback", "tested_source_identity", "cycle_ref", "outcome"])
+    || set.version !== 1 || set.role !== "judge"
+    || !memberValid(set.primary, MODEL_IDS[0], bundle.manifests?.[0])
+    || !memberValid(set.fallback, MODEL_IDS[1], bundle.manifests?.[1])
+    || !same(set.tested_source_identity, sourceIdentity(evidence?.sources ?? []))
+    || set.cycle_ref !== deriveCycleRef({ plan_ref: bundle.plan?.plan_ref, evidence_sha256: bundle.evidence?.sha256, manifests: bundle.manifests })
+    || set.outcome !== (bundle.qualification_refs.length > 0 ? "go" : "no-go")) errors.push("role qualification set is invalid");
+  if (set?.outcome === "go") {
+    if (bundle.role_qualification_ref !== deriveRoleQualificationRef(set)) errors.push("role qualification ref is invalid");
+  } else if (bundle.role_qualification_ref !== null) errors.push("NO-GO role must not emit a ref");
     return { valid: errors.length === 0, errors };
   } catch (error) {
     return { valid: false, errors: [`qualification verification contained malformed input: ${String(error?.message ?? error)}`] };

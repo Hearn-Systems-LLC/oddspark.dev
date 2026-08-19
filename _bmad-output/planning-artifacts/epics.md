@@ -294,7 +294,7 @@ So that the single allowed recovery run is auditable before spending begins.
 ### Story 1.4: Judge Structural Recovery Matrix
 
 As an operator,
-I want one frozen, approval-bound judge recovery matrix,
+I want one frozen, approval-bound Llama judge qualification cycle,
 So that model-dependent work either gains trustworthy STRUCT-JUDGE evidence or stops cleanly.
 
 **Requirements:** FR3; NFR2; NFR4; AD-11
@@ -308,10 +308,10 @@ So that model-dependent work either gains trustworthy STRUCT-JUDGE evidence or s
 **Then** provider, models, prompt, schema, adapter, runtime, call cap, maximum cost, and retained fields are disclosed
 **And** fresh approval authorizes only that run.
 
-**Given** an approved matrix
+**Given** an approved matrix binding `@cf/meta/llama-3.3-70b-instruct-fp8-fast` and `@cf/meta/llama-3.1-8b-instruct-fast`
 **When** the run executes
 **Then** one recorded capability probe runs per configuration before the counted matrix
-**And** rejection of the exact frozen json_schema request or failure to return content produces NO-GO without spending the counted matrix
+**And** rejection of the exact frozen json_schema request or failure to return content rejects only that configuration while an accepted peer continues independently
 **And** a marker-bound preflight stop with zero call records and zero durable call-start accounting remains retained but does not consume the one recovery allowance, even when a later source correction makes it stale for qualification
 **And** after accepted probes, at least 20 sequential counted trials run per configuration
 **And** there are no retries, replacements, CI calls, deployments, or persistent resources
@@ -320,8 +320,9 @@ So that model-dependent work either gains trustworthy STRUCT-JUDGE evidence or s
 **Given** verified results
 **When** the outcome is derived
 **Then** each configuration independently requires at least 95% direct-valid plus every predicate in the Story 1.3 verifier's closed predicate list for GO
-**And** GO produces exact STRUCT-JUDGE refs
-**And** NO-GO completes the evidence story but blocks dependent work and triggers MVP review; no third matrix is allowed.
+**And** only passing configurations produce exact configuration refs
+**And** a closed role set is GO when at least one configuration passes, carries null for failed members, and produces the exact role-level STRUCT-JUDGE ref later used by activation
+**And** two failures complete the evidence story and trigger owner review, while called incomplete or ambiguous evidence emits no refs, records consumed-incomplete authority, and blocks another matrix.
 
 ### Story 1.5: Voice Rubric and Golden Briefs
 

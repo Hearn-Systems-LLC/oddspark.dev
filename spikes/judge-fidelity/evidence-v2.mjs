@@ -7,6 +7,7 @@ import { promisify } from "node:util";
 
 import {
   MODEL_IDS,
+  LEGACY_MODEL_IDS,
   JUDGE_RESULT_SCHEMA,
   PREDICATE_ORACLE,
   PREDICATE_ORACLE_HASH,
@@ -24,7 +25,7 @@ export const EVIDENCE_V2 = "oddspark.judge-recovery-evidence/v2";
 export const EVIDENCE_SOURCE_PATHS = Object.freeze([
   "package.json", "spikes/judge-fidelity/contract.mjs", "spikes/judge-fidelity/evidence-v2.mjs",
   "spikes/judge-fidelity/fixture-executor.mjs", "spikes/judge-fidelity/fixtures.json",
-  "spikes/judge-fidelity/qualification.mjs", "spikes/judge-fidelity/run.mjs", "spikes/judge-fidelity/start-adapter.mjs", "spikes/judge-fidelity/test.mjs",
+  "spikes/judge-fidelity/pricing.mjs", "spikes/judge-fidelity/qualification.mjs", "spikes/judge-fidelity/recovery-finder.mjs", "spikes/judge-fidelity/run.mjs", "spikes/judge-fidelity/start-adapter.mjs", "spikes/judge-fidelity/test.mjs",
   "spikes/judge-fidelity/worker.mjs", "spikes/judge-fidelity/verify-launcher.mjs", "spikes/judge-fidelity/verify-v2.mjs", "spikes/judge-fidelity/wrangler.toml",
 ]);
 const CLASSIFICATIONS = ["provider_error", "timeout", "empty_response", "ambiguous_envelope", "output_too_large", "unrecoverable_json", "schema_invalid", "repaired_valid", "direct_valid"];
@@ -82,7 +83,7 @@ export async function currentLegacyIdentity(read = (relative) => readFile(path.j
       const result = JSON.parse(bytes.toString("utf8"));
       retained.facts = {
         decision: result.outcome?.decision ?? null,
-        by_model: MODEL_IDS.map((model) => ({
+        by_model: LEGACY_MODEL_IDS.map((model) => ({
           model,
           total: result.summary?.by_model?.[model]?.total ?? null,
           direct_valid: result.summary?.by_model?.[model]?.direct_valid ?? null,
@@ -215,7 +216,7 @@ export async function verifyEvidenceV2(evidence, dependencies = {}) {
     const legacy = await (dependencies.currentLegacyIdentity ?? currentLegacyIdentity)();
     const legacyFacts = legacy.find(({ path: legacyPath }) => legacyPath.endsWith(".json"))?.facts;
     if (!same(evidence?.legacy, legacy) || legacy.some((item) => item.observed_sha256 !== item.sha256)
-      || legacyFacts?.decision !== "NO-GO" || !same(legacyFacts?.by_model, MODEL_IDS.map((model) => ({ model, total: 20, direct_valid: 0, repaired_valid: 0 })))) fail("legacy.immutable", "legacy v1 bytes or frozen NO-GO facts changed");
+      || legacyFacts?.decision !== "NO-GO" || !same(legacyFacts?.by_model, LEGACY_MODEL_IDS.map((model) => ({ model, total: 20, direct_valid: 0, repaired_valid: 0 })))) fail("legacy.immutable", "legacy v1 bytes or frozen NO-GO facts changed");
     const runtime = await (dependencies.currentRuntimeIdentity ?? currentRuntimeIdentity)();
     const minimumNode = Number(/^>=([0-9]+)/.exec(runtime.frozen.node_engines)?.[1]);
     const executingNode = Number(/^v([0-9]+)/.exec(runtime.execution.node)?.[1]);
@@ -305,9 +306,11 @@ export async function verifyEvidenceV2(evidence, dependencies = {}) {
       }
     }
     const blocked = expectedBlockers.length > 0;
-    const probeStopped = evidence?.profile === "operational" && !blocked
-      && MODEL_IDS.every((model) => (evidence?.records ?? []).filter((record) => record.kind === "probe" && record.model === model).length === 1)
-      && (evidence?.records ?? []).some((record) => record.kind === "probe" && ["provider_error", "timeout", "empty_response"].includes(record.classification));
+    const acceptedProbeCount = MODEL_IDS.filter((model) => {
+      const probe = (evidence?.records ?? []).find((record) => record.kind === "probe" && record.model === model);
+      return probe && !["provider_error", "timeout", "empty_response"].includes(probe.classification);
+    }).length;
+    const expectedOperationalCalls = 2 + (20 * acceptedProbeCount);
     const authKeys = ["operator_approved", "profile_confirmed", "headroom_confirmed", "approved_call_cap", "estimated_calls", "calls_made", "plan", "remaining_free_neurons", "estimated_gross_neurons"];
     const expectedOperatorApproval = checksValid && checks.plan_match && checks.approval_preflight.valid && checks.offline_errors.length === 0 && checks.approval_at_run_start.valid;
     if (!checksValid || (evidence.profile === "operational" && (checks.adapter.attempted !== evidence?.adapter?.observation_attempted || checks.adapter.identity_match !== evidence?.adapter?.identity_match))
@@ -317,7 +320,7 @@ export async function verifyEvidenceV2(evidence, dependencies = {}) {
       || auth.operator_approved !== expectedOperatorApproval || auth.approved_call_cap !== (expectedOperatorApproval ? 42 : 0)
       || (evidence.profile === "operational" && (auth.profile_confirmed !== true || auth.headroom_confirmed !== true))
       || auth.calls_made !== calls || auth.calls_made > auth.approved_call_cap
-      || (evidence.profile === "operational" && !blocked && (auth.operator_approved !== true || auth.profile_confirmed !== true || auth.headroom_confirmed !== true || auth.approved_call_cap !== 42 || auth.estimated_calls !== 42 || auth.calls_made !== (probeStopped ? 2 : 42)))
+      || (evidence.profile === "operational" && !blocked && (auth.operator_approved !== true || auth.profile_confirmed !== true || auth.headroom_confirmed !== true || auth.approved_call_cap !== 42 || auth.estimated_calls !== 42 || auth.calls_made !== expectedOperationalCalls))
       || (evidence.profile === "operational" && !blocked && (!['free', 'paid'].includes(auth.plan) || auth.estimated_gross_neurons === null || (auth.plan === "free" && (auth.remaining_free_neurons === null || auth.remaining_free_neurons < auth.estimated_gross_neurons))))
       || (evidence.profile === "operational" && blocked && calls !== 0)) fail("run.authorization", "authorization or call accounting mismatch");
     if (!exact(evidence?.run, ["id", "started_at", "ended_at", "models", "authorization", "preflight_checks", "preflight_blockers"]) || typeof evidence.run.id !== "string" || !/^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/.test(evidence.run.id)
@@ -325,18 +328,19 @@ export async function verifyEvidenceV2(evidence, dependencies = {}) {
     const started = Date.parse(evidence?.run?.started_at); const ended = Date.parse(evidence?.run?.ended_at);
     if (!canonicalTimestamp(evidence?.run?.started_at) || !canonicalTimestamp(evidence?.run?.ended_at)) fail("run.ordering", "run timestamps must be canonical UTC ISO strings");
     let priorEnd = started;
-    const probeEnds = (evidence?.records ?? []).filter((record) => record.kind === "probe").map((record) => Date.parse(record.ended_at));
-    const latestProbeEnd = probeEnds.length ? Math.max(...probeEnds) : started;
     for (const record of evidence?.records ?? []) {
       const begin = Date.parse(record.started_at); const finish = Date.parse(record.ended_at);
       if (!canonicalTimestamp(record.started_at) || !canonicalTimestamp(record.ended_at) || !Number.isFinite(begin) || !Number.isFinite(finish) || begin < priorEnd || finish < begin || begin < started || finish > ended) fail("run.ordering", "record timestamps are noncanonical, overlap, or escape run bounds");
       priorEnd = finish;
-      if (record.kind === "trial" && begin < latestProbeEnd) fail("run.ordering", "trial began before both probes completed");
     }
-    if (evidence?.profile === "operational" && !blocked && !probeStopped) {
+    if (evidence?.profile === "operational" && !blocked) {
+      const acceptedModels = MODEL_IDS.filter((model) => {
+        const probe = (evidence.records ?? []).find((record) => record.kind === "probe" && record.model === model);
+        return probe && !["provider_error", "timeout", "empty_response"].includes(probe.classification);
+      });
       const expectedOrder = [
         ...MODEL_IDS.map((model) => ["probe", model, 1]),
-        ...MODEL_IDS.flatMap((model) => Array.from({ length: 20 }, (_, index) => ["trial", model, index + 1])),
+        ...acceptedModels.flatMap((model) => Array.from({ length: 20 }, (_, index) => ["trial", model, index + 1])),
       ];
       const actualOrder = (evidence.records ?? []).map(({ kind, model, index }) => [kind, model, index]);
       if (!same(actualOrder, expectedOrder)) fail("run.ordering", "records do not follow the exact frozen probe and per-model trial sequence");
@@ -344,8 +348,8 @@ export async function verifyEvidenceV2(evidence, dependencies = {}) {
     for (const model of MODEL_IDS) {
       const probes = (evidence?.records ?? []).filter((r) => r.kind === "probe" && r.model === model);
       const trials = (evidence?.records ?? []).filter((r) => r.kind === "trial" && r.model === model);
-      if (evidence?.profile === "operational" && !blocked && !probeStopped && (probes.length !== 1 || probes[0]?.index !== 1 || trials.length < 20 || trials.some((r, i) => r.index !== i + 1))) fail("run.cardinality", "operational model cardinality invalid");
-      if (evidence?.profile === "operational" && probeStopped && (probes.length !== 1 || probes[0]?.index !== 1 || trials.length !== 0)) fail("run.cardinality", "probe-stopped evidence must contain both probes and no trials");
+      const accepted = probes.length === 1 && !["provider_error", "timeout", "empty_response"].includes(probes[0].classification);
+      if (evidence?.profile === "operational" && !blocked && (probes.length !== 1 || probes[0]?.index !== 1 || trials.length !== (accepted ? 20 : 0) || trials.some((r, i) => r.index !== i + 1))) fail("run.cardinality", "operational model cardinality invalid");
       if (evidence?.profile === "operational" && blocked && (probes.length !== 0 || trials.length !== 0)) fail("run.cardinality", "preflight-blocked evidence must contain no calls");
     }
     const summary = summarize(evidence?.records ?? []);

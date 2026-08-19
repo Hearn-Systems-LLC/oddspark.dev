@@ -372,6 +372,8 @@ export function verify(root) {
   const expected = { ...frozen };
   delete expected.frozen_at;
   delete expected.frozen_from_commit;
+  delete expected.base_commit;
+  delete expected.source_state;
 
   const expectedFlat = new Map(flatten(expected));
   const actualFlat = new Map(flatten(actual));
@@ -403,6 +405,8 @@ export function freeze(root) {
     ...identity,
     frozen_at: new Date().toISOString(),
     frozen_from_commit: commit,
+    base_commit: commit,
+    source_state: 'current hashes bind the uncommitted worktree; base_commit is provenance only',
   });
   writeFileSync(join(root, BASELINE_FILE), `${JSON.stringify(record, null, 2)}\n`);
   return record;
