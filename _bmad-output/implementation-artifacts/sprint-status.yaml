@@ -1,5 +1,5 @@
 # generated: 2026-08-16
-# last_updated: 2026-08-18
+# last_updated: 2026-08-19
 # project: Github
 # project_key: NOKEY
 # tracking_system: file-system
@@ -33,6 +33,16 @@
 #   3-5-quiet-production-house-rate-gate-operational-checkpoint;
 #   3-4-receipt-claim-approval-and-activation -> 3-6-receipt-claim-approval-and-activation;
 #   5-1-executable-dead-code-hygiene -> 5-1-closed-legacy-retirement-oracle.
+#
+# 2026-08-19 WORKER RUNTIME ASSEMBLY COURSE CORRECTION
+# (Sprint Change Proposal 2026-08-19, approved):
+#   The current epics.md contains 48 stories. Story 1.16 was narrowed to request hardening and a
+#   closed inactive-domain dispatch contract. Story 1.23 Worker Runtime Assembly was inserted to
+#   establish one canonical runtime-neutral pipeline imported by the Worker and Node verification.
+#   The prior release tail was renumbered: 1.23 -> 1.24 compatibility reader deployment,
+#   1.24 -> 1.25 inactive writer deployment, and 1.25 -> 1.26 atomic local-only activation.
+#   All affected stories were backlog and remain backlog. The blocked Story 1.16 artifact in run
+#   20260819-035459-b4ae is immutable historical evidence and is not the revised story spec.
 
 # STATUS DEFINITIONS:
 # ==================
@@ -70,7 +80,7 @@
 # - Retrospective appends its action items to action_items; sprint-status surfaces open ones
 
 generated: 2026-08-16
-last_updated: 2026-08-18
+last_updated: 2026-08-19
 project: Github
 project_key: NOKEY
 tracking_system: file-system
@@ -93,16 +103,17 @@ development_status:
   1-13-strike-orchestrator-and-house-fallbacks: awaiting-operator
   1-14-authoritative-commit-and-compatibility-reader: done
   1-15-committed-brief-rendering: done
-  1-16-request-hardening-and-domain-downgrade-seam: backlog
+  1-16-request-hardening-and-inactive-domain-dispatch-contract: backlog
   1-17-semantic-regression-suite: backlog
   1-18-semantic-qualification: backlog
   1-19-local-full-request-qualification: backlog
   1-20-atomic-activation-contract-and-release-decision-view: backlog
   1-21-local-artifact-retention-lifecycle: backlog
   1-22-honest-pipeline-explanation: backlog
-  1-23-compatibility-reader-deployment: backlog
-  1-24-inactive-writer-deployment: backlog
-  1-25-atomic-local-only-activation: backlog
+  1-23-worker-runtime-assembly: backlog
+  1-24-compatibility-reader-deployment: backlog
+  1-25-inactive-writer-deployment: backlog
+  1-26-atomic-local-only-activation: backlog
   epic-1-retrospective: optional
   epic-2: backlog
   2-1-robots-aware-public-site-scanning: backlog

@@ -2,7 +2,7 @@
 title: UX Decision Record — oddspark
 project: oddspark
 date: 2026-08-17
-updated: 2026-08-17
+updated: 2026-08-19
 governing: true
 status: final
 author: BMad UX (bmad-ux) with Justin
@@ -118,7 +118,7 @@ Implementation-readiness assessments must include this file; it is not a duplica
 
 **Rationale.** The PRD promises "within seconds" while the architecture defines a hard deadline and no user-facing behaviour. Suppressing retries at the button — rather than with timers — keeps the interaction at one button and makes the state binary and testable.
 
-**Traces to:** 1.13, 1.15, 1.16, 2.1.
+**Traces to:** 1.13, 1.15, 1.16, 1.23, 2.1.
 **Assumptions:** A11 (no spinner), A12 (no client timeout), A22 (single status region), A23 (`aria-disabled` + region-level `aria-busy`), A24 (400 association), A28 (content negotiation + `replaceState`).
 **Backing:** `EXPERIENCE.md § Interaction Primitives`.
 **Architecture:** revised AD-6 and AD-12.
@@ -156,7 +156,7 @@ Additional rules:
 
 **Rationale.** The "never an error wall" requirement in PRD UJ-1/UJ-2 and FR-4 Consequences, together with `ARCHITECTURE-SPINE.md § Failure precedence`, is satisfied by AD-12's content-negotiated JSON or shell-HTML representations while preserving the terminal 400/502 statuses and a live retry path. Quietly disclosing house Briefs (Justin, 2026-08-17) keeps the owner-voice honesty promise without a badge or error framing; rejected Candidates still leave no visible trace.
 
-**Traces to:** 1.8, 1.14, 1.15, 1.16, 1.20, 1.21, 1.25, 2.4, 2.6, 2.9, 3.6, 4.2.
+**Traces to:** 1.8, 1.14, 1.15, 1.16, 1.20, 1.21, 1.23, 1.26, 2.4, 2.6, 2.9, 3.6, 4.2.
 **Assumptions:** A4, A7, A9, A10, A21. (A8 decided by Justin 2026-08-17: quiet disclosure.)
 **Backing:** `EXPERIENCE.md § State Patterns`.
 
@@ -269,6 +269,10 @@ The ambiguities from the epics/readiness extraction:
 16. **Unenumerated shell edits** → the non-claiming formula copy, the card-interior restructure, the `--dim` text swaps and every `DESIGN.md` value that differs from the deployed CSS are now Deltas (D8, D17–D24), so the Deltas table remains the single authorising list.
 
 These decisions remain within the approved product scope. Revised AD-6 authorizes exactly the closed delta table, while AD-12 owns its transport and representation subset. This UX record grants no authority outside those contracts.
+
+## 2026-08-19 ownership reconciliation
+
+No visitor-facing behavior, copy, layout, accessibility requirement, or state transition changes. Stories 1.15–1.16 own representation, rendering, request hardening, and the closed inactive-domain dispatch contract. Story 1.23 owns assembly and offline proof of the canonical cold writer path. Story 1.26 owns production local-only activation. A valid domain during the activated local-only phase follows Story 1.16's closed dispatch through Story 1.23's canonical assembled writer under Story 1.26 activation authority.
 
 ## Resolved owner decisions
 

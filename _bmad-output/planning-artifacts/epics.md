@@ -1,7 +1,7 @@
 ---
 stepsCompleted: [step-01-extraction, step-02-epic-design, step-03-stories, step-04-validation]
-courseCorrectionStepsCompleted: [step-01-requirements-reconciliation, step-02-epic-design, step-03-deliverable-epic-boundaries-2026-08-17, step-04-readiness-remediation-2026-08-17, step-05-architecture-ux-production-proof-reconciliation-2026-08-17]
-storyCount: 47
+courseCorrectionStepsCompleted: [step-01-requirements-reconciliation, step-02-epic-design, step-03-deliverable-epic-boundaries-2026-08-17, step-04-readiness-remediation-2026-08-17, step-05-architecture-ux-production-proof-reconciliation-2026-08-17, step-06-worker-runtime-assembly-boundary-2026-08-19]
+storyCount: 48
 inputDocuments:
   - _bmad-output/planning-artifacts/prds/prd-oddspark-2026-08-15/prd.md
   - _bmad-output/planning-artifacts/prds/prd-oddspark-2026-08-15/addendum.md
@@ -13,13 +13,14 @@ inputDocuments:
   - _bmad-output/planning-artifacts/ux-decision-record-oddspark.md
   - _bmad-output/planning-artifacts/implementation-readiness-report-2026-08-17-1057.md
   - _bmad-output/planning-artifacts/sprint-change-proposal-2026-08-17-3.md
+  - _bmad-output/planning-artifacts/sprint-change-proposal-2026-08-19.md
 ---
 
 # oddspark - Epic Breakdown
 
 ## Overview
 
-This document provides the complete 47-story epic and story breakdown for oddspark, decomposing the requirements from the PRD and Architecture spine into implementable stories. The one-button / optional-domain product shape remains unchanged (FR10). The governing UX Decision Record (`ux-decision-record-oddspark.md`, 2026-08-17) specifies the closed visitor-facing deltas; revised AD-6 and AD-12 grant and bound their implementation authority. The `DESIGN.md` and `EXPERIENCE.md` spines in `ux-designs/ux-oddspark-2026-08-17/` are backing guidance, not governors.
+This document provides the complete 48-story epic and story breakdown for oddspark, decomposing the requirements from the PRD and Architecture spine into implementable stories. The one-button / optional-domain product shape remains unchanged (FR10). The governing UX Decision Record (`ux-decision-record-oddspark.md`, 2026-08-17) specifies the closed visitor-facing deltas; revised AD-6, AD-12, and AD-13 grant and bound their implementation authority. The `DESIGN.md` and `EXPERIENCE.md` spines in `ux-designs/ux-oddspark-2026-08-17/` are backing guidance, not governors.
 
 ## Requirements Inventory
 
@@ -47,9 +48,10 @@ This document provides the complete 47-story epic and story breakdown for oddspa
 
 ### Additional Requirements
 
-From the architecture spine (AD-1..AD-12), solution design, governing UX Decision Record, and approved course corrections:
+From the architecture spine (AD-1..AD-13), solution design, governing UX Decision Record, and approved course corrections:
 
 - Pipes-and-filters stage separation with the strike orchestrator as sole owner of the retry loop; stages single-pass, no stage calls another.
+- One canonical runtime-neutral ES-module pipeline under `src/pipeline/`; `src/worker.js` and Node verification import the same production implementations. Runtime assembly, compatibility-reader deployment, inactive-writer deployment, and activation are separate authorities (AD-13).
 - Immutable staged ports: closed `EvidenceContext` → Generate adds Candidate/reference → Local Gate derives the closed `GroundingReport` → complete `AttemptContext` goes to the judge; no mutable/closure-fed Gate input.
 - Composite Gate with local AD-4/AD-5 checks, Story 1.5's pure tri-state personal-name policy, and exactly one structurally qualified `JudgeProvider` call for a surviving Candidate.
 - Candidate-bound outer `JudgeResult` plus closed canonical `{pass,gates[9],tone,claims}` verdict; exact IDs/reasons, lossless versioned adapter, fail-safe `pass:false`, and no semantic invention/coercion/omission/ambiguity.
@@ -194,6 +196,16 @@ The crosswalk preserves review history only. Current development, status, depend
 | 5.1 | 5.1 | re-scoped — closed, hash-bound legacy-retirement oracle; no deletion |
 | 5.2 | 5.2 | hardened — exact inventory targets only under separate destructive authority |
 
+### 2026-08-19 Worker Runtime Assembly Crosswalk (prior IDs → revised IDs)
+
+| Prior ID | Revised ID | Change |
+| --- | --- | --- |
+| 1.16 | 1.16 | narrowed — request hardening and closed inactive-domain dispatch contract; no Brief construction |
+| — | 1.23 | new — canonical Worker runtime assembly and offline cold-domain proof |
+| 1.23 | 1.24 | renumbered — compatibility reader deployment |
+| 1.24 | 1.25 | renumbered — inactive writer deployment |
+| 1.25 | 1.26 | renumbered — atomic local-only activation |
+
 
 ## Execution and Authority Rules
 
@@ -203,7 +215,7 @@ The crosswalk preserves review history only. Current development, status, depend
 - Deployment, local activation, domain activation, quiet observation, public promotion, receipt-claim activation, Hearn reference activation, and destructive retirement are separate approvals.
 - A structurally valid NO-GO completes its evidence story but blocks dependent activation; evidence is immutable and cannot be replaced.
 - Runtime-bound toolchain changes invalidate affected structural evidence and all dependent semantic, full-request, production, launch, and activation evidence.
-- Domain requests during the local-only production phase (Story 1.25 until Story 2.10) follow Story 1.16's governed local path with the plain-language notice under domain request scope. The legacy generator is unreachable from Story 1.25 onward and is quarantined, not deleted, until Story 5.2. (Justin decision, 2026-08-17.)
+- Domain requests during the local-only production phase (Story 1.26 until Story 2.10) follow Story 1.16's closed dispatch through Story 1.23's canonical assembled writer with the plain-language notice under domain request scope. The legacy generator is unreachable from Story 1.26 onward and is quarantined, not deleted, until Story 5.2. (Justin decisions, 2026-08-17 and 2026-08-19.)
 - Broad acceptance criteria bind to a named oracle: "every integrity predicate" means the closed predicate list of the Story 1.3 evidence-v2 verifier (cited by version hash); rollout preflight means the enumerated gate list of the Story 1.20 release-decision view; production-proof predicates mean the closed harness schema of Story 3.1.
 - Recurring owner review after Story 3.3 follows the versioned, hash-bound owner-review runbook and is not a sprint story.
 - Story 3.3 owner review and Story 2.10 domain activation are independent prerequisites that may complete in either order; Story 3.4 domain production proof waits for both. Neither prerequisite grants the other's authority.
@@ -211,7 +223,7 @@ The crosswalk preserves review history only. Current development, status, depend
 
 ## Epic 1: A Coherent Brief From One Button — local mode live in production
 
-*Phases (labels, not epics): Foundations 1.1–1.10 · Qualification 1.11–1.19 · Release 1.20–1.25.*
+*Phases (labels, not epics): Foundations 1.1–1.10 · Qualification 1.11–1.19 · Release 1.20–1.26.*
 
 ### Story 1.1: Shell Safety Net
 
@@ -615,15 +627,15 @@ So that the eight-element result stays complete and safe across every route.
 **Then** the enhanced path moves focus according to the governing UX record
 **And** a fresh full-document HTML response sets no scripted focus.
 
-### Story 1.16: Request Hardening and Domain Downgrade Seam
+### Story 1.16: Request Hardening and Inactive-Domain Dispatch Contract
 
 As a visitor,
 I want the existing one-button interaction protected while domain mode remains inactive,
 So that new internals cannot widen public input or remote-resource exposure.
 
-**Requirements:** FR8; FR10; NFR3; AD-12
+**Requirements:** FR8; FR10; NFR3; AD-12; AD-13
 
-**Dependency:** Stories 1.1, 1.9, 1.13, and 1.15; governing UX Decision Record (UX-DR3–UX-DR5, including UX-DR4 notice and terminal-state copy).
+**Dependency:** Stories 1.1, 1.14, and 1.15; governing UX Decision Record (UX-DR3–UX-DR5, including UX-DR4 notice and terminal-state copy).
 
 **Acceptance Criteria:**
 
@@ -652,10 +664,17 @@ So that new internals cannot widen public input or remote-resource exposure.
 **And** no artifact renders and no served metric increments.
 
 **Given** a valid domain before domain activation
-**When** the request runs
-**Then** it follows the deterministic local Evidence path with notice under domain request scope
-**And** no scanner/EvidenceProvider or global w: pollution occurs
-**And** a native domain-form response remains at `/api/spark`, where refresh may resubmit, but every submission follows the same authoritative domain claim/read path.
+**When** request intent is derived
+**Then** one closed dispatch value contains request scope `domain`, effective mode `local`, the normalized domain claim identity, the fixed pre-activation notice identity, `scan_allowed=false`, `evidence_provider_allowed=false`, and `permalink_allowed=false`
+**And** derivation performs no scanner, EvidenceProvider, generator, coordinator, metric, cache, writer, or remote-resource operation.
+
+**Given** the public route with an injected inactive-domain writer port
+**When** the closed dispatch is invoked
+**Then** the route passes it exactly once and renders only a returned validated committed outcome
+**And** a missing, throwing, malformed, or scope-mismatched writer result produces the negotiated `502`
+**And** the route never constructs, repairs, or substitutes a Brief
+**And** transport fixtures prove direct domain-scope HTML behavior and JSON parity with a fake writer without claiming that the production pipeline is assembled
+**And** Story 1.23 owns cold canonical Evidence-through-commit execution.
 
 **Given** CORS, meter, preview, and local-development surfaces
 **When** security tests run
@@ -813,7 +832,53 @@ So that trust comes from understandable behavior rather than marketing.
 **Then** no stronger reproducibility claim appears
 **And** fixtures prohibit legacy and premature-claim language.
 
-### Story 1.23: Compatibility Reader Deployment
+### Story 1.23: Worker Runtime Assembly
+
+As a developer,
+I want the canonical pipeline assembled behind the Worker request boundary,
+So that offline proof, deployment, and later activation all use the same writer implementation.
+
+**Requirements:** FR1; FR3–FR8; FR10–FR11; NFR2; NFR4–NFR5; AD-1–AD-9; AD-11–AD-13
+
+**Dependency:** Stories 1.7–1.16 and 1.20–1.21. Story 1.22 remains independently executable but precedes release deployment by story order.
+
+**Acceptance Criteria:**
+
+**Given** the validated contracts, local Evidence, generation adapter, composite Gate, strike orchestrator, receipt handling, and rendering projections
+**When** runtime assembly is complete
+**Then** their canonical production implementations live under `src/pipeline/`
+**And** `src/worker.js` and Node verification import the same modules
+**And** no file under `scripts/` independently implements a production Brief writer, closed validator, canonical hash, grounding rule, ledger transition, receipt rule, or projection.
+
+**Given** the assembled module graph
+**When** Worker build and offline runtime verification run
+**Then** no canonical runtime module imports Node-only APIs
+**And** every provider, coordinator, clock, storage, and activation dependency enters through an explicit port
+**And** generated Worker types and Wrangler dry run pass without creating or mutating a remote resource.
+
+**Given** Story 1.16's closed domain dispatch and an offline local-enabled/domain-disabled activation fixture
+**When** the first valid domain request runs with no prior receipt or global projection
+**Then** the assembled canonical pipeline builds local Evidence, executes the existing strike and Gate contracts, commits under domain request scope, and renders effective local mode with the fixed notice
+**And** it performs no scan or EvidenceProvider call, writes no global `w:` projection, mints no permalink, and records delivery only after successful rendering.
+
+**Given** concurrent cold requests for the same domain claim
+**When** they contend
+**Then** one valid receipt wins and every successful response resolves the same committed artifact
+**And** incompatible winners reject, claims are safely finalized on failure, and resubmission reads the authoritative receipt instead of generating a replacement.
+
+**Given** no valid production activation manifest
+**When** the assembled Worker is evaluated
+**Then** model roles and new writer execution remain disabled
+**And** no legacy generator becomes a fallback
+**And** offline fake ports and activation fixtures create test authority only and cannot activate a deployed Worker.
+
+**Given** repository verification
+**When** the complete offline checks run
+**Then** `npm test`, `npm run check`, Worker type generation, Wrangler dry run, and `git diff --check` pass without provider calls, deployment, production bindings, or protected configuration changes
+**And** existing scanner and personalization regression tests remain intact
+**And** a deterministic runtime-assembly identity binds the canonical module graph and source hashes for later gates without creating approval or deployment authority.
+
+### Story 1.24: Compatibility Reader Deployment
 
 As an operator,
 I want the compatibility reader deployed and verified before any new writer,
@@ -821,13 +886,14 @@ So that production never observes a mixed-version artifact it cannot read.
 
 **Requirements:** FR11; NFR5; AD-7; AD-11
 
-**Dependency:** Stories 1.2, 1.14, and 1.16; explicit deployment approval is required.
+**Dependency:** Stories 1.2, 1.14, 1.16, and 1.23; explicit deployment approval is required.
 
 **Acceptance Criteria:**
 
 **Given** a candidate reader release
 **When** deployment preflight runs
 **Then** toolchain identity, reader acceptance of the current legacy shape, lossless shim or fail-closed rejection of CommittedBrief versions, and config isolation pass
+**And** the candidate Story 1.23 assembly proves its compatibility-reader projection matches the runtime-assembly identity while the deployed reader artifact contains no new writer entrypoint
 **And** dry run creates no resource.
 
 **Given** explicit deployment approval
@@ -836,7 +902,7 @@ So that production never observes a mixed-version artifact it cannot read.
 **And** no writer or ProductionActivationManifest exists
 **And** rollback restores the prior artifact without data change.
 
-### Story 1.24: Inactive Writer Deployment
+### Story 1.25: Inactive Writer Deployment
 
 As an operator,
 I want the compatible writer deployed while activation remains absent,
@@ -844,7 +910,7 @@ So that production can verify the deployable artifact before any new write path 
 
 **Requirements:** FR1; FR3–FR8; FR10–FR11; NFR2; NFR4–NFR5; AD-11
 
-**Dependency:** Stories 1.20–1.23; explicit deployment approval is required.
+**Dependency:** Stories 1.20–1.24, including Story 1.23's passing runtime-assembly identity and Story 1.24's deployed compatibility reader; explicit deployment approval is required.
 
 **AC-to-requirement map:** deployment preflight → FR11, AD-11; inactive safe posture → FR3–FR8, FR10; rollback separation → NFR5.
 
@@ -853,6 +919,7 @@ So that production can verify the deployable artifact before any new write path 
 **Given** the deployed reader and current STRUCT-JUDGE, STRUCT-GENERATION, SEMANTIC, local FULL-PAIR, and house-catalog refs
 **When** deployment preflight runs
 **Then** every applicable gate in the Story 1.20 release-decision view is pass
+**And** the candidate Worker bundle contains exactly the Story 1.23 canonical module graph with no duplicate writer or drifted runtime module
 **And** dry run creates no resource.
 
 **Given** explicit deployment approval
@@ -868,7 +935,7 @@ So that production can verify the deployable artifact before any new write path 
 **Then** the prior compatible artifact is restored without data change
 **And** activation authority is neither inferred nor exercised.
 
-### Story 1.25: Atomic Local-Only Activation
+### Story 1.26: Atomic Local-Only Activation
 
 As an operator,
 I want the deployed writer enabled by one separately approved local-only manifest replacement,
@@ -876,13 +943,13 @@ So that visitors receive committed gate-passed local Briefs without coupling act
 
 **Requirements:** FR1; FR3–FR8; FR10–FR11; NFR2; NFR4–NFR5; AD-11
 
-**Dependency:** Story 1.24; separate activation approval is required.
+**Dependency:** Story 1.25; separate activation approval is required.
 
 **AC-to-requirement map:** activation preflight/replacement → FR11, AD-11; domain-phase behaviour → FR8, FR10; activation rollback → NFR5.
 
 **Acceptance Criteria:**
 
-**Given** Story 1.24's inactive writer and current STRUCT-JUDGE, STRUCT-GENERATION, SEMANTIC, local FULL-PAIR, and house-catalog refs
+**Given** Story 1.25's inactive writer and current STRUCT-JUDGE, STRUCT-GENERATION, SEMANTIC, local FULL-PAIR, and house-catalog refs
 **When** activation preflight runs
 **Then** every applicable local gate in the Story 1.20 release-decision view is pass
 **And** the exact replacement value is frozen without changing deployment state.
@@ -895,12 +962,12 @@ So that visitors receive committed gate-passed local Briefs without coupling act
 
 **Given** a domain request in this phase
 **When** it runs
-**Then** it follows Story 1.16's governed local path with the plain-language notice under domain request scope
-**And** the legacy generator is unreachable.
+**Then** Story 1.16's closed dispatch invokes Story 1.23's canonical assembled writer under domain request scope and produces effective local mode with the plain-language notice
+**And** no scanner, EvidenceProvider, legacy generator, global `w:` write, or domain permalink is reachable.
 
 **Given** an activation rollback
 **When** it executes
-**Then** the whole manifest is removed or replaced atomically and runtime returns to Story 1.24's inactive safe posture
+**Then** the whole manifest is removed or replaced atomically and runtime returns to Story 1.25's inactive safe posture
 **And** stale refs cannot reactivate
 **And** code-deployment rollback remains separate authority.
 
@@ -1109,11 +1176,11 @@ So that domain mode goes live on the same governed pipeline without premature de
 
 **Requirements:** FR1–FR4; FR8–FR10; NFR5
 
-**Dependency:** Stories 1.25 and 2.1–2.8.
+**Dependency:** Stories 1.26 and 2.1–2.8.
 
 **Acceptance Criteria:**
 
-**Given** the legacy generator already unreachable since Story 1.25 and the domain pipeline about to activate
+**Given** the legacy generator already unreachable since Story 1.26 and the domain pipeline about to activate
 **When** routing is verified
 **Then** no flag, missing ref, provider failure, or fallback selects legacy axis, personalization output, or a domain-specific parallel path
 **And** domain insufficiency still downgrades through the governed local path
@@ -1169,7 +1236,7 @@ So that later local and domain production runs cannot improvise their evidence o
 
 **Requirements:** FR11; NFR2; NFR4; NFR5
 
-**Dependency:** Story 1.25. The harness is mode-parameterized and completes offline; Story 2.10 and production activity are not required.
+**Dependency:** Story 1.26. The harness is mode-parameterized and completes offline; Story 2.10 and production activity are not required.
 
 **Acceptance Criteria:**
 
@@ -1196,7 +1263,7 @@ So that the first owner review rests on observed local production behavior.
 
 **Requirements:** FR11; NFR2; NFR4; NFR5
 
-**Dependency:** Stories 1.25 and 3.1; exact LIVE-AUTH and RELEASE-ONLY approval is required.
+**Dependency:** Stories 1.26 and 3.1; exact LIVE-AUTH and RELEASE-ONLY approval is required.
 
 **AC-to-requirement map:** disclosure/approval → NFR4; local cold request and synchronized burst → FR11, NFR2, NFR5; LOCAL PASS derivation → FR11.
 
@@ -1439,7 +1506,7 @@ So that the CTA remains safe across cross-repository drift.
 
 **Requirements:** FR7; AD-10
 
-**Dependency:** Stories 1.25 and 4.3; separate reference-handoff approval is required.
+**Dependency:** Stories 1.26 and 4.3; separate reference-handoff approval is required.
 
 **Acceptance Criteria:**
 

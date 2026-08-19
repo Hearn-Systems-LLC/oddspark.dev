@@ -3,7 +3,7 @@ name: oddspark
 description: Behavioural contract for the preserved one-button / optional-domain interaction and the result, notice, error, and invitation states built on it
 status: final
 created: 2026-08-17
-updated: 2026-08-17
+updated: 2026-08-19
 sources:
   - prds/prd-oddspark-2026-08-15/prd.md
   - prds/prd-oddspark-2026-08-15/addendum.md
@@ -141,7 +141,7 @@ Copy strings below are **draft**. The **result region is not a live region.** "F
 | Success — local | `mode: "local"`, no notice | Full eight-element card; footer id / `copy link` / `json` present | Focus moves **once** to `h1[tabindex="-1"]` (now the Spark title); the status region is cleared **before** the move so nothing double-announces. `aria-busy` removed from the result region | Yes ("Strike again") |
 | Success — domain | `mode: "domain"` | Eight-element card with one breadcrumb in Why It Fits; **no** id link, **no** `copy link`; `json` present | Same | Yes |
 | Downgrade — scan insufficiency | `mode: "local"`, domain request scope, `notice` from the scan-downgrade cause | Notice above the title: "No usable pages came back from your website, so this plan is built from local patterns only." | Same as success. The notice precedes the `h1` in the DOM and carries `role="note"`; SR users reach it by reading up from the focused heading. It is **not** re-announced via a live region | Yes |
-| Pre-activation domain request | Valid domain submitted during the local-only phase (Story 1.16 / 1.25 governed local path) | Notice above the title: "Website reading is not switched on yet, so this plan is built from local patterns only." | Same | Yes |
+| Pre-activation domain request | Valid domain submitted during the local-only phase (Story 1.16 dispatch → Story 1.23 canonical assembled writer → Story 1.26 activation authority) | Notice above the title: "Website reading is not switched on yet, so this plan is built from local patterns only." | Same | Yes |
 | House Brief | Exhaustion, over budget, deadline, feed failure | An ordinary eight-element local Brief with the `notice` "This plan is one of ours, not built for you." above the title — no badge, no error styling, no other visual difference | Same as success | Yes |
 | Invalid input — 400 | Guard rejects the website value | The shell stays on screen. `website-input` gets `aria-invalid="true"`; adjacent message = the API's stable field message, e.g. "That does not look like a public website address." No strike started, button returns to "Strike" | Enhanced path: `aria-describedby="website-error"` and focus moves to the input, which announces name, "invalid" and the message. Fresh HTML: no scripted focus. The message element has **no** `role` | Yes, immediately |
 | Coordinator uncertainty — 502 | COORD read/claim/commit uncertainty | The shell stays on screen. Message in the result region: "No spark this time — a part of the system did not answer. Press Strike again." No stack trace, no code, no full-page error | Enhanced path: the status region takes `tabindex="-1"` and receives focus once. Fresh HTML: no scripted focus. The button's `aria-disabled` posture never drops focus to `<body>` | Yes, immediately |

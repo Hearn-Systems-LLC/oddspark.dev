@@ -3,7 +3,7 @@ name: oddspark
 description: The visual identity of the preserved oddspark one-button shell and the result card, notice, and invitation states built on top of it
 status: final
 created: 2026-08-17
-updated: 2026-08-17
+updated: 2026-08-19
 sources:
   - prds/prd-oddspark-2026-08-15/prd.md
   - prds/prd-oddspark-2026-08-15/addendum.md
@@ -258,7 +258,7 @@ The tone constraint from the PRD applies to pixels as well as words: confident, 
 
 **Preservation is the first design rule.** FR10 / AD-10 fix the interaction at one button and one optional domain field. Revised AD-6 preserves the page shell except for the governing UX record's closed D1, D1a, D2, D2a and D3–D24 rows; AD-12 owns the transport and representation subset. New states are drawn *with the existing vocabulary* — a 1px rule, a 2px accent bar, an existing colour — before any new token is proposed.
 
-**Behavioral mirror.** AD-12's precedence is exact: explicit `Accept: application/json` wins; otherwise HTML acceptance or a browser-form content type selects shell HTML, and remaining requests use JSON. Request scope—not rendered mode—owns local redirect/permalink eligibility. A native domain form, including downgrade, receives direct `200` home-shell HTML and remains at `/api/spark`; the enhanced domain path leaves its current page URL unchanged. Neither mints a permalink or performs history mutation. Enhanced results use the governing record's deliberate focus choreography, while fresh full-document `400`, `502`, and `404` responses set no scripted focus. Stories 1.15–1.16 own this transport/rendering seam; Story 1.25 owns local-only activation, Story 3.3 the first owner review, and Story 3.6 receipt-claim copy. This visual spine grants none of those behaviors independently.
+**Behavioral mirror.** AD-12's precedence is exact: explicit `Accept: application/json` wins; otherwise HTML acceptance or a browser-form content type selects shell HTML, and remaining requests use JSON. Request scope—not rendered mode—owns local redirect/permalink eligibility. A native domain form, including downgrade, receives direct `200` home-shell HTML and remains at `/api/spark`; the enhanced domain path leaves its current page URL unchanged. Neither mints a permalink or performs history mutation. Enhanced results use the governing record's deliberate focus choreography, while fresh full-document `400`, `502`, and `404` responses set no scripted focus. Stories 1.15–1.16 own transport, rendering, request hardening, and the closed inactive-domain dispatch contract; Story 1.23 owns canonical Worker assembly and offline cold-path proof; Story 1.26 owns local-only activation; Story 3.3 owns the first owner review; and Story 3.6 owns receipt-claim copy. This visual spine grants none of those behaviors independently.
 
 ## Colors
 

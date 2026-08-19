@@ -23,16 +23,17 @@ A press without a domain produces an authoritative, committed local Opportunity 
 - Story 1.13: Strike Orchestrator and House Fallbacks
 - Story 1.14: Authoritative Commit and Compatibility Reader
 - Story 1.15: Committed Brief Rendering
-- Story 1.16: Request Hardening and Domain Downgrade Seam
+- Story 1.16: Request Hardening and Inactive-Domain Dispatch Contract
 - Story 1.17: Semantic Regression Suite
 - Story 1.18: Semantic Qualification
 - Story 1.19: Local Full-Request Qualification
 - Story 1.20: Atomic Activation Contract and Release Decision View
 - Story 1.21: Local Artifact Retention Lifecycle
 - Story 1.22: Honest Pipeline Explanation
-- Story 1.23: Compatibility Reader Deployment
-- Story 1.24: Inactive Writer Deployment
-- Story 1.25: Atomic Local-Only Activation
+- Story 1.23: Worker Runtime Assembly
+- Story 1.24: Compatibility Reader Deployment
+- Story 1.25: Inactive Writer Deployment
+- Story 1.26: Atomic Local-Only Activation
 
 ## Requirements & Constraints
 
@@ -50,6 +51,8 @@ The same window and inputs must resolve the same versioned committed artifact th
 
 Use a pipes-and-filters pipeline with immutable staged contracts: closed local Evidence feeds Generate; Local Gate derives the grounding report; the complete immutable attempt feeds the qualified judge; Commit persists only validated or approved-house output. Stages are single-pass and never own retries; the strike orchestrator alone owns retries, role transitions, deadline, and ledger.
 
+Use one canonical runtime-neutral ES-module pipeline under `src/pipeline/`. `src/worker.js` and Node verification import the same production implementations; `scripts/` may wrap them for tests, qualification, or CLI use but may not contain a second production writer or duplicate closed contract behavior. Story 1.16 owns the request and dispatch contract, Story 1.23 owns Worker assembly and offline cold-domain proof, Story 1.24 deploys the compatibility reader, Story 1.25 deploys the writer inactive, and Story 1.26 separately activates local mode.
+
 Generation and judge identities qualify independently and bind provider, resolved model, parameters, prompt, schema, adapter, runtime, timeout policy, inputs, fixtures, and source hashes. Primary and fallback evidence never pool. Structural qualification is separate from semantic calibration and full-request latency/cost proof. A failed identity is disabled and triggers architecture review; evidence is immutable and cannot be reclassified.
 
 The committed artifact uses a closed, versioned envelope. Rollout is reader-first: establish compatibility and authoritative coordinator behavior, deploy the compatible reader, deploy the writer inactive, then atomically publish one closed production activation manifest. The manifest binds deployed source, generation, judge, semantic, local full-request, and house-catalog identities; missing, partial, stale, mismatched, or invalid values disable model roles. Rollback preserves a compatible reader and removes or replaces the entire manifest.
@@ -64,4 +67,4 @@ Before receipt proof is separately activated, use non-claiming copy and never pr
 
 ## Cross-Story Dependencies
 
-Foundation stories establish the shell, runtime, judge recovery boundary, content, contracts, local evidence, and offline generation adapter before structural generation qualification. Generation and judge structural evidence plus the voice/contracts work feed composite gating; those pieces feed orchestration, semantic qualification, and complete local-request proof. The authoritative compatibility reader precedes new writes and all renderer integration. Activation-contract, retention, UX, and explanation work must be complete before reader deployment, inactive writer deployment, and finally the separately approved atomic local-only activation. Domain requests remain on the governed local downgrade seam until Epic 2 activates domain mode; production receipt claims and launch proof remain owned by Epic 3.
+Foundation stories establish the shell, runtime, judge recovery boundary, content, contracts, local evidence, and offline generation adapter before structural generation qualification. Generation and judge structural evidence plus the voice/contracts work feed composite gating; those pieces feed orchestration, semantic qualification, and complete local-request proof. The authoritative compatibility reader precedes new writes and all renderer integration. Activation-contract, retention, UX, and explanation work must be complete before canonical Worker runtime assembly, compatibility-reader deployment, inactive-writer deployment, and finally the separately approved atomic local-only activation. Domain requests remain on the closed dispatch and canonical assembled local downgrade path until Epic 2 activates domain mode; production receipt claims and launch proof remain owned by Epic 3.
