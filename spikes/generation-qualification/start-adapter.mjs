@@ -1,0 +1,12 @@
+import { createHash } from "node:crypto";
+import { spawn } from "node:child_process";
+import { readFile } from "node:fs/promises";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+const dir = path.dirname(fileURLToPath(import.meta.url)); const root = path.resolve(dir, "../..");
+const digest = async (file) => createHash("sha256").update(await readFile(path.join(root, file))).digest("hex");
+const baseline = JSON.parse(await readFile(path.join(root, "runtime-baseline.json"), "utf8")); const port = process.env.ODDSPARK_GENERATION_ADAPTER_PORT ?? "8789";
+if (!/^[0-9]{1,5}$/.test(port) || Number(port) < 1 || Number(port) > 65535) throw new TypeError("ODDSPARK_GENERATION_ADAPTER_PORT is invalid");
+const [worker, config] = await Promise.all([digest("spikes/generation-qualification/worker.mjs"), digest("spikes/generation-qualification/wrangler.toml")]);
+const child = spawn(path.join(root, "node_modules/.bin/wrangler"), ["dev", "--config", "spikes/generation-qualification/wrangler.toml", "--ip", "127.0.0.1", "--port", port, "--var", `WORKER_SHA256:${worker}`, "--var", `CONFIG_SHA256:${config}`, "--var", `RUNTIME_SHA256:${baseline.runtime_identity_sha256}`], { cwd: root, stdio: "inherit" });
+child.on("error", (error) => { console.error(error.message); process.exitCode = 1; }); child.on("exit", (code, signal) => { if (signal) process.kill(process.pid, signal); else process.exitCode = code ?? 1; }); for (const signal of ["SIGINT", "SIGTERM"]) process.on(signal, () => child.kill(signal));

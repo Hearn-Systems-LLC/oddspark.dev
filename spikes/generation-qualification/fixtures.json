@@ -1,0 +1,18 @@
+{
+  "schema_version": "oddspark.generation-qualification-fixtures/v1",
+  "cases": [
+    { "id": "direct", "shape": "direct", "classification": "direct_valid" },
+    { "id": "missing", "shape": "missing", "classification": "invalid_output" },
+    { "id": "extra", "shape": "extra", "classification": "invalid_output" },
+    { "id": "mistyped", "shape": "mistyped", "classification": "invalid_output" },
+    { "id": "wrapped", "shape": "wrapped", "classification": "invalid_output" },
+    { "id": "text", "shape": "text", "classification": "invalid_output" },
+    { "id": "fenced", "shape": "fenced", "classification": "invalid_output" },
+    { "id": "coerced", "shape": "coerced", "classification": "invalid_output" },
+    { "id": "repaired", "shape": "repaired", "classification": "invalid_output" },
+    { "id": "ambiguous", "shape": "ambiguous", "classification": "invalid_output" },
+    { "id": "oversized", "shape": "oversized", "classification": "output_too_large" },
+    { "id": "provider-error", "shape": "provider_error", "classification": "provider_error" },
+    { "id": "timeout", "shape": "timeout", "classification": "timeout" }
+  ]
+}
