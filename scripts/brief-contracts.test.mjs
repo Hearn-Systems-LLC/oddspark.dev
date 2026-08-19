@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import test from "node:test";
 import {
   CANDIDATE_SCHEMA_VERSION,
@@ -75,6 +76,15 @@ test("Candidate identity sorts object keys, preserves array order, and changes w
   assert.throws(() => canonicalJson({ bad: undefined }), /undefined/);
   const symbol = Symbol("hidden"); const symbolic = domainBrief(); symbolic[symbol] = "not hashed";
   assert.equal(validateBrief(symbolic).valid, false); assert.throws(() => canonicalJson(symbolic), /symbol keys/);
+});
+
+test("runtime-neutral Candidate and Evidence refs match the Node SHA-256 oracle", () => {
+  const candidate = localBrief(); candidate.title = "A calmer café handoff ☀";
+  const evidence = localEvidence(); evidence.priors.region = "Blue Water café area ☀";
+  const candidatePreimage = `oddspark-candidate-ref/v1\n${canonicalJson({ candidate_schema_version: CANDIDATE_SCHEMA_VERSION, candidate })}`;
+  const evidencePreimage = `oddspark-evidence-ref/v1\n${canonicalJson(evidence)}`;
+  assert.equal(deriveCandidateRef(CANDIDATE_SCHEMA_VERSION, candidate), createHash("sha256").update(candidatePreimage, "utf8").digest("hex"));
+  assert.equal(deriveEvidenceRef(evidence), createHash("sha256").update(evidencePreimage, "utf8").digest("hex"));
 });
 
 test("Evidence union is closed, versioned, and mode-specific", () => {
