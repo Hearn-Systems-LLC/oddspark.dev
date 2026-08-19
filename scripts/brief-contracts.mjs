@@ -146,7 +146,7 @@ export function validateBrief(value) {
     for (const key of ["steps_changed", "steps_removed"]) if (!Number.isInteger(value.change_level[key]) || value.change_level[key] < 0) issues.push(issue(`brief.change_level.${key}`, "integer", "must be a non-negative integer"));
     if (value.change_level.preliminary !== true) issues.push(issue("brief.change_level.preliminary", "literal", "must be true"));
   }
-  if (closed(value.stays_same, ["tools", "authority", "steps"], [], "brief.stays_same", issues)) for (const key of ["tools", "authority", "steps"]) strings(value.stays_same[key], `brief.stays_same.${key}`, issues, { unique: true });
+  if (closed(value.stays_same, ["tools", "authority", "steps"], [], "brief.stays_same", issues)) for (const key of ["tools", "authority", "steps"]) strings(value.stays_same[key], `brief.stays_same.${key}`, issues, { allowEmpty: true, unique: true });
   strings(value.grounded_numbers, "brief.grounded_numbers", issues, { allowEmpty: true, unique: true });
   if (Array.isArray(value.grounded_numbers)) value.grounded_numbers.forEach((token, index) => {
     if (!CANONICAL_NUMBER.test(token)) issues.push(issue(`brief.grounded_numbers[${index}]`, "canonical_number", "must be a canonical numeric token"));

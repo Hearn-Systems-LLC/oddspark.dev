@@ -5,6 +5,11 @@ import {
   parseRequestScope,
   validateCommitPayload,
 } from "../scripts/brief-receipts.mjs";
+import {
+  committedBriefAsText,
+  committedBriefJson,
+  committedBriefPresentation,
+} from "../scripts/brief-rendering.mjs";
 
 /**
  * oddspark.dev
@@ -44,7 +49,7 @@ const PROFILE_TTL = 86400;
 const CLAIM_LEASE_MS = 20000;
 const VISITOR_WINDOW_MS = 60 * 60 * 1000;
 const VISITOR_DOMAIN_LIMIT = 10;
-const SPARK_ID_RE = /^(?:[0-9a-f]{8}|p-[0-9a-f]{16})$/;
+const SPARK_ID_RE = /^[A-Za-z0-9._-]{1,128}$/;
 
 const UNAVAILABLE_WARNING = "Site context was unavailable; showing the generic spark.";
 const LIMITED_WARNING = "Site scanning is limited; showing the generic spark.";
@@ -364,14 +369,8 @@ function validateSiteUrl(value, domain, base) {
 async function readSparkIntent(request) {
   if (!request.body) return { website: null };
   const contentType = (request.headers.get("content-type") || "").trim();
-  if (!/^application\/json(?:\s*;|$)/i.test(contentType)) {
-    try {
-      await request.body.cancel();
-    } catch (err) {
-      /* Treat non-JSON bodies exactly like an absent website. */
-    }
-    return { website: null };
-  }
+  const formEncoded = /^application\/x-www-form-urlencoded(?:\s*;|$)/i.test(contentType);
+  if (!formEncoded && !/^application\/json(?:\s*;|$)/i.test(contentType)) return { website: null };
   const declared = Number(request.headers.get("content-length"));
   if (declared > REQUEST_BODY_LIMIT) throw new WebsiteInputError("Website request is too large.");
 
@@ -399,7 +398,8 @@ async function readSparkIntent(request) {
 
   let parsed;
   try {
-    parsed = JSON.parse(new TextDecoder().decode(body));
+    const decoded = new TextDecoder().decode(body);
+    parsed = formEncoded ? { website: new URLSearchParams(decoded).get("website") ?? "" } : JSON.parse(decoded);
   } catch (err) {
     return { website: null };
   }
@@ -1507,76 +1507,18 @@ async function compatibleArtifactById(env, id) {
 }
 
 async function recordServed(env, artifact, delivery) {
-  const outcome = artifact?.source?.kind === "house" ? "house" : "normal";
+  const outcome = artifact?.brief?.notice === "This plan is one of ours, not built for you." ? "house" : "normal";
   await coordPost(env, "/metric", { outcome, delivery });
 }
 
-/* ------------------------------------------------------------------ *
- * Plain-text rendering, for people who reach for curl first
- * ------------------------------------------------------------------ */
-
-function asText(s, origin, meter) {
-  const L = [];
-  L.push("  oddspark.dev");
-  L.push("  a recommendation seeded by verifiable randomness and the sun");
-  L.push("");
-  L.push("  " + s.idea.headline.toUpperCase());
-  L.push("");
-  wrap(s.idea.premise, 66).forEach((l) => L.push("  " + l));
-  L.push("");
-  wrap("? " + s.idea.question, 66).forEach((l) => L.push("  " + l));
-  L.push("");
-  L.push("  " + "-".repeat(66));
-  L.push("  PROVENANCE");
-  L.push("    window         " + (s.window ? s.window.round + "  (" + s.window.seconds + "s)" : "n/a"));
-  L.push("    drand round    " + s.entropy.round);
-  L.push("    signature      " + s.entropy.signature.slice(0, 24) + "...");
-  L.push("    randomness     " + s.entropy.randomness.slice(0, 24) + "...");
-  L.push("    xray flux      " + s.solar.flux.toExponential(3) + " W/m2  (" + s.solar.band + ")");
-  L.push("    flare class    " + s.solar.class + "  GOES-" + s.solar.satellite);
-  L.push("    observed       " + s.solar.time_tag);
-  L.push("    seed           " + s.seed.hash);
-  if (s.personalization && s.personalization.status === "personalized") {
-    L.push("    website        " + s.personalization.domain);
-    L.push("    vertical       " + s.personalization.vertical);
-    L.push("    scanned        " + s.personalization.scanned_urls.join(", "));
-    L.push("    observation    " + s.personalization.observation.text);
-    L.push("    evidence URL   " + s.personalization.observation.url);
-    L.push("    adapted WHAT   " + s.personalization.what.adapted);
-    L.push("    profile hash   " + s.personalization.profile_hash);
+function requireCommittedArtifact(input) {
+  if (!input || typeof input !== "object") throw new Error("committed brief unavailable");
+  const { cached, ...candidate } = input;
+  const classification = classifyCompatibleArtifact(candidate);
+  if (classification.status !== "supported" || classification.kind !== "committed_brief") {
+    throw new Error("committed brief unavailable");
   }
-  if (s.personalization && s.personalization.warning) {
-    L.push("    warning        " + s.personalization.warning);
-  }
-  if (meter) {
-    L.push("    ai meter       " + meter.used.toFixed(1) + " / " + NEURON_FREE_DAILY + " neurons today  (" + String(meter.model).split("/").pop() + ")");
-  }
-  L.push("");
-  L.push("  seed = SHA256(randomness : round : flux : time_tag)");
-  L.push("  recompute it yourself. every input is published.");
-  L.push("");
-  L.push("    " + s.entropy.verify);
-  L.push("    " + origin + "/api/spark/" + s.id);
-  L.push("");
-  L.push("  permalink: " + origin + "/s/" + s.id);
-  L.push("");
-  return L.join("\n");
-}
-
-function wrap(str, width) {
-  const words = String(str).split(/\s+/);
-  const lines = [];
-  let cur = "";
-  for (const w of words) {
-    if ((cur + " " + w).trim().length > width) {
-      lines.push(cur.trim());
-      cur = w;
-    } else {
-      cur += " " + w;
-    }
-  }
-  if (cur.trim()) lines.push(cur.trim());
-  return lines;
+  return classification.value;
 }
 
 /* ------------------------------------------------------------------ *
@@ -1600,25 +1542,27 @@ const FAVICON =
 const HEARN_MARK =
   '<svg xmlns="http://www.w3.org/2000/svg" viewBox="18.9 24.8 178.6 39.9" role="img" aria-label="Hearn."><path fill="currentColor" d="M26.7 44H50.9V46.9H26.7ZM31.7 59.3Q31.7 59.9 32.1 60.3Q32.5 60.7 33.1 60.9L34.7 61.3Q35.9 61.6 35.9 62.7Q35.9 63.3 35.5 63.6Q35.1 64 34.2 64H20.6Q19.7 64 19.3 63.6Q18.9 63.3 18.9 62.7Q18.9 61.6 20.1 61.3L21.7 60.9Q22.4 60.7 22.7 60.3Q23.1 59.9 23.1 59.3V29.5Q23.1 28.9 22.7 28.5Q22.4 28.1 21.7 27.9L20.1 27.5Q18.9 27.2 18.9 26.1Q18.9 25.5 19.3 25.1Q19.7 24.8 20.6 24.8H34.2Q35.1 24.8 35.5 25.1Q35.9 25.5 35.9 26.1Q35.9 27.2 34.7 27.5L33.1 27.9Q32.5 28.1 32.1 28.5Q31.7 28.9 31.7 29.5ZM56.6 59.3Q56.6 59.9 57 60.3Q57.4 60.7 58 60.9L59.6 61.3Q60.8 61.6 60.8 62.7Q60.8 63.3 60.4 63.6Q60 64 59.1 64H45.5Q44.6 64 44.2 63.6Q43.8 63.3 43.8 62.7Q43.8 61.6 45 61.3L46.5 60.9Q47.2 60.7 47.6 60.3Q47.9 59.9 47.9 59.3V29.5Q47.9 28.9 47.6 28.5Q47.2 28.1 46.5 27.9L45 27.5Q43.8 27.2 43.8 26.1Q43.8 25.5 44.2 25.1Q44.6 24.8 45.5 24.8H59.1Q60 24.8 60.4 25.1Q60.8 25.5 60.8 26.1Q60.8 27.2 59.6 27.5L58 27.9Q57.4 28.1 57 28.5Q56.6 28.9 56.6 29.5ZM91.1 47.5Q91.1 48.9 90.3 49.7Q89.4 50.5 87.8 50.5H70.3V48.4H81.8Q83.2 48.4 83.2 47.1Q83.2 43.4 81.9 41.5Q80.5 39.6 78.2 39.6Q76.5 39.6 75.2 40.6Q73.8 41.7 73.1 43.7Q72.3 45.7 72.3 48.5Q72.3 53.9 74.8 56.6Q77.4 59.3 81.6 59.3Q84.1 59.3 85.9 58.3Q87.8 57.3 88.8 55.5Q89.3 55 89.6 54.8Q89.9 54.6 90.2 54.6Q90.7 54.6 90.9 55Q91.1 55.4 91.1 55.9Q91 58.3 89.4 60.3Q87.8 62.3 85.2 63.5Q82.5 64.7 79.1 64.7Q75 64.7 71.9 63Q68.7 61.4 67 58.4Q65.2 55.3 65.2 51.3Q65.2 47.1 66.9 43.8Q68.6 40.5 71.7 38.7Q74.9 36.8 79.3 36.8Q83 36.8 85.7 38.2Q88.3 39.6 89.7 42Q91.1 44.3 91.1 47.5ZM111.7 60.4V59.9L111.2 59.7V43Q111.2 41.1 110.2 40Q109.2 38.9 107.4 38.9Q105.7 38.9 104.9 39.6Q104 40.3 104 41.3V43.8Q104 45.5 102.8 46.4Q101.7 47.3 99.7 47.3Q97.9 47.3 97 46.5Q96.1 45.7 96.1 44.2Q96.1 42.5 97.6 40.8Q99.1 39.1 101.9 38Q104.7 36.9 108.9 36.9Q114 36.9 116.5 39Q119 41 119 44.6V59.2Q119 59.9 119.3 60.3Q119.7 60.7 120.3 60.7Q120.9 60.7 121.2 60.4Q121.5 60.1 121.7 59.8Q121.8 59.6 122 59.5Q122.2 59.4 122.4 59.4Q122.8 59.4 122.9 59.6Q123.1 59.9 123.1 60.3Q123.1 61.3 122.5 62.3Q121.8 63.3 120.5 64Q119.2 64.7 117.2 64.7Q114.7 64.7 113.2 63.6Q111.7 62.4 111.7 60.4ZM95 58.1Q95 54.6 98.1 52.5Q101.2 50.3 106.8 50.3Q108.6 50.3 110.1 50.6Q111.6 51 112.6 51.5L112 53.3Q111.1 52.8 110.1 52.6Q109.1 52.3 107.9 52.3Q105.6 52.3 104.3 53.5Q103 54.7 103 56.8Q103 58.9 104.1 60Q105.2 61.1 107 61.1Q108.5 61.1 109.9 60.5Q111.3 59.8 112.2 58.5L112.8 60.1Q111.3 62.3 108.7 63.5Q106.1 64.7 103.2 64.7Q99.5 64.7 97.2 62.9Q95 61.1 95 58.1ZM135.7 49.2Q135.7 45.1 136.8 42.4Q138 39.6 139.8 38.2Q141.7 36.8 143.9 36.8Q146.5 36.8 148 38.4Q149.4 39.9 149.4 42.7Q149.4 45.2 148.4 46.4Q147.4 47.7 145.7 47.7Q144 47.7 143.2 46.8Q142.3 45.9 142.3 44.3V43.3Q142.3 42.4 141.9 42Q141.5 41.5 140.6 41.5Q139.6 41.5 138.7 42.3Q137.8 43.1 137.2 44.8Q136.6 46.4 136.6 49ZM136.2 38.8 136.6 45.1V59.5Q136.6 60.3 137 60.7Q137.3 61.1 138.1 61.2L140.5 61.6Q141.2 61.7 141.5 62Q141.8 62.3 141.8 62.8Q141.8 63.4 141.4 63.7Q141 64 140.2 64H127.2Q126.4 64 126 63.7Q125.7 63.4 125.7 62.9Q125.7 62.4 125.9 62.1Q126.2 61.8 126.7 61.6L127.8 61.4Q128.3 61.2 128.5 60.8Q128.8 60.4 128.8 59.5V43.5Q128.8 42.8 128.6 42.5Q128.3 42.2 127.9 42.1L126.4 42Q125.9 41.9 125.7 41.6Q125.4 41.4 125.4 41Q125.4 40.5 125.7 40.2Q126 39.9 126.7 39.7L131.8 37.8Q133.2 37.3 133.8 37.1Q134.5 37 134.8 37Q135.5 37 135.8 37.4Q136.1 37.8 136.2 38.8ZM162.9 38.7V59.5Q162.9 60.4 163.2 60.8Q163.4 61.2 163.9 61.4L164.9 61.6Q165.8 62 165.8 62.8Q165.8 64 164.3 64H153.5Q152.7 64 152.3 63.7Q152 63.4 152 62.9Q152 62.4 152.2 62.1Q152.4 61.8 153 61.6L154.1 61.4Q154.6 61.2 154.8 60.8Q155.1 60.4 155.1 59.5V43.5Q155.1 42.7 154.9 42.4Q154.6 42.1 154.2 42L152.7 41.9Q152.2 41.8 152 41.6Q151.7 41.3 151.7 40.9Q151.7 40.5 152 40.2Q152.3 39.9 153 39.6L158.2 37.7Q159.3 37.3 159.9 37.1Q160.6 37 161.2 37Q162 37 162.5 37.5Q162.9 38 162.9 38.7ZM162.1 45 160.8 43.7 161.9 42.7Q165.4 39.5 167.9 38.2Q170.5 36.8 172.7 36.8Q176.2 36.8 178.1 39.2Q180 41.5 180.4 45.3L182 59.4Q182.1 60.4 182.3 60.8Q182.5 61.2 183 61.4L184 61.6Q184.5 61.8 184.8 62.1Q185.1 62.4 185.1 62.9Q185.1 63.4 184.7 63.7Q184.3 64 183.5 64H172.6Q171.1 64 171.1 62.8Q171.1 62 171.9 61.6L173 61.4Q173.5 61.2 173.8 60.8Q174.1 60.3 174 59.4L172.5 46.4Q172.3 44 171.3 42.8Q170.3 41.5 168.4 41.5Q167.3 41.5 166 42.2Q164.7 42.8 163.2 44Z"/><path fill="#B4502E" d="M192.6 64.6Q191.2 64.6 190.1 63.9Q188.9 63.2 188.3 62.1Q187.6 60.9 187.6 59.5Q187.6 58.1 188.3 57Q188.9 55.9 190.1 55.2Q191.2 54.5 192.6 54.5Q194 54.5 195.1 55.2Q196.2 55.9 196.9 57Q197.5 58.1 197.5 59.5Q197.5 60.9 196.9 62.1Q196.2 63.2 195.1 63.9Q194 64.6 192.6 64.6Z"/></svg>';
 
-function page(initial, live) {
+function page(initial, live, state = {}) {
   const boot = initial ? JSON.stringify(initial).replace(/</g, "\\u003c") : "null";
+  const view = initial?.projection ?? null;
   const liveJson = live
     ? JSON.stringify({ letter: live.letter, magnitude: live.magnitude, flux: live.flux })
     : "null";
   const accent = SOLAR_COLOR[live && live.letter ? live.letter : "C"] || SOLAR_COLOR.C;
+  const buttonText = live?.letter === "A" ? "#E4EAF0" : "#0B0D10";
   const liveClass = live ? live.letter + live.magnitude.toFixed(1) : "----";
-  const title = initial ? initial.idea.headline + " / oddspark" : "oddspark";
-  const desc = initial
-    ? initial.idea.premise
+  const title = view ? view.title + " / oddspark" : "oddspark";
+  const desc = view
+    ? view.plan
     : "A recommendation seeded by verifiable distributed randomness and live solar flare activity.";
-  const canonical = initial ? "https://oddspark.dev/s/" + initial.id : "https://oddspark.dev/";
+  const canonical = view?.share ? "https://oddspark.dev" + view.share.path : "https://oddspark.dev/";
   const ldJson = JSON.stringify({
     "@context": "https://schema.org",
     "@type": "WebSite",
     name: "oddspark",
     url: "https://oddspark.dev/",
     description:
-      "A recommendation seeded by verifiable distributed randomness and live solar flare activity. Every spark is reproducible; the randomness has a receipt.",
+      "A recommendation seeded by verifiable distributed randomness and live solar flare activity.",
   }).replace(/</g, "\\u003c");
 
   return `<!doctype html>
@@ -1649,9 +1593,9 @@ function page(initial, live) {
 <style>
   :root{
     --void:#0B0D10; --panel:#101419; --rule:#1D242C;
-    --text:#C6CFD8; --dim:#67737F; --faint:#3D4750;
-    --entropy:#6E8FB8;
-    --solar:${accent};
+    --text:#C6CFD8; --dim-raised:#7E8B98; --border-strong:#7E8B98;
+    --entropy:#6E8FB8; --gold:#C9A227;
+    --solar:${accent}; --button-text:${buttonText};
     --mono:"Courier Prime",ui-monospace,SFMono-Regular,Menlo,monospace;
     --serif:"Newsreader",Georgia,serif;
   }
@@ -1692,7 +1636,7 @@ function page(initial, live) {
   }
   .viz h2{
     font-size:10.5px; letter-spacing:.24em; text-transform:uppercase;
-    color:var(--dim); font-weight:400; margin:0 0 14px;
+    color:var(--dim-raised); font-weight:400; margin:0 0 14px;
   }
   .stage{
     position:relative; width:100%; aspect-ratio:1 / 1.06; max-height:352px;
@@ -1702,11 +1646,12 @@ function page(initial, live) {
     .stage{max-height:min(82vh, 1100px)}
   }
   .stage:active{cursor:grabbing}
+  .stage:focus-visible{outline:2px solid var(--entropy);outline-offset:3px}
   .stage canvas{display:block; width:100%; height:100%}
-  .legend{margin-top:14px; font-size:10.5px; line-height:1.8; color:var(--faint)}
+  .legend{margin-top:14px; font-size:10.5px; line-height:1.8; color:var(--dim-raised)}
   .legend div{display:flex; gap:9px}
-  .legend b{color:var(--dim); font-weight:400; min-width:52px; letter-spacing:.06em}
-  .legend em{font-style:normal; color:var(--solar)}
+  .legend b{color:var(--dim-raised); font-weight:400; min-width:52px; letter-spacing:.06em}
+  .legend em{font-style:normal; color:var(--gold)}
   .legend u{text-decoration:none; color:var(--entropy)}
 
   /* masthead ------------------------------------------------------- */
@@ -1716,7 +1661,7 @@ function page(initial, live) {
   }
   .mark{font-weight:700; letter-spacing:.14em; text-transform:lowercase; font-size:13px}
   .mark span{color:var(--solar)}
-  .live{display:flex; align-items:center; gap:8px; color:var(--dim); font-size:11px; letter-spacing:.1em}
+  .live{display:flex; align-items:center; gap:8px; color:var(--dim-raised); font-size:11px; letter-spacing:.1em}
   .dot{
     width:7px; height:7px; border-radius:50%; background:var(--solar);
     box-shadow:0 0 0 0 var(--solar); animation:breathe 4.2s ease-in-out infinite;
@@ -1729,25 +1674,25 @@ function page(initial, live) {
   /* strike --------------------------------------------------------- */
   .strike-row{padding:44px 0 40px; display:flex; align-items:flex-end; gap:18px; flex-wrap:wrap}
   .website-field{display:flex; flex-direction:column; gap:5px; min-width:min(100%,250px)}
-  .website-field label{color:var(--faint); font-size:10.5px; letter-spacing:.08em; text-transform:lowercase}
+  .website-field label{color:var(--dim-raised); font-size:10.5px; letter-spacing:.08em; text-transform:lowercase}
   .website-field input{
     width:250px; max-width:100%; padding:11px 12px; color:var(--text); background:var(--panel);
-    border:1px solid var(--rule); border-radius:0; font:12px var(--mono); outline:none;
+    border:1px solid var(--border-strong); border-radius:0; font:12px var(--mono);
   }
-  .website-field input:focus{border-color:var(--entropy)}
+  .website-field input:focus-visible{outline:2px solid var(--entropy);outline-offset:3px}
   .website-field input[aria-invalid="true"]{border-color:#E06A3F}
   button.strike{
     font-family:var(--mono); font-size:13px; font-weight:700;
     letter-spacing:.22em; text-transform:uppercase;
-    color:var(--void); background:var(--solar);
+    color:var(--button-text); background:var(--solar);
     border:0; padding:14px 30px; cursor:pointer;
     transition:transform .12s ease, filter .12s ease;
   }
-  button.strike:hover:not(:disabled){filter:brightness(1.12)}
-  button.strike:active:not(:disabled){transform:translateY(1px)}
-  button.strike:disabled{opacity:.45; cursor:wait}
+  button.strike:hover:not([aria-disabled="true"]){filter:brightness(1.12)}
+  button.strike:active:not([aria-disabled="true"]){transform:translateY(1px)}
+  button.strike[aria-disabled="true"]{opacity:.45; cursor:wait}
   button.strike:focus-visible{outline:2px solid var(--entropy); outline-offset:3px}
-  .strike-note{color:var(--faint); font-size:11.5px; letter-spacing:.04em; flex:1; min-width:200px}
+  .strike-note{color:var(--dim-raised); font-size:11.5px; letter-spacing:.04em; flex:1; min-width:200px}
 
   /* idea ----------------------------------------------------------- */
   .idea{border-top:1px solid var(--rule); padding-top:34px; min-height:150px}
@@ -1756,16 +1701,16 @@ function page(initial, live) {
     font-family:var(--serif); font-weight:400; font-size:31px; line-height:1.24;
     margin:0 0 18px; color:#E4EAF0; letter-spacing:-.01em;
   }
-  .premise{font-family:var(--serif); font-size:18px; line-height:1.62; color:var(--text); margin:0 0 26px}
+  .brief-field{margin:26px 0}.brief-field h2,.chip-group h2{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim-raised);font-weight:400}.brief-field p{font-family:var(--serif);font-size:17px;line-height:1.6}.brief-field dl div{margin:10px 0}.brief-field dt{color:var(--dim-raised)}.brief-field dd{margin:0}.notice{background:var(--panel);border-left:2px solid var(--entropy);padding:12px 14px;margin-bottom:24px}.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}.retention,.breadcrumb{color:var(--dim-raised)!important;font-family:var(--mono)!important;font-size:11px!important}.invitation a{color:var(--gold)}
   .question{
     display:flex; gap:12px; align-items:baseline;
     border-left:2px solid var(--solar); padding:2px 0 2px 14px;
-    color:var(--dim); font-size:12.5px; line-height:1.65;
+    color:var(--dim-raised); font-size:12.5px; line-height:1.65;
   }
   .question b{color:var(--solar); font-weight:400}
   .site-context{margin:22px 0 0; padding:13px 14px; background:var(--panel); border-left:2px solid var(--entropy)}
   .site-context[hidden]{display:none}
-  .site-context p{margin:0; color:var(--dim); font-size:11.5px; line-height:1.65}
+  .site-context p{margin:0; color:var(--dim-raised); font-size:11.5px; line-height:1.65}
   .site-context p + p{margin-top:6px}
   .site-context .site-observation{color:var(--text)}
   .site-context .site-warning{color:#D89372}
@@ -1773,35 +1718,35 @@ function page(initial, live) {
   /* seed chips ----------------------------------------------------- */
   .chips{display:flex; flex-wrap:wrap; gap:6px; margin:28px 0 0}
   .chip{
-    font-size:10.5px; letter-spacing:.05em; color:var(--dim);
-    border:1px solid var(--rule); padding:4px 9px; white-space:nowrap;
+    font-size:10.5px; letter-spacing:.05em; color:var(--dim-raised);
+    border:1px solid var(--border-strong); padding:4px 9px; white-space:normal;
   }
-  .chip i{color:var(--faint); font-style:normal; margin-right:6px}
+  .chip i{color:var(--dim-raised); font-style:normal; margin-right:6px}
 
   /* provenance ----------------------------------------------------- */
   .prov{margin-top:44px; border-top:1px solid var(--rule); padding-top:20px}
   .prov h2{
     font-size:10.5px; letter-spacing:.24em; text-transform:uppercase;
-    color:var(--dim); font-weight:400; margin:0 0 16px;
+    color:var(--dim-raised); font-weight:400; margin:0 0 16px;
   }
   .field{
     display:grid; grid-template-columns:118px 1fr; gap:10px;
     padding:3px 0; font-size:11.5px; align-items:baseline;
   }
-  .field dt{color:var(--faint); letter-spacing:.06em}
-  .field dd{margin:0; color:var(--dim); word-break:break-all}
-  .field dd.hot{color:var(--solar)}
+  .field dt{color:var(--dim-raised); letter-spacing:.06em}
+  .field dd{margin:0; color:var(--dim-raised); word-break:break-all}
+  .field dd.hot{color:var(--gold)}
   .field dd.cool{color:var(--entropy)}
   .formula{
     margin-top:18px; padding:12px 14px; background:var(--panel);
-    border-left:2px solid var(--entropy); font-size:11px; color:var(--dim); line-height:1.7;
+    border-left:2px solid var(--entropy); font-size:11px; color:var(--dim-raised); line-height:1.7;
   }
   .formula b{color:var(--text); font-weight:400}
 
   /* footer --------------------------------------------------------- */
   footer{
     margin-top:34px; padding-top:18px; border-top:1px solid var(--rule);
-    display:flex; flex-wrap:wrap; gap:8px 22px; font-size:11px; color:var(--faint);
+    display:flex; flex-wrap:wrap; gap:8px 22px; font-size:11px; color:var(--dim-raised);
   }
   /* the live meter readout always gets its own line below the links */
   #meter{flex-basis:100%}
@@ -1809,7 +1754,7 @@ function page(initial, live) {
   /* Builder's credit. The oxide period inside the mark is the only colour
      in the footer, and the only thing that does not shift on hover -- that
      is what makes it read as a mark rather than as decoration. */
-  .built{color:var(--dim); border-bottom:0}
+  .built{color:var(--dim-raised); border-bottom:0}
   .built:hover{color:var(--text); border-bottom:0}
   /* Sized against the footer's cap height, not its font-size: the viewBox is
      tight to the glyphs, so 1em would render the mark at twice the height of
@@ -1819,7 +1764,7 @@ function page(initial, live) {
   a{color:var(--entropy); text-decoration:none; border-bottom:1px solid transparent}
   a:hover{border-bottom-color:var(--entropy)}
   a:focus-visible{outline:2px solid var(--entropy); outline-offset:2px}
-  .copy{background:none;border:0;padding:0;font:inherit;color:var(--entropy);cursor:pointer}
+  footer a,.copy{padding:4px 0;min-height:24px}.copy{background:none;border:0;font:inherit;color:var(--entropy);cursor:pointer}.copy:focus-visible{outline:2px solid var(--entropy);outline-offset:3px}
   .copy:hover{text-decoration:underline}
 
   .err{color:#E06A3F; font-size:12px; padding:14px 0}
@@ -1834,43 +1779,37 @@ function page(initial, live) {
 </style>
 </head>
 <body>
+<main>
 <div class="shell">
 
   <header>
-    <div class="mark">odd<span>spark</span></div>
+    ${view ? '<p class="mark">odd<span>spark</span></p>' : '<h1 class="mark">odd<span>spark</span></h1>'}
     <div class="live"><span class="dot"></span><span id="live">${esc(liveClass)}</span> &middot; SUN NOW</div>
   </header>
 
-  <div class="strike-row">
+  <form class="strike-row" method="post" action="/api/spark">
     <div class="website-field">
       <label for="website">website, optional</label>
-      <input id="website" name="website" type="url" inputmode="url" autocomplete="url" maxlength="2048" placeholder="example.com">
+      <input id="website" name="website" type="text" inputmode="url" autocomplete="url" maxlength="2048" placeholder="example.com" aria-describedby="website-error"${state.fieldError ? ' aria-invalid="true"' : ""}>
     </div>
-    <button class="strike" id="strike">Strike</button>
-    <div class="strike-note">One idea, seeded by the sun and a randomness beacon. Same window, same spark.</div>
-  </div>
+    <button class="strike" id="strike">${view ? "Strike again" : "Strike"}</button>
+    <div class="strike-note">One idea, seeded by the sun and a randomness beacon.</div>
+  </form>
 
-  <div class="err" id="err" hidden></div>
+  <div class="err" id="website-error">${esc(state.fieldError ?? "")}</div>
+  <p class="${state.statusMessage ? "err" : "sr-only"}" id="status" role="status" aria-live="polite">${esc(state.statusMessage ?? "")}</p>
 
-  <article class="idea" id="idea" hidden>
-    <h1 id="headline"></h1>
-    <p class="premise" id="premise"></p>
-    <div class="question"><b>?</b><span id="question"></span></div>
-    <div class="site-context" id="site-context" hidden>
-      <p id="site-summary"></p>
-      <p class="site-observation" id="site-observation"></p>
-      <p class="site-warning" id="site-warning"></p>
-    </div>
-    <div class="chips" id="chips"></div>
+  <article class="idea" id="idea"${view ? "" : " hidden"}>
+    ${initial?.markup ?? ""}
   </article>
 
   <section class="viz">
     <h2>Seed Geometry</h2>
-    <div class="stage" id="stage"><canvas id="cv"></canvas></div>
+    <div class="stage" id="stage" tabindex="0" aria-label="Seed Geometry"><canvas id="cv" aria-hidden="true"></canvas></div>
     <div class="legend" id="legend"></div>
   </section>
 
-  <section class="prov" id="prov" hidden>
+  <section class="prov" id="prov"${view ? "" : " hidden"}>
     <h2>Provenance</h2>
     <dl>
       <div class="field"><dt>drand round</dt><dd class="cool" id="f-round">&mdash;</dd></div>
@@ -1882,13 +1821,13 @@ function page(initial, live) {
       <div class="field"><dt>seed</dt><dd id="f-seed">&mdash;</dd></div>
     </dl>
     <div class="formula">
-      seed = <b>SHA256( randomness : round : flux : time_tag )</b><br>
-      Recompute it yourself; every input above is published and archived.
+      seed = <b>SHA256( randomness : round : flux : time_tag )</b>.<br>
+      Every input above is published and archived.
     </div>
   </section>
 
   <footer>
-    <span id="foot-links"></span>
+    <span id="foot-links">${view?.share ? `<a href="${view.share.path}">${esc(view.id)}</a> &middot; <a href="/api/spark/${encodeURIComponent(view.id)}">json</a>` : ""}</span>
     <a href="/how">how does this work?</a>
     <span>drand &middot; NOAA SWPC</span>
     <a class="built" href="https://hearn.systems" rel="noopener">built by ${HEARN_MARK}</a>
@@ -1896,6 +1835,7 @@ function page(initial, live) {
   </footer>
 
 </div>
+</main>
 
 <script>
 (function(){
@@ -1954,74 +1894,73 @@ function page(initial, live) {
     return s.length > n ? s.slice(0, n) + "\\u2026" : s;
   }
 
-  function render(s, push){
-    el("err").hidden = true;
+  function bindShare(view){
+    var cluster = el("foot-links");
+    cluster.replaceChildren();
+    if (!view.share) return;
+    var permalink = document.createElement("a");
+    permalink.href = view.share.path; permalink.textContent = view.id;
+    var jsonLink = document.createElement("a");
+    jsonLink.href = "/api/spark/" + encodeURIComponent(view.id); jsonLink.textContent = "json";
+    var copy = document.createElement("button");
+    copy.className = "copy"; copy.type = "button"; copy.textContent = "copy link";
+    cluster.append(permalink, document.createTextNode(" · "), jsonLink, document.createTextNode(" · "), copy);
+    copy.onclick = function(){
+      Promise.resolve().then(function(){
+        if (!navigator.clipboard || typeof navigator.clipboard.writeText !== "function") throw new Error("Clipboard unavailable");
+        return navigator.clipboard.writeText(location.origin + view.share.path);
+      }).then(function(){
+        el("status").textContent = "Link copied"; copy.textContent = "copied";
+      }).catch(function(){
+        el("status").textContent = "The link could not be copied. Copy it from the address bar."; copy.textContent = "copy link";
+      });
+    };
+  }
+
+  function validPresentation(presentation){
+    if (!presentation || typeof presentation !== "object" || Array.isArray(presentation)) return false;
+    if (Object.keys(presentation).sort().join(",") !== "markup,projection" || typeof presentation.markup !== "string") return false;
+    var view = presentation.projection;
+    if (!view || typeof view !== "object" || Array.isArray(view)) return false;
+    var keys = ["before_after","change_level","contact_url","id","invitation","mode","notice","plan","request_scope","retention","share","stays_same","title","what_gets_better","why_fits"];
+    if (Object.keys(view).sort().join(",") !== keys.sort().join(",")) return false;
+    if (!/^[A-Za-z0-9._-]{1,128}$/.test(view.id) || !["local","domain"].includes(view.request_scope) || !["local","domain"].includes(view.mode)) return false;
+    if ([view.title, view.plan, view.what_gets_better, view.invitation, view.contact_url, view.retention].some(function(v){ return typeof v !== "string"; })) return false;
+    if (!(view.notice === null || typeof view.notice === "string")) return false;
+    if (!view.why_fits || typeof view.why_fits.text !== "string" || !(view.why_fits.breadcrumb === null || typeof view.why_fits.breadcrumb === "string")) return false;
+    if (!view.before_after || typeof view.before_after.before !== "string" || typeof view.before_after.after !== "string") return false;
+    if (!view.change_level || view.change_level.preliminary !== "preliminary" || typeof view.change_level.time_range !== "string" || !Number.isInteger(view.change_level.steps_changed) || !Number.isInteger(view.change_level.steps_removed)) return false;
+    if (!view.stays_same || ![view.stays_same.tools, view.stays_same.authority, view.stays_same.steps].every(function(v){ return Array.isArray(v) && v.every(function(x){ return typeof x === "string"; }); })) return false;
+    if (view.request_scope === "local") return !!view.share && Object.keys(view.share).sort().join(",") === "id,path" && view.share.id === view.id && view.share.path === "/s/" + encodeURIComponent(view.id);
+    return view.share === null;
+  }
+
+  function clearResult(){
+    el("idea").innerHTML = ""; el("idea").hidden = true; el("prov").hidden = true; el("foot-links").replaceChildren();
+    if (location.pathname && location.pathname.indexOf("/s/") === 0) history.replaceState({}, "", "/");
+    document.title = "oddspark";
+    var mark = document.querySelector("header .mark");
+    if (mark && mark.tagName === "P") { var replacement = document.createElement("h1"); replacement.className = "mark"; replacement.innerHTML = mark.innerHTML; mark.replaceWith(replacement); }
+  }
+
+  function render(presentation, updateHistory){
+    var view = presentation.projection;
+    el("website-error").textContent = "";
+    website.removeAttribute("aria-invalid");
+    el("status").textContent = "";
+    el("status").className = "sr-only";
+    el("status").removeAttribute("tabindex");
     el("idea").hidden = false;
     el("prov").hidden = false;
-
-    el("headline").textContent = s.idea.headline;
-    el("premise").textContent = s.idea.premise;
-    el("question").textContent = s.idea.question || "";
-
-    var personalized = s.personalization && s.personalization.status === "personalized";
-    var context = el("site-context");
-    context.hidden = !s.personalization;
-    el("site-summary").textContent = personalized
-      ? "Public pages from " + s.personalization.domain + " · " + s.personalization.vertical
-      : (s.personalization ? "Website context · " + (s.personalization.domain || "not scanned") : "");
-    el("site-observation").textContent = personalized
-      ? "Observed on " + s.personalization.observation.url + ": " + s.personalization.observation.text
-      : "";
-    el("site-warning").textContent = s.personalization && s.personalization.warning
-      ? s.personalization.warning
-      : "";
-
-    var chips = [
-      ["domain", personalized ? s.personalization.vertical : s.seed.domain],
-      ["lens", s.seed.lens],
-      ["form", personalized ? s.personalization.what.adapted : s.seed.form],
-      ["constraint", s.seed.friction]
-    ];
-    var chipBox = el("chips");
-    chipBox.replaceChildren();
-    chips.forEach(function(c){
-      var chip = document.createElement("span");
-      var label = document.createElement("i");
-      chip.className = "chip";
-      label.textContent = c[0];
-      chip.appendChild(label);
-      chip.appendChild(document.createTextNode(c[1] || ""));
-      chipBox.appendChild(chip);
-    });
-
-    var fields = [
-      ["f-round", String(s.entropy.round)],
-      ["f-sig", shorten(s.entropy.signature, 40)],
-      ["f-rand", shorten(s.entropy.randomness, 40)],
-      ["f-flux", s.solar.flux.toExponential(3) + " W/m\\u00B2"],
-      ["f-class", s.solar.class + "  \\u00B7  GOES-" + s.solar.satellite],
-      ["f-time", s.solar.time_tag],
-      ["f-seed", shorten(s.seed.hash, 40)]
-    ];
-    fields.forEach(function(f, i){ scramble(el(f[0]), f[1], i * 55); });
-
-    document.documentElement.style.setProperty("--solar", solarColor(s.solar.letter));
-    el("live").textContent = s.solar.class;
-    VIZ.spark(s);
-
-    var url = "/s/" + s.id;
-    el("foot-links").innerHTML =
-      '<a href="' + url + '">' + s.id + '</a> \\u00B7 ' +
-      '<a href="/api/spark/' + s.id + '">json</a> \\u00B7 ' +
-      '<button class="copy" id="cp">copy link</button>';
-    el("cp").onclick = function(){
-      navigator.clipboard.writeText(location.origin + url);
-      el("cp").textContent = "copied";
-      setTimeout(function(){ el("cp").textContent = "copy link"; }, 1600);
-    };
-
-    if (push) history.pushState({}, "", url);
-    document.title = s.idea.headline + " / oddspark";
+    el("idea").innerHTML = presentation.markup;
+    bindShare(view);
+    if (updateHistory && view.share) history.replaceState({}, "", view.share.path);
+    document.title = view.title + " / oddspark";
+    var mark = document.querySelector("header .mark");
+    if (mark && mark.tagName === "H1") {
+      var replacement = document.createElement("p"); replacement.className = "mark"; replacement.innerHTML = mark.innerHTML; mark.replaceWith(replacement);
+    }
+    el("headline").focus();
   }
 
   function solarColor(letter){
@@ -2056,7 +1995,7 @@ function page(initial, live) {
     var core = { r:0.16, rays:6, letter:"C", cls:"----" };
     var yaw = 0.7, pitch = -0.22, spin = 0.0024, vy = 0, vp = 0;
     var drag = false, lx = 0, ly = 0;
-    var assembleAt = 0, running = false;
+    var assembleAt = 0, running = false, stopTimer = null, engaged = false;
     var C_SOL = [201,162,39], C_ENT = [110,143,184];
 
     function hexRGB(h){
@@ -2247,14 +2186,20 @@ function page(initial, live) {
       draw(now);
       if (running) requestAnimationFrame(loop);
     }
-    function start(){
-      if (running || reduce) return;
-      running = true; requestAnimationFrame(loop);
+    function scheduleStop(){
+      if (stopTimer) clearTimeout(stopTimer);
+      if (!engaged) stopTimer = setTimeout(stop, 5000);
     }
-    function stop(){ running = false; }
+    function start(){
+      if (!running && !reduce) { running = true; requestAnimationFrame(loop); }
+      scheduleStop();
+    }
+    function stop(){ running = false; if (stopTimer) { clearTimeout(stopTimer); stopTimer = null; } }
 
     // drag to rotate, with a little inertia
     stage.addEventListener("pointerdown", function(e){
+      engaged = true;
+      start();
       drag = true; lx = e.clientX; ly = e.clientY;
       try { stage.setPointerCapture(e.pointerId); } catch (err) {}
     });
@@ -2271,9 +2216,15 @@ function page(initial, live) {
       if (!drag) return;
       drag = false;
       try { stage.releasePointerCapture(e.pointerId); } catch (err) {}
+      engaged = stage.matches(":hover") || document.activeElement === stage;
+      scheduleStop();
     }
     stage.addEventListener("pointerup", release);
     stage.addEventListener("pointercancel", release);
+    stage.addEventListener("pointerenter", function(){ engaged = true; start(); });
+    stage.addEventListener("pointerleave", function(){ if (!drag) { engaged = document.activeElement === stage; scheduleStop(); } });
+    stage.addEventListener("focus", function(){ engaged = true; start(); });
+    stage.addEventListener("blur", function(){ engaged = false; scheduleStop(); });
 
     if (window.ResizeObserver) new ResizeObserver(resize).observe(stage);
     else window.addEventListener("resize", resize);
@@ -2303,16 +2254,23 @@ function page(initial, live) {
     };
   })();
 
-  btn.onclick = function(){
+  document.querySelector("form.strike-row").onsubmit = function(event){
+    event.preventDefault();
+    if (btn.getAttribute("aria-disabled") === "true") return;
     var websiteValue = website ? website.value : "";
     var hasWebsite = !!websiteValue.trim();
-    if (website) website.removeAttribute("aria-invalid");
-    btn.disabled = true;
+    website.removeAttribute("aria-invalid");
+    el("website-error").textContent = "";
+    el("status").removeAttribute("tabindex");
+    el("status").className = "sr-only";
+    el("status").textContent = "Working. Your spark takes a few seconds.";
+    el("idea").setAttribute("aria-busy", "true");
+    btn.setAttribute("aria-disabled", "true");
     btn.textContent = hasWebsite ? "Scanning" : "Striking";
     var strikingTimer = hasWebsite ? setTimeout(function(){ btn.textContent = "Striking"; }, 250) : null;
     fetch("/api/spark", {
       method:"POST",
-      headers:{ "content-type":"application/json" },
+      headers:{ "content-type":"application/json", "accept":"application/json", "x-oddspark-presentation":"1" },
       body:JSON.stringify({ website:websiteValue })
     })
       .then(function(r){
@@ -2325,26 +2283,38 @@ function page(initial, live) {
           return payload;
         });
       })
-      .then(function(s){
+      .then(function(presentation){
+        if (!validPresentation(presentation)) throw new Error("Invalid presentation response");
         if (hasWebsite) btn.textContent = "Striking";
-        render(s, true);
+        render(presentation, true);
       })
       .catch(function(e){
-        el("err").hidden = false;
-        el("err").textContent = e.field === "website"
-          ? e.message
-          : "No spark. A feed did not answer: " + e.message + ". Try again.";
-        if (website && e.field === "website") website.setAttribute("aria-invalid", "true");
+        clearResult();
+        el("website-error").textContent = "";
+        website.removeAttribute("aria-invalid");
+        el("status").textContent = ""; el("status").className = "sr-only"; el("status").removeAttribute("tabindex");
+        if (e.field === "website") {
+          el("website-error").textContent = e.message;
+          website.setAttribute("aria-invalid", "true"); website.focus();
+          btn.textContent = "Strike";
+        } else {
+          var status = el("status");
+          status.textContent = "No spark this time — a part of the system did not answer. Press Strike again.";
+          status.className = "err";
+          status.setAttribute("tabindex", "-1"); status.focus();
+        }
       })
       .finally(function(){
         if (strikingTimer) clearTimeout(strikingTimer);
-        btn.disabled = false;
-        btn.textContent = "Strike again";
+        btn.removeAttribute("aria-disabled");
+        el("idea").removeAttribute("aria-busy");
+        btn.textContent = el("idea").hidden ? "Strike" : "Strike again";
       });
   };
 
   if (BOOT) {
-    render(BOOT, false);
+    bindShare(BOOT.projection);
+    VIZ.live(LIVE);
     btn.textContent = "Strike again";
   } else {
     VIZ.live(LIVE);
@@ -2634,6 +2604,12 @@ function wantsText(req) {
   return !accept.includes("text/html") && !accept.includes("*/*");
 }
 
+function wantsHtml(req) {
+  const accept = req.headers.get("accept") || "";
+  const contentType = req.headers.get("content-type") || "";
+  return !accept.includes("application/json") && (accept.includes("text/html") || contentType.toLowerCase().startsWith("application/x-www-form-urlencoded"));
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -2648,36 +2624,57 @@ export default {
         const id = path.split("/").pop();
         if (!SPARK_ID_RE.test(id || "")) return apiJson(request, { error: "no spark with that id" }, 404);
         const compatible = await compatibleArtifactById(env, id);
-        if (compatible.status !== "supported") return apiJson(request, { error: compatible.status === "unsupported" ? "unsupported spark artifact" : "no spark with that id" }, 404);
+        if (compatible.status !== "supported" || compatible.kind !== "committed_brief") return apiJson(request, { error: compatible.status === "unsupported" ? "unsupported spark artifact" : "no spark with that id" }, 404);
+        const body = committedBriefJson(compatible.value);
         await recordServed(env, compatible.value, "json");
-        return apiJson(request, compatible.value);
+        return apiJson(request, body);
       }
 
       // Strike
       if (path === "/api/spark") {
+        const html = wantsHtml(request);
         let intent;
         try {
           intent = await readSparkIntent(request);
         } catch (err) {
-          if (err instanceof WebsiteInputError) return apiJson(request, { error: err.message, field: "website" }, 400);
+          if (err instanceof WebsiteInputError) return html
+            ? new Response(page(null, null, { fieldError: err.message }), { status: 400, headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" } })
+            : apiJson(request, { error: err.message, field: "website" }, 400);
           throw err;
         }
         if (!intent.website) {
-          const artifact = await buildSpark(env);
+          const artifact = requireCommittedArtifact(await buildSpark(env));
+          const presentation = committedBriefPresentation(artifact);
+          if (html) return new Response(null, { status: 303, headers: { location: `/s/${encodeURIComponent(artifact.id)}`, "cache-control": "no-store" } });
+          const body = request.headers.get("x-oddspark-presentation") === "1" ? presentation : committedBriefJson(artifact);
           await recordServed(env, artifact, "json");
-          return apiJson(request, artifact);
+          return apiJson(request, body);
         }
 
         const round = await currentWindow();
         const visitorKey = await visitorKeyFor(request);
         if (!visitorKey) {
-          const artifact = await authoritativeDomainFallback(env, round, intent.website.domain, "limited", LIMITED_WARNING);
+          const artifact = requireCommittedArtifact(await authoritativeDomainFallback(env, round, intent.website.domain, "limited", LIMITED_WARNING));
+          const presentation = committedBriefPresentation(artifact);
+          if (html) {
+            const response = new Response(page(presentation, null), { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" } });
+            await recordServed(env, artifact, "domain_html");
+            return response;
+          }
+          const body = request.headers.get("x-oddspark-presentation") === "1" ? presentation : committedBriefJson(artifact);
           await recordServed(env, artifact, "json");
-          return apiJson(request, artifact);
+          return apiJson(request, body);
         }
-        const artifact = await buildDomainSpark(request, env, intent.website, round, visitorKey);
+        const artifact = requireCommittedArtifact(await buildDomainSpark(request, env, intent.website, round, visitorKey));
+        const presentation = committedBriefPresentation(artifact);
+        if (html) {
+          const response = new Response(page(presentation, null), { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" } });
+          await recordServed(env, artifact, "domain_html");
+          return response;
+        }
+        const body = request.headers.get("x-oddspark-presentation") === "1" ? presentation : committedBriefJson(artifact);
         await recordServed(env, artifact, "json");
-        return apiJson(request, artifact);
+        return apiJson(request, body);
       }
 
       // Live solar readout only
@@ -2700,17 +2697,23 @@ export default {
       // Permalink
       if (path.startsWith("/s/")) {
         const id = path.split("/").pop();
-        if (!SPARK_ID_RE.test(id || "")) return new Response("404", { status: 404 });
+        if (!SPARK_ID_RE.test(id || "")) return new Response(page(null, null, { statusMessage: "That spark is no longer available. Press Strike for a new one." }), { status: 404, headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" } });
         const compatible = await compatibleArtifactById(env, id);
-        if (compatible.status !== "supported") return id.startsWith("p-") || compatible.status === "unsupported" ? new Response("404", { status: 404 }) : Response.redirect(origin + "/", 302);
+        if (compatible.status !== "supported" || compatible.kind !== "committed_brief" || compatible.value.request_scope !== "local") {
+          return new Response(page(null, null, { statusMessage: "That spark is no longer available. Press Strike for a new one." }), { status: 404, headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" } });
+        }
         const s = compatible.value;
-        await recordServed(env, s, s.personalization ? "domain_html" : "local_permalink");
         if (wantsText(request)) {
-          return new Response(asText(s, origin), {
+          const body = committedBriefAsText(s);
+          await recordServed(env, s, "local_permalink");
+          return new Response(body, {
             headers: { "content-type": "text/plain; charset=utf-8" },
           });
         }
-        return new Response(page(s, { letter: s.solar.letter, magnitude: parseFloat(s.solar.class.slice(1)) }), {
+        const presentation = committedBriefPresentation(s);
+        const body = page(presentation, null);
+        await recordServed(env, s, "local_permalink");
+        return new Response(body, {
           headers: { "content-type": "text/html; charset=utf-8" },
         });
       }
@@ -2725,9 +2728,10 @@ export default {
       // Home
       if (path === "/") {
         if (wantsText(request)) {
-          const s = await buildSpark(env);
-          const used = await neuronsUsedToday(env);
-          return new Response(asText(s, origin, { used, model: modelFor(env, used) }), {
+          const s = requireCommittedArtifact(await buildSpark(env));
+          const body = committedBriefAsText(s);
+          await recordServed(env, s, "json");
+          return new Response(body, {
             headers: { "content-type": "text/plain; charset=utf-8" },
           });
         }
@@ -2745,8 +2749,9 @@ export default {
       return new Response("404", { status: 404 });
     } catch (err) {
       if (err instanceof WebsiteInputError) return apiJson(request, { error: err.message, field: "website" }, 400);
+      if (path === "/api/spark" && wantsHtml(request)) return new Response(page(null, null, { statusMessage: "No spark this time — a part of the system did not answer. Press Strike again." }), { status: 502, headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" } });
       if (path.startsWith("/api/")) return apiJson(request, { error: String(err.message || err) }, 502);
-      return new Response("A feed did not answer: " + (err.message || err), { status: 502 });
+      return new Response(page(null, null, { statusMessage: "No spark this time — a part of the system did not answer. Press Strike again." }), { status: 502, headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" } });
     }
   },
 };
