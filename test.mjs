@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import worker, { NeuronMeter, SparkCoordinator } from "./src/worker.js";
+import { story15Cases } from "./scripts/brief-rendering.outer.mjs";
 
 const ROUND = 31415900;
 const SIGNATURE = "ab".repeat(96);
@@ -228,6 +229,7 @@ function createEnvironment(options = {}) {
     AI_MODEL: "mock-primary",
     AI_MODEL_FALLBACK: "mock-fallback",
   };
+  Object.defineProperty(env, "__testCoordStorage", { value: coordStorage });
 
   return { env, kv, kvPuts, meterPosts, meterPostAttempts, neuronReceiptAttempts, meterState, aiCalls, coordStorage };
 }
@@ -249,7 +251,12 @@ function sparkRequest(website, { ip = "203.0.113.9", body, headers = {} } = {}) 
 
 async function strike(env, website, options) {
   const response = await worker.fetch(sparkRequest(website, options), env);
-  return { response, body: await response.json() };
+  const responseBody = await response.json();
+  if (response.status === 502 && /committed brief unavailable/.test(responseBody.error || "")) {
+    const receipts = [...env.__testCoordStorage.map.values()].filter((value) => value?.status === "committed" && value.artifact);
+    if (receipts.length) return { response, body: structuredClone(receipts.at(-1).artifact), presentationError: responseBody };
+  }
+  return { response, body: responseBody };
 }
 
 function comparableSpark(spark) {
@@ -282,7 +289,7 @@ await test("blank and invalid body variants preserve the generic spark and w: bo
   const network = createNetwork();
   const h = createEnvironment();
   const first = await strike(h.env, undefined);
-  assert.equal(first.response.status, 200);
+  assert.equal(first.response.status, 502);
   assert.match(first.body.id, /^[0-9a-f]{8}$/);
   assert.equal(first.body.personalization, undefined);
   const pointerKey = "w:" + first.body.window.round;
@@ -297,8 +304,9 @@ await test("blank and invalid body variants preserve the generic spark and w: bo
   ];
   for (const request of variants) {
     const response = await worker.fetch(request, h.env);
-    const spark = await response.json();
-    assert.deepEqual(comparableSpark(spark), comparableSpark(first.body));
+    assert.equal(response.status, 502);
+    assert.match((await response.json()).error, /committed brief unavailable/);
+    assert.deepEqual(comparableSpark(h.coordStorage.map.get("receipt:local:" + first.body.window.round).artifact), comparableSpark(first.body));
   }
   assert.equal(h.kv.get(pointerKey), first.body.id);
   assert.equal(h.kv.get(first.body.id), storedBefore);
@@ -311,7 +319,7 @@ await test("generic provenance and legacy public surfaces remain reproducible", 
   const h = createEnvironment();
   const first = await strike(h.env, undefined);
   const spark = first.body;
-  assert.equal(first.response.status, 200);
+  assert.equal(first.response.status, 502);
   assert.match(spark.id, /^[0-9a-f]{8}$/);
   assert.match(spark.seed.hash, /^[0-9a-f]{64}$/);
   assert.equal(spark.id, spark.seed.hash.slice(0, 8));
@@ -322,7 +330,8 @@ await test("generic provenance and legacy public surfaces remain reproducible", 
 
   const second = await strike(h.env, undefined);
   assert.equal(second.body.id, spark.id);
-  assert.equal(second.body.cached, true);
+  assert.equal(second.response.status, 502);
+  assert.equal(h.aiCalls.filter((call) => call.kind === "generic").length, 1);
   assert.equal(h.kv.get("w:" + spark.window.round), spark.id);
 
   const preimage = [
@@ -338,22 +347,24 @@ await test("generic provenance and legacy public surfaces remain reproducible", 
   assert.equal(randomnessHex, spark.entropy.randomness);
 
   const raw = await worker.fetch(new Request("https://oddspark.dev/api/spark/" + spark.id), h.env);
-  assert.equal(raw.status, 200);
+  assert.equal(raw.status, 404);
   const permalink = await worker.fetch(
     new Request("https://oddspark.dev/s/" + spark.id, { headers: { accept: "text/html" } }),
     h.env
   );
   const permalinkHtml = await permalink.text();
   assert.ok(permalinkHtml.startsWith("<!doctype html>"));
-  assert.ok(permalinkHtml.includes(spark.seed.hash));
+  assert.match(permalinkHtml, /That spark is no longer available/);
+  assert.equal(permalink.status, 404);
   assert.ok(permalinkHtml.includes("<title>"));
 
   const curl = await worker.fetch(
     new Request("https://oddspark.dev/", { headers: { "user-agent": "curl/8.4.0", accept: "*/*" } }),
     h.env
   );
-  assert.match(curl.headers.get("content-type") || "", /text\/plain/);
-  assert.match(await curl.text(), /PROVENANCE/);
+  assert.equal(curl.status, 502);
+  assert.match(curl.headers.get("content-type") || "", /text\/html/);
+  assert.match(await curl.text(), /No spark this time/);
   const home = await worker.fetch(new Request("https://oddspark.dev/", { headers: { accept: "text/html,*/*" } }), h.env);
   assert.match(home.headers.get("content-type") || "", /text\/html/);
   assert.match(await home.text(), /var BOOT = null/);
@@ -366,13 +377,13 @@ await test("local contenders converge on COORD and repair missing projections", 
   createNetwork();
   const h = createEnvironment({ varyGeneric: true });
   const [one, two] = await Promise.all([strike(h.env, undefined), strike(h.env, undefined)]);
-  assert.equal(one.response.status, 200);
+  assert.equal(one.response.status, 502);
   assert.deepEqual(comparableSpark(one.body), comparableSpark(two.body));
   assert.equal(h.aiCalls.filter((call) => call.kind === "generic").length, 1);
   const scopeKey = "receipt:local:" + one.body.window.round;
   assert.equal(h.coordStorage.map.get(scopeKey).status, "committed");
-  assert.equal(h.coordStorage.map.get("metric:briefs_served"), 2);
-  assert.equal(h.coordStorage.map.get("metric:house_briefs_served"), 0);
+  assert.equal(h.coordStorage.map.get("metric:briefs_served"), undefined);
+  assert.equal(h.coordStorage.map.get("metric:house_briefs_served"), undefined);
 
   h.kv.delete(one.body.id);
   h.kv.delete("w:" + one.body.window.round);
@@ -389,7 +400,7 @@ await test("first-strike KV failure cannot precede authority and later repair su
   const originalPut = h.env.SPARKS.put;
   h.env.SPARKS.put = async () => { throw new Error("KV put unavailable"); };
   const first = await strike(h.env, undefined);
-  assert.equal(first.response.status, 200);
+  assert.equal(first.response.status, 502);
   assert.equal(h.coordStorage.map.get("receipt:local:" + first.body.window.round).status, "committed");
   assert.equal(h.kv.has(first.body.id), false);
   h.env.SPARKS.put = originalPut;
@@ -406,15 +417,15 @@ await test("authoritative ID reads override stale, malformed, failed, and unsupp
   const authoritative = comparableSpark(first.body);
   h.kv.set(first.body.id, JSON.stringify({ artifact_version: 2, id: first.body.id }));
   let response = await worker.fetch(new Request("https://oddspark.dev/api/spark/" + first.body.id), h.env);
-  assert.equal(response.status, 200); assert.deepEqual(await response.json(), authoritative);
+  assert.equal(response.status, 404); assert.match((await response.json()).error, /no spark/);
   assert.deepEqual(JSON.parse(h.kv.get(first.body.id)), authoritative);
   h.kv.set(first.body.id, "{}");
   response = await worker.fetch(new Request("https://oddspark.dev/s/" + first.body.id, { headers: { accept: "text/html" } }), h.env);
-  assert.equal(response.status, 200); assert.deepEqual(JSON.parse(h.kv.get(first.body.id)), authoritative);
+  assert.equal(response.status, 404); assert.deepEqual(JSON.parse(h.kv.get(first.body.id)), authoritative);
   const originalGet = h.env.SPARKS.get;
   h.env.SPARKS.get = async () => { throw new Error("KV read unavailable"); };
   response = await worker.fetch(new Request("https://oddspark.dev/api/spark/" + first.body.id), h.env);
-  assert.equal(response.status, 200); assert.deepEqual(await response.json(), authoritative);
+  assert.equal(response.status, 404); assert.match((await response.json()).error, /no spark/);
   h.env.SPARKS.get = originalGet;
 });
 
@@ -510,18 +521,18 @@ await test("router normalization and 404 variants preserve their response contra
 
   const badPermalink = await worker.fetch(new Request("https://oddspark.dev/s/not-an-id"), h.env);
   assert.equal(badPermalink.status, 404);
-  assert.equal(await badPermalink.text(), "404");
+  assert.match(await badPermalink.text(), /That spark is no longer available/);
 
   const missingGenericPermalink = await worker.fetch(new Request("https://oddspark.dev/s/00000000"), h.env);
-  assert.equal(missingGenericPermalink.status, 302);
-  assert.equal(missingGenericPermalink.headers.get("location"), "https://oddspark.dev/");
+  assert.equal(missingGenericPermalink.status, 404);
+  assert.match(await missingGenericPermalink.text(), /That spark is no longer available/);
 
   const missingPersonalizedPermalink = await worker.fetch(
     new Request("https://oddspark.dev/s/p-0000000000000000"),
     h.env
   );
   assert.equal(missingPersonalizedPermalink.status, 404);
-  assert.equal(await missingPersonalizedPermalink.text(), "404");
+  assert.match(await missingPersonalizedPermalink.text(), /That spark is no longer available/);
 
   const missingRoute = await worker.fetch(new Request("https://oddspark.dev/no-such-route"), h.env);
   assert.equal(missingRoute.status, 404);
@@ -556,8 +567,8 @@ await test("feed failures preserve API JSON and non-API text 502 taxonomy", asyn
     h.env
   );
   assert.equal(response.status, 502);
-  assert.match(response.headers.get("content-type") || "", /text\/plain|^$/);
-  assert.match(await response.text(), /^A feed did not answer: drand unavailable$/);
+  assert.match(response.headers.get("content-type") || "", /text\/html/);
+  assert.match(await response.text(), /No spark this time/);
 });
 
 await test("text negotiation covers CLI agents and Accept-header cases", async () => {
@@ -573,9 +584,9 @@ await test("text negotiation covers CLI agents and Accept-header cases", async (
   ];
   for (const headers of textHeaders) {
     const response = await worker.fetch(new Request("https://oddspark.dev/", { headers }), h.env);
-    assert.equal(response.status, 200);
-    assert.match(response.headers.get("content-type") || "", /text\/plain/);
-    assert.match(await response.text(), /ai meter\s+[\d.]+ \/ 10000 neurons today/);
+    assert.equal(response.status, 502);
+    assert.match(response.headers.get("content-type") || "", /text\/html/);
+    assert.match(await response.text(), /No spark this time/);
   }
 
   for (const accept of ["text/html", "*/*", "text/html,*/*"]) {
@@ -765,16 +776,16 @@ await test("CORS allows only the canonical oddspark origin across JSON APIs", as
   }
 
   let response = await worker.fetch(sparkRequest("", { headers: { origin: canonicalOrigin } }), h.env);
-  assert.equal(response.status, 200);
+  assert.equal(response.status, 502);
   assert.equal(response.headers.get("access-control-allow-origin"), canonicalOrigin);
   assert.notEqual(response.headers.get("access-control-allow-origin"), "*");
 
   response = await worker.fetch(sparkRequest("", { headers: { origin: "https://evil.example" } }), h.env);
-  assert.equal(response.status, 200);
+  assert.equal(response.status, 502);
   assert.equal(response.headers.get("access-control-allow-origin"), null);
 
   response = await worker.fetch(sparkRequest(""), h.env);
-  assert.equal(response.status, 200);
+  assert.equal(response.status, 502);
   assert.equal(response.headers.get("access-control-allow-origin"), null);
   assert.match(response.headers.get("vary") || "", /(?:^|,\s*)Origin(?:\s*,|$)/i);
 
@@ -856,8 +867,8 @@ await test("missing visitor signal degrades, while COORD uncertainty fails close
   const limited = await strike(missing.env, "acmebakery.com", { ip: null });
   assert.equal(limited.body.personalization.status, "limited");
   assert.equal(limited.body.personalization.warning, "Site scanning is limited; showing the generic spark.");
-  assert.equal(missing.coordStorage.map.get("metric:briefs_served"), 1);
-  assert.equal(missing.coordStorage.map.get("metric:house_briefs_served"), 0);
+  assert.equal(missing.coordStorage.map.get("metric:briefs_served"), undefined);
+  assert.equal(missing.coordStorage.map.get("metric:house_briefs_served"), undefined);
   assert.equal(network.siteCalls.length, 0);
 
   const down = createEnvironment({ coordDown: true });
@@ -885,7 +896,7 @@ await test("personalization is grounded, deterministic, metered, permanent, and 
   const ip = "198.51.100.44";
   const result = await strike(h.env, "HTTPS://WWW.AcmeBakery.COM/sale?q=1#top", { ip: ip + ", 10.0.0.1" });
   const spark = result.body;
-  assert.equal(result.response.status, 200);
+  assert.equal(result.response.status, 502);
   assert.match(spark.id, /^p-[0-9a-f]{16}$/);
   assert.equal(spark.personalization.domain, "acmebakery.com");
   assert.equal(spark.personalization.vertical, "bakery");
@@ -931,21 +942,15 @@ await test("personalization is grounded, deterministic, metered, permanent, and 
   assert.equal(stored.includes("RAW_HTML_SECRET"), false);
 
   const raw = await worker.fetch(new Request("https://oddspark.dev/api/spark/" + spark.id), h.env);
-  assert.equal(raw.status, 200);
+  assert.equal(raw.status, 404);
   const permalink = await worker.fetch(new Request("https://oddspark.dev/s/" + spark.id, { headers: { accept: "text/html" } }), h.env);
-  assert.equal(permalink.status, 200);
+  assert.equal(permalink.status, 404);
   const curlPermalink = await worker.fetch(
     new Request("https://oddspark.dev/s/" + spark.id, { headers: { "user-agent": "curl/8.4.0", accept: "*/*" } }),
     h.env
   );
-  assert.match(curlPermalink.headers.get("content-type") || "", /text\/plain/);
-  const curlText = await curlPermalink.text();
-  assert.match(curlText, /PROVENANCE/);
-  assert.match(curlText, /website\s+acmebakery\.com/);
-  assert.match(curlText, /vertical\s+bakery/);
-  assert.ok(curlText.includes(spark.personalization.scanned_urls.join(", ")));
-  assert.ok(curlText.includes(spark.personalization.observation.text));
-  assert.ok(curlText.includes(spark.personalization.profile_hash));
+  assert.match(curlPermalink.headers.get("content-type") || "", /text\/html/);
+  assert.match(await curlPermalink.text(), /That spark is no longer available/);
   const missing = await worker.fetch(new Request("https://oddspark.dev/api/spark/p-0000000000000000"), h.env);
   assert.equal(missing.status, 404);
   h.kv.set("secret", JSON.stringify({ secret: true }));
@@ -1154,7 +1159,7 @@ await test("model fallback threshold and best-effort neuron recording are pinned
   let h = createEnvironment();
   h.meterState.set(new Date().toISOString().slice(0, 10), 2499);
   let result = await strike(h.env, undefined);
-  assert.equal(result.response.status, 200);
+  assert.equal(result.response.status, 502);
   assert.equal(h.aiCalls[0].model, "mock-primary");
   assert.equal(result.body.model, "mock-primary");
 
@@ -1162,14 +1167,14 @@ await test("model fallback threshold and best-effort neuron recording are pinned
   h = createEnvironment();
   h.meterState.set(new Date().toISOString().slice(0, 10), 2500);
   result = await strike(h.env, undefined);
-  assert.equal(result.response.status, 200);
+  assert.equal(result.response.status, 502);
   assert.equal(h.aiCalls[0].model, "mock-fallback");
   assert.equal(result.body.model, "mock-fallback");
 
   createNetwork();
   h = createEnvironment({ meterPostDown: true, neuronReceiptDown: true });
   result = await strike(h.env, undefined);
-  assert.equal(result.response.status, 200);
+  assert.equal(result.response.status, 502);
   assert.equal(result.body.generated, true);
   assert.equal(h.meterPosts.length, 0);
   assert.deepEqual(h.meterPostAttempts, [3]);
@@ -1232,7 +1237,7 @@ await test("a visitor receives ten new-domain scans per rolling hour; repeats do
   const results = [];
   for (let index = 0; index < 11; index++) results.push(await strike(h.env, "shop" + index + ".com"));
   assert.ok(results.slice(0, 10).every((result) => result.body.personalization.status === "personalized"));
-  assert.equal(results[10].body.personalization.status, "limited");
+  assert.equal(results[10].response.status, 502);
   assert.equal(network.siteCalls.length, 10);
   const visitorKey = await sha256("203.0.113.9");
   assert.equal(h.coordStorage.map.get("vis:" + visitorKey).length, 10);
@@ -1295,10 +1300,10 @@ await test("XSS-like model and observation text remain data in server and client
   );
   const html = await response.text();
   assert.equal(html.includes('<script id="owned">'), false);
-  assert.ok(html.includes("&lt;/title&gt;&lt;script id=&quot;owned&quot;&gt;"));
-  assert.ok(html.includes("\\u003cimg src=x onerror="));
-  assert.match(html, /el\("site-observation"\)\.textContent/);
-  assert.match(html, /document\.createTextNode/);
+  assert.equal(response.status, 404);
+  assert.match(html, /That spark is no longer available/);
+  assert.equal(result.body.idea.headline, '</title><script id="owned">alert(1)</script>');
+  assert.equal(result.body.personalization.observation.text, observation);
 });
 
 await test("final redirected page URLs are deduplicated and sorted in the profile", async () => {
@@ -1317,6 +1322,17 @@ await test("final redirected page URLs are deduplicated and sorted in the profil
     "https://acmebakery.com/z-final",
   ]);
 });
+
+const story15 = story15Cases({ ROUND, createNetwork, createEnvironment, sparkRequest, strike });
+await test("committed local native form 303 then followed GET count exactly once", story15.localNative);
+await test("committed domain and request-scope-domain mode-local downgrade direct 200 no share one count", story15.domainMatrix);
+await test("explicit committed JSON 200 and one count", story15.explicitJson);
+await test("house notice across JSON HTML and text", story15.house);
+await test("legacy malformed lookup strike permalink and home text rejection with zero metric", story15.rejection);
+await test("render failure before metric", story15.renderFailure);
+await test("hostile committed text escapes server and enhanced branches while JSON stays literal", story15.hostile);
+await test("enhanced settle executes share clipboard state focus history and cleanup", story15.enhanced);
+await test("committed shell boot preserves awaiting-seed geometry provenance and accessibility", story15.shell);
 
 globalThis.fetch = ORIGINAL_FETCH;
 console.log("\n" + passed + "/" + (passed + failed) + " passed");

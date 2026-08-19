@@ -92,7 +92,7 @@ development_status:
   1-12-composite-gate-and-qualified-judge-integration: awaiting-operator
   1-13-strike-orchestrator-and-house-fallbacks: awaiting-operator
   1-14-authoritative-commit-and-compatibility-reader: done
-  1-15-committed-brief-rendering: backlog
+  1-15-committed-brief-rendering: done
   1-16-request-hardening-and-domain-downgrade-seam: backlog
   1-17-semantic-regression-suite: backlog
   1-18-semantic-qualification: backlog

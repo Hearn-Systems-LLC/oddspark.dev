@@ -61,10 +61,12 @@ test("Briefs reject unsupported versions, unknown and missing fields, nested dri
   const mutations = [
     (b) => { b.version = 2; }, (b) => { b.extra = true; }, (b) => { delete b.plan; }, (b) => { b.before_after.extra = true; },
     (b) => { b.why_fits.breadcrumb = "not local"; }, (b) => { b.title = "$50 setup"; }, (b) => { b.invitation = "Book now for this Spark; not worth changing is okay."; },
-    (b) => { b.plan = "Save 20 hours."; }, (b) => { b.stays_same.tools = []; },
+    (b) => { b.plan = "Save 20 hours."; },
   ];
   for (const mutate of mutations) { const value = localBrief(); mutate(value); assert.equal(validateBrief(value).valid, false); }
   const domain = domainBrief(); delete domain.why_fits.breadcrumb; assert.equal(validateBrief(domain).valid, false);
+  const emptyGroups = localBrief(); emptyGroups.stays_same = { tools: [], authority: [], steps: [] };
+  assert.equal(validateBrief(emptyGroups).valid, true);
 });
 
 test("Candidate identity sorts object keys, preserves array order, and changes with validated content", () => {
