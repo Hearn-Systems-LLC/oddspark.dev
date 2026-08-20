@@ -43,6 +43,16 @@
 #   1.24 -> 1.25 inactive writer deployment, and 1.25 -> 1.26 atomic local-only activation.
 #   All affected stories were backlog and remain backlog. The blocked Story 1.16 artifact in run
 #   20260819-035459-b4ae is immutable historical evidence and is not the revised story spec.
+#
+# 2026-08-20 PRODUCTION 502 INCIDENT RECONCILIATION
+# (Sprint Change Proposal 2026-08-20, approved):
+#   Production returned 502 on every Strike: an out-of-band deploy of main shipped the
+#   Story 1.14/1.15 committed_brief reader requirement while the live writer still produces
+#   legacy Spark artifacts, violating the approved release sequence (1.23 -> 1.24 -> 1.25 -> 1.26).
+#   Interim mitigation: redeploy the pre-1.14 Worker artifact under separate deployment approval.
+#   Recovery path: Story 1.16 and Story 1.23 are promoted to the incident-recovery critical
+#   path and take precedence over review/operator queues (1.7, 1.11, 1.12, 1.13); their statuses
+#   remain backlog until story files are created. No story is added, removed, or renumbered.
 
 # STATUS DEFINITIONS:
 # ==================
