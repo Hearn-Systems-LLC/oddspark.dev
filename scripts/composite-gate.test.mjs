@@ -106,7 +106,9 @@ test("pending corpus and inactive, NO-GO, stale, or malformed descriptors remain
     let calls = 0; const result = await runCompositeGate(input(), { judge_provider: () => { calls += 1; }, judge: descriptor, rubric: approvedCorpus() });
     assert.equal(result.code, COMPOSITE_GATE_CODES.JUDGE_UNQUALIFIED); assert.equal(calls, 0);
   }
-  const result = await runCompositeGate(input(), { judge_provider: () => assert.fail("must not call"), judge: judge(), rubric: clone(pendingCorpus) });
+  const pending = clone(pendingCorpus);
+  pending.approval = { schema_version: 1, status: "pending_owner_approval", owner: null, corpus_version: "voice-v1", hashes: null, semantic_identity: null, approved_at: null };
+  const result = await runCompositeGate(input(), { judge_provider: () => assert.fail("must not call"), judge: judge(), rubric: pending });
   assert.equal(result.code, COMPOSITE_GATE_CODES.JUDGE_UNQUALIFIED);
   const mismatch = input(); mismatch.evidence_context.rubric_version = "voice-v2";
   const mismatched = await runCompositeGate(mismatch, dependencies(() => assert.fail("must not call")));

@@ -27,6 +27,7 @@ const fixture = await (async () => ({
 const authorities = { priors: fixture.priors, rubric: fixture.rubric };
 const clone = (value) => structuredClone(value);
 const rules = (result) => result.issues.map((entry) => entry.rule);
+const pendingApproval = () => ({ schema_version: 1, catalog_version: 1, status: "pending_owner_approval", approver: null, content_hash: catalogIdentity(fixture.catalog), identity: null, approved_at: null });
 
 test("valid catalog covers every canonical season and returns a deterministic deeply frozen artifact", () => {
   const first = buildCatalog(fixture.catalog, authorities);
@@ -155,10 +156,11 @@ test("omitted and malformed authority arguments fail closed without throwing", (
 });
 
 test("pending approval is exact-hash-bound but never ready", () => {
-  const result = verifyApproval(fixture.catalog, fixture.approval, authorities);
+  const approval = pendingApproval();
+  const result = verifyApproval(fixture.catalog, approval, authorities);
   assert.equal(result.status, "pending_owner_approval");
   assert.equal(result.ready, false);
-  assert.equal(result.content_hash, fixture.approval.content_hash);
+  assert.equal(result.content_hash, approval.content_hash);
   assert.deepEqual(result.issues, []);
 });
 
@@ -195,6 +197,7 @@ test("approval shape, status, version, and time branches fail closed", () => {
     content_hash: catalogIdentity(fixture.catalog), identity: null, approved_at: "2026-08-18T12:00:00.000Z",
   };
   approved.identity = approvalIdentity(approved);
+  const pending = pendingApproval();
   const cases = [
     [null, "object"],
     [[], "object"],
@@ -204,9 +207,9 @@ test("approval shape, status, version, and time branches fail closed", () => {
     [{ ...approved, catalog_version: 2 }, "version"],
     [{ ...approved, approved_at: "2026-08-18T12:00:00Z" }, "timestamp"],
     [{ ...approved, approved_at: "2026-08-19T12:00:00.000Z" }, "timestamp"],
-    [{ ...fixture.approval, approver: "Justin" }, "pending_shape"],
-    [{ ...fixture.approval, identity: "0".repeat(64) }, "pending_shape"],
-    [{ ...fixture.approval, approved_at: "2026-08-18T12:00:00.000Z" }, "pending_shape"],
+    [{ ...pending, approver: "Justin" }, "pending_shape"],
+    [{ ...pending, identity: "0".repeat(64) }, "pending_shape"],
+    [{ ...pending, approved_at: "2026-08-18T12:00:00.000Z" }, "pending_shape"],
   ];
   for (const [record, expected] of cases) {
     const result = verifyApproval(fixture.catalog, record, authorities, { now: new Date("2026-08-18T13:00:00.000Z") });
@@ -237,15 +240,15 @@ test("catalog or approval hash drift never reports ready", () => {
   assert.ok(rules(result).includes("content_hash"));
 });
 
-test("loader and runCli report checked-in pending state and malformed JSON", async () => {
+test("loader and runCli report checked-in approved state and malformed JSON", async () => {
   const loaded = await loadHouseBriefInputs();
   assert.deepEqual(loaded.issues, []);
   assert.equal(loaded.catalog.catalog_version, 1);
-  const pending = await runCli();
-  assert.equal(pending.structure_valid, true);
-  assert.equal(pending.readiness, "pending_owner_approval");
-  assert.equal(pending.production_ready, false);
-  assert.equal(pending.content_hash, fixture.approval.content_hash);
+  const approved = await runCli();
+  assert.equal(approved.structure_valid, true);
+  assert.equal(approved.readiness, "approved");
+  assert.equal(approved.production_ready, true);
+  assert.equal(approved.content_hash, fixture.approval.content_hash);
 
   const directory = await mkdtemp(path.join(tmpdir(), "oddspark-house-briefs-"));
   try {
@@ -261,11 +264,11 @@ test("loader and runCli report checked-in pending state and malformed JSON", asy
   } finally { await rm(directory, { recursive: true, force: true }); }
 });
 
-test("executable emits JSON and exits one for pending and malformed states", async () => {
-  const pending = spawnSync(process.execPath, ["scripts/house-briefs.mjs"], { cwd: new URL("..", import.meta.url), encoding: "utf8" });
-  assert.equal(pending.status, 1);
-  assert.equal(JSON.parse(pending.stdout).readiness, "pending_owner_approval");
-  assert.equal(pending.stderr, "");
+test("executable emits JSON for approved and malformed states", async () => {
+  const approved = spawnSync(process.execPath, ["scripts/house-briefs.mjs"], { cwd: new URL("..", import.meta.url), encoding: "utf8" });
+  assert.equal(approved.status, 0);
+  assert.equal(JSON.parse(approved.stdout).readiness, "approved");
+  assert.equal(approved.stderr, "");
 
   const directory = await mkdtemp(path.join(tmpdir(), "oddspark-house-cli-"));
   try {

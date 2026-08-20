@@ -27,6 +27,7 @@ function validate(body, env) {
 }
 function health(env) { const complete = ["WORKER_SHA256", "CONFIG_SHA256", "RUNTIME_SHA256"].every((key) => /^[a-f0-9]{64}$/.test(env[key] ?? "")); return { ok: complete, inference: false, schema_version: "oddspark.generation-adapter-health/v1", provider: "cloudflare-workers-ai", roles: ROLE_IDENTITIES, parameters: PARAMETERS, binding: "AI", worker_sha256: complete ? env.WORKER_SHA256 : null, config_sha256: complete ? env.CONFIG_SHA256 : null, runtime_sha256: complete ? env.RUNTIME_SHA256 : null }; }
 async function run(request, env) {
+  if (!/^[a-f0-9]{64}$/.test(env.AUTHORITY_SHA256 ?? "") || request.headers.get("x-oddspark-qualification-authority") !== env.AUTHORITY_SHA256) return json({ ok: false, error: { code: "unauthorized" } }, 403);
   if (!request.headers.get("content-type")?.startsWith("application/json")) return json({ ok: false, error: { code: "content_type" } }, 415);
   const declared = request.headers.get("content-length"); if (declared !== null && (!/^\d+$/.test(declared) || Number(declared) > MAX_REQUEST_BYTES)) return json({ ok: false, error: { code: "request_too_large" } }, 413);
   const raw = await request.text(); if (new TextEncoder().encode(raw).byteLength > MAX_REQUEST_BYTES) return json({ ok: false, error: { code: "request_too_large" } }, 413);

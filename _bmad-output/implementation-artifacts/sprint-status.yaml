@@ -1,5 +1,5 @@
 # generated: 2026-08-16
-# last_updated: 2026-08-19
+# last_updated: 2026-08-20
 # project: Github
 # project_key: NOKEY
 # tracking_system: file-system
@@ -43,6 +43,16 @@
 #   1.24 -> 1.25 inactive writer deployment, and 1.25 -> 1.26 atomic local-only activation.
 #   All affected stories were backlog and remain backlog. The blocked Story 1.16 artifact in run
 #   20260819-035459-b4ae is immutable historical evidence and is not the revised story spec.
+#
+# 2026-08-20 PRODUCTION 502 INCIDENT RECONCILIATION
+# (Sprint Change Proposal 2026-08-20, approved):
+#   Production returned 502 on every Strike: an out-of-band deploy of main shipped the
+#   Story 1.14/1.15 committed_brief reader requirement while the live writer still produces
+#   legacy Spark artifacts, violating the approved release sequence (1.23 -> 1.24 -> 1.25 -> 1.26).
+#   Interim mitigation: redeploy the pre-1.14 Worker artifact under separate deployment approval.
+#   Recovery path: Story 1.16 and Story 1.23 are promoted to the incident-recovery critical
+#   path and take precedence over review/operator queues (1.7, 1.11, 1.12, 1.13); their statuses
+#   remain backlog until story files are created. No story is added, removed, or renumbered.
 
 # STATUS DEFINITIONS:
 # ==================
@@ -80,7 +90,7 @@
 # - Retrospective appends its action items to action_items; sprint-status surfaces open ones
 
 generated: 2026-08-16
-last_updated: 2026-08-19
+last_updated: 2026-08-20
 project: Github
 project_key: NOKEY
 tracking_system: file-system
@@ -98,12 +108,12 @@ development_status:
   1-8-versioned-house-brief-catalog: done
   1-9-local-evidence-assembly: done
   1-10-generation-contract-and-offline-adapter: done
-  1-11-generation-structural-qualification: awaiting-operator
+  1-11-generation-structural-qualification: review
   1-12-composite-gate-and-qualified-judge-integration: awaiting-operator
   1-13-strike-orchestrator-and-house-fallbacks: awaiting-operator
   1-14-authoritative-commit-and-compatibility-reader: done
   1-15-committed-brief-rendering: done
-  1-16-request-hardening-and-inactive-domain-dispatch-contract: backlog
+  1-16-request-hardening-and-inactive-domain-dispatch-contract: review
   1-17-semantic-regression-suite: backlog
   1-18-semantic-qualification: backlog
   1-19-local-full-request-qualification: backlog
