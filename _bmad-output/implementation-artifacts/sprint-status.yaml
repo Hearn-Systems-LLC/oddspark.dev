@@ -113,7 +113,7 @@ development_status:
   1-13-strike-orchestrator-and-house-fallbacks: awaiting-operator
   1-14-authoritative-commit-and-compatibility-reader: done
   1-15-committed-brief-rendering: done
-  1-16-request-hardening-and-inactive-domain-dispatch-contract: backlog
+  1-16-request-hardening-and-inactive-domain-dispatch-contract: review
   1-17-semantic-regression-suite: backlog
   1-18-semantic-qualification: backlog
   1-19-local-full-request-qualification: backlog

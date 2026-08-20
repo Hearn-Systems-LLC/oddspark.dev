@@ -1,6 +1,7 @@
 import {
   canonicalScopeKey,
   classifyCompatibleArtifact,
+  defensiveFreeze,
   parseReceipt,
   parseRequestScope,
   validateCommitPayload,
@@ -1522,6 +1523,68 @@ function requireCommittedArtifact(input) {
 }
 
 /* ------------------------------------------------------------------ *
+ * Inactive-domain dispatch contract (Story 1.16)
+ *
+ * Domain mode is not activated, so a valid domain request never reaches
+ * the scanner/personalization path on this seam. Instead the route
+ * derives one closed, deeply frozen dispatch value — a pure function of
+ * the already-guarded `{domain}` and the current window — and passes it
+ * exactly once to an inactive-domain writer port injected on `env`
+ * (absent in production config today; the canonical writer is Story
+ * 1.23). Only a returned, validated, scope-matching committed_brief
+ * renders; every fault class terminates as the negotiated 502. The
+ * route never constructs, repairs, or substitutes a Brief.
+ * ------------------------------------------------------------------ */
+
+export const PRE_ACTIVATION_NOTICE = "Website reading is not switched on yet, so this plan is built from local patterns only.";
+
+const INACTIVE_DOMAIN_WRITER_ERROR = "inactive domain writer unavailable";
+
+export function deriveInactiveDomainDispatch(website, round) {
+  // Input guards have already accepted this domain; a scope that fails to
+  // parse here is a defect and fails closed rather than re-adjudicating input.
+  const scope = parseRequestScope({ kind: "domain", round, domain: website && website.domain });
+  if (!scope) throw new Error(INACTIVE_DOMAIN_WRITER_ERROR);
+  return defensiveFreeze({
+    contract: "inactive-domain-dispatch/v1",
+    request_scope: scope,
+    effective_mode: "local",
+    claim_key: canonicalScopeKey(scope),
+    notice_identity: "pre-activation",
+    notice: PRE_ACTIVATION_NOTICE,
+    scan_allowed: false,
+    evidence_provider_allowed: false,
+    permalink_allowed: false,
+  });
+}
+
+async function runInactiveDomainWriter(port, dispatch) {
+  let outcome;
+  try {
+    outcome = await port.write(dispatch);
+  } catch (err) {
+    throw new Error(INACTIVE_DOMAIN_WRITER_ERROR);
+  }
+  // Hostile outcomes (throwing getters, Proxies) must fail closed to the same
+  // terminal rather than leaking an internal message into the negotiated 502.
+  try {
+    if (!closedInput(outcome, ["status", "scope", "artifact"]) || outcome.status !== "committed") {
+      throw new Error(INACTIVE_DOMAIN_WRITER_ERROR);
+    }
+    const scope = parseRequestScope(outcome.scope);
+    if (!scope || canonicalScopeKey(scope) !== dispatch.claim_key) throw new Error(INACTIVE_DOMAIN_WRITER_ERROR);
+    const classification = classifyCompatibleArtifact(outcome.artifact);
+    if (classification.status !== "supported" || classification.kind !== "committed_brief"
+        || classification.value.request_scope !== "domain") {
+      throw new Error(INACTIVE_DOMAIN_WRITER_ERROR);
+    }
+    return classification.value;
+  } catch (err) {
+    throw new Error(INACTIVE_DOMAIN_WRITER_ERROR);
+  }
+}
+
+/* ------------------------------------------------------------------ *
  * Page
  * ------------------------------------------------------------------ */
 
@@ -2579,11 +2642,15 @@ const CORS = {
   "access-control-allow-headers": "content-type",
 };
 
+// Every dynamic response carries the same negotiation-aware header set:
+// caches must key on Origin, Accept, and Content-Type and never store.
+const DYNAMIC_HEADERS = { vary: "Origin, Accept, Content-Type", "cache-control": "no-store" };
+
 function corsHeaders(request) {
   const origin = request.headers.get("origin");
-  if (!origin) return { vary: "Origin" };
-  if (origin !== APP_ORIGIN) return { vary: "Origin" };
-  return { "access-control-allow-origin": APP_ORIGIN, ...CORS, vary: "Origin" };
+  if (!origin) return { vary: DYNAMIC_HEADERS.vary };
+  if (origin !== APP_ORIGIN) return { vary: DYNAMIC_HEADERS.vary };
+  return { "access-control-allow-origin": APP_ORIGIN, ...CORS, vary: DYNAMIC_HEADERS.vary };
 }
 
 function json(obj, status = 200, headers = {}) {
@@ -2594,7 +2661,7 @@ function json(obj, status = 200, headers = {}) {
 }
 
 function apiJson(request, obj, status = 200) {
-  return json(obj, status, corsHeaders(request));
+  return json(obj, status, { ...DYNAMIC_HEADERS, ...corsHeaders(request) });
 }
 
 function wantsText(req) {
@@ -2638,26 +2705,43 @@ export default {
           intent = await readSparkIntent(request);
         } catch (err) {
           if (err instanceof WebsiteInputError) return html
-            ? new Response(page(null, null, { fieldError: err.message }), { status: 400, headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" } })
+            ? new Response(page(null, null, { fieldError: err.message }), { status: 400, headers: { "content-type": "text/html; charset=utf-8", ...DYNAMIC_HEADERS } })
             : apiJson(request, { error: err.message, field: "website" }, 400);
           throw err;
         }
         if (!intent.website) {
           const artifact = requireCommittedArtifact(await buildSpark(env));
           const presentation = committedBriefPresentation(artifact);
-          if (html) return new Response(null, { status: 303, headers: { location: `/s/${encodeURIComponent(artifact.id)}`, "cache-control": "no-store" } });
+          if (html) return new Response(null, { status: 303, headers: { location: `/s/${encodeURIComponent(artifact.id)}`, ...DYNAMIC_HEADERS } });
           const body = request.headers.get("x-oddspark-presentation") === "1" ? presentation : committedBriefJson(artifact);
           await recordServed(env, artifact, "json");
           return apiJson(request, body);
         }
 
         const round = await currentWindow();
+        // Inactive-domain dispatch seam: when a usable writer port is injected,
+        // the request follows the closed dispatch contract and never touches
+        // the quarantined scanner/personalization path below (Story 5.2
+        // deletes it). A null or malformed binding behaves as absent.
+        if (env.INACTIVE_DOMAIN_WRITER != null && typeof env.INACTIVE_DOMAIN_WRITER.write === "function") {
+          const dispatch = deriveInactiveDomainDispatch(intent.website, round);
+          const artifact = await runInactiveDomainWriter(env.INACTIVE_DOMAIN_WRITER, dispatch);
+          const presentation = committedBriefPresentation(artifact);
+          if (html) {
+            const response = new Response(page(presentation, null), { headers: { "content-type": "text/html; charset=utf-8", ...DYNAMIC_HEADERS } });
+            await recordServed(env, artifact, "domain_html");
+            return response;
+          }
+          const body = request.headers.get("x-oddspark-presentation") === "1" ? presentation : committedBriefJson(artifact);
+          await recordServed(env, artifact, "json");
+          return apiJson(request, body);
+        }
         const visitorKey = await visitorKeyFor(request);
         if (!visitorKey) {
           const artifact = requireCommittedArtifact(await authoritativeDomainFallback(env, round, intent.website.domain, "limited", LIMITED_WARNING));
           const presentation = committedBriefPresentation(artifact);
           if (html) {
-            const response = new Response(page(presentation, null), { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" } });
+            const response = new Response(page(presentation, null), { headers: { "content-type": "text/html; charset=utf-8", ...DYNAMIC_HEADERS } });
             await recordServed(env, artifact, "domain_html");
             return response;
           }
@@ -2668,7 +2752,7 @@ export default {
         const artifact = requireCommittedArtifact(await buildDomainSpark(request, env, intent.website, round, visitorKey));
         const presentation = committedBriefPresentation(artifact);
         if (html) {
-          const response = new Response(page(presentation, null), { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" } });
+          const response = new Response(page(presentation, null), { headers: { "content-type": "text/html; charset=utf-8", ...DYNAMIC_HEADERS } });
           await recordServed(env, artifact, "domain_html");
           return response;
         }
@@ -2697,24 +2781,24 @@ export default {
       // Permalink
       if (path.startsWith("/s/")) {
         const id = path.split("/").pop();
-        if (!SPARK_ID_RE.test(id || "")) return new Response(page(null, null, { statusMessage: "That spark is no longer available. Press Strike for a new one." }), { status: 404, headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" } });
+        if (!SPARK_ID_RE.test(id || "")) return new Response(page(null, null, { statusMessage: "That spark is no longer available. Press Strike for a new one." }), { status: 404, headers: { "content-type": "text/html; charset=utf-8", ...DYNAMIC_HEADERS } });
         const compatible = await compatibleArtifactById(env, id);
         if (compatible.status !== "supported" || compatible.kind !== "committed_brief" || compatible.value.request_scope !== "local") {
-          return new Response(page(null, null, { statusMessage: "That spark is no longer available. Press Strike for a new one." }), { status: 404, headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" } });
+          return new Response(page(null, null, { statusMessage: "That spark is no longer available. Press Strike for a new one." }), { status: 404, headers: { "content-type": "text/html; charset=utf-8", ...DYNAMIC_HEADERS } });
         }
         const s = compatible.value;
         if (wantsText(request)) {
           const body = committedBriefAsText(s);
           await recordServed(env, s, "local_permalink");
           return new Response(body, {
-            headers: { "content-type": "text/plain; charset=utf-8" },
+            headers: { "content-type": "text/plain; charset=utf-8", ...DYNAMIC_HEADERS },
           });
         }
         const presentation = committedBriefPresentation(s);
         const body = page(presentation, null);
         await recordServed(env, s, "local_permalink");
         return new Response(body, {
-          headers: { "content-type": "text/html; charset=utf-8" },
+          headers: { "content-type": "text/html; charset=utf-8", ...DYNAMIC_HEADERS },
         });
       }
 
@@ -2732,7 +2816,7 @@ export default {
           const body = committedBriefAsText(s);
           await recordServed(env, s, "json");
           return new Response(body, {
-            headers: { "content-type": "text/plain; charset=utf-8" },
+            headers: { "content-type": "text/plain; charset=utf-8", ...DYNAMIC_HEADERS },
           });
         }
         let live = null;
@@ -2742,16 +2826,21 @@ export default {
           /* masthead degrades to ---- */
         }
         return new Response(page(null, live), {
-          headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" },
+          headers: { "content-type": "text/html; charset=utf-8", ...DYNAMIC_HEADERS },
         });
       }
 
-      return new Response("404", { status: 404 });
+      return new Response("404", { status: 404, headers: DYNAMIC_HEADERS });
     } catch (err) {
-      if (err instanceof WebsiteInputError) return apiJson(request, { error: err.message, field: "website" }, 400);
-      if (path === "/api/spark" && wantsHtml(request)) return new Response(page(null, null, { statusMessage: "No spark this time — a part of the system did not answer. Press Strike again." }), { status: 502, headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" } });
+      if (err instanceof WebsiteInputError) {
+        if (path === "/api/spark" && wantsHtml(request)) {
+          return new Response(page(null, null, { fieldError: err.message }), { status: 400, headers: { "content-type": "text/html; charset=utf-8", ...DYNAMIC_HEADERS } });
+        }
+        return apiJson(request, { error: err.message, field: "website" }, 400);
+      }
+      if (path === "/api/spark" && wantsHtml(request)) return new Response(page(null, null, { statusMessage: "No spark this time — a part of the system did not answer. Press Strike again." }), { status: 502, headers: { "content-type": "text/html; charset=utf-8", ...DYNAMIC_HEADERS } });
       if (path.startsWith("/api/")) return apiJson(request, { error: String(err.message || err) }, 502);
-      return new Response(page(null, null, { statusMessage: "No spark this time — a part of the system did not answer. Press Strike again." }), { status: 502, headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" } });
+      return new Response(page(null, null, { statusMessage: "No spark this time — a part of the system did not answer. Press Strike again." }), { status: 502, headers: { "content-type": "text/html; charset=utf-8", ...DYNAMIC_HEADERS } });
     }
   },
 };

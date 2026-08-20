@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import worker, { NeuronMeter, SparkCoordinator } from "./src/worker.js";
+import worker, { NeuronMeter, SparkCoordinator, deriveInactiveDomainDispatch, PRE_ACTIVATION_NOTICE } from "./src/worker.js";
 import { story15Cases } from "./scripts/brief-rendering.outer.mjs";
+import { buildCommittedBrief, CANDIDATE_SCHEMA_VERSION, deriveCandidateRef } from "./scripts/brief-contracts.mjs";
 
 const ROUND = 31415900;
 const SIGNATURE = "ab".repeat(96);
@@ -1333,6 +1334,335 @@ await test("render failure before metric", story15.renderFailure);
 await test("hostile committed text escapes server and enhanced branches while JSON stays literal", story15.hostile);
 await test("enhanced settle executes share clipboard state focus history and cleanup", story15.enhanced);
 await test("committed shell boot preserves awaiting-seed geometry provenance and accessibility", story15.shell);
+
+/* ------------------------------------------------------------------ *
+ * Story 1.16: inactive-domain dispatch contract and request hardening
+ * ------------------------------------------------------------------ */
+
+const WRITER_HASH = "a".repeat(64);
+
+function inactiveDomainCommitted(id, domain) {
+  const brief = {
+    version: 1,
+    mode: "local",
+    title: `Title for ${domain}`,
+    plan: "One concrete plan for the week.",
+    why_fits: { text: "It fits the slow season." },
+    what_gets_better: "The phone stops ringing for the same question.",
+    before_after: { before: "Calls interrupt the work.", after: "The page answers first." },
+    change_level: { time_range: "One quiet afternoon", steps_changed: 1, steps_removed: 0, preliminary: true },
+    stays_same: { tools: ["The phone"], authority: ["The owner"], steps: ["Taking the order"] },
+    invitation: "Bring this Spark and map a clear first step.",
+    grounded_numbers: [],
+    notice: PRE_ACTIVATION_NOTICE,
+  };
+  return buildCommittedBrief({
+    artifact_version: 1,
+    id,
+    request_scope: "domain",
+    brief,
+    brief_schema_version: 1,
+    policy_identity: WRITER_HASH,
+    rubric_identity: WRITER_HASH,
+    provenance: {
+      attempt_id: `attempt-${id}`,
+      candidate_ref: deriveCandidateRef(CANDIDATE_SCHEMA_VERSION, brief),
+      evidence_ref: WRITER_HASH,
+      grounding_report_version: 1,
+      effective_mode: "local",
+    },
+  });
+}
+
+function localCommitted(id) {
+  const brief = {
+    version: 1,
+    mode: "local",
+    title: `Local title ${id}`,
+    plan: "One concrete plan for the week.",
+    why_fits: { text: "It fits the slow season." },
+    what_gets_better: "The phone stops ringing for the same question.",
+    before_after: { before: "Calls interrupt the work.", after: "The page answers first." },
+    change_level: { time_range: "One quiet afternoon", steps_changed: 1, steps_removed: 0, preliminary: true },
+    stays_same: { tools: ["The phone"], authority: ["The owner"], steps: ["Taking the order"] },
+    invitation: "Bring this Spark and map a clear first step.",
+    grounded_numbers: [],
+  };
+  return buildCommittedBrief({
+    artifact_version: 1,
+    id,
+    request_scope: "local",
+    brief,
+    brief_schema_version: 1,
+    policy_identity: WRITER_HASH,
+    rubric_identity: WRITER_HASH,
+    provenance: {
+      attempt_id: `attempt-${id}`,
+      candidate_ref: deriveCandidateRef(CANDIDATE_SCHEMA_VERSION, brief),
+      evidence_ref: WRITER_HASH,
+      grounding_report_version: 1,
+      effective_mode: "local",
+    },
+  });
+}
+
+async function seedCommitted(h, scope, artifact) {
+  const stub = h.env.COORD.get(h.env.COORD.idFromName("global"));
+  const post = (path, body) => stub.fetch("https://coord" + path, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  assert.equal((await post("/claim", { scope, owner: "story-16" })).status, 200);
+  assert.equal((await post("/commit", { scope, owner: "story-16", artifact })).status, 200);
+}
+
+function nativeForm(website, headers = {}) {
+  return new Request("https://oddspark.dev/api/spark", {
+    method: "POST",
+    redirect: "manual",
+    headers: {
+      accept: "text/html",
+      "content-type": "application/x-www-form-urlencoded",
+      "cf-connecting-ip": "203.0.113.88",
+      ...headers,
+    },
+    body: new URLSearchParams({ website }).toString(),
+  });
+}
+
+function assertDynamicHeaders(response) {
+  const vary = (response.headers.get("vary") || "").split(",").map((token) => token.trim().toLowerCase());
+  for (const token of ["origin", "accept", "content-type"]) assert.ok(vary.includes(token), `vary missing ${token}`);
+  assert.equal(response.headers.get("cache-control"), "no-store");
+}
+
+await test("inactive-domain dispatch derivation is pure, closed, and deeply frozen", async () => {
+  const network = createNetwork();
+  const dispatch = deriveInactiveDomainDispatch({ domain: "acmebakery.com", url: "https://acmebakery.com/" }, ROUND);
+  assert.deepEqual(Object.keys(dispatch).sort(), [
+    "claim_key",
+    "contract",
+    "effective_mode",
+    "evidence_provider_allowed",
+    "notice",
+    "notice_identity",
+    "permalink_allowed",
+    "request_scope",
+    "scan_allowed",
+  ]);
+  assert.equal(dispatch.contract, "inactive-domain-dispatch/v1");
+  assert.deepEqual(dispatch.request_scope, { kind: "domain", round: ROUND, domain: "acmebakery.com" });
+  assert.equal(dispatch.effective_mode, "local");
+  assert.equal(dispatch.claim_key, `domain:${ROUND}:acmebakery.com`);
+  assert.equal(dispatch.notice_identity, "pre-activation");
+  assert.equal(dispatch.notice, "Website reading is not switched on yet, so this plan is built from local patterns only.");
+  assert.equal(dispatch.scan_allowed, false);
+  assert.equal(dispatch.evidence_provider_allowed, false);
+  assert.equal(dispatch.permalink_allowed, false);
+  const deeplyFrozen = (value) => value === null || typeof value !== "object"
+    || (Object.isFrozen(value) && Object.values(value).every(deeplyFrozen));
+  assert.ok(Object.isFrozen(dispatch) && deeplyFrozen(dispatch));
+  assert.throws(() => { dispatch.scan_allowed = true; }, TypeError);
+  // Purity: derivation touched no network, and it never receives env, KV,
+  // coordinator, AI, or a writer — it is a synchronous function of (website, round).
+  assert.equal(network.calls.length, 0);
+  assert.equal(network.siteCalls.length, 0);
+});
+
+await test("healthy injected writer renders domain HTML direct-200 and JSON parity, counting once each", async () => {
+  const network = createNetwork();
+  const h = createEnvironment();
+  const artifact = inactiveDomainCommitted("inactive-domain-healthy", "acmebakery.com");
+  const calls = [];
+  h.env.INACTIVE_DOMAIN_WRITER = {
+    async write(dispatch) {
+      calls.push(dispatch);
+      return { status: "committed", scope: dispatch.request_scope, artifact };
+    },
+  };
+
+  const htmlResponse = await worker.fetch(nativeForm("acmebakery.com"), h.env);
+  assert.equal(htmlResponse.status, 200);
+  assert.match(htmlResponse.headers.get("content-type") || "", /text\/html/);
+  assertDynamicHeaders(htmlResponse);
+  const html = await htmlResponse.text();
+  assert.match(html, /Title for acmebakery\.com/);
+  assert.match(html, /Website reading is not switched on yet/);
+  assert.doesNotMatch(html, /\/s\/inactive-domain-healthy/);
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].claim_key, `domain:${ROUND}:acmebakery.com`);
+  assert.equal(Object.isFrozen(calls[0]), true);
+  assert.equal(h.coordStorage.map.get("metric:briefs_served"), 1);
+  // Dispatch path performed no scan, no AI call, and no KV projection.
+  assert.equal(network.siteCalls.length, 0);
+  assert.equal(h.aiCalls.length, 0);
+  assert.equal(h.kvPuts.length, 0);
+
+  // Explicit JSON acceptance wins even for a form-encoded body.
+  const jsonResponse = await worker.fetch(nativeForm("acmebakery.com", { accept: "application/json" }), h.env);
+  assert.equal(jsonResponse.status, 200);
+  assert.match(jsonResponse.headers.get("content-type") || "", /application\/json/);
+  assertDynamicHeaders(jsonResponse);
+  assert.deepEqual(await jsonResponse.json(), JSON.parse(JSON.stringify(artifact)));
+  assert.equal(calls.length, 2);
+  assert.equal(h.coordStorage.map.get("metric:briefs_served"), 2);
+  assert.equal(network.siteCalls.length, 0);
+});
+
+await test("writer-port fault classes produce the negotiated 502 with zero metric", async () => {
+  for (const [name, port] of Object.entries({
+    "missing-result": { async write() { return null; } },
+    throwing: { async write() { throw new Error("writer exploded"); } },
+    malformed: { async write(dispatch) { return { status: "committed", scope: dispatch.request_scope, artifact: { junk: true } }; } },
+    "non-committed-status": { async write(dispatch) { return { status: "failed", scope: dispatch.request_scope, artifact: inactiveDomainCommitted("inactive-domain-failed", "acmebakery.com") }; } },
+    "extra-outcome-keys": { async write(dispatch) { return { status: "committed", scope: dispatch.request_scope, artifact: inactiveDomainCommitted("inactive-domain-extra", "acmebakery.com"), debug: true }; } },
+    "hostile-outcome": {
+      async write(dispatch) {
+        return new Proxy({ status: "committed", scope: dispatch.request_scope, artifact: inactiveDomainCommitted("inactive-domain-hostile", "acmebakery.com") }, {
+          get(target, key) { if (key === "artifact") throw new Error("hostile getter"); return target[key]; },
+        });
+      },
+    },
+    "scope-mismatched": {
+      async write(dispatch) {
+        return {
+          status: "committed",
+          scope: { kind: "domain", round: ROUND, domain: "other-domain.com" },
+          artifact: inactiveDomainCommitted("inactive-domain-mismatch", "acmebakery.com"),
+        };
+      },
+    },
+    "local-scoped-artifact": {
+      async write(dispatch) {
+        const artifact = inactiveDomainCommitted("inactive-domain-local", "acmebakery.com");
+        return { status: "committed", scope: dispatch.request_scope, artifact: { ...artifact, request_scope: "local" } };
+      },
+    },
+  })) {
+    const network = createNetwork();
+    const h = createEnvironment();
+    h.env.INACTIVE_DOMAIN_WRITER = port;
+
+    const json = await worker.fetch(sparkRequest("acmebakery.com"), h.env);
+    assert.equal(json.status, 502, name);
+    assert.match((await json.json()).error, /inactive domain writer unavailable/, name);
+
+    const html = await worker.fetch(nativeForm("acmebakery.com"), h.env);
+    assert.equal(html.status, 502, name);
+    assert.match(html.headers.get("content-type") || "", /text\/html/, name);
+    assert.match(await html.text(), /No spark this time/, name);
+
+    assert.equal(h.coordStorage.map.get("metric:briefs_served"), undefined, name);
+    assert.equal(h.coordStorage.map.get("metric:house_briefs_served"), undefined, name);
+    assert.equal(network.siteCalls.length, 0, name);
+    assert.equal(h.aiCalls.length, 0, name);
+  }
+});
+
+await test("the writer port is invoked exactly once per domain request", async () => {
+  createNetwork();
+  const h = createEnvironment();
+  let calls = 0;
+  h.env.INACTIVE_DOMAIN_WRITER = {
+    async write(dispatch) {
+      calls++;
+      return { status: "committed", scope: dispatch.request_scope, artifact: inactiveDomainCommitted("inactive-domain-once", "acmebakery.com") };
+    },
+  };
+  const response = await worker.fetch(sparkRequest("acmebakery.com"), h.env);
+  assert.equal(response.status, 200);
+  assert.equal(calls, 1);
+  assert.equal(h.coordStorage.map.get("metric:briefs_served"), 1);
+});
+
+await test("dynamic responses carry the full Vary set and no-store across terminals", async () => {
+  createNetwork();
+  const h = createEnvironment();
+  h.env.INACTIVE_DOMAIN_WRITER = {
+    async write(dispatch) {
+      return { status: "committed", scope: dispatch.request_scope, artifact: inactiveDomainCommitted("inactive-domain-vary", "acmebakery.com") };
+    },
+  };
+  await seedCommitted(h, { kind: "local", round: ROUND }, localCommitted("vary-local"));
+
+  assertDynamicHeaders(await worker.fetch(sparkRequest("acmebakery.com"), h.env)); // domain JSON 200
+  assertDynamicHeaders(await worker.fetch(nativeForm("acmebakery.com"), h.env)); // domain HTML 200
+  assertDynamicHeaders(await worker.fetch(sparkRequest("ftp://acmebakery.com"), h.env)); // JSON 400
+  assertDynamicHeaders(await worker.fetch(nativeForm("ftp://acmebakery.com"), h.env)); // HTML 400
+  assertDynamicHeaders(await worker.fetch(new Request("https://oddspark.dev/", { headers: { accept: "text/html" } }), h.env)); // home
+  assertDynamicHeaders(await worker.fetch(new Request("https://oddspark.dev/s/00000000", { headers: { accept: "text/html" } }), h.env)); // permalink 404
+  assertDynamicHeaders(await worker.fetch(new Request("https://oddspark.dev/no-such-route"), h.env)); // bare 404
+
+  const redirect = await worker.fetch(nativeForm(""), h.env); // local native-form 303
+  assert.equal(redirect.status, 303);
+  assertDynamicHeaders(redirect);
+  assertDynamicHeaders(await worker.fetch(new Request("https://oddspark.dev/s/vary-local", { headers: { accept: "text/html" } }), h.env)); // permalink 200 HTML
+  assertDynamicHeaders(await worker.fetch(new Request("https://oddspark.dev/s/vary-local", { headers: { "user-agent": "curl/8.4.0", accept: "*/*" } }), h.env)); // permalink text/plain
+  assertDynamicHeaders(await worker.fetch(new Request("https://oddspark.dev/api/spark/vary-local"), h.env)); // JSON 200 by id
+
+  const failing = createEnvironment();
+  failing.env.INACTIVE_DOMAIN_WRITER = { async write() { throw new Error("writer exploded"); } };
+  const html502 = await worker.fetch(nativeForm("acmebakery.com"), failing.env); // negotiated HTML 502
+  assert.equal(html502.status, 502);
+  assertDynamicHeaders(html502);
+  assertDynamicHeaders(await worker.fetch(sparkRequest("acmebakery.com"), failing.env)); // negotiated JSON 502
+});
+
+await test("a null or malformed writer binding behaves as absent and falls through to the legacy path", async () => {
+  for (const port of [null, {}, 42]) {
+    const network = createNetwork();
+    const h = createEnvironment();
+    h.env.INACTIVE_DOMAIN_WRITER = port;
+    const result = await strike(h.env, "acmebakery.com");
+    assert.equal(result.response.status, 502, String(port));
+    // The quarantined legacy path ran: it scanned, failed, and committed an
+    // unavailable fallback that cannot render as a committed_brief.
+    assert.equal(result.body.personalization?.status, "unavailable", String(port));
+    assert.equal(network.siteCalls.length, 1, String(port));
+  }
+});
+
+await test("an injected writer port never sees local no-website strikes", async () => {
+  createNetwork();
+  const withPort = createEnvironment();
+  let calls = 0;
+  withPort.env.INACTIVE_DOMAIN_WRITER = {
+    async write() {
+      calls++;
+      throw new Error("writer must not be called for local strikes");
+    },
+  };
+  const withoutPort = createEnvironment();
+  const a = await strike(withPort.env, undefined);
+  const b = await strike(withoutPort.env, undefined);
+  assert.equal(calls, 0);
+  assert.equal(a.response.status, 502);
+  assert.equal(a.response.status, b.response.status);
+  assert.equal(a.body.id, b.body.id);
+});
+
+await test("the terminal catch negotiates HTML and JSON 400 representations", async () => {
+  const network = createNetwork();
+  network.add("https://acmebakery.com/", new Response(null, { status: 302, headers: { location: "https://otherpublic.com/path" } }));
+  const h = createEnvironment(); // no writer port: quarantined legacy path throws past readSparkIntent
+
+  const html = await worker.fetch(nativeForm("acmebakery.com"), h.env);
+  assert.equal(html.status, 400);
+  assert.match(html.headers.get("content-type") || "", /text\/html/);
+  assertDynamicHeaders(html);
+  const htmlBody = await html.text();
+  assert.match(htmlBody, /Website redirects must stay on the submitted domain\./);
+  assert.match(htmlBody, /id="website-error"/);
+  assert.match(htmlBody, /aria-invalid="true"/);
+
+  const json = await worker.fetch(sparkRequest("acmebakery.com"), h.env);
+  assert.equal(json.status, 400);
+  assert.deepEqual(await json.json(), { error: "Website redirects must stay on the submitted domain.", field: "website" });
+
+  assert.equal(h.coordStorage.map.get("metric:briefs_served"), undefined);
+  assert.deepEqual(network.siteCalls, ["https://acmebakery.com/", "https://acmebakery.com/"]);
+});
 
 globalThis.fetch = ORIGINAL_FETCH;
 console.log("\n" + passed + "/" + (passed + failed) + " passed");
