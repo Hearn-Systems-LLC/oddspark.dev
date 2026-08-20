@@ -21,6 +21,7 @@ export const BASELINE_FILE = 'runtime-baseline.json';
 const ROOT_CONFIG = 'wrangler.toml';
 const OFFLINE_CONFIG = 'wrangler.offline.toml';
 const SPIKE_CONFIG = 'spikes/judge-fidelity/wrangler.toml';
+const GENERATION_SPIKE_CONFIG = 'spikes/generation-qualification/wrangler.toml';
 const TYPES_FILE = 'worker-configuration.d.ts';
 const LOCK_FILE = 'package-lock.json';
 // Alternate root config names Wrangler discovers implicitly; none may shadow wrangler.toml.
@@ -249,6 +250,7 @@ export function computeIdentity(root) {
     root: configFacts(root, ROOT_CONFIG),
     offline: configFacts(root, OFFLINE_CONFIG),
     spike: configFacts(root, SPIKE_CONFIG),
+    generation_spike: configFacts(root, GENERATION_SPIKE_CONFIG),
   };
 
   const identity = {
@@ -303,6 +305,7 @@ export function checkIsolation(root) {
   const rootCfg = configFacts(root, ROOT_CONFIG);
   const offline = configFacts(root, OFFLINE_CONFIG);
   const spike = configFacts(root, SPIKE_CONFIG);
+  const generationSpike = configFacts(root, GENERATION_SPIKE_CONFIG);
 
   if (offline.sections.includes('ai')) {
     violations.push('offline config must not declare an [ai] binding (no callable production AI in dev)');
@@ -312,15 +315,14 @@ export function checkIsolation(root) {
       `offline config must not declare \`remote = true\` (found on: ${offline.remote_sections.join(', ')})`,
     );
   }
-  for (const section of ['kv_namespaces', 'durable_objects', 'routes']) {
-    if (spike.sections.includes(section)) {
-      violations.push(`spike config must not declare [${section}]`);
+  for (const [label, cfg] of [['judge spike', spike], ['generation spike', generationSpike]]) {
+    for (const section of ['kv_namespaces', 'durable_objects', 'routes']) if (cfg.sections.includes(section)) {
+      violations.push(`${label} config must not declare [${section}]`);
     }
   }
-  if (spike.name === rootCfg.name) {
-    violations.push(`spike config name must differ from the production Worker name (${rootCfg.name})`);
-  }
-  for (const [label, cfg] of [['offline', offline], ['spike', spike]]) {
+  const named = [['production', rootCfg], ['offline', offline], ['judge spike', spike], ['generation spike', generationSpike]];
+  for (let left = 0; left < named.length; left += 1) for (let right = left + 1; right < named.length; right += 1) if (named[left][1].name === named[right][1].name) violations.push(`${named[right][0]} config name must differ from ${named[left][0]} (${named[left][1].name})`);
+  for (const [label, cfg] of [['offline', offline], ['judge spike', spike], ['generation spike', generationSpike]]) {
     if (cfg.sections.includes('env')) {
       violations.push(`${label} config must not declare [env.*] sections (bindings are non-inheritable)`);
     }

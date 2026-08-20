@@ -1,5 +1,5 @@
 # generated: 2026-08-16
-# last_updated: 2026-08-19
+# last_updated: 2026-08-20
 # project: Github
 # project_key: NOKEY
 # tracking_system: file-system
@@ -80,7 +80,7 @@
 # - Retrospective appends its action items to action_items; sprint-status surfaces open ones
 
 generated: 2026-08-16
-last_updated: 2026-08-19
+last_updated: 2026-08-20
 project: Github
 project_key: NOKEY
 tracking_system: file-system
@@ -98,7 +98,7 @@ development_status:
   1-8-versioned-house-brief-catalog: done
   1-9-local-evidence-assembly: done
   1-10-generation-contract-and-offline-adapter: done
-  1-11-generation-structural-qualification: awaiting-operator
+  1-11-generation-structural-qualification: review
   1-12-composite-gate-and-qualified-judge-integration: awaiting-operator
   1-13-strike-orchestrator-and-house-fallbacks: awaiting-operator
   1-14-authoritative-commit-and-compatibility-reader: done

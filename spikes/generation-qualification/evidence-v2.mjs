@@ -6,12 +6,23 @@ import { CALL_CAP, DIRECT_VALID_THRESHOLD, GENERATION_PREDICATES, MAX_RETAINED_O
 import { executeFixtures } from "./fixture-executor.mjs";
 
 export const EVIDENCE_VERSION = "oddspark.generation-qualification-evidence/v2";
-export const SOURCE_PATHS = Object.freeze(["package.json", "runtime-baseline.json", "scripts/generation.mjs", "scripts/brief-contracts.mjs", "spikes/judge-fidelity/contract.mjs", "spikes/generation-qualification/contract.mjs", "spikes/generation-qualification/evidence-v2.mjs", "spikes/generation-qualification/fixture-executor.mjs", "spikes/generation-qualification/fixtures.json", "spikes/generation-qualification/qualification.mjs", "spikes/generation-qualification/run.mjs", "spikes/generation-qualification/start-adapter.mjs", "spikes/generation-qualification/test.mjs", "spikes/generation-qualification/verify-v2.mjs", "spikes/generation-qualification/worker.mjs", "spikes/generation-qualification/wrangler.toml"]);
-const LEGACY_JUDGE = Object.freeze([
-  { path: "spikes/judge-fidelity/results/2026-08-16-d2b84005.json", sha256: "1cc4431088e37ba069e128e0059f19229551de2398db0d686524bc70aa752377" },
-  { path: "spikes/judge-fidelity/results/2026-08-16-d2b84005.md", sha256: "0fde75016daa6556ece35be8abd54faaebc4eed6a82156fd834bd127fd263562" },
-  { path: "spikes/judge-fidelity/results/2026-08-16-d2b84005-audit.md", sha256: "4695bae9056e14e8b961111f9be6802c8faab2ebf932963e6425315c43d4e16b" },
-]);
+export const SOURCE_PATHS = Object.freeze(["package.json", "runtime-baseline.json", "scripts/generation.mjs", "scripts/brief-contracts.mjs", "spikes/judge-fidelity/contract.mjs", "spikes/generation-qualification/contract.mjs", "spikes/generation-qualification/evidence-v2.mjs", "spikes/generation-qualification/fixture-executor.mjs", "spikes/generation-qualification/fixtures.json", "spikes/generation-qualification/pricing.mjs", "spikes/generation-qualification/qualification.mjs", "spikes/generation-qualification/recovery-finder.mjs", "spikes/generation-qualification/run.mjs", "spikes/generation-qualification/start-adapter.mjs", "spikes/generation-qualification/test.mjs", "spikes/generation-qualification/verify-v2.mjs", "spikes/generation-qualification/worker.mjs", "spikes/generation-qualification/wrangler.toml"]);
+const LEGACY_GENERATION = Object.freeze([
+  ["story-1-11-2026-08-19-r2-ead1cb17-38d7-41ce-8369-7fdc14098b29.complete.json", "16fa1e27c35c0b4eb4f3bac4ad3d30b884a908e3c3f435f35a59c6bed857790d"],
+  ["story-1-11-2026-08-19-r2-ead1cb17-38d7-41ce-8369-7fdc14098b29.evidence.json", "b880864ded0e560d9fea3421f787257eec28aa4225a414b3bc275b97ee82b908"],
+  ["story-1-11-2026-08-19-r2-ead1cb17-38d7-41ce-8369-7fdc14098b29.qualification.json", "545016f6e1d12d5dd416b3cda30bc299081e6f96d470cc12fe459e7041987b5d"],
+  ["story-1-11-2026-08-19-r2-ead1cb17-38d7-41ce-8369-7fdc14098b29.report.md", "9fcf5544c6bec83a2ee0140c29a54ed579f65bd552038498318784c942b53526"],
+  ["story-1-11-2026-08-19-r2.approval.json", "2505dfa12dfb327a86e54b378377d1a0f89644ee83b69dca7075bed08ac10e64"],
+  ["story-1-11-2026-08-19-r2.plan.json", "c333d5066df41c45c8e26f846ad84b13edcaa54a58b6c818ae90e6adc0e1783c"],
+  ["story-1-11-2026-08-19-r2.spend-receipt.json", "1d072bd51470d25ef1e90c3f1f5e90761f52c5758877dfda3dd12954acd59fea"],
+  ["story-1-11-2026-08-19-r3-f0da0590-4a83-4cf4-8401-6639af524959.complete.json", "09a077fd0964bba80aa5d1df786b3bbe8c10a364d2359f6e1c580b109c5ee707"],
+  ["story-1-11-2026-08-19-r3-f0da0590-4a83-4cf4-8401-6639af524959.evidence.json", "c3b15bf90ecd591e43f72719f6a8c30722e6d73c47b7aa7ec6afc7fbb48c7a9b"],
+  ["story-1-11-2026-08-19-r3-f0da0590-4a83-4cf4-8401-6639af524959.qualification.json", "a86b1cd1cc51b841c0b78d792e04abf89117edae483bfb29f2a3e2bc1274f8b2"],
+  ["story-1-11-2026-08-19-r3-f0da0590-4a83-4cf4-8401-6639af524959.report.md", "7c60b8a2baf66d4a12936140787ce985114c90dd366cb300aeb214c0d8c9186c"],
+  ["story-1-11-2026-08-19-r3.approval.json", "3b9236baefecf890db0d21d10092edf970eebe15ad977f6420cb5bc27b37642b"],
+  ["story-1-11-2026-08-19-r3.plan.json", "f206baef6aad3b18a1851b720b9a6db166219a269d5dd3383635c221268c0c19"],
+  ["story-1-11-2026-08-19-r3.spend-receipt.json", "e323396d69b990964ba472662543e2e1ee575505e4ef2faf0dfc866e03a21a0c"],
+].map(([name, sha256]) => Object.freeze({ path: `spikes/generation-qualification/results/${name}`, sha256 })));
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const plain = (value) => value !== null && typeof value === "object" && !Array.isArray(value) && Object.getPrototypeOf(value) === Object.prototype;
 const same = (a, b) => stableStringify(a) === stableStringify(b);
@@ -24,7 +35,7 @@ export async function sourceIdentity(read = (relative) => readFile(path.join(ROO
 export async function runtimeIdentity(read = (relative) => readFile(path.join(ROOT, relative))) {
   const bytes = await read("runtime-baseline.json"); const frozen = JSON.parse(bytes); return { path: "runtime-baseline.json", bytes: bytes.byteLength, sha256: createHash("sha256").update(bytes).digest("hex"), runtime_identity_sha256: frozen.runtime_identity_sha256, node: process.version, wrangler: frozen.wrangler };
 }
-export async function legacyIdentity(read = (relative) => readFile(path.join(ROOT, relative))) { return Promise.all(LEGACY_JUDGE.map(async (entry) => { const bytes = await read(entry.path); const observed_sha256 = createHash("sha256").update(bytes).digest("hex"); return { ...entry, observed_sha256, immutable: observed_sha256 === entry.sha256 }; })); }
+export async function legacyIdentity(read = (relative) => readFile(path.join(ROOT, relative))) { return Promise.all(LEGACY_GENERATION.map(async (entry) => { const bytes = await read(entry.path); const observed_sha256 = createHash("sha256").update(bytes).digest("hex"); return { ...entry, observed_sha256, immutable: observed_sha256 === entry.sha256, current_authority: false }; })); }
 export function expectedHealth(sources, runtime) {
   const digest = (name) => sources.find(({ path: file }) => file === name)?.sha256 ?? null;
   return { ok: true, inference: false, schema_version: "oddspark.generation-adapter-health/v1", provider: "cloudflare-workers-ai", roles: ROLE_IDENTITIES, parameters: { temperature: 0, max_tokens: 2048 }, binding: "AI", worker_sha256: digest("spikes/generation-qualification/worker.mjs"), config_sha256: digest("spikes/generation-qualification/wrangler.toml"), runtime_sha256: runtime.runtime_identity_sha256 };
@@ -34,7 +45,8 @@ export function summarize(records) {
   const by_role = {};
   for (const identity of ROLE_IDENTITIES) {
     const rows = records.filter((row) => row.kind === "trial" && row.role === identity.role); const counts = Object.fromEntries(TAXONOMY.map((key) => [key, rows.filter((row) => row.classification === key).length]));
-    by_role[identity.role] = { resolved_model: identity.resolved_model, total: rows.length, ...counts, direct_rate: { numerator: counts.direct_valid, denominator: rows.length, percent: rows.length ? Number((100 * counts.direct_valid / rows.length).toFixed(2)) : 0 }, latency_ms: rows.map(({ latency_ms }) => latency_ms), usage: rows.map(({ usage }) => usage), cost_usd: rows.reduce((sum, row) => sum + (row.cost_usd ?? 0), 0), missing_usage: rows.filter(({ usage }) => usage === null).length };
+    const costs = rows.map(({ cost_usd }) => cost_usd); const costKnown = costs.every((cost) => typeof cost === "number" && Number.isFinite(cost));
+    by_role[identity.role] = { resolved_model: identity.resolved_model, total: rows.length, ...counts, direct_rate: { numerator: counts.direct_valid, denominator: rows.length, percent: rows.length ? Number((100 * counts.direct_valid / rows.length).toFixed(2)) : 0 }, latency_ms: rows.map(({ latency_ms }) => latency_ms), usage: rows.map(({ usage }) => usage), cost_usd: costKnown ? costs.reduce((sum, cost) => sum + cost, 0) : null, cost_known: costKnown, missing_usage: rows.filter(({ usage }) => usage === null).length };
   }
   return { by_role };
 }
@@ -84,10 +96,12 @@ export async function verifyEvidence(evidence, dependencies = {}) {
   const run = evidence?.run; if (!exactObject(run, ["id", "started_at", "ended_at", "call_cap", "calls_made"]) || typeof run.id !== "string" || !/^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/.test(run.id) || !canonicalTime(run.started_at) || !canonicalTime(run.ended_at) || Date.parse(run.ended_at) < Date.parse(run.started_at) || run.call_cap !== CALL_CAP || run.calls_made !== records.length) fail("run.cardinality", "run envelope is invalid");
   for (const record of records) { const request = requests.find(({ role }) => role === record.role); if (!request || !recordValid(record, request, costForUsage)) { fail("records.classified", "record classification or request binding mismatch"); fail("records.closed", "record is not closed and typed"); break; } if (canonicalTime(run?.started_at) && (Date.parse(record.started_at) < Date.parse(run.started_at) || Date.parse(record.ended_at) > Date.parse(run.ended_at))) fail("run.ordering", "record lies outside run bounds"); if (record.classification === "direct_valid" && classifyCall({ call_state: "received", output: record.candidate }).candidate_ref !== record.candidate_ref) fail("candidate.binding", "Candidate reference mismatch"); if (record.classification !== "direct_valid" && (record.candidate !== null || record.candidate_ref !== null)) fail("output.direct_candidate", "invalid output retained a Candidate"); }
   for (const identity of ROLE_IDENTITIES) { const rows = records.filter(({ role }) => role === identity.role); const probes = rows.filter(({ kind }) => kind === "probe"); const trials = rows.filter(({ kind }) => kind === "trial"); if (probes.length !== 1 || probes[0]?.index !== 1 || trials.length !== (probes[0]?.classification === "direct_valid" ? TRIALS_PER_ROLE : 0) || trials.some((row, index) => row.index !== index + 1)) fail("run.cardinality", `${identity.role} indices/cardinality mismatch`); }
+  const expectedSchedule = [...ROLE_IDENTITIES.map(({ role }) => ({ kind: "probe", role, index: 1 })), ...ROLE_IDENTITIES.flatMap(({ role }) => { const probe = records.find((row) => row.kind === "probe" && row.role === role); return probe?.classification === "direct_valid" ? Array.from({ length: TRIALS_PER_ROLE }, (_, index) => ({ kind: "trial", role, index: index + 1 })) : []; })];
+  if (!same(records.map(({ kind, role, index }) => ({ kind, role, index })), expectedSchedule)) fail("run.ordering", "global call schedule differs from the exact configured order");
   if (records.some((row, index) => index > 0 && Date.parse(records[index - 1].ended_at) > Date.parse(row.started_at))) fail("run.ordering", "global calls overlap or are out of order");
   const summary = summarize(records); if (!same(evidence?.summary, summary)) fail("summary.rates", "summary does not recompute");
   if (ROLE_IDENTITIES.some((identity) => summary.by_role[identity.role]?.resolved_model !== identity.resolved_model) || requests[0]?.request_sha256 === requests[1]?.request_sha256) fail("roles.independent", "roles are pooled or substituted");
-  if (!same(evidence?.pricing, evidence?.plan?.estimate) || !same(evidence?.pricing?.pricing, PRICING) || records.some(({ cost_usd }) => !Number.isFinite(cost_usd) || cost_usd < 0) || Object.values(summary.by_role).some(({ cost_usd }) => !Number.isFinite(cost_usd))) fail("cost.recomputed", "pricing or cost accounting is invalid");
+  if (!same(evidence?.pricing, evidence?.plan?.estimate) || !same(evidence?.pricing?.pricing, PRICING) || records.some(({ cost_usd }) => cost_usd !== null && (!Number.isFinite(cost_usd) || cost_usd < 0))) fail("cost.recomputed", "pricing or cost accounting is invalid");
   const provisional = Object.entries(checks).map(([id, pass]) => ({ id, pass })); const outcome = outcomeFor(evidence, provisional); if (!same(evidence?.outcome, outcome)) fail("outcome.deterministic", "outcome does not recompute");
   const results = Object.entries(checks).map(([id, pass]) => ({ id, pass })); if (!same(evidence?.predicate_results, results)) fail("predicates.retained", "retained predicate results mismatch");
   if (evidence?.report !== renderReport({ ...evidence, outcome })) fail("report.deterministic", "report bytes mismatch");

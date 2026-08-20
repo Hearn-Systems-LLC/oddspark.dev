@@ -1,10 +1,28 @@
 {
-  "base_commit": "90f3bba0799ade70b74abd71fade5817e89907de",
+  "base_commit": "d8423d1bcf4fa8a4d71705d5dd54dbf5379ad624",
   "compatibility_date": "2026-07-01",
   "compatibility_flags": [
     "global_fetch_strictly_public"
   ],
   "configs": {
+    "generation_spike": {
+      "compatibility_date": "2026-07-01",
+      "compatibility_flags": [
+        "nodejs_compat"
+      ],
+      "has_remote_binding": true,
+      "main": "worker.mjs",
+      "name": "oddspark-generation-llama-qualification-local-only",
+      "preview_urls": null,
+      "remote_sections": [
+        "ai"
+      ],
+      "sections": [
+        "ai",
+        "vars"
+      ],
+      "sha256": "9ba2abe917d0e52d1338fe1ae2f27755f772d8b62cb9b35d8663746295c24777"
+    },
     "offline": {
       "compatibility_date": "2026-07-01",
       "compatibility_flags": [
@@ -67,12 +85,12 @@
       "sha256": "70799cb70abb4fd3de5bfb04da359290c9226841acecb9be9ac309f80e42dd2d"
     }
   },
-  "frozen_at": "2026-08-19T19:00:29.313Z",
-  "frozen_from_commit": "90f3bba0799ade70b74abd71fade5817e89907de",
+  "frozen_at": "2026-08-20T14:07:44.500Z",
+  "frozen_from_commit": "d8423d1bcf4fa8a4d71705d5dd54dbf5379ad624",
   "main": "src/worker.js",
   "node_engines": ">=20",
   "package_lock_sha256": "c5c31aa5474ec9d04a96a4744c5f41c4ffb2e644cbb0ec28950041edc60301ba",
-  "runtime_identity_sha256": "ec75726cd3b7d24dc7f8cb879cfa24678ceb1f2d00be6bbd199aff64e0660939",
+  "runtime_identity_sha256": "b5f2d4b994ab5440dcab711eaf7ec9ac0543cfe7e9ca783b31a734366adbb3be",
   "schema_version": "oddspark.runtime-baseline/v1",
   "source_state": "current hashes bind the uncommitted worktree; base_commit is provenance only",
   "worker_types_sha256": "3aa45eadbc4c641afa2aa0174adbb1b1387b0bb7d06aa5d3ad662dfc0135873b",
