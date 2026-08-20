@@ -28,11 +28,11 @@ function approve(input) {
   return approved;
 }
 
-test("developer corpus is structurally valid but pending and emits no approved identity", () => {
+test("developer corpus is structurally valid and emits its approved identity", () => {
   const report = validateCorpus(corpus);
   assert.equal(report.valid, true);
-  assert.equal(report.readiness, "pending_owner_approval");
-  assert.equal(report.approved_semantic_identity, null);
+  assert.equal(report.readiness, "approved");
+  assert.equal(report.approved_semantic_identity, report.semantic_identity);
   assert.match(report.semantic_identity, /^[a-f0-9]{64}$/);
 });
 
@@ -157,7 +157,7 @@ test("rejects breadcrumb, claim, audit, duplication, and helpful-work replacemen
 });
 
 test("numeric Change Level ranges are allowed while unsupported claim numbers are rejected", () => {
-  assert.equal(validateCorpus(corpus).readiness, "pending_owner_approval");
+  assert.equal(validateCorpus(corpus).readiness, "approved");
   const localClaim = clone(corpus);
   localClaim.goldens.fixtures[0].elements[3].text += " Saves 2 hours.";
   assert.ok(validateCorpus(localClaim).errors.some(({ rule }) => rule === "local_numeric_claim"));
@@ -307,7 +307,7 @@ test("rejects forged owner, stale identity, missing hashes, and partial pending 
   missing.approval.hashes = null;
   assert.equal(validateCorpus(missing).readiness, "invalid");
   const partial = clone(corpus);
-  partial.approval.owner = "Justin";
+  partial.approval = { schema_version: 1, status: "pending_owner_approval", owner: "Justin", corpus_version: "voice-v1", hashes: null, semantic_identity: null, approved_at: null };
   assert.equal(validateCorpus(partial).readiness, "invalid");
 });
 
@@ -351,13 +351,13 @@ test("anti-golden categories are unique and bind closed rules and gates", () => 
   assert.ok(validateCorpus(wrongGate).errors.some(({ rule }) => rule === "category_gates"));
 });
 
-test("CLI reports structured pending readiness and exits nonzero without owner approval", () => {
+test("CLI reports the developer corpus approved identity", () => {
   const run = spawnSync(process.execPath, [cliPath], { cwd: projectDirectory, encoding: "utf8" });
-  assert.equal(run.status, 1);
+  assert.equal(run.status, 0);
   const report = JSON.parse(run.stdout);
   assert.equal(report.valid, true);
-  assert.equal(report.readiness, "pending_owner_approval");
-  assert.equal(report.approved_semantic_identity, null);
+  assert.equal(report.readiness, "approved");
+  assert.equal(report.approved_semantic_identity, report.semantic_identity);
   assert.equal(run.stderr, "");
 });
 
