@@ -1,77 +1,90 @@
 ---
 name: review-tech-currency
 type: architecture-review
-lens: technology currency / web-researched vs. asserted
+lens: technology currency / documented vs asserted
 target: ../ARCHITECTURE-SPINE.md
-reviewed: '2026-08-15'
-verdict: PASS (with minor findings)
+reviewed: '2026-08-19'
+verdict: PASS — PRIOR FINDINGS CLOSED
 ---
 
 # Tech-Currency Review — ARCHITECTURE-SPINE.md
 
-Scope: verify every committed technology claim in the spine's **Stack** table and in the ADs
-against live documentation/web sources, and sanity-check architectural claims against the real
-code (`src/worker.js`, `wrangler.toml`, `package.json`).
-
 ## Verdict
 
-**PASS.** Every named technology exists, is current, and fits the role the spine assigns it.
-Versions and defaults cited in the spine match the live state of the platform. Two minor
-staleness notes and two low-severity fit caveats below; none block the spine.
+**PASS WITH MATERIAL CORRECTIONS.** The newly selected Workers AI candidate pair is real, current, and explicitly listed by Cloudflare for JSON Mode. The spine correctly refuses to infer schema fidelity from that listing and keeps both models subject to independent generation and judge qualification. The architecture therefore has a technologically credible next course without changing provider.
 
-## Verified claims
+Two checked-out-state assertions are stale: the Wrangler version recorded in the Stack/Deferred text and the claim that `preview_urls` is still nested under `[observability]`. These should be corrected before the spine is treated as the exact source for fresh qualification-plan identities. The deployed/runtime model variables also still name the prior gpt-oss pair; that is safe before qualification but should be stated as current implementation state rather than left implicit.
 
-| Spine claim | Result | Source |
+## Evidence and method
+
+- Current Cloudflare Workers AI documentation was fetched through Context7 from Cloudflare's official documentation corpus.
+- Current Workers SDK configuration documentation was fetched through Context7 from the official `cloudflare/workers-sdk` repository.
+- Repository reality was checked against `package.json`, `package-lock.json`, `wrangler.toml`, and a non-deploying `npx wrangler deploy --dry-run`.
+- Registry currency was checked with `npm view wrangler version` on 2026-08-19.
+
+## Verified technology claims
+
+| Spine claim | Verdict | Evidence |
 | --- | --- | --- |
-| Workers AI `@cf/openai/gpt-oss-120b` (primary) | Confirmed — live on Workers AI since 2025-08-05; positioned "for production, general purpose" | [Cloudflare blog](https://blog.cloudflare.com/openai-gpt-oss-on-workers-ai/), [model docs](https://developers.cloudflare.com/workers-ai/models/gpt-oss-120b/) |
-| Workers AI `@cf/openai/gpt-oss-20b` (fallback) | Confirmed — live; positioned "for lower latency, agentic tasks" | [Workers AI models](https://developers.cloudflare.com/workers-ai/models/) |
-| 10,000 free neurons/day allocation (AD-9 / NeuronMeter premise) | Confirmed — free tier is 10K neurons/day, shared across models | [model pricing note](https://www.ayautomate.com/free-models/cloudflare-workers-ai-cf-openai-gpt-oss-120b) |
-| Compatibility flag `global_fetch_strictly_public` | Confirmed — real, publicly documented, usable | [compatibility flags docs](https://developers.cloudflare.com/workers/configuration/compatibility-flags/), [cfdata.lol workerd](https://cfdata.lol/workerd/) |
-| `remote = true` on `[ai]` and `[[kv_namespaces]]` (wrangler.toml) | Confirmed — remote bindings GA since Wrangler v4.37.0 (2025-09), current syntax is `remote: true` | [remote bindings GA changelog](https://developers.cloudflare.com/changelog/post/2025-09-16-remote-bindings-ga/), [Cloudflare blog 2026-07-22](https://blog.cloudflare.com/cloudflare-developer-platform-keeps-getting-better-faster-and-more-powerful/) |
-| wrangler 4.x (`^4.114.0` in package.json) | Confirmed — 4.x is the current major; latest is 4.120.0 (published 2026-08-13). Project pin is 6 patch releases behind latest — effectively current | [npm wrangler](https://www.npmjs.com/package/wrangler) |
-| Durable Objects SQLite via `new_sqlite_classes` migrations (v1/v2) | Confirmed — matches code: `NeuronMeter` (worker.js:641), `SparkCoordinator` (worker.js:661), migrations v1/v2 in wrangler.toml | project code |
-| AD-4 "existing verification at src/worker.js:886" | Mostly confirmed — substring grounding lives at `src/worker.js:889-890` (`page.text.includes(...)`); line cite is off by ~3 but the mechanism exists exactly as described | project code |
-| AD-6 seam (`generate` / `generatePersonalized`, `modelFor` + NeuronMeter) | Confirmed — `modelFor` at worker.js:790, `generate` at :796, `generatePersonalized` at :911; spine's preservation seam matches reality | project code |
+| `@cf/meta/llama-3.3-70b-instruct-fp8-fast` supports Workers AI JSON Mode | Confirmed | Cloudflare's current JSON Mode documentation lists the exact model ID. |
+| `@cf/meta/llama-3.1-8b-instruct-fast` supports Workers AI JSON Mode | Confirmed | Cloudflare's current JSON Mode documentation lists the exact model ID. |
+| JSON Mode support is not proof of closed-schema fidelity | Confirmed | Cloudflare warns that models may fail the requested JSON Schema and return `JSON Mode couldn't be met`; streaming is unsupported. The spine's mandatory live qualification remains necessary. |
+| Compatibility date `2026-07-01` plus `global_fetch_strictly_public` is accepted by the checked-out runtime toolchain | Confirmed operationally | Wrangler 4.123.0 completed a dry-run without a configuration or compatibility-flag warning. |
+| AI, KV, SQLite Durable Objects, assets, custom domain, and observability forms remain accepted | Confirmed operationally | The same dry-run resolved `AI`, `SPARKS`, `NeuronMeter`, and `SparkCoordinator`, read assets, and bundled successfully. Official Workers SDK templates continue to use `new_sqlite_classes`, `durable_objects.bindings`, and `observability`. |
+| Candidate selection does not activate production use | Confirmed by repository state | `wrangler.toml` still supplies the prior gpt-oss IDs. This is safe while the selected pair is only a governed qualification candidate. |
+
+Official documentation: [Workers AI JSON Mode](https://developers.cloudflare.com/workers-ai/features/json-mode/), [Workers AI documentation corpus](https://developers.cloudflare.com/workers-ai/), and [Workers SDK](https://github.com/cloudflare/workers-sdk).
 
 ## Findings
 
-### F1 — LOW: compatibility_date 2026-07-01 is past its freshness window
+### F1 — MEDIUM: the Wrangler Stack and maintenance assertions are stale
 
-Valid date (in the past relative to today, 2026-08-15), but wrangler emits a
-"compatibility date is more than 30 days old" warning once the date lags the current wrangler
-release. 2026-07-01 is ~45 days stale against wrangler 4.120.0. Cosmetic, but the spine treats
-the date as a pinned decision; expect a deploy-time nag and consider bumping to a 2026-08 date
-at implementation time. The flag `global_fetch_strictly_public` itself is unaffected.
+The Stack says `wrangler | ^4.114.0 (project lockfile)` and Deferred says the project lock remains `^4.114.0` while 4.123.0 is current. Checked-out reality is now different:
 
-### F2 — LOW: judge "temperature ≈ 0" and structured verdict JSON on gpt-oss are not confirmed model capabilities
+- `package.json` specifies `4.123.0`, not `^4.114.0`;
+- `package-lock.json` resolves 4.123.0;
+- the dry-run reports Wrangler 4.123.0;
+- the npm registry reports 4.124.0 current on 2026-08-19.
 
-AD-2 commits the judge to a structured JSON verdict at near-zero temperature. The gpt-oss
-models on Workers AI are OpenAI open-weight *reasoning* models; the spine was written as if
-temperature control and reliable JSON-schema output are given. Model docs confirm the models
-and their roles but the review could not confirm from public docs that gpt-oss-120b on Workers
-AI honors `temperature` and emits schema-conformant JSON reliably (reasoning models are
-notoriously loose on both). Mitigation already exists in the spine (AD-3 house-Brief fallback,
-AD-9 graceful degradation), but judge-output parsing should be treated as a build-time
-validation item, not an assumption. Recommend: add to Deferred — "verify temperature/JSON-mode
-behavior of `@cf/openai/gpt-oss-120b` during judge calibration."
+This matters because AD-11 binds qualification evidence to the exact runtime/version and makes later runtime changes transitively stale. A plan derived from the spine could freeze the wrong version before making any calls.
 
-### F3 — LOW: wrangler pin `^4.114.0` vs latest 4.120.0
+**Required correction:** record checked-out Wrangler `4.123.0` in the Stack and update the maintenance note to say 4.124.0 is available. Story 1.2 should still decide whether to retain 4.123.0 or upgrade and then freeze the reviewed exact version before qualification; this review does not authorize an upgrade.
 
-Spine says "wrangler 4.x (project lockfile)" — accurate and safe. Noted only so the record
-shows the pin was checked against latest, not asserted: 4.114.0 is recent (within ~2 weeks of
-latest). Note also wrangler ≤4.59.0 carried CVE-2026-0933 (OS command injection); project is
-well clear of it. No action.
+### F2 — MEDIUM: the `preview_urls` maintenance claim describes an already-corrected defect
 
-### F4 — INFO: no unconfirmed or hallucinated technologies
+Deferred says the current `preview_urls` placement is under `[observability]` and must be corrected. In the current `wrangler.toml`, `preview_urls = true` is top-level, before `[vars]`; `[observability]` contains only `enabled = true`. Wrangler's generated schema likewise defines `preview_urls` as an environment/top-level property, not an Observability property, and the dry-run emits no unexpected-field warning.
 
-Every other named item — Workers KV, Durable Objects (SQLite), Workers AI neuron budgeting,
-`[assets]`, `[observability]`, `preview_urls`, custom-domain `[[routes]]` — is either confirmed
-against live Cloudflare docs or matches the project's own working `wrangler.toml`. The spine's
-architectural claims (line numbers, seam functions, DO classes, KV key scheme) were
-cross-checked against `src/worker.js` and hold, with only the ~3-line drift noted above
-(:886 → :889).
+**Required correction:** remove the stale claim that placement still needs correction. Keep preview isolation itself subject to verification before relying on it; configuration validity is not proof of resource isolation or production safety.
 
-## Recommendation
+### F3 — LOW: distinguish approved candidate configuration from current Wrangler runtime variables
 
-Adopt the spine as-is. Optionally record F2 in the spine's Deferred list so judge calibration
-includes a live model-behavior check rather than assuming temperature/JSON fidelity.
+The Stack accurately labels the Llama pair as generation/judge **candidates**, and AD-11 withholds live and production authority. However, the Consistency Convention says model IDs are Wrangler vars while current `wrangler.toml` still names `@cf/openai/gpt-oss-120b` and `@cf/openai/gpt-oss-20b`. A reader could mistake the Stack for current runtime configuration.
+
+**Required clarification:** state that the Llama pair is frozen for separately approved qualification planning only and that production/default Wrangler vars remain unchanged until a later implementation and activation gate. Do not update production/default variables merely to reconcile this planning document.
+
+### F4 — INFO: the Llama candidate decision is technologically current but remains empirical
+
+Cloudflare's current list includes both exact selected model IDs among nine JSON Mode models. Cloudflare also states that JSON Schema compliance is not guaranteed. The previous gpt-oss structural failures therefore do not predict failure or success for this pair, and documentation support must not be converted into qualification evidence.
+
+The spine handles this correctly: exact IDs are pinned, generation and judge qualify independently, schemas and repair prohibitions remain unchanged, and no call is authorized by architecture approval. No correction is required.
+
+### F5 — LOW: compatibility date is valid but should be re-frozen with Story 1.2
+
+`2026-07-01` is valid and accepted by the current checked-out Wrangler, but it is approximately seven weeks behind the review date. That is not itself an incompatibility. Because AD-11 treats the compatibility date and runtime configuration as evidence identity, Story 1.2 should explicitly review and freeze it alongside Wrangler before any new qualification. Advancing it later would invalidate affected evidence under the spine's own rules.
+
+## Conclusion
+
+The architecture's new model course is current and credible. Correct F1 and F2 before deriving exact qualification plans; clarify F3 so no one treats candidate selection as a production configuration edit. None of these corrections authorizes model calls, configuration mutation, deployment, activation, commit, or push.
+
+## Closure re-review — 2026-08-19
+
+**Verdict: PASS.** The amended spine closes every prior technology-currency finding. No critical, high, or medium finding remains.
+
+| Prior finding | Closure evidence | Status |
+| --- | --- | --- |
+| F1 — stale Wrangler baseline/current release | Stack now records reviewed baseline 4.123.0; Deferred records 4.124.0 as the available release and requires Story 1.2 to re-freeze the exact runtime before either matrix. | Closed |
+| F2 — stale `preview_urls` placement claim | Operational envelope now states that `preview_urls` is already top-level and that no placement correction is pending. | Closed |
+| F3 — candidate/runtime ambiguity | Workers AI qualification text now states that runtime configuration retains the prior gpt-oss IDs until a separately reviewed offline adapter/config change; architecture selection alone does not mutate configuration. | Closed |
+| F5 — compatibility/runtime baseline refreeze | AD-11 and Wrangler maintenance now expressly bind both matrices to a freshly reviewed exact Wrangler version, compatibility date, generated bindings, and runtime configuration. | Closed |
+
+The Llama primary/fallback model claim remains current under the official Cloudflare JSON Mode documentation already cited above, and the amended spine still treats documentation support as candidate eligibility rather than qualification proof. The review found no remaining critical or high technology-currency issue.

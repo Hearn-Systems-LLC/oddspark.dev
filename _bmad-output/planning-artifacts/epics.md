@@ -213,7 +213,7 @@ The crosswalk preserves review history only. Current development, status, depend
 - Offline fixtures never perform provider, production, deployment, remote-resource, or real-contact activity.
 - Every metered/live run requires fresh approval for its exact frozen configuration, call cap, maximum cost, and retained fields. Approval permits the run, not a passing outcome.
 - Deployment, local activation, domain activation, quiet observation, public promotion, receipt-claim activation, Hearn reference activation, and destructive retirement are separate approvals.
-- A structurally valid NO-GO completes its evidence story but blocks dependent activation; evidence is immutable and cannot be replaced.
+- A structurally valid model-evaluating NO-GO completes its evidence story but blocks dependent activation; evidence is immutable and cannot be replaced. A retained, marker-bound preflight stop that independently proves zero calls consumes no qualification allowance and may support a freshly bound replacement plan after the boundary defect is corrected; it remains historical evidence and never emits qualification refs.
 - Runtime-bound toolchain changes invalidate affected structural evidence and all dependent semantic, full-request, production, launch, and activation evidence.
 - Domain requests during the local-only production phase (Story 1.26 until Story 2.10) follow Story 1.16's closed dispatch through Story 1.23's canonical assembled writer with the plain-language notice under domain request scope. The legacy generator is unreachable from Story 1.26 onward and is quarantined, not deleted, until Story 5.2. (Justin decisions, 2026-08-17 and 2026-08-19.)
 - Broad acceptance criteria bind to a named oracle: "every integrity predicate" means the closed predicate list of the Story 1.3 evidence-v2 verifier (cited by version hash); rollout preflight means the enumerated gate list of the Story 1.20 release-decision view; production-proof predicates mean the closed harness schema of Story 3.1.
@@ -294,7 +294,7 @@ So that the single allowed recovery run is auditable before spending begins.
 ### Story 1.4: Judge Structural Recovery Matrix
 
 As an operator,
-I want one frozen, approval-bound judge recovery matrix,
+I want one frozen, approval-bound Llama judge qualification cycle,
 So that model-dependent work either gains trustworthy STRUCT-JUDGE evidence or stops cleanly.
 
 **Requirements:** FR3; NFR2; NFR4; AD-11
@@ -308,10 +308,11 @@ So that model-dependent work either gains trustworthy STRUCT-JUDGE evidence or s
 **Then** provider, models, prompt, schema, adapter, runtime, call cap, maximum cost, and retained fields are disclosed
 **And** fresh approval authorizes only that run.
 
-**Given** an approved matrix
+**Given** an approved matrix binding `@cf/meta/llama-3.3-70b-instruct-fp8-fast` and `@cf/meta/llama-3.1-8b-instruct-fast`
 **When** the run executes
 **Then** one recorded capability probe runs per configuration before the counted matrix
-**And** rejection of the exact frozen json_schema request or failure to return content produces NO-GO without spending the counted matrix
+**And** rejection of the exact frozen json_schema request or failure to return content rejects only that configuration while an accepted peer continues independently
+**And** a marker-bound preflight stop with zero call records and zero durable call-start accounting remains retained but does not consume the one recovery allowance, even when a later source correction makes it stale for qualification
 **And** after accepted probes, at least 20 sequential counted trials run per configuration
 **And** there are no retries, replacements, CI calls, deployments, or persistent resources
 **And** direct-valid and post-repair rates, taxonomy, latency, usage, and provenance remain separate.
@@ -319,8 +320,9 @@ So that model-dependent work either gains trustworthy STRUCT-JUDGE evidence or s
 **Given** verified results
 **When** the outcome is derived
 **Then** each configuration independently requires at least 95% direct-valid plus every predicate in the Story 1.3 verifier's closed predicate list for GO
-**And** GO produces exact STRUCT-JUDGE refs
-**And** NO-GO completes the evidence story but blocks dependent work and triggers MVP review; no third matrix is allowed.
+**And** only passing configurations produce exact configuration refs
+**And** a closed role set is GO when at least one configuration passes, carries null for failed members, and produces the exact role-level STRUCT-JUDGE ref later used by activation
+**And** two failures complete the evidence story and trigger owner review, while called incomplete or ambiguous evidence emits no refs, records consumed-incomplete authority, and blocks another matrix.
 
 ### Story 1.5: Voice Rubric and Golden Briefs
 
@@ -488,6 +490,7 @@ So that only directly reliable generation identities can be selected.
 **When** live qualification executes
 **Then** one probe and at least 20 sequential trials run per configuration
 **And** no retry or replacement occurs
+**And** the frozen adapter decodes only the complete text at exactly one provider response location as one JSON object before the unchanged closed Candidate classifier; multiple choices, prose, fences, trailing content, alternate locations, repair, coercion, omission filling, and schema weakening reject
 **And** direct-valid, repair, taxonomy, latency, usage, and cost are reported separately.
 
 **Given** verified results

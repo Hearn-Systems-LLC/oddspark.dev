@@ -185,3 +185,11 @@ Implemented the offline, approval-gated Story 1.4 judge structural recovery matr
 - The operator action remains pending: confirm the active Wrangler profile and current plan/headroom, generate and review the exact disclosure, create a fresh matching approval, and deliberately execute the one permitted live matrix.
 - No Workers AI/provider call occurred in this workflow, so there is no real operational evidence, live GO/NO-GO result, or production-usable `STRUCT-JUDGE` ref yet.
 - This result grants no push, deployment, merge, release, or future-story authority.
+
+## Correct-Course Amendment — 2026-08-19
+
+- Run `025daf8e-e455-44d1-840e-d67730f52279` remains retained as a marker-bound adapter-identity preflight stop with zero provider calls and zero spend.
+- Justin approved verified zero-call preflight attempts as non-consuming qualification attempts. Source correction may make their structural identity stale while their independently bound zero-call accounting remains usable.
+- Historical zero-call verification grants allowance recovery only. It cannot emit `STRUCT-JUDGE` manifests or refs, convert the retained outcome to GO, delete or overwrite evidence, or excuse any call-start, spend-receipt, partial-publication, marker, or accounting ambiguity.
+- A fresh recovery plan may be prepared after offline correction, but execution requires new exact approval.
+- Prepared outside the repository, not executed: judge r3 plan `6c59946072b346de35b8b1a32ca8c3357e24957d8a84a3f767c5170e42e4eccf`, run ID `b792c8ec-fe38-4343-9c05-18bd4627cb53`, cap 42, maximum `$0.13602225`, Wrangler profile `default`, Workers Paid plan.

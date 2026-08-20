@@ -8,6 +8,7 @@ import { promisify } from "node:util";
 
 import {
   CONTRACT_VERSION,
+  LEGACY_MODEL_IDS,
   MAX_EXTRACTED_BYTES,
   SYSTEM_PROMPT,
   VERDICT_RESPONSE_FORMAT,
@@ -361,7 +362,7 @@ test("classification precedence handles envelope ambiguity before size", async (
 });
 
 test("the live request is frozen to both configured models and exact parameters", () => {
-  assert.deepEqual(MODELS, ["@cf/openai/gpt-oss-120b", "@cf/openai/gpt-oss-20b"]);
+  assert.deepEqual(MODELS, ["@cf/meta/llama-3.3-70b-instruct-fp8-fast", "@cf/meta/llama-3.1-8b-instruct-fast"]);
   assert.equal(APPROVED_CALL_CAP, 42);
   assert.equal(DEFAULT_BASE_URL, "http://127.0.0.1:8788");
   const request = buildModelRequest(MODELS[0], fixtures.synthetic_input);
@@ -383,8 +384,8 @@ test("the live request is frozen to both configured models and exact parameters"
 test("the spike config and scripts cannot deploy or touch production bindings", () => {
   assert.match(spikeWrangler, /name = "oddspark-judge-fidelity-spike-local-only"/);
   assert.match(spikeWrangler, /\[ai\][\s\S]*binding = "AI"[\s\S]*remote = true/);
-  assert.match(spikeWrangler, /AI_MODEL = "@cf\/openai\/gpt-oss-120b"/);
-  assert.match(spikeWrangler, /AI_MODEL_FALLBACK = "@cf\/openai\/gpt-oss-20b"/);
+  assert.match(spikeWrangler, /AI_MODEL = "@cf\/meta\/llama-3\.3-70b-instruct-fp8-fast"/);
+  assert.match(spikeWrangler, /AI_MODEL_FALLBACK = "@cf\/meta\/llama-3\.1-8b-instruct-fast"/);
   assert.doesNotMatch(spikeWrangler, /\b(?:routes?|kv_namespaces|durable_objects|assets|r2_buckets|d1_databases)\b/i);
   assert.equal(packageJson.scripts.dev, "wrangler dev --config wrangler.offline.toml");
   assert.equal(packageJson.scripts.test, "node test.mjs");
@@ -417,7 +418,8 @@ test("the maximum-usage estimate binds the exact 42-call cap", () => {
   assert.equal(estimate.total_calls, 42);
   assert.equal(estimate.calls_per_model, 21);
   assert.equal(estimate.max_output_tokens_per_call, 2048);
-  assert.ok(estimate.gross_usd > 0.11 && estimate.gross_usd < 0.12);
+  assert.ok(estimate.gross_usd > 0.25 && estimate.gross_usd < 0.30);
+  assert.match(estimate.pricing_disclosure, /not observed 8B pricing/);
   assert.ok(estimate.gross_neurons > 10000);
 });
 
@@ -612,7 +614,7 @@ test("the shared exhaustive v2 catalog executes all 79 declared fixtures", async
   assert.match(duplicateResult.failures.join("\n"), /unique/);
 });
 
-test("the live protocol runs both probes first and counts timeout and provider errors without retries", async () => {
+test("the live protocol qualifies accepted configurations independently and never retries", async () => {
   const manifest = buildRequestManifest(fixtures.synthetic_input);
   const order = [];
   let tick = Date.parse("2026-08-17T01:00:00.000Z");
@@ -637,6 +639,18 @@ test("the live protocol runs both probes first and counts timeout and provider e
   assert.deepEqual(records.filter(({ kind, model }) => kind === "trial" && model === MODELS[0]).map(({ index }) => index), Array.from({ length: 20 }, (_, i) => i + 1));
   assert.deepEqual(records.filter(({ kind, model }) => kind === "trial" && model === MODELS[1]).map(({ index }) => index), Array.from({ length: 20 }, (_, i) => i + 1));
   assert.ok(records.every(({ usage }) => usage === null));
+
+  let calls = 0;
+  const partial = await executeRecoveryProtocol({ requests: manifest.by_model, async invoke({ request_body }) {
+    calls += 1;
+    const started_at = new Date(tick).toISOString(); tick += 10;
+    const ended_at = new Date(tick).toISOString(); tick += 10;
+    if (request_body.model === MODELS[0] && calls === 1) return { call_state: "timeout", started_at, ended_at };
+    return { call_state: "received", envelope: { response: { candidate_ref: request_body.candidate_ref, verdict: clone(fixtures.valid_verdict) } }, started_at, ended_at };
+  } });
+  assert.equal(partial.length, 22);
+  assert.equal(partial.filter(({ model }) => model === MODELS[0]).length, 1);
+  assert.equal(partial.filter(({ model }) => model === MODELS[1]).length, 21);
 });
 
 test("request and adapter-input divergence is rejected before inference", async () => {
@@ -735,7 +749,7 @@ async function publishValidQualification(directory, basename = "public-v2", runI
 test("operational evidence validates exact nondefault loopback health, 42 calls, order, and missing-usage honesty", async () => {
   const { evidence, sources, runtime, fixtureResult } = await operationalEvidence({ missingUsage: true });
   const verified = await verifyEvidenceV2(evidence, { currentSourceIdentity: async () => sources, currentRuntimeIdentity: async () => runtime, executeFixtures: async () => fixtureResult });
-  assert.equal(verified.valid, true);
+  assert.equal(verified.valid, true, JSON.stringify(verified.diagnostics));
   assert.equal(evidence.records.length, 42);
   assert.match(evidence.report, /42 calls missing usage/);
   assert.doesNotMatch(evidence.report, /42 calls missing usage[\s\S]*reported tokens; 0 calls missing usage/);
@@ -957,7 +971,7 @@ test("public qualification validators contain arbitrary malformed nested JSON", 
     assert.doesNotThrow(() => validateApproval(malformed, null, {}));
     assert.equal(validateApproval(malformed, null, {}).valid, false);
   }
-  const malformedBundle = { schema_version: "oddspark.judge-qualification-bundle/v1", plan: null, approval: null, approval_check: null, evidence: null, manifests: null, qualification_refs: null, outcome: null };
+  const malformedBundle = { schema_version: "oddspark.judge-qualification-bundle/v2", plan: null, approval: null, approval_check: null, evidence: null, manifests: null, qualification_refs: null, outcome: null };
   const result = await verifyQualificationBundle(malformedBundle, null, Buffer.alloc(0));
   assert.equal(result.valid, false);
   assert.ok(result.errors.length > 0);
@@ -1168,7 +1182,7 @@ test("missing, open, stale, and mismatched approval records retain verified zero
     assert.equal(bundle.manifests.length, 2);
     assert.ok(bundle.manifests.every(({ outcome }) => outcome === "NO-GO"));
     assert.deepEqual(bundle.qualification_refs, []);
-    assert.equal(bundle.outcome.third_matrix_permitted, true);
+    assert.equal(bundle.outcome.cycle_available, true);
   }
 });
 
@@ -1221,7 +1235,7 @@ test("offline fixture failure blocks adapter preflight and provider calls", asyn
   assert.equal(retained.adapter.observation_attempted, false);
 });
 
-test("independent 19-of-20 thresholds emit two deterministic AD-11 manifests and never pool rates", async () => {
+test("independent 19-of-20 thresholds emit configuration refs and a partial-success AD-11 role set", async () => {
   const goSetup = await approvedRecovery({ approvalRunId: "qualification-go-run" });
   const goEvidence = await operationalEvidence({ runId: "qualification-go-run", directByModel: [19, 19] });
   assert.deepEqual(goSetup.recoveryPlan.models.map(({ request_sha256, adapter_input_sha256 }) => [request_sha256, adapter_input_sha256]), goEvidence.evidence.adapter.outbound_request.by_model.map(({ sha256, adapter_input_sha256 }) => [sha256, adapter_input_sha256]));
@@ -1233,6 +1247,8 @@ test("independent 19-of-20 thresholds emit two deterministic AD-11 manifests and
   assert.equal(first.manifests.length, 2);
   assert.equal(first.qualification_refs.length, 2);
   assert.deepEqual(first.qualification_refs, second.qualification_refs);
+  assert.equal(first.role_qualification_set.outcome, "go");
+  assert.match(first.role_qualification_ref, /^[a-f0-9]{64}$/);
   for (let index = 0; index < MODELS.length; index += 1) {
     assert.equal(first.manifests[index].rates.direct_valid, 19);
     assert.equal(first.manifests[index].rates.direct_rate.denominator, 20);
@@ -1247,11 +1263,15 @@ test("independent 19-of-20 thresholds emit two deterministic AD-11 manifests and
   const noGoDependencies = { currentSourceIdentity: async () => noGoEvidence.sources, currentRuntimeIdentity: async () => noGoEvidence.runtime, executeFixtures: async () => noGoEvidence.fixtureResult };
   const noGo = await buildQualificationBundle({ plan: noGoSetup.recoveryPlan, approval: noGoSetup.approval, evidence: noGoEvidence.evidence, evidence_file: "no-go-v2.json", evidence_bytes: noGoBytes, now: noGoSetup.now }, noGoDependencies);
   assert.equal(noGoEvidence.evidence.summary.by_model[MODELS[0]].direct_valid + noGoEvidence.evidence.summary.by_model[MODELS[1]].direct_valid, 38);
-  assert.equal(noGo.outcome.decision, "NO-GO");
+  assert.equal(noGo.outcome.decision, "GO");
   assert.deepEqual(noGo.manifests.map(({ outcome }) => outcome), ["GO", "NO-GO"]);
-  assert.deepEqual(noGo.qualification_refs, []);
-  assert.equal(noGo.outcome.mvp_review_required, true);
-  assert.equal(noGo.outcome.third_matrix_permitted, false);
+  assert.equal(noGo.qualification_refs.length, 1);
+  assert.equal(noGo.qualification_refs[0].model, MODELS[0]);
+  assert.deepEqual(noGo.role_qualification_set.primary, { resolved_model: MODELS[0], qualification_ref: noGo.qualification_refs[0].qualification_ref, outcome: "go" });
+  assert.deepEqual(noGo.role_qualification_set.fallback, { resolved_model: MODELS[1], qualification_ref: null, outcome: "no-go" });
+  assert.match(noGo.role_qualification_ref, /^[a-f0-9]{64}$/);
+  assert.equal(noGo.outcome.mvp_review_required, false);
+  assert.equal(noGo.outcome.cycle_available, false);
 });
 
 test("qualification metrics keep latency, reported usage, missingness, actual cost, maximum cost, and overflow separate", async () => {
@@ -1261,9 +1281,14 @@ test("qualification metrics keep latency, reported usage, missingness, actual co
   assert.deepEqual(manifest.latency_cost.latency_ms, { minimum: 10, maximum: 10, total: 210, mean: 10 });
   assert.deepEqual(manifest.latency_cost.usage, { reported_calls: 21, missing_calls: 0, overflow: false, prompt_tokens: 21, completion_tokens: 42, total_tokens: 63 });
   assert.equal(manifest.latency_cost.observed_cost.partial, false);
-  assert.equal(manifest.latency_cost.observed_cost.input_usd, 21 * 0.35 / 1_000_000);
-  assert.equal(manifest.latency_cost.observed_cost.output_usd, 42 * 0.75 / 1_000_000);
+  assert.equal(manifest.latency_cost.observed_cost.input_usd, 21 * 0.29 / 1_000_000);
+  assert.equal(manifest.latency_cost.observed_cost.output_usd, 42 * 2.25 / 1_000_000);
   assert.ok(manifest.latency_cost.maximum_cost.gross_usd > manifest.latency_cost.observed_cost.gross_usd);
+  const unknownPriceManifest = buildQualificationManifest({ evidence: retained.evidence, plan: setup.recoveryPlan, model: MODELS[1], outcome: "GO" });
+  assert.equal(unknownPriceManifest.latency_cost.observed_cost.computable, false);
+  assert.equal(unknownPriceManifest.latency_cost.observed_cost.gross_usd, null);
+  assert.ok(unknownPriceManifest.latency_cost.maximum_cost.gross_usd > 0);
+  assert.match(setup.recoveryPlan.maximum_cost.pricing_disclosure, /not observed 8B pricing/);
 
   const missing = await operationalEvidence({ runId: "qualification-missing-metrics-run", missingUsage: true });
   const missingManifest = buildQualificationManifest({ evidence: missing.evidence, plan: setup.recoveryPlan, model: MODELS[0], outcome: "GO" });
@@ -1288,7 +1313,7 @@ test("the qualification domain has an independently pinned canonical SHA-256 vec
     version: 1,
     role: "judge",
     provider: "cloudflare-workers-ai",
-    resolved_model: "@cf/openai/gpt-oss-120b",
+    resolved_model: "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
     request_parameters: { temperature: 0, max_tokens: 2048, response_format_type: "json_schema" },
     prompt_template_sha256: "1".repeat(64),
     wire_schema_sha256: "2".repeat(64),
@@ -1310,7 +1335,7 @@ test("the qualification domain has an independently pinned canonical SHA-256 vec
     if (value !== null && typeof value === "object") return `{${Object.keys(value).sort().map((key) => `${JSON.stringify(key)}:${canonical(value[key])}`).join(",")}}`;
     return JSON.stringify(value);
   };
-  const expected = "c2323f335f273f4ad7c11919d9252fc691bb22b763e1f71a904863c803ee0671";
+  const expected = "8edb96098e195472125474729c27083e31e56187398238110ad339b00588624c";
   assert.equal(deriveQualificationRef(vector), expected);
   assert.equal(expected, createHash("sha256").update(`oddspark-qualification/v1\n${canonical(vector)}`).digest("hex"));
   assert.notEqual(expected, createHash("sha256").update(`different-domain\n${canonical(vector)}`).digest("hex"));
@@ -1405,6 +1430,11 @@ test("qualification verification rejects manifest, ref, evidence-byte, and unkno
     (value) => { value.manifests[0].resolved_model = MODELS[1]; },
     (value) => { value.qualification_refs[0].qualification_ref = "0".repeat(64); },
     (value) => { value.evidence.sha256 = "0".repeat(64); },
+    (value) => { value.role_qualification_set.unexpected = true; },
+    (value) => { value.role_qualification_set.primary.outcome = "GO"; },
+    (value) => { value.role_qualification_set.primary.qualification_ref = null; },
+    (value) => { value.role_qualification_set.tested_source_identity.manifest_sha256 = "0".repeat(64); },
+    (value) => { value.role_qualification_ref = "0".repeat(64); },
     (value) => { value.unexpected = true; },
   ]) {
     const changed = clone(bundle); mutate(changed);
@@ -1562,15 +1592,15 @@ test("exclusive recovery locking prevents concurrent live attempts from both inv
   assert.equal(second, "RECOVERY-LOCKED");
   assert.equal(secondCalls, 0);
   releaseFirst();
-  assert.equal(await first, "NO-GO");
-  assert.equal(firstCalls, 2);
+  assert.equal(await first, "GO");
+  assert.equal(firstCalls, 22);
 });
 
 test("stale and unknown lock paths always require fail-closed manual recovery", async () => {
   const directory = await mkdtemp(path.join(tmpdir(), "oddspark-stale-zero-lock-"));
   const timestamp = "2026-08-18T12:00:00.000Z";
-  await writeFile(path.join(directory, ".judge-recovery-spend.json"), `${JSON.stringify({
-    schema_version: "oddspark.judge-recovery-spend/v1",
+  await writeFile(path.join(directory, ".judge-llama-cycle-spend.json"), `${JSON.stringify({
+    schema_version: "oddspark.judge-cycle-spend/v2",
     attempt_id: "stale-zero-attempt",
     approval_run_id: "stale-zero-run",
     created_at: timestamp,
@@ -1608,9 +1638,9 @@ test("real child termination preserves attempt-bound lock and durable spend stat
     assert.equal(lock.attempt_id, `governance-${boundary}`);
     const contender = await acquireRecoveryLock(directory, { attempt_id: `later-${boundary}` });
     assert.equal(contender.acquired, false);
-    if (boundary === "lock-acquired") await assert.rejects(access(path.join(directory, ".judge-recovery-spend.json")));
+    if (boundary === "lock-acquired") await assert.rejects(access(path.join(directory, ".judge-llama-cycle-spend.json")));
     else {
-      const receipt = JSON.parse(await readFile(path.join(directory, ".judge-recovery-spend.json"), "utf8"));
+      const receipt = JSON.parse(await readFile(path.join(directory, ".judge-llama-cycle-spend.json"), "utf8"));
       assert.equal(receipt.attempt_id, lock.attempt_id);
       assert.equal(receipt.calls_started, boundary === "call-started" ? 1 : 0);
       assert.equal(receipt.state, boundary === "call-started" ? "calls-started" : "reserved");
@@ -1686,7 +1716,7 @@ test("a successful filesystem-governed run reports verified evidence and refs de
   }), "GO");
   assert.equal(calls, 42);
 
-  const receipt = JSON.parse(await readFile(path.join(directory, ".judge-recovery-spend.json"), "utf8"));
+  const receipt = JSON.parse(await readFile(path.join(directory, ".judge-llama-cycle-spend.json"), "utf8"));
   assert.equal(receipt.state, "completed-spent");
   assert.equal(receipt.calls_started, 42);
   const evidenceNames = (await readdir(directory)).filter((name) => name.endsWith("-v2.json"));
@@ -1701,6 +1731,13 @@ test("a successful filesystem-governed run reports verified evidence and refs de
   assert.equal(prior.malformed, false);
   assert.deepEqual(prior.qualification_refs, qualification.qualification_refs);
   assert.equal(prior.qualification_refs.length, 2);
+  assert.equal(prior.role_qualification_ref, qualification.role_qualification_ref);
+
+  receipt.last_call.index += 1;
+  await writeFile(path.join(directory, ".judge-llama-cycle-spend.json"), `${JSON.stringify(receipt, null, 2)}\n`);
+  const mismatched = await findPriorOperationalRecovery(directory, verificationDependencies);
+  assert.equal(mismatched.role_qualification_ref ?? null, null);
+  assert.match(mismatched.blocking_reason, /spend receipt/);
 });
 
 test("prior recovery discovery ignores verified zero-call blocks but fails closed on spent or malformed v2 artifacts", async () => {
@@ -1720,6 +1757,50 @@ test("prior recovery discovery ignores verified zero-call blocks but fails close
   assert.equal((await findPriorOperationalRecovery(malformedDirectory)).malformed, true);
 });
 
+test("historical gpt-oss partial and invalid artifacts do not consume the Llama cycle while forged v1 siblings remain blocking", async () => {
+  const historical = await mkdtemp(path.join(tmpdir(), "oddspark-historical-classification-"));
+  await writeFile(path.join(historical, "old-v2.json"), `${JSON.stringify({ schema_version: "oddspark.judge-recovery-evidence/v2", run: { models: LEGACY_MODEL_IDS } })}\n`);
+  await writeFile(path.join(historical, "old-v2-invalid.json"), `${JSON.stringify({ schema_version: "oddspark.judge-recovery-evidence/v2", run: { models: LEGACY_MODEL_IDS } })}\n`);
+  assert.equal(await findPriorOperationalRecovery(historical), null);
+
+  const forged = await mkdtemp(path.join(tmpdir(), "oddspark-forged-v1-sibling-"));
+  await writeFile(path.join(forged, "current-v2.json"), `${JSON.stringify({ schema_version: "oddspark.judge-recovery-evidence/v2", run: { models: MODELS } })}\n`);
+  await writeFile(path.join(forged, "current-qualification.json"), `${JSON.stringify({ schema_version: "oddspark.judge-qualification-bundle/v1" })}\n`);
+  const blocked = await findPriorOperationalRecovery(forged);
+  assert.equal(blocked.malformed, true);
+  assert.match(blocked.blocking_reason, /completion marker|failed complete verification/);
+});
+
+test("marker-bound zero-call preflight remains retained and does not consume allowance after source-verifier drift", async () => {
+  const directory = await mkdtemp(path.join(tmpdir(), "oddspark-historical-zero-"));
+  const setup = await approvedRecovery({ approvalRunId: "historical-zero-run" });
+  const zero = await operationalEvidence({ blocked: true, runId: "historical-zero-run" });
+  const bytes = Buffer.from(`${JSON.stringify(zero.evidence, null, 2)}\n`);
+  const dependencies = { currentSourceIdentity: async () => zero.sources, currentRuntimeIdentity: async () => zero.runtime, executeFixtures: async () => zero.fixtureResult };
+  const basename = "2026-08-19-historical-zero-preflight-v2";
+  const bundle = await buildQualificationBundle({ plan: setup.recoveryPlan, approval: null, evidence: zero.evidence, evidence_file: `${basename}.json`, evidence_bytes: bytes }, dependencies);
+  await writeRecoveryArtifacts(zero.evidence, bundle, directory, basename);
+
+  const drifted = await findPriorOperationalRecovery(directory, {
+    ...dependencies,
+    verifyEvidenceV2: async () => ({ valid: false }),
+    verifyQualificationBundle: async () => ({ valid: false }),
+  });
+  assert.equal(drifted, null);
+  assert.ok((await readdir(directory)).includes(`${basename}.json`));
+
+  const files = await readdir(directory);
+  const markerPath = path.join(directory, `${basename}.complete.json`);
+  const marker = JSON.parse(await readFile(markerPath, "utf8"));
+  const evidencePath = path.join(directory, `${basename}.json`);
+  const tampered = clone(zero.evidence);
+  tampered.records = [{}];
+  await writeFile(evidencePath, `${JSON.stringify(tampered, null, 2)}\n`);
+  assert.match((await findPriorOperationalRecovery(directory, dependencies)).blocking_reason, /completion marker|verification/);
+  assert.ok(files.includes(`${basename.replace(/-v2$/, "")}-qualification.json`));
+  assert.equal(marker.files.length, 3);
+});
+
 test("reserved receipts reopen only for a complete independently verified zero-call artifact from the same attempt", async () => {
   const attempt = "reserved-match-attempt";
   const runId = "reserved-match-run";
@@ -1729,23 +1810,23 @@ test("reserved receipts reopen only for a complete independently verified zero-c
   const dependencies = { currentSourceIdentity: async () => zero.sources, currentRuntimeIdentity: async () => zero.runtime, executeFixtures: async () => zero.fixtureResult };
   const bundle = await buildQualificationBundle({ plan: setup.recoveryPlan, approval: null, evidence: zero.evidence,
     evidence_file: `2026-08-18-zero-${attempt}-v2.json`, evidence_bytes: bytes }, dependencies);
-  const receipt = { schema_version: "oddspark.judge-recovery-spend/v1", attempt_id: attempt, approval_run_id: runId,
+  const receipt = { schema_version: "oddspark.judge-cycle-spend/v2", attempt_id: attempt, approval_run_id: runId,
     created_at: setup.now.toISOString(), updated_at: setup.now.toISOString(), state: "reserved", calls_started: 0, last_call: null };
 
   const matched = await mkdtemp(path.join(tmpdir(), "oddspark-reserved-matched-"));
   await writeRecoveryArtifacts(zero.evidence, bundle, matched, `2026-08-18-zero-${attempt}-v2`);
-  await writeFile(path.join(matched, ".judge-recovery-spend.json"), `${JSON.stringify(receipt, null, 2)}\n`);
+  await writeFile(path.join(matched, ".judge-llama-cycle-spend.json"), `${JSON.stringify(receipt, null, 2)}\n`);
   const recoverable = await findPriorOperationalRecovery(matched, dependencies);
   assert.equal(recoverable.safe_zero_call_receipt, true);
   assert.equal(recoverable.attempt_id, attempt);
 
   const mismatched = await mkdtemp(path.join(tmpdir(), "oddspark-reserved-mismatched-"));
   await writeRecoveryArtifacts(zero.evidence, bundle, mismatched, `2026-08-18-zero-${attempt}-v2`);
-  await writeFile(path.join(mismatched, ".judge-recovery-spend.json"), `${JSON.stringify({ ...receipt, attempt_id: "different-attempt" }, null, 2)}\n`);
+  await writeFile(path.join(mismatched, ".judge-llama-cycle-spend.json"), `${JSON.stringify({ ...receipt, attempt_id: "different-attempt" }, null, 2)}\n`);
   assert.match((await findPriorOperationalRecovery(mismatched, dependencies)).blocking_reason, /same attempt/);
 
   const missing = await mkdtemp(path.join(tmpdir(), "oddspark-reserved-missing-"));
-  await writeFile(path.join(missing, ".judge-recovery-spend.json"), `${JSON.stringify(receipt, null, 2)}\n`);
+  await writeFile(path.join(missing, ".judge-llama-cycle-spend.json"), `${JSON.stringify(receipt, null, 2)}\n`);
   assert.match((await findPriorOperationalRecovery(missing, dependencies)).blocking_reason, /same attempt/);
 });
 
@@ -1849,7 +1930,7 @@ test("blocked and corrected attempts with one approval run id publish without co
   assert.equal((await findPriorOperationalRecovery(directory)).malformed, false);
 });
 
-test("a rejected probe retains exactly two calls, no trials, and no qualification refs", async () => {
+test("a rejected probe does not block the accepted peer or emit a failed configuration ref", async () => {
   const setup = await approvedRecovery({ approvalRunId: "probe-stop-fixture" });
   const health = expectedAdapterHealth(setup.sources, setup.runtime);
   let calls = 0; let retained; let bundle;
@@ -1873,12 +1954,15 @@ test("a rejected probe retains exactly two calls, no trials, and no qualificatio
     async retainInvalidEvidence() { throw new Error("unexpected invalid probe-stop evidence"); },
     async writeArtifacts(evidence, qualification) { retained = clone(evidence); bundle = clone(qualification); return { jsonPath: "probe.json", markdownPath: "probe.md", qualificationPath: "probe-qualification.json" }; },
   });
-  assert.equal(decision, "NO-GO");
-  assert.equal(calls, 2);
-  assert.equal(retained.records.length, 2);
-  assert.equal(retained.records.filter(({ kind }) => kind === "trial").length, 0);
-  assert.deepEqual(bundle.qualification_refs, []);
-  assert.equal(bundle.outcome.mvp_review_required, true);
+  assert.equal(decision, "GO");
+  assert.equal(calls, 22);
+  assert.equal(retained.records.length, 22);
+  assert.equal(retained.records.filter(({ kind }) => kind === "trial").length, 20);
+  assert.equal(bundle.qualification_refs.length, 1);
+  assert.equal(bundle.qualification_refs[0].model, MODELS[1]);
+  assert.deepEqual(bundle.role_qualification_set.primary, { resolved_model: MODELS[0], qualification_ref: null, outcome: "no-go" });
+  assert.deepEqual(bundle.role_qualification_set.fallback, { resolved_model: MODELS[1], qualification_ref: bundle.qualification_refs[0].qualification_ref, outcome: "go" });
+  assert.equal(bundle.outcome.mvp_review_required, false);
 });
 
 test("exact fresh approval runs the full matrix and emits independently verified refs", async () => {
@@ -1907,7 +1991,8 @@ test("exact fresh approval runs the full matrix and emits independently verified
   assert.equal(decision, "GO");
   assert.equal(calls, 42);
   assert.equal(retained.records.length, 42);
-  assert.deepEqual(retained.records.slice(0, 2).map(({ kind }) => kind), ["probe", "probe"]);
+  assert.equal(retained.records[0].kind, "probe");
+  assert.equal(retained.records[1].kind, "probe");
   assert.equal(bundle.manifests.length, 2);
   assert.equal(bundle.qualification_refs.length, 2);
 });
@@ -2009,10 +2094,11 @@ test("qualification and publication failures after calls retain discoverable evi
     if (failureMode === "qualification") dependencies.buildQualificationBundle = async () => { throw new Error("qualification construction failed"); };
     else dependencies.writeArtifacts = async () => { throw new Error("publication failed"); };
     await assert.rejects(runLive({ base_url: "http://127.0.0.1:9667" }, dependencies), new RegExp(`${failureMode} .*failed`));
-    assert.equal(calls, 2);
+    assert.equal(calls, 22);
     const names = await readdir(directory);
     assert.ok(names.some((name) => name.endsWith("-v2-invalid.json")));
-    assert.ok(names.includes(".judge-recovery-spend.json"));
+    assert.ok(names.includes(".judge-llama-cycle-spend.json"));
+    assert.equal(JSON.parse(await readFile(path.join(directory, ".judge-llama-cycle-spend.json"), "utf8")).state, "consumed_incomplete");
     assert.ok((await findPriorOperationalRecovery(directory)).blocking_reason.includes("spend receipt"));
   }
 });

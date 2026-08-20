@@ -54,8 +54,8 @@ const SPIKE_DIR = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(SPIKE_DIR, "../..");
 const RESULTS_DIR = path.join(SPIKE_DIR, "results");
 const RECOVERY_LOCK_FILE = ".judge-recovery.lock";
-const RECOVERY_RECEIPT_FILE = ".judge-recovery-spend.json";
-const RECOVERY_RECEIPT_VERSION = "oddspark.judge-recovery-spend/v1";
+const RECOVERY_RECEIPT_FILE = ".judge-llama-cycle-spend.json";
+const RECOVERY_RECEIPT_VERSION = "oddspark.judge-cycle-spend/v2";
 const FIXTURES_PATH = path.join(SPIKE_DIR, "fixtures.json");
 const TEST_PATH = path.join(SPIKE_DIR, "test.mjs");
 
@@ -87,6 +87,8 @@ import {
   NEURON_USD,
   FREE_NEURONS_PER_DAY,
   MODEL_PRICING,
+  BUDGET_PRICING,
+  PRICING_DISCLOSURE,
 } from "./pricing.mjs";
 
 const SOURCE_PATHS = EVIDENCE_SOURCE_PATHS;
@@ -163,7 +165,7 @@ export function estimateMaximumUsage(inputTokensPerRequest) {
   let grossUsd = 0;
   const byModel = {};
   for (const model of MODELS) {
-    const pricing = MODEL_PRICING[model];
+    const pricing = BUDGET_PRICING[model];
     const inputUsd = callsPerModel * inputTokensPerRequest * pricing.input_per_million_usd / 1_000_000;
     const outputUsd = callsPerModel * MAX_TOKENS * pricing.output_per_million_usd / 1_000_000;
     byModel[model] = { calls: callsPerModel, input_usd: inputUsd, output_usd: outputUsd };
@@ -172,6 +174,7 @@ export function estimateMaximumUsage(inputTokensPerRequest) {
   return {
     pricing_as_of: PRICING_AS_OF,
     pricing_source: PRICING_SOURCE,
+    pricing_disclosure: PRICING_DISCLOSURE,
     input_token_upper_bound_per_request: inputTokensPerRequest,
     max_output_tokens_per_call: MAX_TOKENS,
     calls_per_model: callsPerModel,
@@ -292,12 +295,7 @@ export async function executeRecoveryProtocol({ requests, base_url = DEFAULT_BAS
     records.push(record);
     await on_record(structuredClone(record));
   };
-  // Retry with exponential backoff for transient rate-limit errors (429).
-  // Max 2 retries per invocation to avoid infinite loops on persistent failures.
-  const MAX_RETRY_ATTEMPTS = 2;
-  const BASE_RETRY_MS = 1_000;
-  const isRateLimitError = (call) => call.error_code === "http_429" || call.call_state === "provider_error";
-  const invokeWithRetry = async (kind, entry, index, attempt = 0) => {
+  const invokeOnce = async (kind, entry, index) => {
     const started_at = new Date().toISOString();
     try {
       await before_invoke({ kind, model: entry.model, index });
@@ -305,17 +303,19 @@ export async function executeRecoveryProtocol({ requests, base_url = DEFAULT_BAS
     } catch (error) {
       if (error?.code === "ODDSPARK_RECOVERY_GOVERNANCE_FAILURE" || error?.code === "ODDSPARK_FATAL_PROCESS_EXIT") throw error;
       const failedCall = { call_state: "provider_error", error_code: "invocation_exception", envelope: null, usage: null, started_at, ended_at: new Date().toISOString() };
-      if (attempt < MAX_RETRY_ATTEMPTS && isRateLimitError(failedCall)) {
-        const delayMs = BASE_RETRY_MS * Math.pow(2, attempt);
-        await new Promise((resolve) => setTimeout(resolve, delayMs));
-        return invokeWithRetry(kind, entry, index, attempt + 1);
-      }
       return retain(kind, entry, index, failedCall);
     }
   };
-  for (const entry of requests) await invokeWithRetry("probe", entry, 1);
-  if (!records.some((r) => ["provider_error", "timeout", "empty_response"].includes(r.classification))) {
-    for (const entry of requests) for (let i = 1; i <= TRIALS_PER_MODEL; i += 1) await invokeWithRetry("trial", entry, i);
+  const acceptedModels = new Set();
+  for (const entry of requests) {
+    await invokeOnce("probe", entry, 1);
+    const probe = records.at(-1);
+    if (!["provider_error", "timeout", "empty_response"].includes(probe.classification)) acceptedModels.add(entry.model);
+  }
+  for (const entry of requests) {
+    if (acceptedModels.has(entry.model)) {
+      for (let i = 1; i <= TRIALS_PER_MODEL; i += 1) await invokeOnce("trial", entry, i);
+    }
   }
   return records;
 }
@@ -665,14 +665,11 @@ async function durableWriteJson(target, value) {
   }
 }
 
-// Stale lock TTL: 24 hours. Locks older than this are considered abandoned.
-const RECOVERY_LOCK_TTL_MS = 24 * 60 * 60 * 1000;
-
 /**
- * Acquire an exclusive recovery lock with stale-lock detection.
- * If the existing lock file is older than RECOVERY_LOCK_TTL_MS, it is treated as abandoned.
+ * Acquire an exclusive recovery lock. Existing lock ownership is never inferred
+ * from age; stale and unknown locks require explicit manual recovery.
  */
-export async function acquireRecoveryLock(resultsDir = RESULTS_DIR, { now = new Date(), attempt_id = randomUUID(), lockTtlMs = RECOVERY_LOCK_TTL_MS } = {}) {
+export async function acquireRecoveryLock(resultsDir = RESULTS_DIR, { now = new Date(), attempt_id = randomUUID() } = {}) {
   assertSafeBasename(attempt_id, "lock attempt");
   const directory = await physicalDirectory(resultsDir);
   const lockPath = path.join(directory, RECOVERY_LOCK_FILE);
@@ -702,36 +699,6 @@ export async function acquireRecoveryLock(resultsDir = RESULTS_DIR, { now = new 
   } catch (error) {
     await handle?.close().catch(() => {});
     if (error?.code === "EEXIST") {
-      // Check for stale lock — read existing lock file and compare timestamps
-      try {
-        const existingBytes = await readFile(lockPath);
-        const existing = JSON.parse(existingBytes.toString("utf8"));
-        const createdAt = Date.parse(existing.created_at);
-        if (Number.isFinite(createdAt) && now.getTime() - createdAt > lockTtlMs) {
-          // Lock is stale — remove it and retry acquisition
-          await unlink(lockPath).catch(() => {});
-          await syncDirectory(directory);
-          // Retry: attempt to create the lock fresh
-          handle = await open(lockPath, "wx", 0o600);
-          await handle.writeFile(`${JSON.stringify({ attempt_id, pid: process.pid, created_at: now.toISOString() })}
-`);
-          await handle.sync();
-          await syncDirectory(directory);
-          let releasedStale = false;
-          return {
-            acquired: true,
-            attempt_id,
-            lockPath,
-            async release() {
-              if (releasedStale) return;
-              releasedStale = true;
-              await handle.close();
-              await unlink(lockPath).catch(() => {});
-              await syncDirectory(directory);
-            },
-          };
-        }
-      } catch { /* unreadable lock file — treat as blocking */ }
       return { acquired: false, reason: "recovery lock exists; stale and unknown locks require manual recovery" };
     }
     throw error;
@@ -773,8 +740,8 @@ async function markRecoveryCallStarted(resultsDir, receipt, { kind, model, index
   return next;
 }
 
-async function completeRecoverySpend(resultsDir, receipt, now = new Date()) {
-  const completed = { ...receipt, updated_at: now.toISOString(), state: "completed-spent" };
+async function completeRecoverySpend(resultsDir, receipt, now = new Date(), state = "completed-spent") {
+  const completed = { ...receipt, updated_at: now.toISOString(), state };
   await durableWriteJson(path.join(resultsDir, RECOVERY_RECEIPT_FILE), completed);
   return completed;
 }
@@ -1139,9 +1106,9 @@ export async function writeRecoveryArtifacts(evidence, qualification, resultsDir
   };
 }
 
-async function retainInvalidEvidence(evidence, resultsDir = RESULTS_DIR) {
+async function retainInvalidEvidence(evidence, resultsDir = RESULTS_DIR, attemptId = randomUUID()) {
   const directory = await physicalDirectory(resultsDir);
-  const target = path.join(directory, `${evidenceBasename(evidence)}-invalid.json`);
+  const target = path.join(directory, `${evidenceBasename(evidence, attemptId)}-invalid.json`);
   const handle = await open(target, "wx", 0o600);
   try { await handle.writeFile(`${JSON.stringify(evidence, null, 2)}\n`); await handle.sync(); } finally { await handle.close(); }
   await syncDirectory(directory);
@@ -1167,9 +1134,9 @@ export async function runLive(options, dependencies = {}) {
     return await runLiveExclusive(options, { ...dependencies, resultsDir, _attemptId: attemptId, _filesystemGovernance: filesystemGovernance, _governanceState: governanceState });
   } catch (error) {
     if (filesystemGovernance && governanceState.receipt?.calls_started > 0) {
-      governanceState.receipt = await completeRecoverySpend(resultsDir, governanceState.receipt).catch(() => governanceState.receipt);
+      governanceState.receipt = await completeRecoverySpend(resultsDir, governanceState.receipt, new Date(), "consumed_incomplete").catch(() => governanceState.receipt);
       if (governanceState.evidence && !governanceState.retained) {
-        await retainInvalidEvidence(governanceState.evidence, resultsDir).then(() => { governanceState.retained = true; }).catch(() => {});
+        await retainInvalidEvidence(governanceState.evidence, resultsDir, governanceState.receipt.attempt_id).then(() => { governanceState.retained = true; }).catch(() => {});
       }
     }
     throw error;
@@ -1408,7 +1375,23 @@ async function runLiveExclusive(options, dependencies = {}) {
   if (!qualificationVerification.valid) throw new Error(`qualification bundle failed verification: ${qualificationVerification.errors.join(", ")}`);
   const files = await (dependencies.writeArtifacts ?? writeRecoveryArtifacts)(evidence, qualification, dependencies.resultsDir, artifactBasename, dependencies.publicationOptions);
   if (dependencies._filesystemGovernance) {
-    if (receipt.calls_started > 0) receipt = await completeRecoverySpend(dependencies.resultsDir, receipt);
+    if (receipt.calls_started > 0) {
+      const expectedNames = [`${artifactBasename}.json`, `${artifactBasename}.md`, `${artifactBasename.replace(/-v2$/, "")}-qualification.json`];
+      const completed = await verifyCompletedArtifactSet(dependencies.resultsDir, `${artifactBasename}.complete.json`, expectedNames);
+      if (!completed.valid) throw new Error(`published recovery set failed independent completion verification: ${completed.errors.join("; ")}`);
+      const rereadEvidenceBytes = await readFile(path.join(dependencies.resultsDir, expectedNames[0]));
+      const rereadEvidenceParsed = parseCanonicalJsonBytes(rereadEvidenceBytes, "published evidence");
+      const rereadQualificationParsed = parseCanonicalJsonBytes(await readFile(path.join(dependencies.resultsDir, expectedNames[2])), "published qualification");
+      const rereadMarkdown = await readFile(path.join(dependencies.resultsDir, expectedNames[1]), "utf8");
+      if (!rereadEvidenceParsed.valid || !rereadQualificationParsed.valid || rereadMarkdown !== rereadEvidenceParsed.value?.report) throw new Error("published recovery bytes failed independent parse or Markdown binding");
+      const rereadVerification = await verifyQualificationBundle(rereadQualificationParsed.value, rereadEvidenceParsed.value, rereadEvidenceBytes, {
+        currentLegacyIdentity: async () => postCallLegacy, executeFixtures: async () => fixtures,
+        currentSourceIdentity: async () => postCallSources, currentRuntimeIdentity: async () => postCallRuntime,
+        ...(dependencies.evidenceDependencies ?? {}),
+      });
+      if (!rereadVerification.valid) throw new Error(`published qualification failed independent verification: ${rereadVerification.errors.join("; ")}`);
+      receipt = await completeRecoverySpend(dependencies.resultsDir, receipt);
+    }
     else {
       await unlink(path.join(dependencies.resultsDir, RECOVERY_RECEIPT_FILE)).catch(() => {});
       await syncDirectory(await physicalDirectory(dependencies.resultsDir));
@@ -1418,7 +1401,8 @@ async function runLiveExclusive(options, dependencies = {}) {
   console.log(`Decision: ${qualification.outcome.decision}`);
   console.log(`Evidence: ${files.jsonPath}`);
   console.log(`Qualification: ${files.qualificationPath}`);
-  for (const ref of qualification.qualification_refs) console.log(`STRUCT-JUDGE ${ref.model}: ${ref.qualification_ref}`);
+  for (const ref of qualification.qualification_refs) console.log(`STRUCT-JUDGE-CONFIG ${ref.model}: ${ref.qualification_ref}`);
+  if (qualification.role_qualification_ref) console.log(`STRUCT-JUDGE ${qualification.role_qualification_ref}`);
   return qualification.outcome.decision;
 }
 

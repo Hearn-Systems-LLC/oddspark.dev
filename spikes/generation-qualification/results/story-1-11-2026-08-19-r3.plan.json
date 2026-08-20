@@ -1,0 +1,683 @@
+{
+  "schema_version": "oddspark.generation-qualification-plan/v1",
+  "plan_ref": "5d372eaa391223059e64c95a7c4cf311ceb5313cca9a769bd9736d21e8cfe028",
+  "approval_run_id": "story-1-11-2026-08-19-r3",
+  "created_at": "2026-08-19T16:20:00.645Z",
+  "provider": "cloudflare-workers-ai",
+  "authority": {
+    "account_profile": "operator-reviewed-profile",
+    "credential_path": "wrangler-remote-binding",
+    "headroom_confirmed": true
+  },
+  "roles": [
+    {
+      "role": "primary",
+      "resolved_model": "@cf/openai/gpt-oss-120b"
+    },
+    {
+      "role": "fallback",
+      "resolved_model": "@cf/openai/gpt-oss-20b"
+    }
+  ],
+  "parameters": {
+    "temperature": 0,
+    "max_tokens": 2048
+  },
+  "timeout_policy": {
+    "adapter_timeout_ms": 120000,
+    "preflight_timeout_ms": 10000,
+    "execution": "sequential",
+    "retries": 0,
+    "replacements": 0
+  },
+  "input": {
+    "evidence": {
+      "version": 1,
+      "mode": "local",
+      "priors": {
+        "region": "Blue Water Area",
+        "season": "summer",
+        "date": "2026-08-18",
+        "situation": "repeated inquiries",
+        "capability_bundle": [
+          "software",
+          "workflow automation"
+        ]
+      }
+    },
+    "seed": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  "requests": [
+    {
+      "role": "primary",
+      "resolved_model": "@cf/openai/gpt-oss-120b",
+      "body": {
+        "role": "primary",
+        "model": "@cf/openai/gpt-oss-120b",
+        "messages": [
+          {
+            "role": "system",
+            "content": "Return exactly one JSON Candidate object matching the supplied JSON Schema. Do not wrap it, explain it, fence it, repair it, or include a candidate_ref. Preserve the supplied Evidence faithfully and produce only a closed Story 1.7 Candidate."
+          },
+          {
+            "role": "user",
+            "content": "{\"evidence\":{\"mode\":\"local\",\"priors\":{\"capability_bundle\":[\"software\",\"workflow automation\"],\"date\":\"2026-08-18\",\"region\":\"Blue Water Area\",\"season\":\"summer\",\"situation\":\"repeated inquiries\"},\"version\":1},\"seed\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}"
+          }
+        ],
+        "temperature": 0,
+        "max_tokens": 2048,
+        "response_format": {
+          "type": "json_schema",
+          "json_schema": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "version",
+              "mode",
+              "title",
+              "plan",
+              "why_fits",
+              "what_gets_better",
+              "before_after",
+              "change_level",
+              "stays_same",
+              "invitation",
+              "grounded_numbers"
+            ],
+            "properties": {
+              "version": {
+                "const": 1
+              },
+              "mode": {
+                "enum": [
+                  "local",
+                  "domain"
+                ]
+              },
+              "title": {
+                "type": "string",
+                "minLength": 1
+              },
+              "plan": {
+                "type": "string",
+                "minLength": 1
+              },
+              "why_fits": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "text"
+                ],
+                "properties": {
+                  "text": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "breadcrumb": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
+              },
+              "what_gets_better": {
+                "type": "string",
+                "minLength": 1
+              },
+              "before_after": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "before",
+                  "after"
+                ],
+                "properties": {
+                  "before": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "after": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
+              },
+              "change_level": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "time_range",
+                  "steps_changed",
+                  "steps_removed",
+                  "preliminary"
+                ],
+                "properties": {
+                  "time_range": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "steps_changed": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "steps_removed": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "preliminary": {
+                    "const": true
+                  }
+                }
+              },
+              "stays_same": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "tools",
+                  "authority",
+                  "steps"
+                ],
+                "properties": {
+                  "tools": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "authority": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "steps": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  }
+                }
+              },
+              "invitation": {
+                "type": "string",
+                "minLength": 1
+              },
+              "grounded_numbers": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "notice": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "allOf": [
+              {
+                "if": {
+                  "properties": {
+                    "mode": {
+                      "const": "domain"
+                    }
+                  }
+                },
+                "then": {
+                  "properties": {
+                    "why_fits": {
+                      "required": [
+                        "text",
+                        "breadcrumb"
+                      ]
+                    }
+                  }
+                },
+                "else": {
+                  "properties": {
+                    "why_fits": {
+                      "not": {
+                        "required": [
+                          "breadcrumb"
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "request_sha256": "fae773de138bc9ed3d4432347748f5ab79165bf0b3cf80fa77e135c97965958e",
+      "adapter_input_sha256": "5651ef53a9c4bcf76aa8a2353a11917fced33344c6b6a6330664d913efc7fa8e"
+    },
+    {
+      "role": "fallback",
+      "resolved_model": "@cf/openai/gpt-oss-20b",
+      "body": {
+        "role": "fallback",
+        "model": "@cf/openai/gpt-oss-20b",
+        "messages": [
+          {
+            "role": "system",
+            "content": "Return exactly one JSON Candidate object matching the supplied JSON Schema. Do not wrap it, explain it, fence it, repair it, or include a candidate_ref. Preserve the supplied Evidence faithfully and produce only a closed Story 1.7 Candidate."
+          },
+          {
+            "role": "user",
+            "content": "{\"evidence\":{\"mode\":\"local\",\"priors\":{\"capability_bundle\":[\"software\",\"workflow automation\"],\"date\":\"2026-08-18\",\"region\":\"Blue Water Area\",\"season\":\"summer\",\"situation\":\"repeated inquiries\"},\"version\":1},\"seed\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}"
+          }
+        ],
+        "temperature": 0,
+        "max_tokens": 2048,
+        "response_format": {
+          "type": "json_schema",
+          "json_schema": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "version",
+              "mode",
+              "title",
+              "plan",
+              "why_fits",
+              "what_gets_better",
+              "before_after",
+              "change_level",
+              "stays_same",
+              "invitation",
+              "grounded_numbers"
+            ],
+            "properties": {
+              "version": {
+                "const": 1
+              },
+              "mode": {
+                "enum": [
+                  "local",
+                  "domain"
+                ]
+              },
+              "title": {
+                "type": "string",
+                "minLength": 1
+              },
+              "plan": {
+                "type": "string",
+                "minLength": 1
+              },
+              "why_fits": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "text"
+                ],
+                "properties": {
+                  "text": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "breadcrumb": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
+              },
+              "what_gets_better": {
+                "type": "string",
+                "minLength": 1
+              },
+              "before_after": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "before",
+                  "after"
+                ],
+                "properties": {
+                  "before": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "after": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
+              },
+              "change_level": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "time_range",
+                  "steps_changed",
+                  "steps_removed",
+                  "preliminary"
+                ],
+                "properties": {
+                  "time_range": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "steps_changed": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "steps_removed": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "preliminary": {
+                    "const": true
+                  }
+                }
+              },
+              "stays_same": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "tools",
+                  "authority",
+                  "steps"
+                ],
+                "properties": {
+                  "tools": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "authority": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "steps": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  }
+                }
+              },
+              "invitation": {
+                "type": "string",
+                "minLength": 1
+              },
+              "grounded_numbers": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "notice": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "allOf": [
+              {
+                "if": {
+                  "properties": {
+                    "mode": {
+                      "const": "domain"
+                    }
+                  }
+                },
+                "then": {
+                  "properties": {
+                    "why_fits": {
+                      "required": [
+                        "text",
+                        "breadcrumb"
+                      ]
+                    }
+                  }
+                },
+                "else": {
+                  "properties": {
+                    "why_fits": {
+                      "not": {
+                        "required": [
+                          "breadcrumb"
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "request_sha256": "fa0f6d616e8735f0274fcc31627b07612df0cbd3c4f9ad04d9db9c750b5ffa5a",
+      "adapter_input_sha256": "5651ef53a9c4bcf76aa8a2353a11917fced33344c6b6a6330664d913efc7fa8e"
+    }
+  ],
+  "sources": [
+    {
+      "path": "package.json",
+      "bytes": 3309,
+      "sha256": "7e27ada2f1a76f11d883ecda3e32d26bee54aeef4b44b2636385ffa69201439c"
+    },
+    {
+      "path": "runtime-baseline.json",
+      "bytes": 2254,
+      "sha256": "3c9b0860c8dd9760e7883f5c9aed54aa5a2878518fb55c1e5fe5e0f4e17a52a5"
+    },
+    {
+      "path": "scripts/generation.mjs",
+      "bytes": 10830,
+      "sha256": "fe90dce280366e4207b78edd52a93d4dc57e1e40b899122d084d7d7b61993bb5"
+    },
+    {
+      "path": "scripts/brief-contracts.mjs",
+      "bytes": 28020,
+      "sha256": "38f85a381dbe6735a7851ec46e5af7d0edff70d64607943b96325c704c43c431"
+    },
+    {
+      "path": "spikes/judge-fidelity/contract.mjs",
+      "bytes": 28206,
+      "sha256": "02bfb84840c69806bc495360840d4af89cfc6e16f964ad95e46d15ce30d41f1e"
+    },
+    {
+      "path": "spikes/generation-qualification/contract.mjs",
+      "bytes": 8041,
+      "sha256": "9283b83a2f91b90e3bc3717fba972af89054fdd38d3a6348a341983333a89727"
+    },
+    {
+      "path": "spikes/generation-qualification/evidence-v2.mjs",
+      "bytes": 16216,
+      "sha256": "aef97e82da82e6f82196251a2d8b78b2de5ec0f141a491d2b3bf6afe62084723"
+    },
+    {
+      "path": "spikes/generation-qualification/fixture-executor.mjs",
+      "bytes": 2890,
+      "sha256": "60f950c422a0bd567b4753a645b754e3b67b514547241a72a13af52b00a90ab5"
+    },
+    {
+      "path": "spikes/generation-qualification/fixtures.json",
+      "bytes": 1147,
+      "sha256": "bc7a49026898e60c0717590ee6b2575b0f4dc32363322c2e06326b05f2ede9a3"
+    },
+    {
+      "path": "spikes/generation-qualification/qualification.mjs",
+      "bytes": 8774,
+      "sha256": "cabd85ca981fdfc45894491d398311242145eb596f444488fc0ea697bf9debc7"
+    },
+    {
+      "path": "spikes/generation-qualification/run.mjs",
+      "bytes": 9160,
+      "sha256": "c52b29799f1a158d9052feb4746535f73b1554e9083fc8ae90f8079a9e7ff2ef"
+    },
+    {
+      "path": "spikes/generation-qualification/start-adapter.mjs",
+      "bytes": 1523,
+      "sha256": "062ec48f442b4986b6556961fcfa164a51a3c9d6f94e5d1574c4aed686866baa"
+    },
+    {
+      "path": "spikes/generation-qualification/test.mjs",
+      "bytes": 15563,
+      "sha256": "f3b05922f29a4c61d9a0ff94bfe03aed604456bd7bffc2b1a995615f9eb2e0ab"
+    },
+    {
+      "path": "spikes/generation-qualification/verify-v2.mjs",
+      "bytes": 805,
+      "sha256": "ae223fa409035d9efa535b2af9efd42f0f367980b3dc896c27167621c66d857c"
+    },
+    {
+      "path": "spikes/generation-qualification/worker.mjs",
+      "bytes": 5314,
+      "sha256": "d84e229baeba5db982bebe8cdad0a93cacf969bd66a4577748db6ee725ce2856"
+    },
+    {
+      "path": "spikes/generation-qualification/wrangler.toml",
+      "bytes": 275,
+      "sha256": "69ef703d626f5200b2a06e82843760f5d1d663079ac46788d4b6de8109064b60"
+    }
+  ],
+  "runtime": {
+    "path": "runtime-baseline.json",
+    "bytes": 2254,
+    "sha256": "3c9b0860c8dd9760e7883f5c9aed54aa5a2878518fb55c1e5fe5e0f4e17a52a5",
+    "runtime_identity_sha256": "5d14ca5fc8cfbb9d307d066944454fc336a0f86698f9368debe57cbab6958189",
+    "node": "v24.18.0",
+    "wrangler": "4.123.0"
+  },
+  "expected_health": {
+    "ok": true,
+    "inference": false,
+    "schema_version": "oddspark.generation-adapter-health/v1",
+    "provider": "cloudflare-workers-ai",
+    "roles": [
+      {
+        "role": "primary",
+        "resolved_model": "@cf/openai/gpt-oss-120b"
+      },
+      {
+        "role": "fallback",
+        "resolved_model": "@cf/openai/gpt-oss-20b"
+      }
+    ],
+    "parameters": {
+      "temperature": 0,
+      "max_tokens": 2048
+    },
+    "binding": "AI",
+    "worker_sha256": "d84e229baeba5db982bebe8cdad0a93cacf969bd66a4577748db6ee725ce2856",
+    "config_sha256": "69ef703d626f5200b2a06e82843760f5d1d663079ac46788d4b6de8109064b60",
+    "runtime_sha256": "5d14ca5fc8cfbb9d307d066944454fc336a0f86698f9368debe57cbab6958189"
+  },
+  "estimate": {
+    "pricing": {
+      "as_of": "2026-08-18",
+      "source": "https://developers.cloudflare.com/workers-ai/platform/pricing/",
+      "currency": "USD",
+      "input_per_million": {
+        "@cf/openai/gpt-oss-120b": 0.35,
+        "@cf/openai/gpt-oss-20b": 0.2
+      },
+      "output_per_million": {
+        "@cf/openai/gpt-oss-120b": 0.75,
+        "@cf/openai/gpt-oss-20b": 0.3
+      }
+    },
+    "roles": [
+      {
+        "role": "primary",
+        "resolved_model": "@cf/openai/gpt-oss-120b",
+        "calls": 21,
+        "input_tokens_upper_bound": 2529,
+        "max_output_tokens_per_call": 2048,
+        "input_usd": 0.018588149999999998,
+        "output_usd": 0.032256,
+        "maximum_usd": 0.05084415
+      },
+      {
+        "role": "fallback",
+        "resolved_model": "@cf/openai/gpt-oss-20b",
+        "calls": 21,
+        "input_tokens_upper_bound": 2529,
+        "max_output_tokens_per_call": 2048,
+        "input_usd": 0.0106218,
+        "output_usd": 0.0129024,
+        "maximum_usd": 0.023524200000000002
+      }
+    ],
+    "call_cap": 42,
+    "maximum_usd": 0.07436835
+  },
+  "retention": {
+    "provider_retention_disclosed": true,
+    "retained_locally": [
+      "plan",
+      "approval",
+      "records",
+      "bounded output envelopes",
+      "usage",
+      "latency",
+      "cost",
+      "source/runtime/adapter identities",
+      "predicate results",
+      "manifests",
+      "completion marker"
+    ],
+    "forbidden": [
+      "credentials",
+      "account identifiers",
+      "provider reasoning",
+      "unbounded raw output"
+    ]
+  },
+  "schedule": [
+    {
+      "role": "primary",
+      "probe": 1,
+      "trials_after_successful_probe": 20,
+      "sequential": true,
+      "retries": 0,
+      "replacements": 0
+    },
+    {
+      "role": "fallback",
+      "probe": 1,
+      "trials_after_successful_probe": 20,
+      "sequential": true,
+      "retries": 0,
+      "replacements": 0
+    }
+  ],
+  "call_cap": 42,
+  "predicate_ids": [
+    "evidence.shape",
+    "oracle.identity",
+    "legacy.immutable",
+    "runtime.identity",
+    "source.identity",
+    "adapter.identity",
+    "candidate.binding",
+    "fixtures.executed",
+    "records.classified",
+    "records.closed",
+    "run.authorization",
+    "run.cardinality",
+    "run.ordering",
+    "run.common_request",
+    "summary.rates",
+    "outcome.deterministic",
+    "predicates.retained",
+    "report.deterministic",
+    "roles.independent",
+    "output.direct_candidate",
+    "schedule.zero_retry",
+    "cost.recomputed",
+    "manifest.independent"
+  ]
+}

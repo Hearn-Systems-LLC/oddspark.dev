@@ -280,6 +280,8 @@ test('freeze writes deterministic, sorted, 2-space JSON with a trailing newline'
 
   const commit = run('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim();
   assert.equal(record.frozen_from_commit, commit);
+  assert.equal(record.base_commit, commit);
+  assert.match(record.source_state, /uncommitted worktree/);
 
   // Refreezing an unchanged tree changes nothing but the timestamp.
   const second = freeze(root);

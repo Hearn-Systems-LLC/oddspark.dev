@@ -1,9 +1,13 @@
 export const CONTRACT_VERSION = 1;
 export const RESULT_CONTRACT_VERSION = "oddspark-judge-result/v2";
 export const MAX_EXTRACTED_BYTES = 64 * 1024;
-export const MODEL_IDS = Object.freeze([
+export const LEGACY_MODEL_IDS = Object.freeze([
   "@cf/openai/gpt-oss-120b",
   "@cf/openai/gpt-oss-20b",
+]);
+export const MODEL_IDS = Object.freeze([
+  "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+  "@cf/meta/llama-3.1-8b-instruct-fast",
 ]);
 
 export const GATE_NAMES = Object.freeze([
