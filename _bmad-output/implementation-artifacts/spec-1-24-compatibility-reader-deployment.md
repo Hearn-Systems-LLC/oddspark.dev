@@ -2,11 +2,11 @@
 title: 'Story 1.24: Compatibility Reader Deployment'
 type: 'feature'
 created: '2026-08-21'
-status: 'in-progress'
+status: 'in-review'
 baseline_commit: '16ac963'
 warnings: [oversized]
 baseline_revision: '16ac963'
-review_loop_iteration: 0
+review_loop_iteration: 1
 context:
   - '{project-root}/_bmad-output/implementation-artifacts/epic-1-context.md'
 ---
@@ -55,10 +55,10 @@ context:
 ## Tasks & Acceptance
 
 **Execution:**
-- [ ] `src/pipeline/legacy-rendering.mjs` — runtime-neutral lossless legacy presentation: `legacySparkJson/text/presentation` (or equivalent) consuming only a `supported` legacy classification from `classifyCompatibleArtifact`; reproduce the pre-1.14 view model's fields and structure; escape everything; never emit Brief fields. Add to the assembly identity (refreeze) with a neutrality-clean module name.
-- [ ] `src/worker.js` — route read paths by classification kind: `committed_brief` → 1.15 boundary; `legacy_*` → legacy presentation; otherwise stable 404/502 with no metric. Preserve all 1.16 headers/dispatch behavior, the inactive-domain seam semantics, and render-before-count ordering. Legacy serves count as `normal`.
-- [ ] `test.mjs` — named fixtures for every I/O matrix row: legacy local/personalized/fallback rendering losslessness (field-for-field against the stored artifact), committed v1 unchanged, unknown-version fail-closed with zero metric, strike parity with the rollback artifact's observable behavior, and house/normal metric split.
-- [ ] `scripts/reader-preflight.mjs` (Node tooling) + `package.json` — one offline preflight composing: runtime-baseline verify, config dry runs, assembly:verify, reader-projection identity match (reader module set ⊆ `runtime-assembly.json`, hashes byte-identical), and a wrangler-config assertion that no writer entrypoint, activation manifest, or `PIPELINE_*`/`ACTIVATION_MANIFEST`/`INACTIVE_DOMAIN_WRITER` binding exists. Wire as `reader:preflight`; do not compose into `check` (it is a release gate, not a commit gate).
+- [x] `src/pipeline/legacy-rendering.mjs` — runtime-neutral lossless legacy presentation: `legacySparkJson/text/presentation` (or equivalent) consuming only a `supported` legacy classification from `classifyCompatibleArtifact`; reproduce the pre-1.14 view model's fields and structure; escape everything; never emit Brief fields. Add to the assembly identity (refreeze) with a neutrality-clean module name.
+- [x] `src/worker.js` — route read paths by classification kind using ONE shared legacy-kind set sourced from the receipts module: `committed_brief` → 1.15 boundary; legacy kinds → legacy presentation; otherwise stable 404/502 with no metric. Remove the orphaned `requireCommittedArtifact`. Guard flare magnitude and meter values as finite numbers in legacy rendering paths. The enhanced client must accept and render the legacy presentation shape losslessly (its own view model, correct share cluster/focus/busy settlement) — production parity with the rollback artifact's observable behavior INCLUDES the JS-enabled strike path. Preserve all 1.16 headers/dispatch behavior, the inactive-domain seam semantics, and render-before-count ordering. Legacy serves count as `normal`.
+- [x] `test.mjs` + `scripts/brief-rendering.outer.mjs` — named fixtures for every I/O matrix row plus: an executable sliced-client fixture feeding a legacy presentation through the enhanced submit path (assert acceptance and settlement), `cached:true` replay through the JSON seam, legacy domain-strike HTML (site-context block, hidden shell provenance), meta/og description equals premise on legacy pages, the exact lookup-response key set pinned, and the house/normal metric split.
+- [x] `scripts/reader-preflight.mjs` (Node tooling) + `package.json` — one offline preflight composing: runtime-baseline verify, config dry runs, assembly:verify, reader-projection identity match, and wrangler-config assertions. The projection must bind the DEPLOYED ENTRYPOINT: hash `src/worker.js` itself and derive the reader module set by parsing its import closure (assert it equals the expected reader set — no hand-maintained list), with every closure module's hash byte-identical to `runtime-assembly.json`. Scope the `[vars]` assertion to the parsed TOML section (strip comments first); match forbidden config case-insensitively. Every check must emit a pass/fail line — no silent skips. Wire as `reader:preflight`; do not compose into `check` (it is a release gate, not a commit gate).
 - [ ] Deploy under the recorded approval: run preflight, `npx wrangler deploy` from develop, verify production serves both a legacy strike and existing legacy artifacts (200, legacy rendering), and record the deployed version ID in the spec's Auto Run Result. Document the Workers Builds trigger state observed at deploy time. Rollback path: redeploy 9946847 (version 025cfac9 lineage), no data change.
 
 **Acceptance Criteria:**
@@ -68,6 +68,37 @@ context:
 - Given repository verification, when `npm test` and `npm run check` run, then all offline gates pass with the refrozen assembly identity and no protected-file changes.
 
 ## Spec Change Log
+
+### 2026-08-21 — Enhanced-client legacy contract, entrypoint-bound preflight, and read-path hardening
+- Trigger: Review demonstrated that the enhanced JS Strike path (`validPresentation`) rejects the legacy presentation the server now returns — every JS-enabled strike would show the incident error despite a 200 — plus an unbound deployed entrypoint, cross-section TOML regex false positives, NaN-prone flare/meter rendering, and an orphaned committed-only gate.
+- Amended: Tasks now pin the enhanced-client contract (the client must accept and render the legacy presentation shape losslessly, with correct share/focus/busy settlement, proven by an executable sliced-client fixture), require the preflight to bind `src/worker.js` and the reader import closure (parsed, not hand-maintained), scope the wrangler `[vars]` assertion to the parsed section with comment-stripping and case-insensitive forbidden-config matching, require numeric guards on flare magnitude and meter values in legacy rendering, remove the orphaned `requireCommittedArtifact`, and add fixtures for `cached:true` replay, legacy domain-strike HTML, meta/og description, hidden shell provenance on legacy pages, and the exact lookup-response key set. Legacy-kind routing must use one shared kind set sourced from the receipts module, and `projectLegacySpark` must use the authoritative `classification.kind`.
+- Known-bad state avoided: A deploy whose curl surfaces are lossless while the primary browser interaction shows the incident error on every strike, and a preflight whose identity proof excludes the file visitors actually execute.
+- KEEP: Preserve the separate runtime-neutral `legacy-rendering.mjs` module and its fail-closed entries, the classification-based tri-way routing shape, the refrozen assembly identity including the new module, the preflight composition (baseline, dry runs, assembly verify, projection, config assertion), render-before-count ordering, and the existing losslessness/metric fixture matrix.
+
+## Review Triage Log
+
+### 2026-08-21 — Review pass (round 1)
+- intent_gap: 0
+- bad_spec: 1: (high 1, medium 0, low 0)
+- patch: 0
+- defer: 0
+- reject: 4: (high 0, medium 1, low 3)
+- addressed_findings:
+  - `[high]` `[bad_spec]` Enhanced JS Strike path rejected the legacy presentation (incident symptom on every JS strike); triggered loopback with entrypoint-bound preflight, TOML section parsing, NaN guards, and shared-kind-set amendments.
+
+### 2026-08-21 — Review pass (round 2)
+- intent_gap: 0
+- bad_spec: 0
+- patch: 11: (high 3, medium 5, low 3)
+- defer: 0
+- reject: 7: (high 0, medium 3, low 4)
+- addressed_findings:
+  - `[high]` `[patch]` `[vars]` regex captured only the section's first line; proper TOML section parsing plus a dedicated preflight test suite.
+  - `[high]` `[patch]` Entrypoint hash bound into the frozen assembly identity and compared at preflight.
+  - `[high]` `[patch]` Inline-script XSS on legacy permalinks closed (`<` escaped in LIVE JSON).
+  - `[medium]` `[patch]` Client legacy-kind set injected from the shared server constant; import-closure parser covers side-effect/re-export/dynamic forms; reader-critical closure membership asserted; `[env.*]` sections fail the config assertion.
+  - `[medium]` `[patch]` Domain-scope legacy permalink serves labeled `domain_html`, not `local_permalink`.
+  - `[low]` `[patch]` Code-point-safe shortening, empty-line wrap fix, `servable` spelling, permalink-meter and fail-closed unit pins, viz-placeholder assertion.
 
 ## Design Notes
 

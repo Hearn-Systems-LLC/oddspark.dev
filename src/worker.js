@@ -1,7 +1,9 @@
 import {
+  LEGACY_ARTIFACT_KINDS,
   canonicalScopeKey,
   classifyCompatibleArtifact,
   defensiveFreeze,
+  isLegacyArtifactKind,
   parseReceipt,
   parseRequestScope,
   validateCommitPayload,
@@ -12,6 +14,11 @@ import {
   committedBriefJson,
   committedBriefPresentation,
 } from "./pipeline/rendering.mjs";
+import {
+  legacySparkAsText,
+  legacySparkJson,
+  legacySparkPresentation,
+} from "./pipeline/legacy-rendering.mjs";
 import { createInactiveDomainWriter } from "./pipeline/assembly.mjs";
 
 /**
@@ -1510,18 +1517,45 @@ async function compatibleArtifactById(env, id) {
 }
 
 async function recordServed(env, artifact, delivery) {
+  // Committed house detection is unchanged; legacy artifacts carry no Brief
+  // and therefore always serve with outcome "normal" — they are real serves.
   const outcome = artifact?.brief?.notice === HOUSE_NOTICE ? "house" : "normal";
   await coordPost(env, "/metric", { outcome, delivery });
 }
 
-function requireCommittedArtifact(input) {
+// Story 1.24 compatibility routing: classify a built or stored artifact once
+// and render by kind — committed_brief through the 1.15 presentation
+// boundary, legacy kinds (one shared set sourced from the receipts module)
+// through the lossless legacy presentation, anything else fails closed (502
+// at the route, before any metric). The throw message stays "committed brief
+// unavailable" so coordinator-uncertainty semantics are unchanged.
+function classifyServableArtifact(input) {
   if (!input || typeof input !== "object") throw new Error("committed brief unavailable");
   const { cached, ...candidate } = input;
   const classification = classifyCompatibleArtifact(candidate);
-  if (classification.status !== "supported" || classification.kind !== "committed_brief") {
+  if (classification.status !== "supported"
+      || (classification.kind !== "committed_brief" && !isLegacyArtifactKind(classification.kind))) {
     throw new Error("committed brief unavailable");
   }
-  return classification.value;
+  return { classification, cached: cached === true };
+}
+
+function servablePresentation(classification) {
+  return classification.kind === "committed_brief"
+    ? committedBriefPresentation(classification.value)
+    : legacySparkPresentation(classification);
+}
+
+function servableJson(classification, cached) {
+  return classification.kind === "committed_brief"
+    ? committedBriefJson(classification.value)
+    : legacySparkJson(classification, { cached });
+}
+
+function servableAsText(classification, origin, meter) {
+  return classification.kind === "committed_brief"
+    ? committedBriefAsText(classification.value)
+    : legacySparkAsText(classification, origin, meter);
 }
 
 /* ------------------------------------------------------------------ *
@@ -1611,14 +1645,14 @@ function page(initial, live, state = {}) {
   const boot = initial ? JSON.stringify(initial).replace(/</g, "\\u003c") : "null";
   const view = initial?.projection ?? null;
   const liveJson = live
-    ? JSON.stringify({ letter: live.letter, magnitude: live.magnitude, flux: live.flux })
+    ? JSON.stringify({ letter: live.letter, magnitude: live.magnitude, flux: live.flux }).replace(/</g, "\\u003c")
     : "null";
   const accent = SOLAR_COLOR[live && live.letter ? live.letter : "C"] || SOLAR_COLOR.C;
   const buttonText = live?.letter === "A" ? "#E4EAF0" : "#0B0D10";
   const liveClass = live ? live.letter + live.magnitude.toFixed(1) : "----";
   const title = view ? view.title + " / oddspark" : "oddspark";
   const desc = view
-    ? view.plan
+    ? (view.plan ?? view.premise)
     : "A recommendation seeded by verifiable distributed randomness and live solar flare activity.";
   const canonical = view?.share ? "https://oddspark.dev" + view.share.path : "https://oddspark.dev/";
   const ldJson = JSON.stringify({
@@ -1874,7 +1908,9 @@ function page(initial, live, state = {}) {
     <div class="legend" id="legend"></div>
   </section>
 
-  <section class="prov" id="prov"${view ? "" : " hidden"}>
+  <!-- shell provenance stays placeholder-only for committed briefs; legacy
+       presentations carry their own lossless provenance inside the markup -->
+  <section class="prov" id="prov"${view && view.kind !== "legacy" ? "" : " hidden"}>
     <h2>Provenance</h2>
     <dl>
       <div class="field"><dt>drand round</dt><dd class="cool" id="f-round">&mdash;</dd></div>
@@ -1959,6 +1995,10 @@ function page(initial, live, state = {}) {
     return s.length > n ? s.slice(0, n) + "\\u2026" : s;
   }
 
+  // The shared legacy-kind set, injected from src/pipeline/receipts.mjs so the
+  // enhanced client and the server can never drift apart.
+  var LEGACY_KINDS = ${JSON.stringify([...LEGACY_ARTIFACT_KINDS])};
+
   function bindShare(view){
     var cluster = el("foot-links");
     cluster.replaceChildren();
@@ -1987,6 +2027,15 @@ function page(initial, live, state = {}) {
     if (Object.keys(presentation).sort().join(",") !== "markup,projection" || typeof presentation.markup !== "string") return false;
     var view = presentation.projection;
     if (!view || typeof view !== "object" || Array.isArray(view)) return false;
+    // Story 1.24: the legacy presentation shape is accepted losslessly — its
+    // own view model, never widened into Brief fields.
+    if (view.kind === "legacy") {
+      if (Object.keys(view).sort().join(",") !== "id,kind,legacy_kind,premise,share,title") return false;
+      if (!/^[A-Za-z0-9._-]{1,128}$/.test(view.id)) return false;
+      if (!LEGACY_KINDS.includes(view.legacy_kind)) return false;
+      if (typeof view.title !== "string" || typeof view.premise !== "string") return false;
+      return !!view.share && Object.keys(view.share).sort().join(",") === "id,path" && view.share.id === view.id && view.share.path === "/s/" + encodeURIComponent(view.id);
+    }
     var keys = ["before_after","change_level","contact_url","id","invitation","mode","notice","plan","request_scope","retention","share","stays_same","title","what_gets_better","why_fits"];
     if (Object.keys(view).sort().join(",") !== keys.sort().join(",")) return false;
     if (!/^[A-Za-z0-9._-]{1,128}$/.test(view.id) || !["local","domain"].includes(view.request_scope) || !["local","domain"].includes(view.mode)) return false;
@@ -2016,7 +2065,9 @@ function page(initial, live, state = {}) {
     el("status").className = "sr-only";
     el("status").removeAttribute("tabindex");
     el("idea").hidden = false;
-    el("prov").hidden = false;
+    // Legacy markup carries its own lossless provenance; the shell's
+    // placeholder provenance block stays hidden for it.
+    el("prov").hidden = view.kind === "legacy";
     el("idea").innerHTML = presentation.markup;
     bindShare(view);
     if (updateHistory && view.share) history.replaceState({}, "", view.share.path);
@@ -2693,8 +2744,8 @@ export default {
         const id = path.split("/").pop();
         if (!SPARK_ID_RE.test(id || "")) return apiJson(request, { error: "no spark with that id" }, 404);
         const compatible = await compatibleArtifactById(env, id);
-        if (compatible.status !== "supported" || compatible.kind !== "committed_brief") return apiJson(request, { error: compatible.status === "unsupported" ? "unsupported spark artifact" : "no spark with that id" }, 404);
-        const body = committedBriefJson(compatible.value);
+        if (compatible.status !== "supported") return apiJson(request, { error: compatible.status === "unsupported" ? "unsupported spark artifact" : "no spark with that id" }, 404);
+        const body = servableJson(compatible);
         await recordServed(env, compatible.value, "json");
         return apiJson(request, body);
       }
@@ -2712,10 +2763,11 @@ export default {
           throw err;
         }
         if (!intent.website) {
-          const artifact = requireCommittedArtifact(await buildSpark(env));
-          const presentation = committedBriefPresentation(artifact);
+          const { classification, cached } = classifyServableArtifact(await buildSpark(env));
+          const artifact = classification.value;
+          const presentation = servablePresentation(classification);
           if (html) return new Response(null, { status: 303, headers: { location: `/s/${encodeURIComponent(artifact.id)}`, ...DYNAMIC_HEADERS } });
-          const body = request.headers.get("x-oddspark-presentation") === "1" ? presentation : committedBriefJson(artifact);
+          const body = request.headers.get("x-oddspark-presentation") === "1" ? presentation : servableJson(classification, cached);
           await recordServed(env, artifact, "json");
           return apiJson(request, body);
         }
@@ -2748,25 +2800,27 @@ export default {
         }
         const visitorKey = await visitorKeyFor(request);
         if (!visitorKey) {
-          const artifact = requireCommittedArtifact(await authoritativeDomainFallback(env, round, intent.website.domain, "limited", LIMITED_WARNING));
-          const presentation = committedBriefPresentation(artifact);
+          const { classification, cached } = classifyServableArtifact(await authoritativeDomainFallback(env, round, intent.website.domain, "limited", LIMITED_WARNING));
+          const artifact = classification.value;
+          const presentation = servablePresentation(classification);
           if (html) {
             const response = new Response(page(presentation, null), { headers: { "content-type": "text/html; charset=utf-8", ...DYNAMIC_HEADERS } });
             await recordServed(env, artifact, "domain_html");
             return response;
           }
-          const body = request.headers.get("x-oddspark-presentation") === "1" ? presentation : committedBriefJson(artifact);
+          const body = request.headers.get("x-oddspark-presentation") === "1" ? presentation : servableJson(classification, cached);
           await recordServed(env, artifact, "json");
           return apiJson(request, body);
         }
-        const artifact = requireCommittedArtifact(await buildDomainSpark(request, env, intent.website, round, visitorKey));
-        const presentation = committedBriefPresentation(artifact);
+        const { classification, cached } = classifyServableArtifact(await buildDomainSpark(request, env, intent.website, round, visitorKey));
+        const artifact = classification.value;
+        const presentation = servablePresentation(classification);
         if (html) {
           const response = new Response(page(presentation, null), { headers: { "content-type": "text/html; charset=utf-8", ...DYNAMIC_HEADERS } });
           await recordServed(env, artifact, "domain_html");
           return response;
         }
-        const body = request.headers.get("x-oddspark-presentation") === "1" ? presentation : committedBriefJson(artifact);
+        const body = request.headers.get("x-oddspark-presentation") === "1" ? presentation : servableJson(classification, cached);
         await recordServed(env, artifact, "json");
         return apiJson(request, body);
       }
@@ -2793,20 +2847,32 @@ export default {
         const id = path.split("/").pop();
         if (!SPARK_ID_RE.test(id || "")) return new Response(page(null, null, { statusMessage: "That spark is no longer available. Press Strike for a new one." }), { status: 404, headers: { "content-type": "text/html; charset=utf-8", ...DYNAMIC_HEADERS } });
         const compatible = await compatibleArtifactById(env, id);
-        if (compatible.status !== "supported" || compatible.kind !== "committed_brief" || compatible.value.request_scope !== "local") {
+        const servable = compatible.status === "supported"
+          && (compatible.kind === "committed_brief" ? compatible.value.request_scope === "local" : isLegacyArtifactKind(compatible.kind));
+        if (!servable) {
           return new Response(page(null, null, { statusMessage: "That spark is no longer available. Press Strike for a new one." }), { status: 404, headers: { "content-type": "text/html; charset=utf-8", ...DYNAMIC_HEADERS } });
         }
         const s = compatible.value;
+        // Domain-scope legacy artifacts (personalized/fallback) are not local
+        // deliveries; only legacy_local and committed locals are.
+        const delivery = compatible.kind === "legacy_local" || compatible.kind === "committed_brief"
+          ? "local_permalink" : "domain_html";
         if (wantsText(request)) {
-          const body = committedBriefAsText(s);
-          await recordServed(env, s, "local_permalink");
+          const body = servableAsText(compatible, origin);
+          await recordServed(env, s, delivery);
           return new Response(body, {
             headers: { "content-type": "text/plain; charset=utf-8", ...DYNAMIC_HEADERS },
           });
         }
-        const presentation = committedBriefPresentation(s);
-        const body = page(presentation, null);
-        await recordServed(env, s, "local_permalink");
+        const presentation = servablePresentation(compatible);
+        // Legacy pages seat the masthead on the stored flare class, as the
+        // rollback artifact did — but only when the magnitude parses to a
+        // finite number; otherwise the masthead degrades to ----.
+        const magnitude = compatible.kind === "committed_brief" ? NaN : parseFloat(s.solar.class.slice(1));
+        const live = compatible.kind === "committed_brief" || !Number.isFinite(magnitude) ? null
+          : { letter: s.solar.letter, magnitude, flux: s.solar.flux };
+        const body = page(presentation, live);
+        await recordServed(env, s, delivery);
         return new Response(body, {
           headers: { "content-type": "text/html; charset=utf-8", ...DYNAMIC_HEADERS },
         });
@@ -2822,9 +2888,16 @@ export default {
       // Home
       if (path === "/") {
         if (wantsText(request)) {
-          const s = requireCommittedArtifact(await buildSpark(env));
-          const body = committedBriefAsText(s);
-          await recordServed(env, s, "json");
+          const { classification } = classifyServableArtifact(await buildSpark(env));
+          let meter = null;
+          if (classification.kind !== "committed_brief") {
+            try {
+              const used = await neuronsUsedToday(env);
+              meter = { used, free: NEURON_FREE_DAILY, model: modelFor(env, used) };
+            } catch (err) { /* the readout is best-effort; the text still serves */ }
+          }
+          const body = servableAsText(classification, origin, meter);
+          await recordServed(env, classification.value, "json");
           return new Response(body, {
             headers: { "content-type": "text/plain; charset=utf-8", ...DYNAMIC_HEADERS },
           });
