@@ -1,0 +1,66 @@
+{
+  "schema_version": 1,
+  "modules": [
+    {
+      "path": "src/pipeline/activation.mjs",
+      "sha256": "4bfb9b8df684efc84fb5b2956e067b46ca726a73837976777cc75bd0178eb806"
+    },
+    {
+      "path": "src/pipeline/assembly.mjs",
+      "sha256": "afa12411b2432add99537337fc91567bb31ed91fc06d2934452e96a7fcfabc68"
+    },
+    {
+      "path": "src/pipeline/contracts.mjs",
+      "sha256": "574e93061c5cee14a0a4db54f52b6a94fcea45469cbb37153ad2341c210651db"
+    },
+    {
+      "path": "src/pipeline/corpus.mjs",
+      "sha256": "36872819a8de474c97f25824a506a5e3d158fe542378b2a9f136b6985e8d5af8"
+    },
+    {
+      "path": "src/pipeline/evidence.mjs",
+      "sha256": "ce2f2bd9295acb76184b1ebaa7cc876682b9efab24a1ee424a9aa722c66202fa"
+    },
+    {
+      "path": "src/pipeline/gate.mjs",
+      "sha256": "5117b733571c3670d4a81242aa3753a2176a19f80a6785877cd98dd0b5415ee8"
+    },
+    {
+      "path": "src/pipeline/generation.mjs",
+      "sha256": "6e713eea668748914c41712b455e3864563f5c3f043ca7e7b73916a80691a225"
+    },
+    {
+      "path": "src/pipeline/house.mjs",
+      "sha256": "d4016fc0736a01fc005ffc16fcfc977ee1ac17313ddaee719ad21fb7688549d2"
+    },
+    {
+      "path": "src/pipeline/identity.mjs",
+      "sha256": "adc76d501d3d22cac1dae1f646e70219d1e303a03b422ae824156cc24145bb93"
+    },
+    {
+      "path": "src/pipeline/judge.mjs",
+      "sha256": "7535be20e4b426a165c096920f8a9ebdd43aa121af305010158e26dd349059e7"
+    },
+    {
+      "path": "src/pipeline/priors.mjs",
+      "sha256": "b5bb447e4b40bfec57b146ca070dee2d62b329e04db93e8f8a118325469cbd45"
+    },
+    {
+      "path": "src/pipeline/receipts.mjs",
+      "sha256": "323a1484e6b740935d034739ea90a2eb67178d4c64a58f2c0c4ea4faa96f37a0"
+    },
+    {
+      "path": "src/pipeline/rendering.mjs",
+      "sha256": "0e456bc42782f79359cd8880e3bdb5b67bd246129ecef592b5adc62fc8c697b0"
+    },
+    {
+      "path": "src/pipeline/retention.mjs",
+      "sha256": "fc080805041e432f2534c4c0b62829e51e783b686439ca81f1ea3978ba041e56"
+    },
+    {
+      "path": "src/pipeline/strike.mjs",
+      "sha256": "a11d0b9313de346d9bff8edc11de1557dc767f24e49992c1ea252ee5b64bc7db"
+    }
+  ],
+  "assembly_identity_sha256": "68230f3f1dcef43504f8dca8aec43c7d32c9252d99f05d99657c0d38f3b263c0"
+}

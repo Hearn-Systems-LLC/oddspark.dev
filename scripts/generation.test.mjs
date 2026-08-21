@@ -142,9 +142,9 @@ test("hidden dependency capabilities reject before provider invocation", async (
 });
 
 test("offline adapter imports only the authoritative contract and exposes no network or production binding", async () => {
-  const source = await readFile(fileURLToPath(new URL("./generation.mjs", import.meta.url)), "utf8");
+  const source = await readFile(fileURLToPath(new URL("../src/pipeline/generation.mjs", import.meta.url)), "utf8");
   const imports = [...source.matchAll(/^import[\s\S]*?from\s+["']([^"']+)["'];$/gm)].map((match) => match[1]);
-  assert.deepEqual(imports, ["./brief-contracts.mjs"]);
+  assert.deepEqual(imports, ["./contracts.mjs"]);
   assert.doesNotMatch(source, /\b(?:fetch|wrangler|cloudflare|workers ai|env\.AI)\b/i);
 });
 

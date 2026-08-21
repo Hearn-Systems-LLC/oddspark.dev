@@ -160,3 +160,48 @@ violating config cannot be laundered into a new baseline.
 `scripts/runtime-baseline.mjs` uses Node built-ins only and parses just the flat
 top-level keys of each config plus section presence — no TOML dependency is added,
 because nothing should sit between the repo and its own identity.
+
+## Runtime-assembly identity (Story 1.23)
+
+`src/worker.js` and Node verification import the same canonical pipeline modules.
+The runtime-neutral implementations live under `src/pipeline/` (`contracts`,
+`receipts`, `rendering`, `generation`, `judge`, `gate`, `corpus`, `priors`,
+`house`, `evidence`, `strike`, `activation`, `retention`, `assembly`,
+`identity`). The `scripts/*.mjs` files of the same concerns are thin re-export
+shims plus the Node-only fs loaders and CLIs — they implement no closed
+validator, canonical hash, grounding rule, ledger transition, receipt rule,
+projection, or production writer themselves.
+
+No canonical module may reference Node-only APIs. `scripts/assembly-identity.mjs`
+enforces that by scanning for every import form (static, side-effect `import
+"node:fs"`, re-export, literal or computed dynamic `import(...)`), `require()`,
+`eval()`/`Function()`, the full Node builtin surface, and any
+`process.*`/`process[...]`/`Buffer`/`globalThis.process`/`globalThis.Buffer`
+reference (dot or bracket form). The scan is deliberately conservative: comments
+and string literals are matched too, so a suspicious pattern fails closed rather
+than being parsed away. Any `.mjs`/`.js` file under `src/pipeline/` whose name
+does not match the canonical module pattern fails freeze/verify by name, so no
+module can evade the identity or the scan.
+
+`runtime-assembly.json` is the committed frozen identity:
+`{schema_version: 1, modules: [{path, sha256}], assembly_identity_sha256}`, where
+modules are the sorted canonical module paths with their source hashes and the
+identity hash is `sha256("oddspark-runtime-assembly/v1\n" +
+canonical_json({schema_version, modules}))`. It binds later gates to exact source
+bytes; it creates no approval or deployment authority.
+
+Commands:
+
+- `npm run assembly:freeze` — rewrite `runtime-assembly.json` from the current
+  canonical graph (refuses a graph that violates runtime neutrality).
+- `npm run assembly:verify` — recompute and fail, naming each drifted or missing
+  module; a missing or malformed `runtime-assembly.json` fails with a clean
+  error. A fresh clone passes `check` because the frozen file is committed.
+- `npm run assembly:test` — unit tests for freeze/verify/drift/usage and the
+  neutrality scan. `npm run check` composes `assembly:test` and exactly one
+  `assembly:verify`.
+
+The assembled inactive-domain writer and its activation port read the
+`PIPELINE_*`/`ACTIVATION_MANIFEST` bindings from the Worker's environment;
+production wiring of those bindings is deferred to Stories 1.25/1.26, and
+offline fixtures for them create test authority only.
