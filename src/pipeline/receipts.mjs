@@ -1,5 +1,12 @@
 import { ARTIFACT_VERSION, buildCommittedBrief } from "./contracts.mjs";
 
+// The one shared legacy-kind set (Story 1.24): the classification seam, the
+// legacy presentation module, and the Worker's read-path routing all source
+// legacy-kind membership from here.
+export const LEGACY_ARTIFACT_KINDS = Object.freeze(["legacy_local", "legacy_personalized", "legacy_fallback"]);
+const LEGACY_KIND_SET = new Set(LEGACY_ARTIFACT_KINDS);
+export const isLegacyArtifactKind = (kind) => LEGACY_KIND_SET.has(kind);
+
 const OWNER = /^[a-zA-Z0-9][a-zA-Z0-9._:-]{0,127}$/;
 const DOMAIN = /^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/;
 const LEGACY_ID = /^(?:[0-9a-f]{8}|p-[0-9a-f]{16})$/;
@@ -104,8 +111,8 @@ export function classifyCompatibleArtifact(input) {
     catch { return defensiveFreeze({ status: "miss", reason: "malformed" }); }
   }
   if (validLegacySpark(value)) {
-    const kind = value.personalization?.status === "personalized" ? "legacy_personalized"
-      : value.personalization ? "legacy_fallback" : "legacy_local";
+    const kind = value.personalization?.status === "personalized" ? LEGACY_ARTIFACT_KINDS[1]
+      : value.personalization ? LEGACY_ARTIFACT_KINDS[2] : LEGACY_ARTIFACT_KINDS[0];
     return defensiveFreeze({ status: "supported", kind, value });
   }
   return defensiveFreeze({ status: "miss", reason: "unrecognized" });

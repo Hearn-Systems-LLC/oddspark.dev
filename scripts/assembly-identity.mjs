@@ -99,8 +99,15 @@ export function moduleSourcesFromDir(pipelineDir, pathPrefix = "src/pipeline") {
   });
 }
 
-export function computeIdentityFromDir(pipelineDir, pathPrefix = "src/pipeline") {
-  return computeAssemblyIdentity(moduleSourcesFromDir(pipelineDir, pathPrefix));
+export function computeIdentityFromDir(pipelineDir, pathPrefix = "src/pipeline", entrypointPath = "src/worker.js") {
+  // The deployed entrypoint is bound into the identity when it exists
+  // (synthetic test projects have none, and round-trip without it).
+  const root = path.resolve(pipelineDir, "..", "..");
+  const entrypointFile = path.join(root, entrypointPath);
+  const entrypoint = existsSync(entrypointFile)
+    ? { path: entrypointPath, sha256: createHash("sha256").update(readFileSync(entrypointFile, "utf8"), "utf8").digest("hex") }
+    : null;
+  return computeAssemblyIdentity(moduleSourcesFromDir(pipelineDir, pathPrefix), entrypoint);
 }
 
 // Parse a stored identity file; malformed content throws a plain Error with a
@@ -114,8 +121,11 @@ export function parseStoredIdentity(text) {
   }
   if (value === null || typeof value !== "object" || Array.isArray(value)
       || value.schema_version !== 1 || !Array.isArray(value.modules)
-      || typeof value.assembly_identity_sha256 !== "string") {
-    throw new Error("runtime-assembly.json does not have the {schema_version: 1, modules, assembly_identity_sha256} shape");
+      || typeof value.assembly_identity_sha256 !== "string"
+      || (value.entrypoint !== undefined && (value.entrypoint === null || typeof value.entrypoint !== "object"
+          || Array.isArray(value.entrypoint) || typeof value.entrypoint.path !== "string"
+          || typeof value.entrypoint.sha256 !== "string"))) {
+    throw new Error("runtime-assembly.json does not have the {schema_version: 1, modules, assembly_identity_sha256, entrypoint?} shape");
   }
   return value;
 }
@@ -132,6 +142,13 @@ export function diffIdentity(stored, current) {
   }
   for (const modulePath of storedModules.keys()) {
     if (!currentModules.has(modulePath)) problems.push(`stored identity names a module no longer present: ${modulePath}`);
+  }
+  const storedEntrypoint = stored.entrypoint ?? null;
+  const currentEntrypoint = current.entrypoint ?? null;
+  if ((storedEntrypoint === null) !== (currentEntrypoint === null)) {
+    problems.push(`entrypoint binding mismatch: stored ${storedEntrypoint ? storedEntrypoint.path : "(absent)"}, current ${currentEntrypoint ? currentEntrypoint.path : "(absent)"}`);
+  } else if (storedEntrypoint && storedEntrypoint.sha256 !== currentEntrypoint.sha256) {
+    problems.push(`entrypoint source drifted: ${storedEntrypoint.path}`);
   }
   if (!problems.length && stored.assembly_identity_sha256 !== current.assembly_identity_sha256) {
     problems.push("assembly_identity_sha256 mismatch");

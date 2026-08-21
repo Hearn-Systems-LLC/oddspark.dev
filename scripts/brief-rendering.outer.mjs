@@ -4,6 +4,8 @@ import vm from "node:vm";
 import worker from "../src/worker.js";
 import { buildCommittedBrief, CANDIDATE_SCHEMA_VERSION, deriveCandidateRef } from "./brief-contracts.mjs";
 import { committedBriefPresentation, CONTACT_URL, RETENTION_COPY } from "./brief-rendering.mjs";
+import { classifyCompatibleArtifact, LEGACY_ARTIFACT_KINDS } from "../src/pipeline/receipts.mjs";
+import { legacySparkPresentation } from "../src/pipeline/legacy-rendering.mjs";
 
 const HASH = "a".repeat(64);
 function fixture({ id, mode = "local", requestScope = mode, notice, hostile = false, empty = false }) {
@@ -58,10 +60,21 @@ export function story15Cases(harness) {
       assert.equal(h.coordStorage.map.get("metric:briefs_served"), 3); assert.equal(h.coordStorage.map.get("metric:house_briefs_served"), 3);
     },
     async rejection() {
+      // Story 1.24: legacy artifacts serve losslessly (200) and count once as
+      // normal; malformed or unsupported versions still fail closed with zero
+      // metric.
       createNetwork(); const h = createEnvironment(); const legacy = (await strike(h.env, undefined)).body;
-      assert.equal((await worker.fetch(new Request("https://oddspark.dev/api/spark/" + legacy.id), h.env)).status, 404); assert.equal((await worker.fetch(sparkRequest(undefined), h.env)).status, 502);
-      assert.equal((await worker.fetch(new Request("https://oddspark.dev/s/" + legacy.id), h.env)).status, 404); assert.equal((await worker.fetch(new Request("https://oddspark.dev/", { headers: { accept: "text/plain" } }), h.env)).status, 502);
-      h.kv.set("malformed", JSON.stringify({ artifact_version: 1, id: "malformed" })); assert.equal((await worker.fetch(new Request("https://oddspark.dev/api/spark/malformed"), h.env)).status, 404); assert.equal(h.coordStorage.map.get("metric:briefs_served"), undefined);
+      const { cached, ...storedLegacy } = legacy;
+      const looked = await worker.fetch(new Request("https://oddspark.dev/api/spark/" + legacy.id), h.env);
+      assert.equal(looked.status, 200); assert.deepEqual(await looked.json(), storedLegacy);
+      assert.equal((await worker.fetch(sparkRequest(undefined), h.env)).status, 200);
+      const legacyPermalink = await worker.fetch(new Request("https://oddspark.dev/s/" + legacy.id, { headers: { accept: "text/html" } }), h.env);
+      assert.equal(legacyPermalink.status, 200); assert.match(await legacyPermalink.text(), /PROVENANCE|Provenance/);
+      const homeText = await worker.fetch(new Request("https://oddspark.dev/", { headers: { accept: "text/plain" } }), h.env);
+      assert.equal(homeText.status, 200); assert.match(await homeText.text(), /PROVENANCE/);
+      assert.equal(h.coordStorage.map.get("metric:briefs_served"), 5);
+      assert.equal(h.coordStorage.map.get("metric:house_briefs_served"), 0);
+      h.kv.set("malformed", JSON.stringify({ artifact_version: 1, id: "malformed" })); assert.equal((await worker.fetch(new Request("https://oddspark.dev/api/spark/malformed"), h.env)).status, 404); assert.equal(h.coordStorage.map.get("metric:briefs_served"), 5);
     },
     async renderFailure() {
       createNetwork(); const h = createEnvironment(); await seed(h, { kind: "local", round: ROUND }, fixture({ id: "render-failure" })); const original = globalThis.structuredClone; globalThis.structuredClone = () => { throw new Error("synthetic renderer failure"); };
@@ -77,10 +90,13 @@ export function story15Cases(harness) {
     },
     async enhanced() {
       const source = await readFile(new URL("../src/worker.js", import.meta.url), "utf8");
-      const executable = source.slice(source.indexOf("  function bindShare"), source.indexOf("  function solarColor")) + source.slice(source.indexOf("  document.querySelector(\"form.strike-row\").onsubmit"), source.indexOf("  if (BOOT)"));
+      // The slice starts at the injected shared legacy-kind set so the client
+      // under test reads exactly what the server renders into the page.
+      const executable = (source.slice(source.indexOf("  var LEGACY_KINDS = "), source.indexOf("  function solarColor")) + source.slice(source.indexOf("  document.querySelector(\"form.strike-row\").onsubmit"), source.indexOf("  if (BOOT)")))
+        .replace("${JSON.stringify([...LEGACY_ARTIFACT_KINDS])}", JSON.stringify([...LEGACY_ARTIFACT_KINDS]));
       let mark;
       class Node { constructor(tag = "div") { this.tagName = tag.toUpperCase(); this.children = []; this.attributes = {}; this.focused = 0; this.hidden = false; this.textContent = ""; this.innerHTML = ""; this.value = ""; } replaceChildren(...x) { this.children = x; } append(...x) { this.children.push(...x); } setAttribute(k, v) { this.attributes[k] = String(v); } getAttribute(k) { return this.attributes[k] ?? null; } hasAttribute(k) { return k in this.attributes; } removeAttribute(k) { delete this.attributes[k]; } focus() { this.focused++; } replaceWith(x) { mark = x; } }
-      const nodes = Object.fromEntries(["foot-links", "status", "website-error", "idea", "prov", "headline"].map((id) => [id, new Node()])); const form = new Node("form"); const btn = new Node("button"); const website = new Node("input"); mark = new Node("h1"); mark.innerHTML = "mark"; const historyCalls = []; const queue = [];
+      const nodes = Object.fromEntries(["foot-links", "status", "website-error", "idea", "prov", "headline", "legend"].map((id) => [id, new Node()])); const form = new Node("form"); const btn = new Node("button"); const website = new Node("input"); mark = new Node("h1"); mark.innerHTML = "mark"; const historyCalls = []; const queue = [];
       const location = { origin: "https://oddspark.dev", pathname: "/" };
       const history = { replaceState(_state, _title, path) { historyCalls.push(path); location.pathname = path; } };
       const context = { Promise, location, history, navigator: {}, website, btn, el: (id) => nodes[id], fetch: async () => { const next = queue.shift(); return { ok: next.ok, status: next.status, json: async () => next.payload }; }, setTimeout, clearTimeout, document: { title: "oddspark", createElement: (tag) => new Node(tag), createTextNode: (text) => ({ text }), querySelector: (selector) => selector === "form.strike-row" ? form : mark }, console };
@@ -95,6 +111,37 @@ export function story15Cases(harness) {
       assert.equal(website.focused, 1); assert.equal(nodes["website-error"].textContent, "Enter a public website domain."); assert.equal(website.getAttribute("aria-invalid"), "true"); assert.equal(btn.textContent, "Strike"); assert.equal(nodes.idea.hidden, true); assert.equal(nodes.prov.hidden, true); assert.equal(nodes["foot-links"].children.length, 0); assert.equal(location.pathname, "/"); assert.equal(context.document.title, "oddspark");
       await submit({ ok: true, status: 200, payload: local }); website.value = "domain.test"; const beforeFailure = historyCalls.length; await submit({ ok: false, status: 502, payload: { error: "unavailable" } });
       assert.equal(nodes.status.textContent, "No spark this time — a part of the system did not answer. Press Strike again."); assert.equal(nodes.status.className, "err"); assert.equal(nodes.status.getAttribute("tabindex"), "-1"); assert.equal(nodes.status.focused, 1); assert.equal(btn.textContent, "Strike"); assert.equal(nodes.idea.hasAttribute("aria-busy"), false); assert.equal(nodes.idea.hidden, true); assert.equal(location.pathname, "/"); assert.deepEqual(historyCalls.slice(beforeFailure), ["/"]); assert.doesNotMatch(source, /history\.pushState/);
+
+      // Story 1.24: the enhanced submit path must accept and settle a legacy
+      // presentation losslessly — production parity with the rollback
+      // artifact includes the JS-enabled strike.
+      const legacyArtifact = {
+        id: "0a1b2c3d", struck: "2026-08-20T12:00:00.000Z",
+        idea: { headline: "Legacy Enhanced Headline", premise: "A legacy premise for the enhanced client.", question: "What repeats every morning?" },
+        seed: { domain: "content-for-local-shops", lens: "operations", form: "a short checklist", friction: "no new tools", hash: "f".repeat(64), preimage: "randomness:31415900:2.5e-6:tag" },
+        window: { round: 31415900, rounds: 100, seconds: 300 },
+        entropy: { source: "drand quicknet (League of Entropy)", round: 31415900, signature: "ab".repeat(96), randomness: "c".repeat(64), verify: "https://api.drand.sh/v2/beacons/quicknet/rounds/31415900" },
+        solar: { source: "NOAA SWPC GOES XRS", band: "0.1-0.8nm", satellite: 18, flux: 2.5e-6, class: "C2.5", letter: "C", time_tag: "2026-08-20T11:59:00Z", verify: "https://services.swpc.noaa.gov/json/goes/primary/xrays-1-day.json" },
+        model: "mock-primary", generated: true,
+      };
+      const legacy = legacySparkPresentation(classifyCompatibleArtifact(legacyArtifact));
+      website.value = ""; const beforeLegacy = historyCalls.length; await submit({ ok: true, status: 200, payload: legacy });
+      assert.equal(nodes.idea.hidden, false); assert.equal(nodes.idea.innerHTML, legacy.markup);
+      assert.equal(nodes.prov.hidden, true); // legacy markup carries its own provenance; the shell placeholder block stays hidden
+      assert.equal(nodes.headline.focused > 0, true);
+      assert.equal(btn.textContent, "Strike again"); assert.equal(nodes.idea.hasAttribute("aria-busy"), false);
+      assert.equal(nodes.status.textContent, ""); assert.equal(nodes.status.className, "sr-only");
+      assert.equal(historyCalls.at(-1), "/s/0a1b2c3d"); assert.equal(location.pathname, "/s/0a1b2c3d");
+      assert.equal(context.document.title, "Legacy Enhanced Headline / oddspark");
+      const legacyLinks = nodes["foot-links"].children.filter((x) => x instanceof Node);
+      assert.deepEqual(legacyLinks.map((x) => x.tagName), ["A", "A", "BUTTON"]);
+      assert.equal(legacyLinks[0].href, "/s/0a1b2c3d");
+      assert.equal(legacyLinks[1].href, "/api/spark/0a1b2c3d");
+      assert.equal(historyCalls.slice(beforeLegacy).length, 1);
+      // The seed-geometry placeholder stays untouched for a legacy projection:
+      // no stale committed geometry is rendered into the legend or canvas.
+      assert.equal(nodes.legend.innerHTML, "");
+      assert.equal(nodes.legend.children.length, 0);
     },
     async shell() {
       createNetwork(); const h = createEnvironment(); await seed(h, { kind: "local", round: ROUND }, fixture({ id: "committed-shell", empty: true })); const html = await (await worker.fetch(new Request("https://oddspark.dev/s/committed-shell", { headers: { accept: "text/html" } }), h.env)).text();

@@ -20,6 +20,14 @@ import { ACTIVATION_REASON_CODES, deriveActivationRef, evaluateProductionActivat
 import { activationPosture } from "./src/pipeline/assembly.mjs";
 import { DOMAIN_RESULT_TTL_MS, LOCAL_RETENTION_MS, domainArtifactReadable, localArtifactLive } from "./src/pipeline/retention.mjs";
 import { computeAssemblyIdentity } from "./src/pipeline/identity.mjs";
+import { classifyCompatibleArtifact } from "./src/pipeline/receipts.mjs";
+import {
+  legacySparkAsText,
+  legacySparkJson,
+  legacySparkPresentation,
+  projectLegacySpark,
+  renderLegacySparkMarkup,
+} from "./src/pipeline/legacy-rendering.mjs";
 
 const ROUND = 31415900;
 const SIGNATURE = "ab".repeat(96);
@@ -425,7 +433,8 @@ await test("blank and invalid body variants preserve the generic spark and w: bo
   const network = createNetwork();
   const h = createEnvironment();
   const first = await strike(h.env, undefined);
-  assert.equal(first.response.status, 502);
+  assert.equal(first.response.status, 200);
+  assert.equal(first.body.cached, false);
   assert.match(first.body.id, /^[0-9a-f]{8}$/);
   assert.equal(first.body.personalization, undefined);
   const pointerKey = "w:" + first.body.window.round;
@@ -440,10 +449,12 @@ await test("blank and invalid body variants preserve the generic spark and w: bo
   ];
   for (const request of variants) {
     const response = await worker.fetch(request, h.env);
-    assert.equal(response.status, 502);
-    assert.match((await response.json()).error, /committed brief unavailable/);
+    assert.equal(response.status, 200);
+    assert.deepEqual(comparableSpark(await response.json()), comparableSpark(first.body));
     assert.deepEqual(comparableSpark(h.coordStorage.map.get("receipt:local:" + first.body.window.round).artifact), comparableSpark(first.body));
   }
+  assert.equal(h.coordStorage.map.get("metric:briefs_served"), 1 + variants.length);
+  assert.equal(h.coordStorage.map.get("metric:house_briefs_served"), 0);
   assert.equal(h.kv.get(pointerKey), first.body.id);
   assert.equal(h.kv.get(first.body.id), storedBefore);
   assert.equal(h.aiCalls.filter((call) => call.kind === "generic").length, 1);
@@ -455,7 +466,7 @@ await test("generic provenance and legacy public surfaces remain reproducible", 
   const h = createEnvironment();
   const first = await strike(h.env, undefined);
   const spark = first.body;
-  assert.equal(first.response.status, 502);
+  assert.equal(first.response.status, 200);
   assert.match(spark.id, /^[0-9a-f]{8}$/);
   assert.match(spark.seed.hash, /^[0-9a-f]{64}$/);
   assert.equal(spark.id, spark.seed.hash.slice(0, 8));
@@ -466,7 +477,7 @@ await test("generic provenance and legacy public surfaces remain reproducible", 
 
   const second = await strike(h.env, undefined);
   assert.equal(second.body.id, spark.id);
-  assert.equal(second.response.status, 502);
+  assert.equal(second.response.status, 200);
   assert.equal(h.aiCalls.filter((call) => call.kind === "generic").length, 1);
   assert.equal(h.kv.get("w:" + spark.window.round), spark.id);
 
@@ -483,24 +494,28 @@ await test("generic provenance and legacy public surfaces remain reproducible", 
   assert.equal(randomnessHex, spark.entropy.randomness);
 
   const raw = await worker.fetch(new Request("https://oddspark.dev/api/spark/" + spark.id), h.env);
-  assert.equal(raw.status, 404);
+  assert.equal(raw.status, 200);
+  assert.deepEqual(await raw.json(), comparableSpark(spark));
   const permalink = await worker.fetch(
     new Request("https://oddspark.dev/s/" + spark.id, { headers: { accept: "text/html" } }),
     h.env
   );
   const permalinkHtml = await permalink.text();
+  assert.equal(permalink.status, 200);
   assert.ok(permalinkHtml.startsWith("<!doctype html>"));
-  assert.match(permalinkHtml, /That spark is no longer available/);
-  assert.equal(permalink.status, 404);
+  assert.match(permalinkHtml, new RegExp(`<h1 id="headline" tabindex="-1">${spark.idea.headline.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}</h1>`));
+  assert.match(permalinkHtml, /seed = <b>SHA256\( randomness : round : flux : time_tag \)<\/b>/);
   assert.ok(permalinkHtml.includes("<title>"));
 
   const curl = await worker.fetch(
     new Request("https://oddspark.dev/", { headers: { "user-agent": "curl/8.4.0", accept: "*/*" } }),
     h.env
   );
-  assert.equal(curl.status, 502);
-  assert.match(curl.headers.get("content-type") || "", /text\/html/);
-  assert.match(await curl.text(), /No spark this time/);
+  assert.equal(curl.status, 200);
+  assert.match(curl.headers.get("content-type") || "", /text\/plain/);
+  const curlText = await curl.text();
+  assert.match(curlText, /PROVENANCE/);
+  assert.match(curlText, new RegExp("permalink: https://oddspark.dev/s/" + spark.id));
   const home = await worker.fetch(new Request("https://oddspark.dev/", { headers: { accept: "text/html,*/*" } }), h.env);
   assert.match(home.headers.get("content-type") || "", /text\/html/);
   assert.match(await home.text(), /var BOOT = null/);
@@ -513,13 +528,14 @@ await test("local contenders converge on COORD and repair missing projections", 
   createNetwork();
   const h = createEnvironment({ varyGeneric: true });
   const [one, two] = await Promise.all([strike(h.env, undefined), strike(h.env, undefined)]);
-  assert.equal(one.response.status, 502);
+  assert.equal(one.response.status, 200);
+  assert.equal(two.response.status, 200);
   assert.deepEqual(comparableSpark(one.body), comparableSpark(two.body));
   assert.equal(h.aiCalls.filter((call) => call.kind === "generic").length, 1);
   const scopeKey = "receipt:local:" + one.body.window.round;
   assert.equal(h.coordStorage.map.get(scopeKey).status, "committed");
-  assert.equal(h.coordStorage.map.get("metric:briefs_served"), undefined);
-  assert.equal(h.coordStorage.map.get("metric:house_briefs_served"), undefined);
+  assert.equal(h.coordStorage.map.get("metric:briefs_served"), 2);
+  assert.equal(h.coordStorage.map.get("metric:house_briefs_served"), 0);
 
   h.kv.delete(one.body.id);
   h.kv.delete("w:" + one.body.window.round);
@@ -536,7 +552,7 @@ await test("first-strike KV failure cannot precede authority and later repair su
   const originalPut = h.env.SPARKS.put;
   h.env.SPARKS.put = async () => { throw new Error("KV put unavailable"); };
   const first = await strike(h.env, undefined);
-  assert.equal(first.response.status, 502);
+  assert.equal(first.response.status, 200);
   assert.equal(h.coordStorage.map.get("receipt:local:" + first.body.window.round).status, "committed");
   assert.equal(h.kv.has(first.body.id), false);
   h.env.SPARKS.put = originalPut;
@@ -553,15 +569,15 @@ await test("authoritative ID reads override stale, malformed, failed, and unsupp
   const authoritative = comparableSpark(first.body);
   h.kv.set(first.body.id, JSON.stringify({ artifact_version: 2, id: first.body.id }));
   let response = await worker.fetch(new Request("https://oddspark.dev/api/spark/" + first.body.id), h.env);
-  assert.equal(response.status, 404); assert.match((await response.json()).error, /no spark/);
+  assert.equal(response.status, 200); assert.deepEqual(await response.json(), authoritative);
   assert.deepEqual(JSON.parse(h.kv.get(first.body.id)), authoritative);
   h.kv.set(first.body.id, "{}");
   response = await worker.fetch(new Request("https://oddspark.dev/s/" + first.body.id, { headers: { accept: "text/html" } }), h.env);
-  assert.equal(response.status, 404); assert.deepEqual(JSON.parse(h.kv.get(first.body.id)), authoritative);
+  assert.equal(response.status, 200); assert.deepEqual(JSON.parse(h.kv.get(first.body.id)), authoritative);
   const originalGet = h.env.SPARKS.get;
   h.env.SPARKS.get = async () => { throw new Error("KV read unavailable"); };
   response = await worker.fetch(new Request("https://oddspark.dev/api/spark/" + first.body.id), h.env);
-  assert.equal(response.status, 404); assert.match((await response.json()).error, /no spark/);
+  assert.equal(response.status, 200); assert.deepEqual(await response.json(), authoritative);
   h.env.SPARKS.get = originalGet;
 });
 
@@ -720,9 +736,9 @@ await test("text negotiation covers CLI agents and Accept-header cases", async (
   ];
   for (const headers of textHeaders) {
     const response = await worker.fetch(new Request("https://oddspark.dev/", { headers }), h.env);
-    assert.equal(response.status, 502);
-    assert.match(response.headers.get("content-type") || "", /text\/html/);
-    assert.match(await response.text(), /No spark this time/);
+    assert.equal(response.status, 200);
+    assert.match(response.headers.get("content-type") || "", /text\/plain/);
+    assert.match(await response.text(), /PROVENANCE/);
   }
 
   for (const accept of ["text/html", "*/*", "text/html,*/*"]) {
@@ -912,16 +928,16 @@ await test("CORS allows only the canonical oddspark origin across JSON APIs", as
   }
 
   let response = await worker.fetch(sparkRequest("", { headers: { origin: canonicalOrigin } }), h.env);
-  assert.equal(response.status, 502);
+  assert.equal(response.status, 200);
   assert.equal(response.headers.get("access-control-allow-origin"), canonicalOrigin);
   assert.notEqual(response.headers.get("access-control-allow-origin"), "*");
 
   response = await worker.fetch(sparkRequest("", { headers: { origin: "https://evil.example" } }), h.env);
-  assert.equal(response.status, 502);
+  assert.equal(response.status, 200);
   assert.equal(response.headers.get("access-control-allow-origin"), null);
 
   response = await worker.fetch(sparkRequest(""), h.env);
-  assert.equal(response.status, 502);
+  assert.equal(response.status, 200);
   assert.equal(response.headers.get("access-control-allow-origin"), null);
   assert.match(response.headers.get("vary") || "", /(?:^|,\s*)Origin(?:\s*,|$)/i);
 
@@ -1001,10 +1017,11 @@ await test("missing visitor signal degrades, while COORD uncertainty fails close
   addSimpleSite(network);
   const missing = createEnvironment();
   const limited = await strike(missing.env, "acmebakery.com", { ip: null });
+  assert.equal(limited.response.status, 200);
   assert.equal(limited.body.personalization.status, "limited");
   assert.equal(limited.body.personalization.warning, "Site scanning is limited; showing the generic spark.");
-  assert.equal(missing.coordStorage.map.get("metric:briefs_served"), undefined);
-  assert.equal(missing.coordStorage.map.get("metric:house_briefs_served"), undefined);
+  assert.equal(missing.coordStorage.map.get("metric:briefs_served"), 1);
+  assert.equal(missing.coordStorage.map.get("metric:house_briefs_served"), 0);
   assert.equal(network.siteCalls.length, 0);
 
   const down = createEnvironment({ coordDown: true });
@@ -1032,7 +1049,7 @@ await test("personalization is grounded, deterministic, metered, permanent, and 
   const ip = "198.51.100.44";
   const result = await strike(h.env, "HTTPS://WWW.AcmeBakery.COM/sale?q=1#top", { ip: ip + ", 10.0.0.1" });
   const spark = result.body;
-  assert.equal(result.response.status, 502);
+  assert.equal(result.response.status, 200);
   assert.match(spark.id, /^p-[0-9a-f]{16}$/);
   assert.equal(spark.personalization.domain, "acmebakery.com");
   assert.equal(spark.personalization.vertical, "bakery");
@@ -1078,15 +1095,21 @@ await test("personalization is grounded, deterministic, metered, permanent, and 
   assert.equal(stored.includes("RAW_HTML_SECRET"), false);
 
   const raw = await worker.fetch(new Request("https://oddspark.dev/api/spark/" + spark.id), h.env);
-  assert.equal(raw.status, 404);
+  assert.equal(raw.status, 200);
+  assert.deepEqual(await raw.json(), comparableSpark(spark));
   const permalink = await worker.fetch(new Request("https://oddspark.dev/s/" + spark.id, { headers: { accept: "text/html" } }), h.env);
-  assert.equal(permalink.status, 404);
+  assert.equal(permalink.status, 200);
+  const permalinkHtml = await permalink.text();
+  assert.match(permalinkHtml, /Public pages from acmebakery\.com · bakery/);
+  assert.match(permalinkHtml, new RegExp(`Observed on https://acmebakery\\.com/: ${OBSERVATION.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`));
   const curlPermalink = await worker.fetch(
     new Request("https://oddspark.dev/s/" + spark.id, { headers: { "user-agent": "curl/8.4.0", accept: "*/*" } }),
     h.env
   );
-  assert.match(curlPermalink.headers.get("content-type") || "", /text\/html/);
-  assert.match(await curlPermalink.text(), /That spark is no longer available/);
+  assert.match(curlPermalink.headers.get("content-type") || "", /text\/plain/);
+  const curlBody = await curlPermalink.text();
+  assert.match(curlBody, /website        acmebakery\.com/);
+  assert.match(curlBody, new RegExp("observation    " + OBSERVATION.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
   const missing = await worker.fetch(new Request("https://oddspark.dev/api/spark/p-0000000000000000"), h.env);
   assert.equal(missing.status, 404);
   h.kv.set("secret", JSON.stringify({ secret: true }));
@@ -1295,7 +1318,7 @@ await test("model fallback threshold and best-effort neuron recording are pinned
   let h = createEnvironment();
   h.meterState.set(new Date().toISOString().slice(0, 10), 2499);
   let result = await strike(h.env, undefined);
-  assert.equal(result.response.status, 502);
+  assert.equal(result.response.status, 200);
   assert.equal(h.aiCalls[0].model, "mock-primary");
   assert.equal(result.body.model, "mock-primary");
 
@@ -1303,14 +1326,14 @@ await test("model fallback threshold and best-effort neuron recording are pinned
   h = createEnvironment();
   h.meterState.set(new Date().toISOString().slice(0, 10), 2500);
   result = await strike(h.env, undefined);
-  assert.equal(result.response.status, 502);
+  assert.equal(result.response.status, 200);
   assert.equal(h.aiCalls[0].model, "mock-fallback");
   assert.equal(result.body.model, "mock-fallback");
 
   createNetwork();
   h = createEnvironment({ meterPostDown: true, neuronReceiptDown: true });
   result = await strike(h.env, undefined);
-  assert.equal(result.response.status, 502);
+  assert.equal(result.response.status, 200);
   assert.equal(result.body.generated, true);
   assert.equal(h.meterPosts.length, 0);
   assert.deepEqual(h.meterPostAttempts, [3]);
@@ -1373,7 +1396,9 @@ await test("a visitor receives ten new-domain scans per rolling hour; repeats do
   const results = [];
   for (let index = 0; index < 11; index++) results.push(await strike(h.env, "shop" + index + ".com"));
   assert.ok(results.slice(0, 10).every((result) => result.body.personalization.status === "personalized"));
-  assert.equal(results[10].response.status, 502);
+  assert.equal(results[10].response.status, 200);
+  assert.equal(results[10].body.personalization.status, "limited");
+  assert.equal(results[10].body.personalization.warning, "Site scanning is limited; showing the generic spark.");
   assert.equal(network.siteCalls.length, 10);
   const visitorKey = await sha256("203.0.113.9");
   assert.equal(h.coordStorage.map.get("vis:" + visitorKey).length, 10);
@@ -1436,8 +1461,10 @@ await test("XSS-like model and observation text remain data in server and client
   );
   const html = await response.text();
   assert.equal(html.includes('<script id="owned">'), false);
-  assert.equal(response.status, 404);
-  assert.match(html, /That spark is no longer available/);
+  assert.equal(response.status, 200);
+  assert.match(html, /&lt;script id=&quot;owned&quot;&gt;alert\(1\)&lt;\/script&gt;/);
+  assert.match(html, /&lt;img src=x onerror=&quot;alert\(2\)&quot;&gt;/);
+  assert.match(html, /&lt;svg onload=&quot;alert\(3\)&quot;&gt;/);
   assert.equal(result.body.idea.headline, '</title><script id="owned">alert(1)</script>');
   assert.equal(result.body.personalization.observation.text, observation);
 });
@@ -1464,11 +1491,314 @@ await test("committed local native form 303 then followed GET count exactly once
 await test("committed domain and request-scope-domain mode-local downgrade direct 200 no share one count", story15.domainMatrix);
 await test("explicit committed JSON 200 and one count", story15.explicitJson);
 await test("house notice across JSON HTML and text", story15.house);
-await test("legacy malformed lookup strike permalink and home text rejection with zero metric", story15.rejection);
+await test("legacy lookup strike permalink and home text serve losslessly while malformed rejects with zero metric", story15.rejection);
 await test("render failure before metric", story15.renderFailure);
 await test("hostile committed text escapes server and enhanced branches while JSON stays literal", story15.hostile);
 await test("enhanced settle executes share clipboard state focus history and cleanup", story15.enhanced);
 await test("committed shell boot preserves awaiting-seed geometry provenance and accessibility", story15.shell);
+
+/* ------------------------------------------------------------------ *
+ * Story 1.24: compatibility reader — legacy artifacts render losslessly
+ * from their own fields through the legacy view model, committed v1 keeps
+ * the 1.15 boundary, unsupported versions fail closed with no metric.
+ * ------------------------------------------------------------------ */
+
+const legacyFixtureBase = {
+  struck: "2026-08-20T12:00:00.000Z",
+  idea: { headline: "Legacy Local Headline", premise: "A legacy premise, served from its own fields.", question: "What repeats every morning?" },
+  seed: { domain: "content-for-local-shops", lens: "operations", form: "a short checklist", friction: "no new tools", hash: "f".repeat(64), preimage: "randomness:31415900:2.5e-6:tag" },
+  window: { round: ROUND, rounds: 100, seconds: 300 },
+  entropy: {
+    source: "drand quicknet (League of Entropy)", round: ROUND,
+    signature: "ab".repeat(96), randomness: "c".repeat(64),
+    verify: "https://api.drand.sh/v2/beacons/quicknet/rounds/" + ROUND,
+  },
+  solar: {
+    source: "NOAA SWPC GOES XRS", band: "0.1-0.8nm", satellite: 18, flux: 2.5e-6,
+    class: "C2.5", letter: "C", time_tag: "2026-08-20T11:59:00Z", verify: NOAA_URL,
+  },
+  model: "mock-primary",
+  generated: true,
+};
+const LEGACY_LOCAL_FIXTURE = { id: "0a1b2c3d", ...legacyFixtureBase };
+const LEGACY_PERSONALIZED_FIXTURE = {
+  ...legacyFixtureBase, id: "p-0123456789abcdef",
+  personalization: {
+    version: 1, status: "personalized", domain: "acmelegacy.test.com",
+    scan_time: "2026-08-20T11:00:00.000Z",
+    scanned_urls: ["https://acmelegacy.test.com/", "https://acmelegacy.test.com/about"],
+    vertical: "bakery", clarity: "unclear",
+    observation: { url: "https://acmelegacy.test.com/", text: "They post the daily soup before dawn." },
+    what: { seeded: "a short checklist", adapted: "dawn soup posts become the order sheet" },
+    profile_hash: "d".repeat(64),
+    warning: "The site's purpose was unclear on the scanned pages.",
+  },
+};
+const LEGACY_FALLBACK_FIXTURE = {
+  ...legacyFixtureBase, id: "p-fedcba9876543210",
+  personalization: {
+    version: 1, status: "limited", domain: "fallbacklegacy.test.com",
+    warning: "Site scanning is limited; showing the generic spark.",
+  },
+};
+
+async function seedArtifact(h, scope, artifact) {
+  const stub = h.env.COORD.get(h.env.COORD.idFromName("global"));
+  const post = (path, body) => stub.fetch("https://coord" + path, {
+    method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body),
+  });
+  assert.equal((await post("/claim", { scope, owner: "story-1-24" })).status, 200);
+  assert.equal((await post("/commit", { scope, owner: "story-1-24", artifact })).status, 200);
+}
+
+await test("1.24 legacy local artifact renders losslessly across JSON HTML and text, counting normal", async () => {
+  createNetwork();
+  const h = createEnvironment();
+  await seedArtifact(h, { kind: "local", round: ROUND }, LEGACY_LOCAL_FIXTURE);
+
+  const raw = await worker.fetch(new Request("https://oddspark.dev/api/spark/0a1b2c3d"), h.env);
+  assert.equal(raw.status, 200);
+  const rawBody = await raw.json();
+  assert.deepEqual(rawBody, LEGACY_LOCAL_FIXTURE); // field-for-field lossless
+  assert.deepEqual(Object.keys(rawBody).sort(), Object.keys(LEGACY_LOCAL_FIXTURE).sort()); // exact lookup-response key set
+
+  const page = await worker.fetch(new Request("https://oddspark.dev/s/0a1b2c3d", { headers: { accept: "text/html" } }), h.env);
+  assert.equal(page.status, 200);
+  const html = await page.text();
+  assert.match(html, /<h1 id="headline" tabindex="-1">Legacy Local Headline<\/h1>/);
+  assert.match(html, /<p class="premise" id="premise">A legacy premise, served from its own fields\.<\/p>/);
+  assert.match(html, /<div class="question"><b>\?<\/b><span id="question">What repeats every morning\?<\/span><\/div>/);
+  assert.doesNotMatch(html, /site-context" id="site-context"/); // local sparks have no site-context block
+  // meta/og description is the legacy premise
+  assert.match(html, /<meta name="description" content="A legacy premise, served from its own fields\.">/);
+  assert.match(html, /<meta property="og:description" content="A legacy premise, served from its own fields\.">/);
+  assert.match(html, /<meta property="og:title" content="Legacy Local Headline \/ oddspark">/);
+  assert.match(html, /<link rel="canonical" href="https:\/\/oddspark\.dev\/s\/0a1b2c3d">/);
+  // the shell's placeholder provenance stays hidden; the markup carries the real one
+  assert.match(html, /<section class="prov" id="prov" hidden>/);
+  for (const chip of ["<i>domain</i>content-for-local-shops", "<i>lens</i>operations", "<i>form</i>a short checklist", "<i>constraint</i>no new tools"]) {
+    assert.ok(html.includes(chip), chip);
+  }
+  for (const row of [
+    '<dt>drand round</dt><dd class="cool">31415900</dd>',
+    `<dt>signature</dt><dd class="cool">${"ab".repeat(20)}…</dd>`,
+    `<dt>randomness</dt><dd class="cool">${"c".repeat(40)}…</dd>`,
+    '<dt>xray flux</dt><dd class="hot">2.500e-6 W/m²</dd>',
+    '<dt>flare class</dt><dd class="hot">C2.5  ·  GOES-18</dd>',
+    "<dt>observed</dt><dd>2026-08-20T11:59:00Z</dd>",
+    `<dt>seed</dt><dd>${"f".repeat(40)}…</dd>`,
+  ]) assert.ok(html.includes(row), row);
+  assert.match(html, /seed = <b>SHA256\( randomness : round : flux : time_tag \)<\/b><br>Recompute it yourself; every input above is published and archived\./);
+  assert.match(html, /<a href="\/s\/0a1b2c3d">0a1b2c3d<\/a>/);
+  // the masthead seats on the stored flare class, as the rollback artifact did
+  assert.match(html, /<span id="live">C2\.5<\/span> &middot; SUN NOW/);
+
+  const text = await worker.fetch(new Request("https://oddspark.dev/s/0a1b2c3d", { headers: { "user-agent": "curl/8.4.0", accept: "*/*" } }), h.env);
+  assert.equal(text.status, 200);
+  const body = await text.text();
+  assert.match(body, /  LEGACY LOCAL HEADLINE\n/);
+  assert.match(body, /    window         31415900  \(300s\)/);
+  assert.match(body, new RegExp(`    signature      ${"ab".repeat(12)}\\.\\.\\.`));
+  assert.match(body, /    xray flux      2\.500e-6 W\/m2  \(0\.1-0\.8nm\)/);
+  assert.match(body, /    flare class    C2\.5  GOES-18/);
+  assert.match(body, new RegExp(`    seed           ${"f".repeat(64)}`));
+  assert.match(body, /  seed = SHA256\(randomness : round : flux : time_tag\)/);
+  assert.match(body, /  permalink: https:\/\/oddspark\.dev\/s\/0a1b2c3d/);
+  assert.doesNotMatch(body, /ai meter/); // permalink text never carries the meter line
+
+  assert.equal(h.coordStorage.map.get("metric:briefs_served"), 3);
+  assert.equal(h.coordStorage.map.get("metric:house_briefs_served"), 0);
+});
+
+await test("1.24 legacy personalized and fallback artifacts render site-context and warning blocks", async () => {
+  createNetwork();
+  const h = createEnvironment();
+  await seedArtifact(h, { kind: "domain", round: ROUND, domain: "acmelegacy.test.com" }, LEGACY_PERSONALIZED_FIXTURE);
+  await seedArtifact(h, { kind: "domain", round: ROUND, domain: "fallbacklegacy.test.com" }, LEGACY_FALLBACK_FIXTURE);
+
+  const raw = await worker.fetch(new Request("https://oddspark.dev/api/spark/p-0123456789abcdef"), h.env);
+  assert.equal(raw.status, 200);
+  assert.deepEqual(await raw.json(), LEGACY_PERSONALIZED_FIXTURE);
+
+  const personalized = await worker.fetch(new Request("https://oddspark.dev/s/p-0123456789abcdef", { headers: { accept: "text/html" } }), h.env);
+  assert.equal(personalized.status, 200);
+  const personalizedHtml = await personalized.text();
+  assert.match(personalizedHtml, /<p id="site-summary">Public pages from acmelegacy\.test\.com · bakery<\/p>/);
+  assert.match(personalizedHtml, /<p class="site-observation" id="site-observation">Observed on https:\/\/acmelegacy\.test\.com\/: They post the daily soup before dawn\.<\/p>/);
+  assert.match(personalizedHtml, /<p class="site-warning" id="site-warning">The site&#39;s purpose was unclear on the scanned pages\.<\/p>/);
+  assert.ok(personalizedHtml.includes("<i>form</i>dawn soup posts become the order sheet"));
+
+  const personalizedText = await worker.fetch(new Request("https://oddspark.dev/s/p-0123456789abcdef", { headers: { "user-agent": "curl/8.4.0" } }), h.env);
+  const personalizedBody = await personalizedText.text();
+  for (const line of [
+    "    website        acmelegacy.test.com",
+    "    vertical       bakery",
+    "    scanned        https://acmelegacy.test.com/, https://acmelegacy.test.com/about",
+    "    observation    They post the daily soup before dawn.",
+    "    evidence URL   https://acmelegacy.test.com/",
+    "    adapted WHAT   dawn soup posts become the order sheet",
+    `    profile hash   ${"d".repeat(64)}`,
+    "    warning        The site's purpose was unclear on the scanned pages.",
+  ]) assert.ok(personalizedBody.includes(line), line);
+
+  const fallback = await worker.fetch(new Request("https://oddspark.dev/s/p-fedcba9876543210", { headers: { accept: "text/html" } }), h.env);
+  assert.equal(fallback.status, 200);
+  const fallbackHtml = await fallback.text();
+  assert.match(fallbackHtml, /<p id="site-summary">Website context · fallbacklegacy\.test\.com<\/p>/);
+  assert.match(fallbackHtml, /<p class="site-warning" id="site-warning">Site scanning is limited; showing the generic spark\.<\/p>/);
+  assert.doesNotMatch(fallbackHtml, /id="site-observation"/);
+
+  assert.equal(h.coordStorage.map.get("metric:briefs_served"), 4);
+  assert.equal(h.coordStorage.map.get("metric:house_briefs_served"), 0);
+});
+
+await test("1.24 legacy strike matches the rollback artifact's observable behavior incl. cached replay", async () => {
+  createNetwork();
+  const h = createEnvironment();
+  const json = await worker.fetch(sparkRequest(undefined), h.env);
+  assert.equal(json.status, 200);
+  const spark = await json.json();
+  assert.match(spark.id, /^[0-9a-f]{8}$/);
+  assert.equal(spark.cached, false);
+  assert.deepEqual(Object.keys(spark).sort(), ["cached", "entropy", "generated", "id", "idea", "model", "seed", "solar", "struck", "window"]);
+
+  // cached:true replay through the same JSON seam
+  const replay = await worker.fetch(sparkRequest(undefined), h.env);
+  assert.equal(replay.status, 200);
+  const replayed = await replay.json();
+  assert.equal(replayed.cached, true);
+  assert.deepEqual(comparableSpark(replayed), comparableSpark(spark));
+
+  const native = await worker.fetch(new Request("https://oddspark.dev/api/spark", {
+    method: "POST", redirect: "manual",
+    headers: { accept: "text/html", "content-type": "application/x-www-form-urlencoded" },
+    body: "",
+  }), h.env);
+  assert.equal(native.status, 303);
+  assert.equal(native.headers.get("location"), "/s/" + spark.id);
+
+  const followed = await worker.fetch(new Request("https://oddspark.dev/s/" + spark.id, { headers: { accept: "text/html" } }), h.env);
+  assert.equal(followed.status, 200);
+  assert.match(await followed.text(), /Recompute it yourself; every input above is published and archived\./);
+
+  const homeText = await worker.fetch(new Request("https://oddspark.dev/", { headers: { "user-agent": "curl/8.4.0", accept: "*/*" } }), h.env);
+  assert.equal(homeText.status, 200);
+  assert.match(await homeText.text(), /    ai meter       \d+\.\d \/ 10000 neurons today  \(mock-primary\)/);
+
+  assert.equal(h.coordStorage.map.get("metric:briefs_served"), 4); // 303 redirect counts nothing
+  assert.equal(h.coordStorage.map.get("metric:house_briefs_served"), 0);
+});
+
+await test("1.24 legacy domain-strike HTML renders the site-context block with the shell provenance hidden", async () => {
+  createNetwork();
+  const h = createEnvironment();
+  const response = await worker.fetch(new Request("https://oddspark.dev/api/spark", {
+    method: "POST", redirect: "manual",
+    headers: { accept: "text/html", "content-type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({ website: "acmebakery.com" }).toString(),
+  }), h.env); // no visitor signal → limited legacy fallback
+  assert.equal(response.status, 200);
+  const html = await response.text();
+  assert.match(html, /<p id="site-summary">Website context · acmebakery\.com<\/p>/);
+  assert.match(html, /<p class="site-warning" id="site-warning">Site scanning is limited; showing the generic spark\.<\/p>/);
+  assert.match(html, /<section class="prov" id="prov" hidden>/);
+  assert.match(html, /seed = <b>SHA256\( randomness : round : flux : time_tag \)<\/b><br>Recompute it yourself/);
+  assert.equal(h.coordStorage.map.get("metric:briefs_served"), 1);
+  assert.equal(h.coordStorage.map.get("metric:house_briefs_served"), 0);
+});
+
+await test("1.24 unknown and newer artifact versions fail closed with no render and no metric", async () => {
+  createNetwork();
+  const h = createEnvironment();
+  h.kv.set("00000000", JSON.stringify({ artifact_version: 2, id: "00000000" }));
+  h.kv.set("00000001", JSON.stringify({ artifact_version: 1, id: "00000001" })); // malformed v1
+  h.kv.set("00000002", JSON.stringify({ id: "00000002", junk: true })); // unrecognized
+
+  for (const [id, error] of [["00000000", "unsupported spark artifact"], ["00000001", "no spark with that id"], ["00000002", "no spark with that id"]]) {
+    const api = await worker.fetch(new Request("https://oddspark.dev/api/spark/" + id), h.env);
+    assert.equal(api.status, 404, id);
+    assert.deepEqual(await api.json(), { error }, id);
+    const permalink = await worker.fetch(new Request("https://oddspark.dev/s/" + id, { headers: { accept: "text/html" } }), h.env);
+    assert.equal(permalink.status, 404, id);
+    assert.match(await permalink.text(), /That spark is no longer available/, id);
+  }
+  assert.equal(h.coordStorage.map.get("metric:briefs_served"), undefined);
+  assert.equal(h.coordStorage.map.get("metric:house_briefs_served"), undefined);
+  // Fail-closed projections are left untouched (no rewrite, no deletion).
+  assert.deepEqual(JSON.parse(h.kv.get("00000000")), { artifact_version: 2, id: "00000000" });
+});
+
+await test("1.24 committed house and legacy normal serves split the served metrics", async () => {
+  createNetwork();
+  const h = createEnvironment();
+  await seedArtifact(h, { kind: "local", round: ROUND }, LEGACY_LOCAL_FIXTURE);
+  const houseBrief = {
+    version: 1, mode: "local", title: "House title", plan: "House plan.",
+    why_fits: { text: "House fit." }, what_gets_better: "House better.",
+    before_after: { before: "House before.", after: "House after." },
+    change_level: { time_range: "House range", steps_changed: 1, steps_removed: 0, preliminary: true },
+    stays_same: { tools: ["House tool"], authority: ["House authority"], steps: ["House step"] },
+    invitation: "Bring this Spark and map a clear first step.", grounded_numbers: [], notice: HOUSE_NOTICE,
+  };
+  const house = buildCommittedBrief({
+    artifact_version: 1, id: "committed-house-124", request_scope: "local", brief: houseBrief,
+    brief_schema_version: 1, policy_identity: "e".repeat(64), rubric_identity: "e".repeat(64),
+    provenance: { attempt_id: "attempt-124", candidate_ref: deriveCandidateRef(CANDIDATE_SCHEMA_VERSION, houseBrief), evidence_ref: "e".repeat(64), grounding_report_version: 1, effective_mode: "local" },
+  });
+  h.kv.set("committed-house-124", JSON.stringify(house));
+
+  assert.equal((await worker.fetch(new Request("https://oddspark.dev/s/0a1b2c3d", { headers: { accept: "text/html" } }), h.env)).status, 200);
+  const housePage = await worker.fetch(new Request("https://oddspark.dev/s/committed-house-124", { headers: { accept: "text/html" } }), h.env);
+  assert.equal(housePage.status, 200);
+  assert.match(await housePage.text(), /<aside class="notice" role="note">/);
+  assert.equal(h.coordStorage.map.get("metric:briefs_served"), 2);
+  assert.equal(h.coordStorage.map.get("metric:house_briefs_served"), 1);
+});
+
+await test("1.24 legacy permalink text omits the ai-meter line while home text includes it", async () => {
+  createNetwork();
+  const h = createEnvironment();
+  await seedArtifact(h, { kind: "local", round: ROUND }, LEGACY_LOCAL_FIXTURE);
+  const permalinkText = await worker.fetch(new Request("https://oddspark.dev/s/0a1b2c3d", { headers: { "user-agent": "curl/8.4.0" } }), h.env);
+  assert.doesNotMatch(await permalinkText.text(), /ai meter/);
+  const homeText = await worker.fetch(new Request("https://oddspark.dev/", { headers: { "user-agent": "curl/8.4.0", accept: "*/*" } }), h.env);
+  assert.equal(homeText.status, 200);
+  assert.match(await homeText.text(), /    ai meter       \d+\.\d \/ 10000 neurons today  \(mock-primary\)/);
+});
+
+await test("1.24 legacy presentation entries fail closed on miss and unsupported classifications", async () => {
+  const bad = [
+    classifyCompatibleArtifact(null),
+    classifyCompatibleArtifact({ junk: true }),
+    classifyCompatibleArtifact({ artifact_version: 99, id: "0a1b2c3d" }),
+    classifyCompatibleArtifact(LEGACY_LOCAL_FIXTURE) && { status: "supported", kind: "committed_brief", value: {} },
+    { status: "supported", kind: "legacy_future", value: LEGACY_LOCAL_FIXTURE },
+    null,
+  ];
+  for (const [index, classification] of bad.entries()) {
+    assert.throws(() => legacySparkJson(classification), /legacy spark unavailable/, `json ${index}`);
+    assert.throws(() => legacySparkPresentation(classification), /legacy spark unavailable/, `presentation ${index}`);
+    assert.throws(() => projectLegacySpark(classification), /legacy spark unavailable/, `projection ${index}`);
+    assert.throws(() => renderLegacySparkMarkup(classification), /legacy spark unavailable/, `markup ${index}`);
+    assert.throws(() => legacySparkAsText(classification, "https://oddspark.dev"), /legacy spark unavailable/, `text ${index}`);
+  }
+});
+
+await test("1.24 hostile legacy fields cannot break out of the inline LIVE JSON", async () => {
+  createNetwork();
+  const h = createEnvironment();
+  const hostile = {
+    ...LEGACY_LOCAL_FIXTURE, id: "9a8b7c6d",
+    solar: { ...LEGACY_LOCAL_FIXTURE.solar, letter: 'X<script>alert(1)</script>', class: "C2.5" },
+  };
+  await seedArtifact(h, { kind: "local", round: ROUND }, hostile);
+  const page = await worker.fetch(new Request("https://oddspark.dev/s/9a8b7c6d", { headers: { accept: "text/html" } }), h.env);
+  assert.equal(page.status, 200);
+  const html = await page.text();
+  assert.match(html, /var LIVE = \{[^}]*X\\u003cscript>/);
+  assert.doesNotMatch(html, /var LIVE = \{[^}]*<script>/);
+  assert.equal(html.includes('<script>alert(1)</script>'), false);
+});
 
 /* ------------------------------------------------------------------ *
  * Story 1.16: inactive-domain dispatch contract and request hardening
@@ -1750,9 +2080,9 @@ await test("a null or malformed writer binding behaves as absent and falls throu
     const h = createEnvironment();
     h.env.INACTIVE_DOMAIN_WRITER = port;
     const result = await strike(h.env, "acmebakery.com");
-    assert.equal(result.response.status, 502, String(port));
+    assert.equal(result.response.status, 200, String(port));
     // The quarantined legacy path ran: it scanned, failed, and committed an
-    // unavailable fallback that cannot render as a committed_brief.
+    // unavailable fallback that now renders through the legacy view model.
     assert.equal(result.body.personalization?.status, "unavailable", String(port));
     assert.equal(network.siteCalls.length, 1, String(port));
   }
@@ -1772,7 +2102,7 @@ await test("an injected writer port never sees local no-website strikes", async 
   const a = await strike(withPort.env, undefined);
   const b = await strike(withoutPort.env, undefined);
   assert.equal(calls, 0);
-  assert.equal(a.response.status, 502);
+  assert.equal(a.response.status, 200);
   assert.equal(a.response.status, b.response.status);
   assert.equal(a.body.id, b.body.id);
 });
@@ -2126,6 +2456,7 @@ await test("worker pipeline imports resolve only to src/pipeline modules", async
   assert.ok(imports.includes("./pipeline/assembly.mjs"));
   assert.ok(imports.includes("./pipeline/receipts.mjs"));
   assert.ok(imports.includes("./pipeline/rendering.mjs"));
+  assert.ok(imports.includes("./pipeline/legacy-rendering.mjs"));
 });
 
 await test("without a valid manifest the assembled writer stays disabled and the legacy path is untouched", async () => {
@@ -2145,7 +2476,7 @@ await test("without a valid manifest the assembled writer stays disabled and the
     // Absent or invalid manifests leave the seam port-absent: the route keeps
     // its existing fallthrough to the quarantined legacy path, which scans.
     const result = await strike(h.env, "acmebakery.com");
-    assert.equal(result.response.status, 502, name);
+    assert.equal(result.response.status, 200, name);
     assert.equal(result.body.personalization?.status, "personalized", name);
     assert.equal(network.siteCalls.length, 1, name);
   }
