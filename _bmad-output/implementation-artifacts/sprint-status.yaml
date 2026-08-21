@@ -155,3 +155,9 @@ development_status:
   5-1-closed-legacy-retirement-oracle: backlog
   5-2-destructive-legacy-seam-retirement: backlog
   epic-5-retrospective: optional
+#
+# 2026-08-21 POST-INCIDENT ADDENDUM (Sprint Change Proposal 2026-08-20 §7):
+#   Merging PR #11 revealed that Workers Builds auto-deploys the configured production branch;
+#   the merge briefly re-broke production until the pre-1.14 rollback artifact was redeployed.
+#   Production branch moved off main (to develop); gitflow adopted: story PRs merge to develop,
+#   Justin owns develop -> main. Story 1.24 preflight must verify the build-trigger configuration.
