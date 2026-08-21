@@ -5,12 +5,14 @@ import {
   parseReceipt,
   parseRequestScope,
   validateCommitPayload,
-} from "../scripts/brief-receipts.mjs";
+} from "./pipeline/receipts.mjs";
 import {
+  HOUSE_NOTICE,
   committedBriefAsText,
   committedBriefJson,
   committedBriefPresentation,
-} from "../scripts/brief-rendering.mjs";
+} from "./pipeline/rendering.mjs";
+import { createInactiveDomainWriter } from "./pipeline/assembly.mjs";
 
 /**
  * oddspark.dev
@@ -1508,7 +1510,7 @@ async function compatibleArtifactById(env, id) {
 }
 
 async function recordServed(env, artifact, delivery) {
-  const outcome = artifact?.brief?.notice === "This plan is one of ours, not built for you." ? "house" : "normal";
+  const outcome = artifact?.brief?.notice === HOUSE_NOTICE ? "house" : "normal";
   await coordPost(env, "/metric", { outcome, delivery });
 }
 
@@ -2719,13 +2721,21 @@ export default {
         }
 
         const round = await currentWindow();
-        // Inactive-domain dispatch seam: when a usable writer port is injected,
-        // the request follows the closed dispatch contract and never touches
-        // the quarantined scanner/personalization path below (Story 5.2
-        // deletes it). A null or malformed binding behaves as absent.
-        if (env.INACTIVE_DOMAIN_WRITER != null && typeof env.INACTIVE_DOMAIN_WRITER.write === "function") {
+        // Inactive-domain dispatch seam: a usable injected writer port wins;
+        // otherwise the canonical Story 1.23 writer is assembled behind the
+        // activation port. Manifest absent/invalid means no writer, so the
+        // route keeps its existing fallthrough to the quarantined
+        // scanner/personalization path below (Story 5.2 deletes it); a valid
+        // manifest with a missing or unverified pipeline port instead fails
+        // closed with the 1.16 writer error. Either way the assembled writer
+        // itself has no legacy generator fallback.
+        const injectedWriter = env.INACTIVE_DOMAIN_WRITER;
+        const inactiveWriter = injectedWriter != null && typeof injectedWriter.write === "function"
+          ? injectedWriter
+          : createInactiveDomainWriter(env, { coordPost: (path, body) => coordPost(env, path, body) });
+        if (inactiveWriter) {
           const dispatch = deriveInactiveDomainDispatch(intent.website, round);
-          const artifact = await runInactiveDomainWriter(env.INACTIVE_DOMAIN_WRITER, dispatch);
+          const artifact = await runInactiveDomainWriter(inactiveWriter, dispatch);
           const presentation = committedBriefPresentation(artifact);
           if (html) {
             const response = new Response(page(presentation, null), { headers: { "content-type": "text/html; charset=utf-8", ...DYNAMIC_HEADERS } });

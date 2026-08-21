@@ -1,5 +1,5 @@
 # generated: 2026-08-16
-# last_updated: 2026-08-20
+# last_updated: 2026-08-21
 # project: Github
 # project_key: NOKEY
 # tracking_system: file-system
@@ -90,7 +90,7 @@
 # - Retrospective appends its action items to action_items; sprint-status surfaces open ones
 
 generated: 2026-08-16
-last_updated: 2026-08-20
+last_updated: 2026-08-21
 project: Github
 project_key: NOKEY
 tracking_system: file-system
@@ -120,7 +120,7 @@ development_status:
   1-20-atomic-activation-contract-and-release-decision-view: backlog
   1-21-local-artifact-retention-lifecycle: backlog
   1-22-honest-pipeline-explanation: backlog
-  1-23-worker-runtime-assembly: backlog
+  1-23-worker-runtime-assembly: review
   1-24-compatibility-reader-deployment: backlog
   1-25-inactive-writer-deployment: backlog
   1-26-atomic-local-only-activation: backlog
