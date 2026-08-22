@@ -44,6 +44,7 @@ import {
   normalizeProviderUsage,
   observeAdapterHealth,
   planCommand,
+  reserveRecoveryAttempt,
   runLive,
   summarizeTrials,
   writeRecoveryArtifacts,
@@ -1106,6 +1107,33 @@ test("owner-reviewed 2026-08-22 cycle is immutable history; unreviewed spend sti
   await assert.rejects(
     planCommand({ output: path.join(directory, "blocked-plan.json"), account_profile: "test-profile", plan: "paid", approval_run_id: "blocked-run" }, { resultsDir: blockedResults }),
     /prior operational recovery already retained/,
+  );
+});
+
+test("reservation archives only the owner-reviewed completed-spend receipt and refuses any other", async () => {
+  const reviewed = {
+    schema_version: "oddspark.judge-cycle-spend/v2",
+    attempt_id: "c43fb299-6891-4f10-aebe-e49cbf3f770c",
+    approval_run_id: "e848e2bd-dc86-40e0-90da-45bee83fcc6d",
+    created_at: "2026-08-22T18:03:29.324Z",
+    updated_at: "2026-08-22T18:05:22.417Z",
+    state: "completed-spent",
+    calls_started: 42,
+    last_call: { sequence: 42, kind: "trial", model: MODELS[1], index: 20, marked_at: "2026-08-22T18:05:20.185Z" },
+  };
+  const directory = await mkdtemp(path.join(tmpdir(), "oddspark-reserve-"));
+  await writeFile(path.join(directory, ".judge-llama-cycle-spend.json"), `${JSON.stringify(reviewed, null, 2)}\n`);
+  const receipt = await reserveRecoveryAttempt(directory, "00000000-0000-4000-8000-000000000009", "new-run", new Date("2026-08-22T19:00:00.000Z"));
+  assert.equal(receipt.state, "reserved");
+  const archived = JSON.parse(await readFile(path.join(directory, "2026-08-22-e848e2bd-c43fb299.spend-receipt.json"), "utf8"));
+  assert.deepEqual(archived, reviewed);
+
+  // Any other existing receipt still requires manual recovery.
+  const other = await mkdtemp(path.join(tmpdir(), "oddspark-reserve-blocked-"));
+  await writeFile(path.join(other, ".judge-llama-cycle-spend.json"), `${JSON.stringify({ ...reviewed, calls_started: 1 }, null, 2)}\n`);
+  await assert.rejects(
+    reserveRecoveryAttempt(other, "00000000-0000-4000-8000-000000000010", "new-run", new Date("2026-08-22T19:00:00.000Z")),
+    /requires manual recovery/,
   );
 });
 

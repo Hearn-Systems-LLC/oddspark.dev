@@ -42,6 +42,10 @@ const OWNER_REVIEWED_SPEND = Object.freeze({
   approval_run_id: "e848e2bd-dc86-40e0-90da-45bee83fcc6d",
   calls_started: 42,
 });
+// When a successor cycle is granted, the owner-reviewed completed-spend receipt is
+// archived (bytes preserved, renamed) so the single-file receipt slot can be reused.
+export const OWNER_REVIEWED_RECEIPT_ARCHIVE = "2026-08-22-e848e2bd-c43fb299.spend-receipt.json";
+export { OWNER_REVIEWED_SPEND };
 async function classifyHistoricalArtifacts(resultsDir, entries) {
   const historical = new Set();
   const legacyModels = (evidence) => stableStringify(evidence?.run?.models) === stableStringify(LEGACY_MODEL_IDS);
@@ -198,6 +202,17 @@ export async function findPriorOperationalRecovery(resultsDir, options = {}) {
   let reservedReceipt = null;
   let receiptFallback = null;
   const historicalArtifacts = await classifyHistoricalArtifacts(resultsDir, entries);
+
+  // --- Archived owner-reviewed receipt (renamed aside when a successor cycle was granted) ---
+  if (entries.includes(OWNER_REVIEWED_RECEIPT_ARCHIVE)) {
+    try {
+      const archived = JSON.parse(await readFile(path.join(resultsDir, OWNER_REVIEWED_RECEIPT_ARCHIVE), "utf8"));
+      if (validSpendReceipt(archived, APPROVED_CALL_CAP) && archived.state === "completed-spent"
+        && archived.attempt_id === OWNER_REVIEWED_SPEND.attempt_id
+        && archived.approval_run_id === OWNER_REVIEWED_SPEND.approval_run_id
+        && archived.calls_started === OWNER_REVIEWED_SPEND.calls_started) historicalArtifacts.add(OWNER_REVIEWED_RECEIPT_ARCHIVE);
+    } catch { /* unverifiable archive is simply not classified */ }
+  }
 
   // --- Spend receipt analysis ---
   if (entries.includes(RECOVERY_RECEIPT_FILE)) {

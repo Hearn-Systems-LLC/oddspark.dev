@@ -15,7 +15,7 @@ import {
 } from "./contract.mjs";
 import { buildAdapterIdentity, buildOperationalEvidence, currentLegacyIdentity, currentRuntimeIdentity, currentSourceIdentity, EVIDENCE_SOURCE_PATHS, expectedAdapterHealth, retainOperationalRecord, verifyEvidenceV2 } from "./evidence-v2.mjs";
 import { executeCurrentFixtureCatalog } from "./fixture-executor.mjs";
-import { findPriorOperationalRecovery as _findPriorOperationalRecovery, validSpendReceipt } from "./recovery-finder.mjs";
+import { findPriorOperationalRecovery as _findPriorOperationalRecovery, validSpendReceipt, OWNER_REVIEWED_SPEND, OWNER_REVIEWED_RECEIPT_ARCHIVE } from "./recovery-finder.mjs";
 import {
   RECOVERY_APPROVAL_VERSION,
   RECOVERY_COMPLETION_VERSION,
@@ -708,10 +708,21 @@ export async function acquireRecoveryLock(resultsDir = RESULTS_DIR, { now = new 
 
 
 
-async function reserveRecoveryAttempt(resultsDir, attemptId, approvalRunId, now) {
+export async function reserveRecoveryAttempt(resultsDir, attemptId, approvalRunId, now) {
   try {
-    await readFile(path.join(resultsDir, RECOVERY_RECEIPT_FILE));
-    throw new Error("an existing spend receipt requires manual recovery before another attempt can be reserved");
+    const existingBytes = await readFile(path.join(resultsDir, RECOVERY_RECEIPT_FILE));
+    // The owner-reviewed completed-spend receipt of the 2026-08-22 NO-GO cycle does not
+    // block the one successor matrix Justin granted; its bytes are archived aside, not deleted.
+    let parsed = null;
+    try { parsed = JSON.parse(existingBytes.toString("utf8")); } catch { /* unparseable */ }
+    const reviewMatch = parsed && validSpendReceipt(parsed, APPROVED_CALL_CAP)
+      && parsed.state === "completed-spent"
+      && parsed.attempt_id === OWNER_REVIEWED_SPEND.attempt_id
+      && parsed.approval_run_id === OWNER_REVIEWED_SPEND.approval_run_id
+      && parsed.calls_started === OWNER_REVIEWED_SPEND.calls_started;
+    if (!reviewMatch) throw new Error("an existing spend receipt requires manual recovery before another attempt can be reserved");
+    await rename(path.join(resultsDir, RECOVERY_RECEIPT_FILE), path.join(resultsDir, OWNER_REVIEWED_RECEIPT_ARCHIVE));
+    await syncDirectory(await physicalDirectory(resultsDir));
   } catch (error) {
     if (error?.code !== "ENOENT") throw error;
   }
