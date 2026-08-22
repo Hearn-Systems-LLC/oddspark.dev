@@ -131,11 +131,20 @@ async function healthDescriptor(env) {
 }
 
 function sanitizedEnvelope(result, candidateRef) {
+  // Retain exactly one representation of the provider result. Workers AI structured
+  // output returns the same verdict as both a parsed `response` object and a
+  // `choices[0].message.content` string; retaining both makes extraction see two
+  // kinds (json vs text) and classify the call ambiguous_envelope (467ba931 cycle,
+  // 39/42 calls). Preference order: validated wire object, then response/result text,
+  // then choices content.
   const envelope = {};
   if (!result || typeof result !== "object") return envelope;
   for (const key of ["response", "result"]) {
     const value = result[key];
-    if (typeof value === "string" || validateWireJudgeResult(value, candidateRef).valid) envelope[key] = value;
+    if (value !== undefined && (typeof value === "string" || validateWireJudgeResult(value, candidateRef).valid)) {
+      envelope[key] = value;
+      return envelope;
+    }
   }
   const content = result.choices?.[0]?.message?.content;
   if (content !== undefined) {

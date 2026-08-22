@@ -525,6 +525,25 @@ test("the adapter health route makes no inference and live POST makes exactly on
     method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(buildModelRequest(MODELS[0], fixtures.synthetic_input)),
   }), env);
   assert.deepEqual((await metadataResponse.json()).envelope, {});
+
+  // Workers AI structured output returns the same verdict as both a parsed response
+  // object and a choices string; the adapter must retain exactly one representation
+  // (the 467ba931 cycle lost 39/42 calls to the resulting ambiguous_envelope).
+  const request = buildModelRequest(MODELS[0], fixtures.synthetic_input);
+  const wireResult = { candidate_ref: request.candidate_ref, verdict: clone(fixtures.wire_valid_verdict) };
+  env.AI.run = async () => ({ response: wireResult, choices: [{ message: { content: JSON.stringify(wireResult) } }] });
+  const duplicate = await adapter.fetch(new Request("http://127.0.0.1/run", {
+    method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(request),
+  }), env);
+  const duplicateBody = await duplicate.json();
+  assert.deepEqual(Object.keys(duplicateBody.envelope), ["response"]);
+  assert.deepEqual(duplicateBody.envelope.response, wireResult);
+
+  env.AI.run = async () => ({ choices: [{ message: { content: JSON.stringify(wireResult) } }] });
+  const choicesOnly = await adapter.fetch(new Request("http://127.0.0.1/run", {
+    method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(request),
+  }), env);
+  assert.deepEqual(Object.keys((await choicesOnly.json()).envelope), ["choices"]);
 });
 
 test("the adapter rejects non-JSON, alternate routes, and preflight without inference", async () => {
@@ -1083,14 +1102,13 @@ test("approval templates require explicit timestamps and plan publication is ext
   assert.equal(await readFile(rollbackTemplate, "utf8"), "occupied");
 });
 
-test("retained unreviewed spent cycle blocks planning; fabricated receipts block in isolation", async () => {
-  // The real results directory holds the completed 467ba931 called cycle (NO-GO, pending
-  // owner review), so the plan command must refuse new plan generation against it.
-  const refusedDir = await mkdtemp(path.join(tmpdir(), "oddspark-plan-refused-"));
-  await assert.rejects(
-    planCommand({ output: path.join(refusedDir, "recovery-plan.json"), account_profile: "test-profile", plan: "paid", approval_run_id: "refused-run" }),
-    /prior operational recovery already retained/,
-  );
+test("owner-reviewed cycles are immutable history; unreviewed spend still blocks planning", async () => {
+  // Both completed 2026-08-22 called cycles (e848e2bd, 467ba931) are owner-reviewed and
+  // classified as immutable history, so the granted third matrix may be planned.
+  const directory = await mkdtemp(path.join(tmpdir(), "oddspark-plan-history-"));
+  const output = path.join(directory, "recovery-plan.json");
+  await planCommand({ output, account_profile: "test-profile", plan: "paid", approval_run_id: "history-run" });
+  await access(output);
 
   // An unreviewed receipt proving (or unable to disprove) provider invocation still blocks.
   const blockedResults = await mkdtemp(path.join(tmpdir(), "oddspark-plan-blocked-"));
@@ -1105,7 +1123,7 @@ test("retained unreviewed spent cycle blocks planning; fabricated receipts block
     last_call: { sequence: 1, kind: "probe", model: MODELS[0], index: 1, marked_at: "2026-08-22T00:00:00.000Z" },
   }, null, 2)}\n`);
   await assert.rejects(
-    planCommand({ output: path.join(refusedDir, "blocked-plan.json"), account_profile: "test-profile", plan: "paid", approval_run_id: "blocked-run" }, { resultsDir: blockedResults }),
+    planCommand({ output: path.join(directory, "blocked-plan.json"), account_profile: "test-profile", plan: "paid", approval_run_id: "blocked-run" }, { resultsDir: blockedResults }),
     /prior operational recovery already retained/,
   );
 });

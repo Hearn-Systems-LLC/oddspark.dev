@@ -15,7 +15,7 @@ import {
 } from "./contract.mjs";
 import { buildAdapterIdentity, buildOperationalEvidence, currentLegacyIdentity, currentRuntimeIdentity, currentSourceIdentity, EVIDENCE_SOURCE_PATHS, expectedAdapterHealth, retainOperationalRecord, verifyEvidenceV2 } from "./evidence-v2.mjs";
 import { executeCurrentFixtureCatalog } from "./fixture-executor.mjs";
-import { findPriorOperationalRecovery as _findPriorOperationalRecovery, validSpendReceipt, OWNER_REVIEWED_SPEND, OWNER_REVIEWED_RECEIPT_ARCHIVE } from "./recovery-finder.mjs";
+import { findPriorOperationalRecovery as _findPriorOperationalRecovery, validSpendReceipt, OWNER_REVIEWED_SPENDS } from "./recovery-finder.mjs";
 import {
   RECOVERY_APPROVAL_VERSION,
   RECOVERY_COMPLETION_VERSION,
@@ -715,13 +715,20 @@ export async function reserveRecoveryAttempt(resultsDir, attemptId, approvalRunI
     // block the one successor matrix Justin granted; its bytes are archived aside, not deleted.
     let parsed = null;
     try { parsed = JSON.parse(existingBytes.toString("utf8")); } catch { /* unparseable */ }
-    const reviewMatch = parsed && validSpendReceipt(parsed, APPROVED_CALL_CAP)
-      && parsed.state === "completed-spent"
-      && parsed.attempt_id === OWNER_REVIEWED_SPEND.attempt_id
-      && parsed.approval_run_id === OWNER_REVIEWED_SPEND.approval_run_id
-      && parsed.calls_started === OWNER_REVIEWED_SPEND.calls_started;
-    if (!reviewMatch) throw new Error("an existing spend receipt requires manual recovery before another attempt can be reserved");
-    await rename(path.join(resultsDir, RECOVERY_RECEIPT_FILE), path.join(resultsDir, OWNER_REVIEWED_RECEIPT_ARCHIVE));
+    const spend = parsed && validSpendReceipt(parsed, APPROVED_CALL_CAP) && parsed.state === "completed-spent"
+      ? OWNER_REVIEWED_SPENDS.find((entry) => parsed.attempt_id === entry.attempt_id
+          && parsed.approval_run_id === entry.approval_run_id
+          && parsed.calls_started === entry.calls_started)
+      : undefined;
+    if (!spend) throw new Error("an existing spend receipt requires manual recovery before another attempt can be reserved");
+    const archivePath = path.join(resultsDir, spend.archive);
+    try {
+      await readFile(archivePath);
+      throw new Error("owner-reviewed receipt archive already exists; manual recovery required");
+    } catch (error) {
+      if (error?.code !== "ENOENT") throw error;
+    }
+    await rename(path.join(resultsDir, RECOVERY_RECEIPT_FILE), archivePath);
     await syncDirectory(await physicalDirectory(resultsDir));
   } catch (error) {
     if (error?.code !== "ENOENT") throw error;

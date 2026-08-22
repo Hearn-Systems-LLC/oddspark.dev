@@ -27,25 +27,26 @@ const exact = (value, keys) => plain(value) && Object.keys(value).length === key
 const zeroRate = (rate) => exact(rate, ["numerator", "denominator", "percent"]) && rate.numerator === 0 && rate.denominator === 0 && rate.percent === 0;
 
 // Owner-reviewed completed cycles (spec-1-4 Llama cycle change log, 2026-08-22):
-// after the fully-published, independently verified NO-GO of run e848e2bd, Justin
-// granted one new matrix under the flattened wire schema. These exact sets are
-// immutable history; they no longer block plan generation, but any new artifact
-// outside this list remains blocking. Verification below re-checks marker bytes,
-// bundle/evidence bindings, NO-GO outcome, and zero emitted refs.
+// after fully-published, independently verified NO-GO cycles, Justin granted successor
+// matrices (wire-schema flattening; then the adapter single-representation fix).
+// These exact sets are immutable history; they no longer block plan generation, but
+// any new artifact outside this list remains blocking. Verification below re-checks
+// marker bytes, bundle/evidence bindings, NO-GO outcome, and zero emitted refs.
 const OWNER_REVIEWED_PREFIXES = Object.freeze([
   "2026-08-22-e848e2bd-ecd55b947f985a3e-9047f82c-9e53-4db1-8d8b-744f4b92b1e4",
   "2026-08-22-e848e2bd-f5582e1bc9bfec5a-50e5102a-85d8-415a-9715-aa5e79666361",
   "2026-08-22-e848e2bd-d072356c9de6a906-c43fb299-6891-4f10-aebe-e49cbf3f770c",
+  "2026-08-22-c0b94e4a-819dd1f7ed29e093-286bd0b2-4e62-4e1b-83c4-6b69653f2a31",
+  "2026-08-22-c0b94e4a-d2a2402b331a4487-ee3dbc1c-50dc-48f4-9017-7790a0b6d29a",
+  "2026-08-22-467ba931-9be44152aeb9a440-20d88746-a496-4b34-b0a5-8a694a4989d2",
 ]);
-const OWNER_REVIEWED_SPEND = Object.freeze({
-  attempt_id: "c43fb299-6891-4f10-aebe-e49cbf3f770c",
-  approval_run_id: "e848e2bd-dc86-40e0-90da-45bee83fcc6d",
-  calls_started: 42,
-});
 // When a successor cycle is granted, the owner-reviewed completed-spend receipt is
-// archived (bytes preserved, renamed) so the single-file receipt slot can be reused.
-export const OWNER_REVIEWED_RECEIPT_ARCHIVE = "2026-08-22-e848e2bd-c43fb299.spend-receipt.json";
-export { OWNER_REVIEWED_SPEND };
+// archived (bytes preserved, renamed aside) so the single-file receipt slot is reusable.
+export const OWNER_REVIEWED_SPENDS = Object.freeze([
+  Object.freeze({ attempt_id: "c43fb299-6891-4f10-aebe-e49cbf3f770c", approval_run_id: "e848e2bd-dc86-40e0-90da-45bee83fcc6d", calls_started: 42, archive: "2026-08-22-e848e2bd-c43fb299.spend-receipt.json" }),
+  Object.freeze({ attempt_id: "20d88746-a496-4b34-b0a5-8a694a4989d2", approval_run_id: "467ba931-4e31-450a-93ce-f05f62e4db73", calls_started: 42, archive: "2026-08-22-467ba931-20d88746.spend-receipt.json" }),
+]);
+export const OWNER_REVIEWED_RECEIPT_ARCHIVES = Object.freeze(OWNER_REVIEWED_SPENDS.map((spend) => spend.archive));
 async function classifyHistoricalArtifacts(resultsDir, entries) {
   const historical = new Set();
   const legacyModels = (evidence) => stableStringify(evidence?.run?.models) === stableStringify(LEGACY_MODEL_IDS);
@@ -203,14 +204,15 @@ export async function findPriorOperationalRecovery(resultsDir, options = {}) {
   let receiptFallback = null;
   const historicalArtifacts = await classifyHistoricalArtifacts(resultsDir, entries);
 
-  // --- Archived owner-reviewed receipt (renamed aside when a successor cycle was granted) ---
-  if (entries.includes(OWNER_REVIEWED_RECEIPT_ARCHIVE)) {
+  // --- Archived owner-reviewed receipts (renamed aside when successor cycles were granted) ---
+  for (const spend of OWNER_REVIEWED_SPENDS) {
+    if (!entries.includes(spend.archive)) continue;
     try {
-      const archived = JSON.parse(await readFile(path.join(resultsDir, OWNER_REVIEWED_RECEIPT_ARCHIVE), "utf8"));
+      const archived = JSON.parse(await readFile(path.join(resultsDir, spend.archive), "utf8"));
       if (validSpendReceipt(archived, APPROVED_CALL_CAP) && archived.state === "completed-spent"
-        && archived.attempt_id === OWNER_REVIEWED_SPEND.attempt_id
-        && archived.approval_run_id === OWNER_REVIEWED_SPEND.approval_run_id
-        && archived.calls_started === OWNER_REVIEWED_SPEND.calls_started) historicalArtifacts.add(OWNER_REVIEWED_RECEIPT_ARCHIVE);
+        && archived.attempt_id === spend.attempt_id
+        && archived.approval_run_id === spend.approval_run_id
+        && archived.calls_started === spend.calls_started) historicalArtifacts.add(spend.archive);
     } catch { /* unverifiable archive is simply not classified */ }
   }
 
@@ -226,10 +228,10 @@ export async function findPriorOperationalRecovery(resultsDir, options = {}) {
       return { evidence_file: null, qualification_file: null, qualification_refs: [], malformed: true, receipt_file: RECOVERY_RECEIPT_FILE, blocking_reason: "spend receipt proves or cannot disprove provider invocation" };
     }
     const ownerReviewedSpend = receipt.state === "completed-spent"
-      && receipt.attempt_id === OWNER_REVIEWED_SPEND.attempt_id
-      && receipt.approval_run_id === OWNER_REVIEWED_SPEND.approval_run_id
-      && receipt.calls_started === OWNER_REVIEWED_SPEND.calls_started
-      && OWNER_REVIEWED_PREFIXES.some((prefix) => entries.some((entry) => entry.startsWith(prefix) && entry.endsWith("-v2.complete.json")));
+      && OWNER_REVIEWED_SPENDS.some((spend) => receipt.attempt_id === spend.attempt_id
+        && receipt.approval_run_id === spend.approval_run_id
+        && receipt.calls_started === spend.calls_started
+        && OWNER_REVIEWED_PREFIXES.some((prefix) => entries.some((entry) => entry.startsWith(prefix) && entry.endsWith("-v2.complete.json"))));
     if (ownerReviewedSpend) {
       historicalArtifacts.add(RECOVERY_RECEIPT_FILE);
     } else if (receipt.calls_started > 0 || receipt.state !== "reserved") {
