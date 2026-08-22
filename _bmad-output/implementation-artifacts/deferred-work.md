@@ -40,6 +40,7 @@ status: open
 - source_spec: none
   summary: Reconcile Story 1.11 generation structural qualification with the approved Workers AI Llama pair and prepare its fresh governed plan.
   evidence: Split from the current build because generation qualification has an independent contract, allowance, cost cap, evidence set, and review surface from Story 1.4 judge qualification.
+  status: resolved 2026-08-22 — satisfied by `spec-1-11-generation-structural-qualification-2.md` (Llama cycle, harness re-governed, fresh unapproved plan bundle prepared). Residual operator action: Justin's fresh exact approval + interactive execution of the Llama live qualification run; STRUCT-GENERATION refs do not exist until then. The original spec's gpt-oss r3 plan is obsolete (spec marked superseded/blocked).
 - source_spec: `_bmad-output/implementation-artifacts/spec-1-16-request-hardening-and-inactive-domain-dispatch-contract.md`
   summary: Bound inactive-domain writer-port latency with a deadline so a hung writer cannot park a request until the platform wall-clock limit.
   evidence: Story 1.16 review found `port.write(dispatch)` is awaited without a timeout; tolerable with the test fake but matters once Story 1.23 wires the real assembled writer.

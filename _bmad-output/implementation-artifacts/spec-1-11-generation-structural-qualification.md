@@ -2,7 +2,8 @@
 title: 'Story 1.11: Generation Structural Qualification'
 type: 'feature'
 created: '2026-08-18'
-status: 'awaiting-operator'
+status: 'blocked'
+superseded_by: 'spec-1-11-generation-structural-qualification-2.md'
 baseline_revision: '334ec837ce7ed129a8e8b1b0ae68eef1ed032687'
 review_loop_iteration: 0
 followup_review_recommended: true
@@ -76,6 +77,8 @@ operator_actions:
 - Given repository verification, when the focused self-test, public-verifier tamper suite, full `npm run check`, and `git diff --check` run, then all offline gates pass with no network, deployment, production binding, or sprint-state mutation.
 
 ## Spec Change Log
+
+- 2026-08-22: SUPERSEDED by `spec-1-11-generation-structural-qualification-2.md` (Llama cycle). The gpt-oss r3 plan (`5d372eaa…`, run ID `story-1-11-2026-08-19-r3`) is obsolete — do NOT approve or execute it. The gpt-oss cycles concluded NO-GO; the harness was re-governed for the approved Workers AI Llama pair and a fresh unapproved plan bundle was prepared in the -2 cycle. The residual operator action lives there: fresh exact approval + interactive execution of the Llama qualification run.
 
 - 2026-08-18: Implemented the offline-verifiable qualification harness, isolated adapter, approval-gated runner, public verifier, focused tests, and package commands; moved to awaiting-operator because the metered live run requires fresh exact approval.
 
