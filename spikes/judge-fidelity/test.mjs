@@ -42,6 +42,7 @@ import {
   findPriorOperationalRecovery,
   normalizeProviderUsage,
   observeAdapterHealth,
+  planCommand,
   runLive,
   summarizeTrials,
   writeRecoveryArtifacts,
@@ -1030,8 +1031,20 @@ test("approval templates require explicit timestamps and plan publication is ext
 
   const directory = await mkdtemp(path.join(tmpdir(), "oddspark-plan-command-"));
   const output = path.join(directory, "recovery-plan.json");
-  const { stdout } = await execFileAsync(process.execPath, [new URL("./run.mjs", import.meta.url).pathname, "plan", "--output", output, "--account-profile", "test-profile", "--plan", "paid", "--approval-run-id", "command-plan-run"], { cwd: new URL("../..", import.meta.url).pathname });
-  assert.match(stdout, /Approval template \(not authority/);
+  // Exercise the plan command against an isolated results directory: the real one now
+  // holds a completed called cycle (2026-08-22), whose retained evidence correctly makes
+  // the CLI refuse new plans (course-end governance). Template-safety behavior is what
+  // this test covers, so the prior-recovery gate is isolated, not weakened.
+  const isolatedResults = await mkdtemp(path.join(tmpdir(), "oddspark-plan-results-"));
+  const logs = [];
+  const originalLog = console.log;
+  console.log = (...args) => logs.push(args.join(" "));
+  try {
+    await planCommand({ output, account_profile: "test-profile", plan: "paid", approval_run_id: "command-plan-run" }, { resultsDir: isolatedResults });
+  } finally {
+    console.log = originalLog;
+  }
+  assert.ok(logs.some((line) => /Approval template \(not authority/.test(line)));
   const commandTemplate = JSON.parse(await readFile(output.replace(/\.json$/, "-approval-template.json"), "utf8"));
   assert.equal(commandTemplate.approved_at, null);
   assert.equal(commandTemplate.expires_at, null);
@@ -1046,6 +1059,18 @@ test("approval templates require explicit timestamps and plan publication is ext
   await assert.rejects(writePlanDisclosure(setup.recoveryPlan, rollbackPlan));
   await assert.rejects(access(rollbackPlan));
   assert.equal(await readFile(rollbackTemplate, "utf8"), "occupied");
+});
+
+test("plan command refuses against the retained completed called cycle (course-end governance)", async () => {
+  // The real results directory holds the completed 2026-08-22 called cycle; governance
+  // requires the CLI to refuse new plan generation while that recovery is retained.
+  const directory = await mkdtemp(path.join(tmpdir(), "oddspark-plan-refused-"));
+  const output = path.join(directory, "recovery-plan.json");
+  await assert.rejects(
+    planCommand({ output, account_profile: "test-profile", plan: "paid", approval_run_id: "refused-run" }),
+    /prior operational recovery already retained/,
+  );
+  await assert.rejects(access(output));
 });
 
 test("runLive accepts the completed immutable on-disk disclosure and distinct canonical approval without network activity", async () => {

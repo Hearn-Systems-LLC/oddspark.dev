@@ -1419,7 +1419,7 @@ async function verifyCommand(options) {
   }
 }
 
-async function planCommand(options, dependencies = {}) {
+export async function planCommand(options, dependencies = {}) {
   const prior = await (dependencies.findPriorRecovery ?? findPriorOperationalRecovery)(dependencies.resultsDir ?? RESULTS_DIR);
   if (prior && prior.safe_zero_call_receipt !== true) throw new Error(`prior operational recovery already retained: ${prior.evidence_file}`);
   if (typeof options.output !== "string" || typeof options.account_profile !== "string" || !["free", "paid"].includes(options.plan)) {

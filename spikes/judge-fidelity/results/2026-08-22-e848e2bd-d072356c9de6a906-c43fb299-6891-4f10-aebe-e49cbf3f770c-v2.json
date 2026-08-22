@@ -1,0 +1,3167 @@
+{
+  "schema_version": "oddspark.judge-recovery-evidence/v2",
+  "profile": "operational",
+  "oracle": {
+    "version": "oddspark-judge-evidence-predicates/v2",
+    "hash": "87e15af7b9ad5477862de03bf9b2b049f68932d41eb1cbbf2eaacee1c9ee7ade",
+    "predicates": [
+      {
+        "id": "evidence.shape",
+        "description": "Evidence and every retained nested object are closed and strictly typed."
+      },
+      {
+        "id": "oracle.identity",
+        "description": "The ordered predicate oracle version and hash match this verifier."
+      },
+      {
+        "id": "legacy.immutable",
+        "description": "The legacy v1 artifacts retain pinned hashes and NO-GO facts."
+      },
+      {
+        "id": "runtime.identity",
+        "description": "The frozen and executing runtime identities agree."
+      },
+      {
+        "id": "source.identity",
+        "description": "Every retained source manifest entry matches actual bytes."
+      },
+      {
+        "id": "adapter.identity",
+        "description": "Observed adapter health, endpoint, and input match independent identities."
+      },
+      {
+        "id": "candidate.binding",
+        "description": "The common candidate reference equals the canonical candidate hash."
+      },
+      {
+        "id": "fixtures.executed",
+        "description": "Every unique declared fixture was executed by the shared executor."
+      },
+      {
+        "id": "records.classified",
+        "description": "Every retained call classification and verdict hash recomputes."
+      },
+      {
+        "id": "records.closed",
+        "description": "Record, envelope, usage, and error shapes are closed and typed."
+      },
+      {
+        "id": "run.authorization",
+        "description": "Authorization, cap, estimate, and calls made are exact."
+      },
+      {
+        "id": "run.cardinality",
+        "description": "Operational records use the frozen pair with exact probes and trials."
+      },
+      {
+        "id": "run.ordering",
+        "description": "Both probes precede chronological non-overlapping trials."
+      },
+      {
+        "id": "run.common_request",
+        "description": "Every record uses an independently rebuilt frozen request."
+      },
+      {
+        "id": "summary.rates",
+        "description": "Counts and rates recompute from all trials."
+      },
+      {
+        "id": "outcome.deterministic",
+        "description": "Decision and reasons recompute from integrity and records."
+      },
+      {
+        "id": "predicates.retained",
+        "description": "Retained predicate IDs and booleans equal recomputation."
+      },
+      {
+        "id": "report.deterministic",
+        "description": "Retained Markdown is byte-deterministic."
+      }
+    ]
+  },
+  "legacy": [
+    {
+      "path": "spikes/judge-fidelity/results/2026-08-16-d2b84005.json",
+      "sha256": "1cc4431088e37ba069e128e0059f19229551de2398db0d686524bc70aa752377",
+      "observed_sha256": "1cc4431088e37ba069e128e0059f19229551de2398db0d686524bc70aa752377",
+      "facts": {
+        "decision": "NO-GO",
+        "by_model": [
+          {
+            "model": "@cf/openai/gpt-oss-120b",
+            "total": 20,
+            "direct_valid": 0,
+            "repaired_valid": 0
+          },
+          {
+            "model": "@cf/openai/gpt-oss-20b",
+            "total": 20,
+            "direct_valid": 0,
+            "repaired_valid": 0
+          }
+        ]
+      }
+    },
+    {
+      "path": "spikes/judge-fidelity/results/2026-08-16-d2b84005.md",
+      "sha256": "0fde75016daa6556ece35be8abd54faaebc4eed6a82156fd834bd127fd263562",
+      "observed_sha256": "0fde75016daa6556ece35be8abd54faaebc4eed6a82156fd834bd127fd263562"
+    },
+    {
+      "path": "spikes/judge-fidelity/results/2026-08-16-d2b84005-audit.md",
+      "sha256": "4695bae9056e14e8b961111f9be6802c8faab2ebf932963e6425315c43d4e16b",
+      "observed_sha256": "4695bae9056e14e8b961111f9be6802c8faab2ebf932963e6425315c43d4e16b"
+    }
+  ],
+  "runtime": {
+    "path": "runtime-baseline.json",
+    "bytes": 2900,
+    "sha256": "50d8e3fdb06b548a2b90d8f620cee6ed9620c33ed23314aa5f65db1ecec2cf35",
+    "runtime_identity_sha256": "a3d5ae76d31669bc1f008f7ef3d0fdde14d4a5b1fcb0fc63e70d290cdae32feb",
+    "frozen": {
+      "node_engines": ">=20",
+      "wrangler": "4.123.0",
+      "workerd": "1.20260811.1"
+    },
+    "execution": {
+      "node": "v24.18.0",
+      "wrangler": "4.123.0"
+    }
+  },
+  "sources": [
+    {
+      "path": "package.json",
+      "bytes": 3801,
+      "sha256": "bbe7d7c9512bf6944c684867fe03052976349c07c5a0c444106c09b9c70ca7d1"
+    },
+    {
+      "path": "spikes/judge-fidelity/contract.mjs",
+      "bytes": 28345,
+      "sha256": "c124dfbf2cb56727bb5fdc8b01622509867460304b3bbf3a635b8f004cc8d8f2"
+    },
+    {
+      "path": "spikes/judge-fidelity/evidence-v2.mjs",
+      "bytes": 38463,
+      "sha256": "560b50091eb5118014bdb030488b3a0b90db8e360325f0498b41a22d2f1ee1bd"
+    },
+    {
+      "path": "spikes/judge-fidelity/fixture-executor.mjs",
+      "bytes": 9257,
+      "sha256": "6c1504661b3bca904b8d1fdf214e4e4796ca0c82a6041e6433da66c94d142e38"
+    },
+    {
+      "path": "spikes/judge-fidelity/fixtures.json",
+      "bytes": 11555,
+      "sha256": "7a5020883ec817809fabc797a6e1bd4af34a24d9bb369a7cce626ca95a97d2e5"
+    },
+    {
+      "path": "spikes/judge-fidelity/pricing.mjs",
+      "bytes": 1243,
+      "sha256": "4ab46a4bd4ac34189a82344a4ca6540866364f7299aa9c5eb7e96c7572423b6e"
+    },
+    {
+      "path": "spikes/judge-fidelity/qualification.mjs",
+      "bytes": 40067,
+      "sha256": "cf4d15e2dd0d8579e26249603a16a9a00dd3ec2591e00f0bb34c6640cf305179"
+    },
+    {
+      "path": "spikes/judge-fidelity/recovery-finder.mjs",
+      "bytes": 23673,
+      "sha256": "4df0572cf69e95d8d1cf4b52682b9a8d600577ba8481b0778b88cb41f0ef8411"
+    },
+    {
+      "path": "spikes/judge-fidelity/run.mjs",
+      "bytes": 70249,
+      "sha256": "571fa582ffefcc055d65160e723ea6fafd524e0168d53732f356c698ccab08dd"
+    },
+    {
+      "path": "spikes/judge-fidelity/start-adapter.mjs",
+      "bytes": 1986,
+      "sha256": "be5e8958f40c9b1f217cbf3bc6310c19bdc9276c5f5efc7e672b7b05baab7939"
+    },
+    {
+      "path": "spikes/judge-fidelity/test.mjs",
+      "bytes": 130632,
+      "sha256": "3936df1fd1c71bceff51149efee8e1bc5d00dcfb150d78525e557b1a4a447f89"
+    },
+    {
+      "path": "spikes/judge-fidelity/worker.mjs",
+      "bytes": 8757,
+      "sha256": "cfde74de613619ab1edcdb65c20a4660f3960f256a627930635897105b23b98d"
+    },
+    {
+      "path": "spikes/judge-fidelity/verify-launcher.mjs",
+      "bytes": 1964,
+      "sha256": "4b493214762dfe77fa813fa0f4c3e1c23e1e1164ce2a7e2de8c63b88f2a8e6b3"
+    },
+    {
+      "path": "spikes/judge-fidelity/verify-v2.mjs",
+      "bytes": 2956,
+      "sha256": "fad9e45e6acc5266516ef92d67678bad3b3fcdd97a588f90d6eca7e8c71e48a5"
+    },
+    {
+      "path": "spikes/judge-fidelity/wrangler.toml",
+      "bytes": 299,
+      "sha256": "70799cb70abb4fd3de5bfb04da359290c9226841acecb9be9ac309f80e42dd2d"
+    }
+  ],
+  "candidate": {
+    "schema_version": "oddspark-candidate/v1",
+    "value": {
+      "version": 1,
+      "mode": "domain",
+      "title": "Monday Follow-Up Relay",
+      "plan": "Add a small staff-approved follow-up queue around the existing appointment-request form so unanswered requests return to the front desk at the next useful moment.",
+      "why_fits": {
+        "text": "The practice already accepts appointment requests online and keeps a later Monday window, so the smallest useful change is a follow-up relay around that familiar routine.",
+        "breadcrumb": "Open late on Mondays"
+      },
+      "what_gets_better": "Requests are less likely to sit between the website and the front desk, while staff keep control of every patient conversation.",
+      "before_after": {
+        "before": "A request enters the current form and staff remember to revisit it between other work.",
+        "after": "The same request enters the same form and appears in a short staff-approved follow-up queue."
+      },
+      "change_level": {
+        "time_range": "1–2 weeks",
+        "steps_changed": 2,
+        "steps_removed": 1,
+        "preliminary": true
+      },
+      "stays_same": {
+        "tools": [
+          "Existing website request form",
+          "Current appointment calendar"
+        ],
+        "authority": [
+          "Front-desk staff decide when and how to contact a requester"
+        ],
+        "steps": [
+          "Patients use the existing form",
+          "Staff confirm appointments in the current calendar"
+        ]
+      },
+      "invitation": "Hearn Systems can map the smallest version of this Spark around the existing form and show exactly how the relay would work.",
+      "grounded_numbers": []
+    },
+    "ref": "36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891",
+    "request_input": {
+      "synthetic": true,
+      "candidate": {
+        "version": 1,
+        "mode": "domain",
+        "title": "Monday Follow-Up Relay",
+        "plan": "Add a small staff-approved follow-up queue around the existing appointment-request form so unanswered requests return to the front desk at the next useful moment.",
+        "why_fits": {
+          "text": "The practice already accepts appointment requests online and keeps a later Monday window, so the smallest useful change is a follow-up relay around that familiar routine.",
+          "breadcrumb": "Open late on Mondays"
+        },
+        "what_gets_better": "Requests are less likely to sit between the website and the front desk, while staff keep control of every patient conversation.",
+        "before_after": {
+          "before": "A request enters the current form and staff remember to revisit it between other work.",
+          "after": "The same request enters the same form and appears in a short staff-approved follow-up queue."
+        },
+        "change_level": {
+          "time_range": "1–2 weeks",
+          "steps_changed": 2,
+          "steps_removed": 1,
+          "preliminary": true
+        },
+        "stays_same": {
+          "tools": [
+            "Existing website request form",
+            "Current appointment calendar"
+          ],
+          "authority": [
+            "Front-desk staff decide when and how to contact a requester"
+          ],
+          "steps": [
+            "Patients use the existing form",
+            "Staff confirm appointments in the current calendar"
+          ]
+        },
+        "invitation": "Hearn Systems can map the smallest version of this Spark around the existing form and show exactly how the relay would work.",
+        "grounded_numbers": []
+      },
+      "evidence_bundle": {
+        "vertical": "Family dental practice",
+        "clarity": "clear",
+        "capabilities": [
+          "Online appointment requests",
+          "Existing appointment calendar"
+        ],
+        "channels": [
+          "Website request form",
+          "Phone"
+        ],
+        "observation": {
+          "url": "https://synthetic.example.invalid/appointments",
+          "text": "Request an appointment online. Open late on Mondays. Call the front desk with questions."
+        },
+        "scanned_urls": [
+          "https://synthetic.example.invalid/",
+          "https://synthetic.example.invalid/appointments"
+        ]
+      },
+      "grounding_report": {
+        "schema_version": "synthetic-grounding-report/v1",
+        "fixture_only": true,
+        "valid": true,
+        "claims": [
+          {
+            "field": "candidate.why_fits.breadcrumb",
+            "source": "evidence_bundle.observation.text",
+            "matched_text": "Open late on Mondays"
+          }
+        ],
+        "numeric_claims": [],
+        "breadcrumb_count": 1,
+        "pii_free": true,
+        "issues": []
+      }
+    }
+  },
+  "adapter": {
+    "schema_version": "oddspark-judge-adapter-health/v2",
+    "endpoint": "http://127.0.0.1:8788/health",
+    "http_status": 200,
+    "observation_attempted": true,
+    "identity_match": true,
+    "expected_health": {
+      "ok": true,
+      "inference": false,
+      "schema_version": "oddspark-judge-adapter-health/v2",
+      "result_contract_version": "oddspark-judge-result/v2",
+      "candidate_binding_version": "oddspark-candidate-ref/v1",
+      "models": [
+        "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+        "@cf/meta/llama-3.1-8b-instruct-fast"
+      ],
+      "parameters": {
+        "temperature": 0,
+        "max_tokens": 2048
+      },
+      "binding": "AI",
+      "system_prompt_sha256": "796a7bb6a54ee637314e1b0d4342614e151c8fe4726ed1ffd8c6a38f6c173587",
+      "message_contract_sha256": "e04c4e6320862d19968e2dca9679e79e0923fb5964fa8a8cca26e6d8ee44d1ad",
+      "wire_schema_sha256": "8dd321c119e0a4cc5c7789bc837f264e8885d952eafcd95169513fc0f167a2a1",
+      "adapter_source_sha256": "cfde74de613619ab1edcdb65c20a4660f3960f256a627930635897105b23b98d",
+      "config_source_sha256": "70799cb70abb4fd3de5bfb04da359290c9226841acecb9be9ac309f80e42dd2d",
+      "runtime_sha256": "a3d5ae76d31669bc1f008f7ef3d0fdde14d4a5b1fcb0fc63e70d290cdae32feb",
+      "identity_complete": true
+    },
+    "expected_health_sha256": "74d9241e74fdf9f9bf54c31f50882bfda8afb5412affff19a1a8befc03f69ce4",
+    "observed_health": {
+      "ok": true,
+      "inference": false,
+      "schema_version": "oddspark-judge-adapter-health/v2",
+      "result_contract_version": "oddspark-judge-result/v2",
+      "candidate_binding_version": "oddspark-candidate-ref/v1",
+      "models": [
+        "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+        "@cf/meta/llama-3.1-8b-instruct-fast"
+      ],
+      "parameters": {
+        "temperature": 0,
+        "max_tokens": 2048
+      },
+      "binding": "AI",
+      "system_prompt_sha256": "796a7bb6a54ee637314e1b0d4342614e151c8fe4726ed1ffd8c6a38f6c173587",
+      "message_contract_sha256": "e04c4e6320862d19968e2dca9679e79e0923fb5964fa8a8cca26e6d8ee44d1ad",
+      "wire_schema_sha256": "8dd321c119e0a4cc5c7789bc837f264e8885d952eafcd95169513fc0f167a2a1",
+      "adapter_source_sha256": "cfde74de613619ab1edcdb65c20a4660f3960f256a627930635897105b23b98d",
+      "config_source_sha256": "70799cb70abb4fd3de5bfb04da359290c9226841acecb9be9ac309f80e42dd2d",
+      "runtime_sha256": "a3d5ae76d31669bc1f008f7ef3d0fdde14d4a5b1fcb0fc63e70d290cdae32feb",
+      "identity_complete": true
+    },
+    "observed_health_sha256": "74d9241e74fdf9f9bf54c31f50882bfda8afb5412affff19a1a8befc03f69ce4",
+    "outbound_request": {
+      "by_model": [
+        {
+          "model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+          "body": {
+            "model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+            "messages": [
+              {
+                "role": "system",
+                "content": "You are the independent Oddspark judge. Evaluate the supplied synthetic Candidate Brief against every check below.\n\n1. Recognizable routine: starts from a credible routine and recurring annoyance.\n2. Constructive intervention: every friction leads to an imaginable solution.\n3. Capability inventory: does not duplicate an existing capability.\n4. Channel fit: uses an observed channel or clearly introduces a fitting one.\n5. Proportionality: matches likely scale, complexity, and maintenance capacity.\n6. Delivery fit: Hearn Systems could implement it as software, AI automation, integration, data workflow, or adjacent digital system.\n7. Preservation: retains helpful tools, workflow steps, and decision rights it need not change.\n8. Natural retelling: a person could naturally explain the situation, capability, and payoff.\n9. Novel but imaginable: goes beyond the obvious while remaining concrete.\n\nAlso evaluate tone (confident plan, plain language, no pitch, no consultant-speak, no bare-mush effects) and claims (qualitative unless supplied evidence grounds a number). Use the supplied grounding report; do not add a grounding field or a tenth gate.\n\nReturn only one JSON value matching the supplied schema. Include gates 1 through 9 exactly once. Set top-level pass to true only when all nine gates, tone, and claims pass."
+              },
+              {
+                "role": "user",
+                "content": "{\"candidate_ref\":\"36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891\",\"input\":{\"candidate\":{\"before_after\":{\"after\":\"The same request enters the same form and appears in a short staff-approved follow-up queue.\",\"before\":\"A request enters the current form and staff remember to revisit it between other work.\"},\"change_level\":{\"preliminary\":true,\"steps_changed\":2,\"steps_removed\":1,\"time_range\":\"1–2 weeks\"},\"grounded_numbers\":[],\"invitation\":\"Hearn Systems can map the smallest version of this Spark around the existing form and show exactly how the relay would work.\",\"mode\":\"domain\",\"plan\":\"Add a small staff-approved follow-up queue around the existing appointment-request form so unanswered requests return to the front desk at the next useful moment.\",\"stays_same\":{\"authority\":[\"Front-desk staff decide when and how to contact a requester\"],\"steps\":[\"Patients use the existing form\",\"Staff confirm appointments in the current calendar\"],\"tools\":[\"Existing website request form\",\"Current appointment calendar\"]},\"title\":\"Monday Follow-Up Relay\",\"version\":1,\"what_gets_better\":\"Requests are less likely to sit between the website and the front desk, while staff keep control of every patient conversation.\",\"why_fits\":{\"breadcrumb\":\"Open late on Mondays\",\"text\":\"The practice already accepts appointment requests online and keeps a later Monday window, so the smallest useful change is a follow-up relay around that familiar routine.\"}},\"evidence_bundle\":{\"capabilities\":[\"Online appointment requests\",\"Existing appointment calendar\"],\"channels\":[\"Website request form\",\"Phone\"],\"clarity\":\"clear\",\"observation\":{\"text\":\"Request an appointment online. Open late on Mondays. Call the front desk with questions.\",\"url\":\"https://synthetic.example.invalid/appointments\"},\"scanned_urls\":[\"https://synthetic.example.invalid/\",\"https://synthetic.example.invalid/appointments\"],\"vertical\":\"Family dental practice\"},\"grounding_report\":{\"breadcrumb_count\":1,\"claims\":[{\"field\":\"candidate.why_fits.breadcrumb\",\"matched_text\":\"Open late on Mondays\",\"source\":\"evidence_bundle.observation.text\"}],\"fixture_only\":true,\"issues\":[],\"numeric_claims\":[],\"pii_free\":true,\"schema_version\":\"synthetic-grounding-report/v1\",\"valid\":true},\"synthetic\":true}}"
+              }
+            ],
+            "max_tokens": 2048,
+            "temperature": 0,
+            "response_format": {
+              "type": "json_schema",
+              "json_schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "candidate_ref",
+                  "verdict"
+                ],
+                "properties": {
+                  "candidate_ref": {
+                    "type": "string",
+                    "pattern": "^[a-f0-9]{64}$"
+                  },
+                  "verdict": {
+                    "$schema": "https://json-schema.org/draft/2020-12/schema",
+                    "title": "Oddspark judge verdict v1",
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "pass",
+                      "gates",
+                      "tone",
+                      "claims"
+                    ],
+                    "properties": {
+                      "pass": {
+                        "type": "boolean"
+                      },
+                      "gates": {
+                        "type": "array",
+                        "minItems": 9,
+                        "maxItems": 9,
+                        "allOf": [
+                          {
+                            "contains": {
+                              "type": "object",
+                              "required": [
+                                "gate"
+                              ],
+                              "properties": {
+                                "gate": {
+                                  "const": 1
+                                }
+                              }
+                            },
+                            "minContains": 1,
+                            "maxContains": 1
+                          },
+                          {
+                            "contains": {
+                              "type": "object",
+                              "required": [
+                                "gate"
+                              ],
+                              "properties": {
+                                "gate": {
+                                  "const": 2
+                                }
+                              }
+                            },
+                            "minContains": 1,
+                            "maxContains": 1
+                          },
+                          {
+                            "contains": {
+                              "type": "object",
+                              "required": [
+                                "gate"
+                              ],
+                              "properties": {
+                                "gate": {
+                                  "const": 3
+                                }
+                              }
+                            },
+                            "minContains": 1,
+                            "maxContains": 1
+                          },
+                          {
+                            "contains": {
+                              "type": "object",
+                              "required": [
+                                "gate"
+                              ],
+                              "properties": {
+                                "gate": {
+                                  "const": 4
+                                }
+                              }
+                            },
+                            "minContains": 1,
+                            "maxContains": 1
+                          },
+                          {
+                            "contains": {
+                              "type": "object",
+                              "required": [
+                                "gate"
+                              ],
+                              "properties": {
+                                "gate": {
+                                  "const": 5
+                                }
+                              }
+                            },
+                            "minContains": 1,
+                            "maxContains": 1
+                          },
+                          {
+                            "contains": {
+                              "type": "object",
+                              "required": [
+                                "gate"
+                              ],
+                              "properties": {
+                                "gate": {
+                                  "const": 6
+                                }
+                              }
+                            },
+                            "minContains": 1,
+                            "maxContains": 1
+                          },
+                          {
+                            "contains": {
+                              "type": "object",
+                              "required": [
+                                "gate"
+                              ],
+                              "properties": {
+                                "gate": {
+                                  "const": 7
+                                }
+                              }
+                            },
+                            "minContains": 1,
+                            "maxContains": 1
+                          },
+                          {
+                            "contains": {
+                              "type": "object",
+                              "required": [
+                                "gate"
+                              ],
+                              "properties": {
+                                "gate": {
+                                  "const": 8
+                                }
+                              }
+                            },
+                            "minContains": 1,
+                            "maxContains": 1
+                          },
+                          {
+                            "contains": {
+                              "type": "object",
+                              "required": [
+                                "gate"
+                              ],
+                              "properties": {
+                                "gate": {
+                                  "const": 9
+                                }
+                              }
+                            },
+                            "minContains": 1,
+                            "maxContains": 1
+                          }
+                        ],
+                        "items": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "gate",
+                            "pass",
+                            "reason"
+                          ],
+                          "properties": {
+                            "gate": {
+                              "type": "integer",
+                              "minimum": 1,
+                              "maximum": 9
+                            },
+                            "pass": {
+                              "type": "boolean"
+                            },
+                            "reason": {
+                              "type": "string",
+                              "minLength": 1,
+                              "pattern": "\\S"
+                            }
+                          }
+                        }
+                      },
+                      "tone": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                          "pass",
+                          "reason"
+                        ],
+                        "properties": {
+                          "pass": {
+                            "type": "boolean"
+                          },
+                          "reason": {
+                            "type": "string",
+                            "minLength": 1,
+                            "pattern": "\\S"
+                          }
+                        }
+                      },
+                      "claims": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                          "pass",
+                          "reason"
+                        ],
+                        "properties": {
+                          "pass": {
+                            "type": "boolean"
+                          },
+                          "reason": {
+                            "type": "string",
+                            "minLength": 1,
+                            "pattern": "\\S"
+                          }
+                        }
+                      }
+                    },
+                    "allOf": [
+                      {
+                        "if": {
+                          "required": [
+                            "pass"
+                          ],
+                          "properties": {
+                            "pass": {
+                              "const": true
+                            }
+                          }
+                        },
+                        "then": {
+                          "properties": {
+                            "gates": {
+                              "items": {
+                                "required": [
+                                  "pass"
+                                ],
+                                "properties": {
+                                  "pass": {
+                                    "const": true
+                                  }
+                                }
+                              }
+                            },
+                            "tone": {
+                              "required": [
+                                "pass"
+                              ],
+                              "properties": {
+                                "pass": {
+                                  "const": true
+                                }
+                              }
+                            },
+                            "claims": {
+                              "required": [
+                                "pass"
+                              ],
+                              "properties": {
+                                "pass": {
+                                  "const": true
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            },
+            "candidate_schema_version": "oddspark-candidate/v1",
+            "candidate": {
+              "version": 1,
+              "mode": "domain",
+              "title": "Monday Follow-Up Relay",
+              "plan": "Add a small staff-approved follow-up queue around the existing appointment-request form so unanswered requests return to the front desk at the next useful moment.",
+              "why_fits": {
+                "text": "The practice already accepts appointment requests online and keeps a later Monday window, so the smallest useful change is a follow-up relay around that familiar routine.",
+                "breadcrumb": "Open late on Mondays"
+              },
+              "what_gets_better": "Requests are less likely to sit between the website and the front desk, while staff keep control of every patient conversation.",
+              "before_after": {
+                "before": "A request enters the current form and staff remember to revisit it between other work.",
+                "after": "The same request enters the same form and appears in a short staff-approved follow-up queue."
+              },
+              "change_level": {
+                "time_range": "1–2 weeks",
+                "steps_changed": 2,
+                "steps_removed": 1,
+                "preliminary": true
+              },
+              "stays_same": {
+                "tools": [
+                  "Existing website request form",
+                  "Current appointment calendar"
+                ],
+                "authority": [
+                  "Front-desk staff decide when and how to contact a requester"
+                ],
+                "steps": [
+                  "Patients use the existing form",
+                  "Staff confirm appointments in the current calendar"
+                ]
+              },
+              "invitation": "Hearn Systems can map the smallest version of this Spark around the existing form and show exactly how the relay would work.",
+              "grounded_numbers": []
+            },
+            "candidate_ref": "36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891"
+          },
+          "sha256": "93e5dd51babc27749c915be811a178021c31296cce6144dfd40b5b97e043463f",
+          "adapter_input": {
+            "messages": [
+              {
+                "role": "system",
+                "content": "You are the independent Oddspark judge. Evaluate the supplied synthetic Candidate Brief against every check below.\n\n1. Recognizable routine: starts from a credible routine and recurring annoyance.\n2. Constructive intervention: every friction leads to an imaginable solution.\n3. Capability inventory: does not duplicate an existing capability.\n4. Channel fit: uses an observed channel or clearly introduces a fitting one.\n5. Proportionality: matches likely scale, complexity, and maintenance capacity.\n6. Delivery fit: Hearn Systems could implement it as software, AI automation, integration, data workflow, or adjacent digital system.\n7. Preservation: retains helpful tools, workflow steps, and decision rights it need not change.\n8. Natural retelling: a person could naturally explain the situation, capability, and payoff.\n9. Novel but imaginable: goes beyond the obvious while remaining concrete.\n\nAlso evaluate tone (confident plan, plain language, no pitch, no consultant-speak, no bare-mush effects) and claims (qualitative unless supplied evidence grounds a number). Use the supplied grounding report; do not add a grounding field or a tenth gate.\n\nReturn only one JSON value matching the supplied schema. Include gates 1 through 9 exactly once. Set top-level pass to true only when all nine gates, tone, and claims pass."
+              },
+              {
+                "role": "user",
+                "content": "{\"candidate_ref\":\"36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891\",\"input\":{\"candidate\":{\"before_after\":{\"after\":\"The same request enters the same form and appears in a short staff-approved follow-up queue.\",\"before\":\"A request enters the current form and staff remember to revisit it between other work.\"},\"change_level\":{\"preliminary\":true,\"steps_changed\":2,\"steps_removed\":1,\"time_range\":\"1–2 weeks\"},\"grounded_numbers\":[],\"invitation\":\"Hearn Systems can map the smallest version of this Spark around the existing form and show exactly how the relay would work.\",\"mode\":\"domain\",\"plan\":\"Add a small staff-approved follow-up queue around the existing appointment-request form so unanswered requests return to the front desk at the next useful moment.\",\"stays_same\":{\"authority\":[\"Front-desk staff decide when and how to contact a requester\"],\"steps\":[\"Patients use the existing form\",\"Staff confirm appointments in the current calendar\"],\"tools\":[\"Existing website request form\",\"Current appointment calendar\"]},\"title\":\"Monday Follow-Up Relay\",\"version\":1,\"what_gets_better\":\"Requests are less likely to sit between the website and the front desk, while staff keep control of every patient conversation.\",\"why_fits\":{\"breadcrumb\":\"Open late on Mondays\",\"text\":\"The practice already accepts appointment requests online and keeps a later Monday window, so the smallest useful change is a follow-up relay around that familiar routine.\"}},\"evidence_bundle\":{\"capabilities\":[\"Online appointment requests\",\"Existing appointment calendar\"],\"channels\":[\"Website request form\",\"Phone\"],\"clarity\":\"clear\",\"observation\":{\"text\":\"Request an appointment online. Open late on Mondays. Call the front desk with questions.\",\"url\":\"https://synthetic.example.invalid/appointments\"},\"scanned_urls\":[\"https://synthetic.example.invalid/\",\"https://synthetic.example.invalid/appointments\"],\"vertical\":\"Family dental practice\"},\"grounding_report\":{\"breadcrumb_count\":1,\"claims\":[{\"field\":\"candidate.why_fits.breadcrumb\",\"matched_text\":\"Open late on Mondays\",\"source\":\"evidence_bundle.observation.text\"}],\"fixture_only\":true,\"issues\":[],\"numeric_claims\":[],\"pii_free\":true,\"schema_version\":\"synthetic-grounding-report/v1\",\"valid\":true},\"synthetic\":true}}"
+              }
+            ],
+            "max_tokens": 2048,
+            "temperature": 0,
+            "response_format": {
+              "type": "json_schema",
+              "json_schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "candidate_ref",
+                  "verdict"
+                ],
+                "properties": {
+                  "candidate_ref": {
+                    "type": "string",
+                    "pattern": "^[a-f0-9]{64}$"
+                  },
+                  "verdict": {
+                    "$schema": "https://json-schema.org/draft/2020-12/schema",
+                    "title": "Oddspark judge verdict v1",
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "pass",
+                      "gates",
+                      "tone",
+                      "claims"
+                    ],
+                    "properties": {
+                      "pass": {
+                        "type": "boolean"
+                      },
+                      "gates": {
+                        "type": "array",
+                        "minItems": 9,
+                        "maxItems": 9,
+                        "allOf": [
+                          {
+                            "contains": {
+                              "type": "object",
+                              "required": [
+                                "gate"
+                              ],
+                              "properties": {
+                                "gate": {
+                                  "const": 1
+                                }
+                              }
+                            },
+                            "minContains": 1,
+                            "maxContains": 1
+                          },
+                          {
+                            "contains": {
+                              "type": "object",
+                              "required": [
+                                "gate"
+                              ],
+                              "properties": {
+                                "gate": {
+                                  "const": 2
+                                }
+                              }
+                            },
+                            "minContains": 1,
+                            "maxContains": 1
+                          },
+                          {
+                            "contains": {
+                              "type": "object",
+                              "required": [
+                                "gate"
+                              ],
+                              "properties": {
+                                "gate": {
+                                  "const": 3
+                                }
+                              }
+                            },
+                            "minContains": 1,
+                            "maxContains": 1
+                          },
+                          {
+                            "contains": {
+                              "type": "object",
+                              "required": [
+                                "gate"
+                              ],
+                              "properties": {
+                                "gate": {
+                                  "const": 4
+                                }
+                              }
+                            },
+                            "minContains": 1,
+                            "maxContains": 1
+                          },
+                          {
+                            "contains": {
+                              "type": "object",
+                              "required": [
+                                "gate"
+                              ],
+                              "properties": {
+                                "gate": {
+                                  "const": 5
+                                }
+                              }
+                            },
+                            "minContains": 1,
+                            "maxContains": 1
+                          },
+                          {
+                            "contains": {
+                              "type": "object",
+                              "required": [
+                                "gate"
+                              ],
+                              "properties": {
+                                "gate": {
+                                  "const": 6
+                                }
+                              }
+                            },
+                            "minContains": 1,
+                            "maxContains": 1
+                          },
+                          {
+                            "contains": {
+                              "type": "object",
+                              "required": [
+                                "gate"
+                              ],
+                              "properties": {
+                                "gate": {
+                                  "const": 7
+                                }
+                              }
+                            },
+                            "minContains": 1,
+                            "maxContains": 1
+                          },
+                          {
+                            "contains": {
+                              "type": "object",
+                              "required": [
+                                "gate"
+                              ],
+                              "properties": {
+                                "gate": {
+                                  "const": 8
+                                }
+                              }
+                            },
+                            "minContains": 1,
+                            "maxContains": 1
+                          },
+                          {
+                            "contains": {
+                              "type": "object",
+                              "required": [
+                                "gate"
+                              ],
+                              "properties": {
+                                "gate": {
+                                  "const": 9
+                                }
+                              }
+                            },
+                            "minContains": 1,
+                            "maxContains": 1
+                          }
+                        ],
+                        "items": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "gate",
+                            "pass",
+                            "reason"
+                          ],
+                          "properties": {
+                            "gate": {
+                              "type": "integer",
+                              "minimum": 1,
+                              "maximum": 9
+                            },
+                            "pass": {
+                              "type": "boolean"
+                            },
+                            "reason": {
+                              "type": "string",
+                              "minLength": 1,
+                              "pattern": "\\S"
+                            }
+                          }
+                        }
+                      },
+                      "tone": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                          "pass",
+                          "reason"
+                        ],
+                        "properties": {
+                          "pass": {
+                            "type": "boolean"
+                          },
+                          "reason": {
+                            "type": "string",
+                            "minLength": 1,
+                            "pattern": "\\S"
+                          }
+                        }
+                      },
+                      "claims": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                          "pass",
+                          "reason"
+                        ],
+                        "properties": {
+                          "pass": {
+                            "type": "boolean"
+                          },
+                          "reason": {
+                            "type": "string",
+                            "minLength": 1,
+                            "pattern": "\\S"
+                          }
+                        }
+                      }
+                    },
+                    "allOf": [
+                      {
+                        "if": {
+                          "required": [
+                            "pass"
+                          ],
+                          "properties": {
+                            "pass": {
+                              "const": true
+                            }
+                          }
+                        },
+                        "then": {
+                          "properties": {
+                            "gates": {
+                              "items": {
+                                "required": [
+                                  "pass"
+                                ],
+                                "properties": {
+                                  "pass": {
+                                    "const": true
+                                  }
+                                }
+                              }
+                            },
+                            "tone": {
+                              "required": [
+                                "pass"
+                              ],
+                              "properties": {
+                                "pass": {
+                                  "const": true
+                                }
+                              }
+                            },
+                            "claims": {
+                              "required": [
+                                "pass"
+                              ],
+                              "properties": {
+                                "pass": {
+                                  "const": true
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "adapter_input_sha256": "6efa2a67b01ca530d856309dfb60c19fb926361f743ca9b45499acc2bd43e6d0"
+        },
+        {
+          "model": "@cf/meta/llama-3.1-8b-instruct-fast",
+          "body": {
+            "model": "@cf/meta/llama-3.1-8b-instruct-fast",
+            "messages": [
+              {
+                "role": "system",
+                "content": "You are the independent Oddspark judge. Evaluate the supplied synthetic Candidate Brief against every check below.\n\n1. Recognizable routine: starts from a credible routine and recurring annoyance.\n2. Constructive intervention: every friction leads to an imaginable solution.\n3. Capability inventory: does not duplicate an existing capability.\n4. Channel fit: uses an observed channel or clearly introduces a fitting one.\n5. Proportionality: matches likely scale, complexity, and maintenance capacity.\n6. Delivery fit: Hearn Systems could implement it as software, AI automation, integration, data workflow, or adjacent digital system.\n7. Preservation: retains helpful tools, workflow steps, and decision rights it need not change.\n8. Natural retelling: a person could naturally explain the situation, capability, and payoff.\n9. Novel but imaginable: goes beyond the obvious while remaining concrete.\n\nAlso evaluate tone (confident plan, plain language, no pitch, no consultant-speak, no bare-mush effects) and claims (qualitative unless supplied evidence grounds a number). Use the supplied grounding report; do not add a grounding field or a tenth gate.\n\nReturn only one JSON value matching the supplied schema. Include gates 1 through 9 exactly once. Set top-level pass to true only when all nine gates, tone, and claims pass."
+              },
+              {
+                "role": "user",
+                "content": "{\"candidate_ref\":\"36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891\",\"input\":{\"candidate\":{\"before_after\":{\"after\":\"The same request enters the same form and appears in a short staff-approved follow-up queue.\",\"before\":\"A request enters the current form and staff remember to revisit it between other work.\"},\"change_level\":{\"preliminary\":true,\"steps_changed\":2,\"steps_removed\":1,\"time_range\":\"1–2 weeks\"},\"grounded_numbers\":[],\"invitation\":\"Hearn Systems can map the smallest version of this Spark around the existing form and show exactly how the relay would work.\",\"mode\":\"domain\",\"plan\":\"Add a small staff-approved follow-up queue around the existing appointment-request form so unanswered requests return to the front desk at the next useful moment.\",\"stays_same\":{\"authority\":[\"Front-desk staff decide when and how to contact a requester\"],\"steps\":[\"Patients use the existing form\",\"Staff confirm appointments in the current calendar\"],\"tools\":[\"Existing website request form\",\"Current appointment calendar\"]},\"title\":\"Monday Follow-Up Relay\",\"version\":1,\"what_gets_better\":\"Requests are less likely to sit between the website and the front desk, while staff keep control of every patient conversation.\",\"why_fits\":{\"breadcrumb\":\"Open late on Mondays\",\"text\":\"The practice already accepts appointment requests online and keeps a later Monday window, so the smallest useful change is a follow-up relay around that familiar routine.\"}},\"evidence_bundle\":{\"capabilities\":[\"Online appointment requests\",\"Existing appointment calendar\"],\"channels\":[\"Website request form\",\"Phone\"],\"clarity\":\"clear\",\"observation\":{\"text\":\"Request an appointment online. Open late on Mondays. Call the front desk with questions.\",\"url\":\"https://synthetic.example.invalid/appointments\"},\"scanned_urls\":[\"https://synthetic.example.invalid/\",\"https://synthetic.example.invalid/appointments\"],\"vertical\":\"Family dental practice\"},\"grounding_report\":{\"breadcrumb_count\":1,\"claims\":[{\"field\":\"candidate.why_fits.breadcrumb\",\"matched_text\":\"Open late on Mondays\",\"source\":\"evidence_bundle.observation.text\"}],\"fixture_only\":true,\"issues\":[],\"numeric_claims\":[],\"pii_free\":true,\"schema_version\":\"synthetic-grounding-report/v1\",\"valid\":true},\"synthetic\":true}}"
+              }
+            ],
+            "max_tokens": 2048,
+            "temperature": 0,
+            "response_format": {
+              "type": "json_schema",
+              "json_schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "candidate_ref",
+                  "verdict"
+                ],
+                "properties": {
+                  "candidate_ref": {
+                    "type": "string",
+                    "pattern": "^[a-f0-9]{64}$"
+                  },
+                  "verdict": {
+                    "$schema": "https://json-schema.org/draft/2020-12/schema",
+                    "title": "Oddspark judge verdict v1",
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "pass",
+                      "gates",
+                      "tone",
+                      "claims"
+                    ],
+                    "properties": {
+                      "pass": {
+                        "type": "boolean"
+                      },
+                      "gates": {
+                        "type": "array",
+                        "minItems": 9,
+                        "maxItems": 9,
+                        "allOf": [
+                          {
+                            "contains": {
+                              "type": "object",
+                              "required": [
+                                "gate"
+                              ],
+                              "properties": {
+                                "gate": {
+                                  "const": 1
+                                }
+                              }
+                            },
+                            "minContains": 1,
+                            "maxContains": 1
+                          },
+                          {
+                            "contains": {
+                              "type": "object",
+                              "required": [
+                                "gate"
+                              ],
+                              "properties": {
+                                "gate": {
+                                  "const": 2
+                                }
+                              }
+                            },
+                            "minContains": 1,
+                            "maxContains": 1
+                          },
+                          {
+                            "contains": {
+                              "type": "object",
+                              "required": [
+                                "gate"
+                              ],
+                              "properties": {
+                                "gate": {
+                                  "const": 3
+                                }
+                              }
+                            },
+                            "minContains": 1,
+                            "maxContains": 1
+                          },
+                          {
+                            "contains": {
+                              "type": "object",
+                              "required": [
+                                "gate"
+                              ],
+                              "properties": {
+                                "gate": {
+                                  "const": 4
+                                }
+                              }
+                            },
+                            "minContains": 1,
+                            "maxContains": 1
+                          },
+                          {
+                            "contains": {
+                              "type": "object",
+                              "required": [
+                                "gate"
+                              ],
+                              "properties": {
+                                "gate": {
+                                  "const": 5
+                                }
+                              }
+                            },
+                            "minContains": 1,
+                            "maxContains": 1
+                          },
+                          {
+                            "contains": {
+                              "type": "object",
+                              "required": [
+                                "gate"
+                              ],
+                              "properties": {
+                                "gate": {
+                                  "const": 6
+                                }
+                              }
+                            },
+                            "minContains": 1,
+                            "maxContains": 1
+                          },
+                          {
+                            "contains": {
+                              "type": "object",
+                              "required": [
+                                "gate"
+                              ],
+                              "properties": {
+                                "gate": {
+                                  "const": 7
+                                }
+                              }
+                            },
+                            "minContains": 1,
+                            "maxContains": 1
+                          },
+                          {
+                            "contains": {
+                              "type": "object",
+                              "required": [
+                                "gate"
+                              ],
+                              "properties": {
+                                "gate": {
+                                  "const": 8
+                                }
+                              }
+                            },
+                            "minContains": 1,
+                            "maxContains": 1
+                          },
+                          {
+                            "contains": {
+                              "type": "object",
+                              "required": [
+                                "gate"
+                              ],
+                              "properties": {
+                                "gate": {
+                                  "const": 9
+                                }
+                              }
+                            },
+                            "minContains": 1,
+                            "maxContains": 1
+                          }
+                        ],
+                        "items": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "gate",
+                            "pass",
+                            "reason"
+                          ],
+                          "properties": {
+                            "gate": {
+                              "type": "integer",
+                              "minimum": 1,
+                              "maximum": 9
+                            },
+                            "pass": {
+                              "type": "boolean"
+                            },
+                            "reason": {
+                              "type": "string",
+                              "minLength": 1,
+                              "pattern": "\\S"
+                            }
+                          }
+                        }
+                      },
+                      "tone": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                          "pass",
+                          "reason"
+                        ],
+                        "properties": {
+                          "pass": {
+                            "type": "boolean"
+                          },
+                          "reason": {
+                            "type": "string",
+                            "minLength": 1,
+                            "pattern": "\\S"
+                          }
+                        }
+                      },
+                      "claims": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                          "pass",
+                          "reason"
+                        ],
+                        "properties": {
+                          "pass": {
+                            "type": "boolean"
+                          },
+                          "reason": {
+                            "type": "string",
+                            "minLength": 1,
+                            "pattern": "\\S"
+                          }
+                        }
+                      }
+                    },
+                    "allOf": [
+                      {
+                        "if": {
+                          "required": [
+                            "pass"
+                          ],
+                          "properties": {
+                            "pass": {
+                              "const": true
+                            }
+                          }
+                        },
+                        "then": {
+                          "properties": {
+                            "gates": {
+                              "items": {
+                                "required": [
+                                  "pass"
+                                ],
+                                "properties": {
+                                  "pass": {
+                                    "const": true
+                                  }
+                                }
+                              }
+                            },
+                            "tone": {
+                              "required": [
+                                "pass"
+                              ],
+                              "properties": {
+                                "pass": {
+                                  "const": true
+                                }
+                              }
+                            },
+                            "claims": {
+                              "required": [
+                                "pass"
+                              ],
+                              "properties": {
+                                "pass": {
+                                  "const": true
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            },
+            "candidate_schema_version": "oddspark-candidate/v1",
+            "candidate": {
+              "version": 1,
+              "mode": "domain",
+              "title": "Monday Follow-Up Relay",
+              "plan": "Add a small staff-approved follow-up queue around the existing appointment-request form so unanswered requests return to the front desk at the next useful moment.",
+              "why_fits": {
+                "text": "The practice already accepts appointment requests online and keeps a later Monday window, so the smallest useful change is a follow-up relay around that familiar routine.",
+                "breadcrumb": "Open late on Mondays"
+              },
+              "what_gets_better": "Requests are less likely to sit between the website and the front desk, while staff keep control of every patient conversation.",
+              "before_after": {
+                "before": "A request enters the current form and staff remember to revisit it between other work.",
+                "after": "The same request enters the same form and appears in a short staff-approved follow-up queue."
+              },
+              "change_level": {
+                "time_range": "1–2 weeks",
+                "steps_changed": 2,
+                "steps_removed": 1,
+                "preliminary": true
+              },
+              "stays_same": {
+                "tools": [
+                  "Existing website request form",
+                  "Current appointment calendar"
+                ],
+                "authority": [
+                  "Front-desk staff decide when and how to contact a requester"
+                ],
+                "steps": [
+                  "Patients use the existing form",
+                  "Staff confirm appointments in the current calendar"
+                ]
+              },
+              "invitation": "Hearn Systems can map the smallest version of this Spark around the existing form and show exactly how the relay would work.",
+              "grounded_numbers": []
+            },
+            "candidate_ref": "36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891"
+          },
+          "sha256": "a3b74fb258de22438187aa7dd54b53f92ddb3fe0f7fccb61f5627acfc3332fc7",
+          "adapter_input": {
+            "messages": [
+              {
+                "role": "system",
+                "content": "You are the independent Oddspark judge. Evaluate the supplied synthetic Candidate Brief against every check below.\n\n1. Recognizable routine: starts from a credible routine and recurring annoyance.\n2. Constructive intervention: every friction leads to an imaginable solution.\n3. Capability inventory: does not duplicate an existing capability.\n4. Channel fit: uses an observed channel or clearly introduces a fitting one.\n5. Proportionality: matches likely scale, complexity, and maintenance capacity.\n6. Delivery fit: Hearn Systems could implement it as software, AI automation, integration, data workflow, or adjacent digital system.\n7. Preservation: retains helpful tools, workflow steps, and decision rights it need not change.\n8. Natural retelling: a person could naturally explain the situation, capability, and payoff.\n9. Novel but imaginable: goes beyond the obvious while remaining concrete.\n\nAlso evaluate tone (confident plan, plain language, no pitch, no consultant-speak, no bare-mush effects) and claims (qualitative unless supplied evidence grounds a number). Use the supplied grounding report; do not add a grounding field or a tenth gate.\n\nReturn only one JSON value matching the supplied schema. Include gates 1 through 9 exactly once. Set top-level pass to true only when all nine gates, tone, and claims pass."
+              },
+              {
+                "role": "user",
+                "content": "{\"candidate_ref\":\"36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891\",\"input\":{\"candidate\":{\"before_after\":{\"after\":\"The same request enters the same form and appears in a short staff-approved follow-up queue.\",\"before\":\"A request enters the current form and staff remember to revisit it between other work.\"},\"change_level\":{\"preliminary\":true,\"steps_changed\":2,\"steps_removed\":1,\"time_range\":\"1–2 weeks\"},\"grounded_numbers\":[],\"invitation\":\"Hearn Systems can map the smallest version of this Spark around the existing form and show exactly how the relay would work.\",\"mode\":\"domain\",\"plan\":\"Add a small staff-approved follow-up queue around the existing appointment-request form so unanswered requests return to the front desk at the next useful moment.\",\"stays_same\":{\"authority\":[\"Front-desk staff decide when and how to contact a requester\"],\"steps\":[\"Patients use the existing form\",\"Staff confirm appointments in the current calendar\"],\"tools\":[\"Existing website request form\",\"Current appointment calendar\"]},\"title\":\"Monday Follow-Up Relay\",\"version\":1,\"what_gets_better\":\"Requests are less likely to sit between the website and the front desk, while staff keep control of every patient conversation.\",\"why_fits\":{\"breadcrumb\":\"Open late on Mondays\",\"text\":\"The practice already accepts appointment requests online and keeps a later Monday window, so the smallest useful change is a follow-up relay around that familiar routine.\"}},\"evidence_bundle\":{\"capabilities\":[\"Online appointment requests\",\"Existing appointment calendar\"],\"channels\":[\"Website request form\",\"Phone\"],\"clarity\":\"clear\",\"observation\":{\"text\":\"Request an appointment online. Open late on Mondays. Call the front desk with questions.\",\"url\":\"https://synthetic.example.invalid/appointments\"},\"scanned_urls\":[\"https://synthetic.example.invalid/\",\"https://synthetic.example.invalid/appointments\"],\"vertical\":\"Family dental practice\"},\"grounding_report\":{\"breadcrumb_count\":1,\"claims\":[{\"field\":\"candidate.why_fits.breadcrumb\",\"matched_text\":\"Open late on Mondays\",\"source\":\"evidence_bundle.observation.text\"}],\"fixture_only\":true,\"issues\":[],\"numeric_claims\":[],\"pii_free\":true,\"schema_version\":\"synthetic-grounding-report/v1\",\"valid\":true},\"synthetic\":true}}"
+              }
+            ],
+            "max_tokens": 2048,
+            "temperature": 0,
+            "response_format": {
+              "type": "json_schema",
+              "json_schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "candidate_ref",
+                  "verdict"
+                ],
+                "properties": {
+                  "candidate_ref": {
+                    "type": "string",
+                    "pattern": "^[a-f0-9]{64}$"
+                  },
+                  "verdict": {
+                    "$schema": "https://json-schema.org/draft/2020-12/schema",
+                    "title": "Oddspark judge verdict v1",
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "pass",
+                      "gates",
+                      "tone",
+                      "claims"
+                    ],
+                    "properties": {
+                      "pass": {
+                        "type": "boolean"
+                      },
+                      "gates": {
+                        "type": "array",
+                        "minItems": 9,
+                        "maxItems": 9,
+                        "allOf": [
+                          {
+                            "contains": {
+                              "type": "object",
+                              "required": [
+                                "gate"
+                              ],
+                              "properties": {
+                                "gate": {
+                                  "const": 1
+                                }
+                              }
+                            },
+                            "minContains": 1,
+                            "maxContains": 1
+                          },
+                          {
+                            "contains": {
+                              "type": "object",
+                              "required": [
+                                "gate"
+                              ],
+                              "properties": {
+                                "gate": {
+                                  "const": 2
+                                }
+                              }
+                            },
+                            "minContains": 1,
+                            "maxContains": 1
+                          },
+                          {
+                            "contains": {
+                              "type": "object",
+                              "required": [
+                                "gate"
+                              ],
+                              "properties": {
+                                "gate": {
+                                  "const": 3
+                                }
+                              }
+                            },
+                            "minContains": 1,
+                            "maxContains": 1
+                          },
+                          {
+                            "contains": {
+                              "type": "object",
+                              "required": [
+                                "gate"
+                              ],
+                              "properties": {
+                                "gate": {
+                                  "const": 4
+                                }
+                              }
+                            },
+                            "minContains": 1,
+                            "maxContains": 1
+                          },
+                          {
+                            "contains": {
+                              "type": "object",
+                              "required": [
+                                "gate"
+                              ],
+                              "properties": {
+                                "gate": {
+                                  "const": 5
+                                }
+                              }
+                            },
+                            "minContains": 1,
+                            "maxContains": 1
+                          },
+                          {
+                            "contains": {
+                              "type": "object",
+                              "required": [
+                                "gate"
+                              ],
+                              "properties": {
+                                "gate": {
+                                  "const": 6
+                                }
+                              }
+                            },
+                            "minContains": 1,
+                            "maxContains": 1
+                          },
+                          {
+                            "contains": {
+                              "type": "object",
+                              "required": [
+                                "gate"
+                              ],
+                              "properties": {
+                                "gate": {
+                                  "const": 7
+                                }
+                              }
+                            },
+                            "minContains": 1,
+                            "maxContains": 1
+                          },
+                          {
+                            "contains": {
+                              "type": "object",
+                              "required": [
+                                "gate"
+                              ],
+                              "properties": {
+                                "gate": {
+                                  "const": 8
+                                }
+                              }
+                            },
+                            "minContains": 1,
+                            "maxContains": 1
+                          },
+                          {
+                            "contains": {
+                              "type": "object",
+                              "required": [
+                                "gate"
+                              ],
+                              "properties": {
+                                "gate": {
+                                  "const": 9
+                                }
+                              }
+                            },
+                            "minContains": 1,
+                            "maxContains": 1
+                          }
+                        ],
+                        "items": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "gate",
+                            "pass",
+                            "reason"
+                          ],
+                          "properties": {
+                            "gate": {
+                              "type": "integer",
+                              "minimum": 1,
+                              "maximum": 9
+                            },
+                            "pass": {
+                              "type": "boolean"
+                            },
+                            "reason": {
+                              "type": "string",
+                              "minLength": 1,
+                              "pattern": "\\S"
+                            }
+                          }
+                        }
+                      },
+                      "tone": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                          "pass",
+                          "reason"
+                        ],
+                        "properties": {
+                          "pass": {
+                            "type": "boolean"
+                          },
+                          "reason": {
+                            "type": "string",
+                            "minLength": 1,
+                            "pattern": "\\S"
+                          }
+                        }
+                      },
+                      "claims": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                          "pass",
+                          "reason"
+                        ],
+                        "properties": {
+                          "pass": {
+                            "type": "boolean"
+                          },
+                          "reason": {
+                            "type": "string",
+                            "minLength": 1,
+                            "pattern": "\\S"
+                          }
+                        }
+                      }
+                    },
+                    "allOf": [
+                      {
+                        "if": {
+                          "required": [
+                            "pass"
+                          ],
+                          "properties": {
+                            "pass": {
+                              "const": true
+                            }
+                          }
+                        },
+                        "then": {
+                          "properties": {
+                            "gates": {
+                              "items": {
+                                "required": [
+                                  "pass"
+                                ],
+                                "properties": {
+                                  "pass": {
+                                    "const": true
+                                  }
+                                }
+                              }
+                            },
+                            "tone": {
+                              "required": [
+                                "pass"
+                              ],
+                              "properties": {
+                                "pass": {
+                                  "const": true
+                                }
+                              }
+                            },
+                            "claims": {
+                              "required": [
+                                "pass"
+                              ],
+                              "properties": {
+                                "pass": {
+                                  "const": true
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "adapter_input_sha256": "6efa2a67b01ca530d856309dfb60c19fb926361f743ca9b45499acc2bd43e6d0"
+        }
+      ]
+    },
+    "outbound_request_sha256": "131692f56e5f0205aad8cd390491920b43012edb03269837ef68fa3394a6c5b8"
+  },
+  "run": {
+    "id": "e848e2bd-dc86-40e0-90da-45bee83fcc6d",
+    "started_at": "2026-08-22T18:03:29.480Z",
+    "ended_at": "2026-08-22T18:05:22.167Z",
+    "models": [
+      "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+      "@cf/meta/llama-3.1-8b-instruct-fast"
+    ],
+    "authorization": {
+      "operator_approved": true,
+      "profile_confirmed": true,
+      "headroom_confirmed": true,
+      "approved_call_cap": 42,
+      "estimated_calls": 42,
+      "calls_made": 42,
+      "plan": "paid",
+      "remaining_free_neurons": null,
+      "estimated_gross_neurons": 26323.920000000002
+    },
+    "preflight_checks": {
+      "plan_match": true,
+      "approval_preflight": {
+        "valid": true,
+        "errors": []
+      },
+      "offline_errors": [],
+      "adapter": {
+        "attempted": true,
+        "identity_match": true
+      },
+      "approval_at_run_start": {
+        "valid": true,
+        "errors": []
+      }
+    },
+    "preflight_blockers": []
+  },
+  "fixtures": {
+    "declared_ids": [
+      "verdict:valid-all-pass",
+      "verdict:valid-shuffled-gates",
+      "verdict:valid-fail-safe-all-reported-pass",
+      "verdict:valid-fail-safe-with-reported-failure",
+      "verdict:null-verdict",
+      "verdict:array-verdict",
+      "verdict:missing-claims",
+      "verdict:extra-top-level",
+      "verdict:pass-string",
+      "verdict:short-gates",
+      "verdict:long-gates",
+      "verdict:duplicate-and-missing-gate",
+      "verdict:string-gate",
+      "verdict:fractional-gate",
+      "verdict:gate-zero",
+      "verdict:gate-ten",
+      "verdict:gate-missing-pass",
+      "verdict:gate-extra-property",
+      "verdict:gate-empty-reason",
+      "verdict:tone-missing-reason",
+      "verdict:tone-empty-reason",
+      "verdict:tone-extra-property",
+      "verdict:claims-empty-reason",
+      "verdict:claims-extra-property",
+      "verdict:claims-string-pass",
+      "verdict:unsafe-gate-aggregate-pass",
+      "verdict:unsafe-tone-aggregate-pass",
+      "verdict:unsafe-claims-aggregate-pass",
+      "normalization:provider-error",
+      "normalization:timeout",
+      "normalization:empty-response",
+      "normalization:unknown-location",
+      "normalization:direct-response-object",
+      "normalization:direct-response-text",
+      "normalization:direct-result-text",
+      "normalization:direct-choice-text",
+      "normalization:identical-duplicates",
+      "normalization:semantic-not-byte-duplicates",
+      "normalization:object-and-text-duplicates",
+      "normalization:repair-bom",
+      "normalization:repair-json-fence",
+      "normalization:repair-double-encoded",
+      "normalization:repair-prose",
+      "normalization:repair-prose-string-braces",
+      "normalization:reject-truncated",
+      "normalization:reject-two-objects",
+      "normalization:reject-trailing-comma",
+      "normalization:reject-single-quotes",
+      "normalization:reject-unquoted-keys",
+      "normalization:reject-comments",
+      "normalization:reject-unlabeled-fence",
+      "normalization:reject-multiple-fences",
+      "normalization:reject-array",
+      "normalization:reject-primitive",
+      "normalization:reject-schema",
+      "normalization:reject-bom-plus-fence",
+      "normalization:reject-fence-plus-prose",
+      "normalization:reject-double-double",
+      "normalization:exact-size",
+      "normalization:over-size",
+      "normalization:conflict-before-size",
+      "normalization:identical-oversize",
+      "v2:bound-direct-object",
+      "v2:bound-direct-text",
+      "v2:bound-repair-fence",
+      "v2:binding-missing",
+      "v2:binding-extra",
+      "v2:binding-non-string",
+      "v2:binding-mismatch",
+      "v2:outer-extra",
+      "v2:verdict-extra",
+      "v2:verdict-blank-reason",
+      "v2:verdict-duplicate-gate",
+      "v2:verdict-unsafe-pass",
+      "v2:bound-chained-repair",
+      "v2:bound-ambiguous-before-size",
+      "v2:bound-oversized",
+      "v2:bound-provider-error",
+      "v2:bound-timeout"
+    ],
+    "passing_ids": [
+      "verdict:valid-all-pass",
+      "verdict:valid-shuffled-gates",
+      "verdict:valid-fail-safe-all-reported-pass",
+      "verdict:valid-fail-safe-with-reported-failure",
+      "verdict:null-verdict",
+      "verdict:array-verdict",
+      "verdict:missing-claims",
+      "verdict:extra-top-level",
+      "verdict:pass-string",
+      "verdict:short-gates",
+      "verdict:long-gates",
+      "verdict:duplicate-and-missing-gate",
+      "verdict:string-gate",
+      "verdict:fractional-gate",
+      "verdict:gate-zero",
+      "verdict:gate-ten",
+      "verdict:gate-missing-pass",
+      "verdict:gate-extra-property",
+      "verdict:gate-empty-reason",
+      "verdict:tone-missing-reason",
+      "verdict:tone-empty-reason",
+      "verdict:tone-extra-property",
+      "verdict:claims-empty-reason",
+      "verdict:claims-extra-property",
+      "verdict:claims-string-pass",
+      "verdict:unsafe-gate-aggregate-pass",
+      "verdict:unsafe-tone-aggregate-pass",
+      "verdict:unsafe-claims-aggregate-pass",
+      "normalization:provider-error",
+      "normalization:timeout",
+      "normalization:empty-response",
+      "normalization:unknown-location",
+      "normalization:direct-response-object",
+      "normalization:direct-response-text",
+      "normalization:direct-result-text",
+      "normalization:direct-choice-text",
+      "normalization:identical-duplicates",
+      "normalization:semantic-not-byte-duplicates",
+      "normalization:object-and-text-duplicates",
+      "normalization:repair-bom",
+      "normalization:repair-json-fence",
+      "normalization:repair-double-encoded",
+      "normalization:repair-prose",
+      "normalization:repair-prose-string-braces",
+      "normalization:reject-truncated",
+      "normalization:reject-two-objects",
+      "normalization:reject-trailing-comma",
+      "normalization:reject-single-quotes",
+      "normalization:reject-unquoted-keys",
+      "normalization:reject-comments",
+      "normalization:reject-unlabeled-fence",
+      "normalization:reject-multiple-fences",
+      "normalization:reject-array",
+      "normalization:reject-primitive",
+      "normalization:reject-schema",
+      "normalization:reject-bom-plus-fence",
+      "normalization:reject-fence-plus-prose",
+      "normalization:reject-double-double",
+      "normalization:exact-size",
+      "normalization:over-size",
+      "normalization:conflict-before-size",
+      "normalization:identical-oversize",
+      "v2:bound-direct-object",
+      "v2:bound-direct-text",
+      "v2:bound-repair-fence",
+      "v2:binding-missing",
+      "v2:binding-extra",
+      "v2:binding-non-string",
+      "v2:binding-mismatch",
+      "v2:outer-extra",
+      "v2:verdict-extra",
+      "v2:verdict-blank-reason",
+      "v2:verdict-duplicate-gate",
+      "v2:verdict-unsafe-pass",
+      "v2:bound-chained-repair",
+      "v2:bound-ambiguous-before-size",
+      "v2:bound-oversized",
+      "v2:bound-provider-error",
+      "v2:bound-timeout"
+    ],
+    "failures": []
+  },
+  "records": [
+    {
+      "kind": "probe",
+      "model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+      "index": 1,
+      "started_at": "2026-08-22T18:03:29.572Z",
+      "ended_at": "2026-08-22T18:03:36.765Z",
+      "call_state": "received",
+      "error_code": null,
+      "envelope": {
+        "choices": [
+          {
+            "message": {
+              "content": "{\"candidate_ref\": \"36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891\", \"verdict\": {\"pass\": true, \"gates\": {\"1\": true, \"2\": true, \"3\": true, \"4\": true, \"5\": true, \"6\": true, \"7\": true, \"8\": true, \"9\": true}, \"tone\": \"confident plan, plain language, no pitch, no consultant-speak, no bare-mush effects\", \"claims\": \"qualitative\"}}"
+            }
+          }
+        ]
+      },
+      "usage": {
+        "prompt_tokens": 768,
+        "completion_tokens": 130,
+        "total_tokens": 898
+      },
+      "request_sha256": "93e5dd51babc27749c915be811a178021c31296cce6144dfd40b5b97e043463f",
+      "candidate_ref": "36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891",
+      "classification": "schema_invalid",
+      "repair_kind": null,
+      "verdict_sha256": null
+    },
+    {
+      "kind": "probe",
+      "model": "@cf/meta/llama-3.1-8b-instruct-fast",
+      "index": 1,
+      "started_at": "2026-08-22T18:03:36.805Z",
+      "ended_at": "2026-08-22T18:03:37.850Z",
+      "call_state": "received",
+      "error_code": null,
+      "envelope": {
+        "choices": [
+          {
+            "message": {
+              "content": "{\n  \"candidate_ref\": \"36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891\",\n  \"verdict\": {\n    \"pass\": true,\n    \"gates\": {\n      \"1\": true,\n      \"2\": true,\n      \"3\": true,\n      \"4\": true,\n      \"5\": true,\n      \"6\": true,\n      \"7\": true,\n      \"8\": true,\n      \"9\": true\n    },\n    \"tone\": \"pass\",\n    \"claims\": \"pass\"\n  }\n}"
+            }
+          }
+        ]
+      },
+      "usage": {
+        "prompt_tokens": 768,
+        "completion_tokens": 133,
+        "total_tokens": 901
+      },
+      "request_sha256": "a3b74fb258de22438187aa7dd54b53f92ddb3fe0f7fccb61f5627acfc3332fc7",
+      "candidate_ref": "36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891",
+      "classification": "schema_invalid",
+      "repair_kind": null,
+      "verdict_sha256": null
+    },
+    {
+      "kind": "trial",
+      "model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+      "index": 1,
+      "started_at": "2026-08-22T18:03:37.869Z",
+      "ended_at": "2026-08-22T18:03:42.444Z",
+      "call_state": "received",
+      "error_code": null,
+      "envelope": {
+        "choices": [
+          {
+            "message": {
+              "content": "{\"candidate_ref\": \"36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891\", \"verdict\": {\"pass\": true, \"gates\": {\"1\": true, \"2\": true, \"3\": true, \"4\": true, \"5\": true, \"6\": true, \"7\": true, \"8\": true, \"9\": true}, \"tone\": \"confident plan, plain language, no pitch, no consultant-speak, no bare-mush effects\", \"claims\": \"qualitative\"}}"
+            }
+          }
+        ]
+      },
+      "usage": {
+        "prompt_tokens": 768,
+        "completion_tokens": 130,
+        "total_tokens": 898
+      },
+      "request_sha256": "93e5dd51babc27749c915be811a178021c31296cce6144dfd40b5b97e043463f",
+      "candidate_ref": "36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891",
+      "classification": "schema_invalid",
+      "repair_kind": null,
+      "verdict_sha256": null
+    },
+    {
+      "kind": "trial",
+      "model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+      "index": 2,
+      "started_at": "2026-08-22T18:03:42.474Z",
+      "ended_at": "2026-08-22T18:03:46.020Z",
+      "call_state": "received",
+      "error_code": null,
+      "envelope": {
+        "choices": [
+          {
+            "message": {
+              "content": "{\"candidate_ref\": \"36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891\", \"verdict\": {\"pass\": true, \"gates\": {\"1\": true, \"2\": true, \"3\": true, \"4\": true, \"5\": true, \"6\": true, \"7\": true, \"8\": true, \"9\": true}, \"tone\": \"confident plan, plain language, no pitch, no consultant-speak, no bare-mush effects\", \"claims\": \"qualitative\"}}"
+            }
+          }
+        ]
+      },
+      "usage": {
+        "prompt_tokens": 768,
+        "completion_tokens": 130,
+        "total_tokens": 898
+      },
+      "request_sha256": "93e5dd51babc27749c915be811a178021c31296cce6144dfd40b5b97e043463f",
+      "candidate_ref": "36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891",
+      "classification": "schema_invalid",
+      "repair_kind": null,
+      "verdict_sha256": null
+    },
+    {
+      "kind": "trial",
+      "model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+      "index": 3,
+      "started_at": "2026-08-22T18:03:46.044Z",
+      "ended_at": "2026-08-22T18:03:49.865Z",
+      "call_state": "received",
+      "error_code": null,
+      "envelope": {
+        "choices": [
+          {
+            "message": {
+              "content": "{\"candidate_ref\": \"36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891\", \"verdict\": {\"pass\": true, \"gates\": {\"1\": true, \"2\": true, \"3\": true, \"4\": true, \"5\": true, \"6\": true, \"7\": true, \"8\": true, \"9\": true}, \"tone\": \"confident plan, plain language, no pitch, no consultant-speak, no bare-mush effects\", \"claims\": \"qualitative\"}}"
+            }
+          }
+        ]
+      },
+      "usage": {
+        "prompt_tokens": 768,
+        "completion_tokens": 130,
+        "total_tokens": 898
+      },
+      "request_sha256": "93e5dd51babc27749c915be811a178021c31296cce6144dfd40b5b97e043463f",
+      "candidate_ref": "36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891",
+      "classification": "schema_invalid",
+      "repair_kind": null,
+      "verdict_sha256": null
+    },
+    {
+      "kind": "trial",
+      "model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+      "index": 4,
+      "started_at": "2026-08-22T18:03:49.904Z",
+      "ended_at": "2026-08-22T18:03:53.863Z",
+      "call_state": "received",
+      "error_code": null,
+      "envelope": {
+        "choices": [
+          {
+            "message": {
+              "content": "{\"candidate_ref\": \"36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891\", \"verdict\": {\"pass\": true, \"gates\": {\"1\": true, \"2\": true, \"3\": true, \"4\": true, \"5\": true, \"6\": true, \"7\": true, \"8\": true, \"9\": true}, \"tone\": \"confident plan, plain language, no pitch, no consultant-speak, no bare-mush effects\", \"claims\": \"qualitative\"}}"
+            }
+          }
+        ]
+      },
+      "usage": {
+        "prompt_tokens": 768,
+        "completion_tokens": 130,
+        "total_tokens": 898
+      },
+      "request_sha256": "93e5dd51babc27749c915be811a178021c31296cce6144dfd40b5b97e043463f",
+      "candidate_ref": "36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891",
+      "classification": "schema_invalid",
+      "repair_kind": null,
+      "verdict_sha256": null
+    },
+    {
+      "kind": "trial",
+      "model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+      "index": 5,
+      "started_at": "2026-08-22T18:03:53.888Z",
+      "ended_at": "2026-08-22T18:03:58.163Z",
+      "call_state": "received",
+      "error_code": null,
+      "envelope": {
+        "choices": [
+          {
+            "message": {
+              "content": "{\"candidate_ref\": \"36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891\", \"verdict\": {\"pass\": true, \"gates\": {\"1\": true, \"2\": true, \"3\": true, \"4\": true, \"5\": true, \"6\": true, \"7\": true, \"8\": true, \"9\": true}, \"tone\": \"confident plan, plain language, no pitch, no consultant-speak, no bare-mush effects\", \"claims\": \"qualitative\"}}"
+            }
+          }
+        ]
+      },
+      "usage": {
+        "prompt_tokens": 768,
+        "completion_tokens": 130,
+        "total_tokens": 898
+      },
+      "request_sha256": "93e5dd51babc27749c915be811a178021c31296cce6144dfd40b5b97e043463f",
+      "candidate_ref": "36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891",
+      "classification": "schema_invalid",
+      "repair_kind": null,
+      "verdict_sha256": null
+    },
+    {
+      "kind": "trial",
+      "model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+      "index": 6,
+      "started_at": "2026-08-22T18:03:58.224Z",
+      "ended_at": "2026-08-22T18:04:01.883Z",
+      "call_state": "received",
+      "error_code": null,
+      "envelope": {
+        "choices": [
+          {
+            "message": {
+              "content": "{\"candidate_ref\": \"36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891\", \"verdict\": {\"pass\": true, \"gates\": {\"1\": true, \"2\": true, \"3\": true, \"4\": true, \"5\": true, \"6\": true, \"7\": true, \"8\": true, \"9\": true}, \"tone\": \"confident plan, plain language, no pitch, no consultant-speak, no bare-mush effects\", \"claims\": \"qualitative\"}}"
+            }
+          }
+        ]
+      },
+      "usage": {
+        "prompt_tokens": 768,
+        "completion_tokens": 130,
+        "total_tokens": 898
+      },
+      "request_sha256": "93e5dd51babc27749c915be811a178021c31296cce6144dfd40b5b97e043463f",
+      "candidate_ref": "36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891",
+      "classification": "schema_invalid",
+      "repair_kind": null,
+      "verdict_sha256": null
+    },
+    {
+      "kind": "trial",
+      "model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+      "index": 7,
+      "started_at": "2026-08-22T18:04:01.960Z",
+      "ended_at": "2026-08-22T18:04:05.218Z",
+      "call_state": "received",
+      "error_code": null,
+      "envelope": {
+        "choices": [
+          {
+            "message": {
+              "content": "{\"candidate_ref\": \"36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891\", \"verdict\": {\"pass\": true, \"gates\": {\"1\": true, \"2\": true, \"3\": true, \"4\": true, \"5\": true, \"6\": true, \"7\": true, \"8\": true, \"9\": true}, \"tone\": true, \"claims\": true}}"
+            }
+          }
+        ]
+      },
+      "usage": {
+        "prompt_tokens": 768,
+        "completion_tokens": 108,
+        "total_tokens": 876
+      },
+      "request_sha256": "93e5dd51babc27749c915be811a178021c31296cce6144dfd40b5b97e043463f",
+      "candidate_ref": "36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891",
+      "classification": "schema_invalid",
+      "repair_kind": null,
+      "verdict_sha256": null
+    },
+    {
+      "kind": "trial",
+      "model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+      "index": 8,
+      "started_at": "2026-08-22T18:04:05.254Z",
+      "ended_at": "2026-08-22T18:04:09.385Z",
+      "call_state": "received",
+      "error_code": null,
+      "envelope": {
+        "choices": [
+          {
+            "message": {
+              "content": "{\"candidate_ref\": \"36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891\", \"verdict\": {\"pass\": true, \"gates\": {\"1\": true, \"2\": true, \"3\": true, \"4\": true, \"5\": true, \"6\": true, \"7\": true, \"8\": true, \"9\": true}, \"tone\": \"confident plan, plain language, no pitch, no consultant-speak, no bare-mush effects\", \"claims\": \"qualitative\"}}"
+            }
+          }
+        ]
+      },
+      "usage": {
+        "prompt_tokens": 768,
+        "completion_tokens": 130,
+        "total_tokens": 898
+      },
+      "request_sha256": "93e5dd51babc27749c915be811a178021c31296cce6144dfd40b5b97e043463f",
+      "candidate_ref": "36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891",
+      "classification": "schema_invalid",
+      "repair_kind": null,
+      "verdict_sha256": null
+    },
+    {
+      "kind": "trial",
+      "model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+      "index": 9,
+      "started_at": "2026-08-22T18:04:09.422Z",
+      "ended_at": "2026-08-22T18:04:14.033Z",
+      "call_state": "received",
+      "error_code": null,
+      "envelope": {
+        "choices": [
+          {
+            "message": {
+              "content": "{\"candidate_ref\": \"36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891\", \"verdict\": {\"pass\": true, \"gates\": {\"1\": true, \"2\": true, \"3\": true, \"4\": true, \"5\": true, \"6\": true, \"7\": true, \"8\": true, \"9\": true}, \"tone\": \"confident plan, plain language, no pitch, no consultant-speak, no bare-mush effects\", \"claims\": \"qualitative\"}}"
+            }
+          }
+        ]
+      },
+      "usage": {
+        "prompt_tokens": 768,
+        "completion_tokens": 130,
+        "total_tokens": 898
+      },
+      "request_sha256": "93e5dd51babc27749c915be811a178021c31296cce6144dfd40b5b97e043463f",
+      "candidate_ref": "36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891",
+      "classification": "schema_invalid",
+      "repair_kind": null,
+      "verdict_sha256": null
+    },
+    {
+      "kind": "trial",
+      "model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+      "index": 10,
+      "started_at": "2026-08-22T18:04:14.106Z",
+      "ended_at": "2026-08-22T18:04:18.085Z",
+      "call_state": "received",
+      "error_code": null,
+      "envelope": {
+        "choices": [
+          {
+            "message": {
+              "content": "{\"candidate_ref\": \"36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891\", \"verdict\": {\"pass\": true, \"gates\": {\"1\": true, \"2\": true, \"3\": true, \"4\": true, \"5\": true, \"6\": true, \"7\": true, \"8\": true, \"9\": true}, \"tone\": \"confident plan, plain language, no pitch, no consultant-speak, no bare-mush effects\", \"claims\": \"qualitative\"}}"
+            }
+          }
+        ]
+      },
+      "usage": {
+        "prompt_tokens": 768,
+        "completion_tokens": 130,
+        "total_tokens": 898
+      },
+      "request_sha256": "93e5dd51babc27749c915be811a178021c31296cce6144dfd40b5b97e043463f",
+      "candidate_ref": "36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891",
+      "classification": "schema_invalid",
+      "repair_kind": null,
+      "verdict_sha256": null
+    },
+    {
+      "kind": "trial",
+      "model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+      "index": 11,
+      "started_at": "2026-08-22T18:04:18.122Z",
+      "ended_at": "2026-08-22T18:04:21.233Z",
+      "call_state": "received",
+      "error_code": null,
+      "envelope": {
+        "choices": [
+          {
+            "message": {
+              "content": "{\"candidate_ref\": \"36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891\", \"verdict\": {\"pass\": true, \"gates\": {\"1\": true, \"2\": true, \"3\": true, \"4\": true, \"5\": true, \"6\": true, \"7\": true, \"8\": true, \"9\": true}, \"tone\": true, \"claims\": true}}"
+            }
+          }
+        ]
+      },
+      "usage": {
+        "prompt_tokens": 768,
+        "completion_tokens": 108,
+        "total_tokens": 876
+      },
+      "request_sha256": "93e5dd51babc27749c915be811a178021c31296cce6144dfd40b5b97e043463f",
+      "candidate_ref": "36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891",
+      "classification": "schema_invalid",
+      "repair_kind": null,
+      "verdict_sha256": null
+    },
+    {
+      "kind": "trial",
+      "model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+      "index": 12,
+      "started_at": "2026-08-22T18:04:21.271Z",
+      "ended_at": "2026-08-22T18:04:24.430Z",
+      "call_state": "received",
+      "error_code": null,
+      "envelope": {
+        "choices": [
+          {
+            "message": {
+              "content": "{\"candidate_ref\": \"36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891\", \"verdict\": {\"pass\": true, \"gates\": {\"1\": true, \"2\": true, \"3\": true, \"4\": true, \"5\": true, \"6\": true, \"7\": true, \"8\": true, \"9\": true}, \"tone\": true, \"claims\": true}}"
+            }
+          }
+        ]
+      },
+      "usage": {
+        "prompt_tokens": 768,
+        "completion_tokens": 108,
+        "total_tokens": 876
+      },
+      "request_sha256": "93e5dd51babc27749c915be811a178021c31296cce6144dfd40b5b97e043463f",
+      "candidate_ref": "36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891",
+      "classification": "schema_invalid",
+      "repair_kind": null,
+      "verdict_sha256": null
+    },
+    {
+      "kind": "trial",
+      "model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+      "index": 13,
+      "started_at": "2026-08-22T18:04:24.467Z",
+      "ended_at": "2026-08-22T18:04:28.350Z",
+      "call_state": "received",
+      "error_code": null,
+      "envelope": {
+        "choices": [
+          {
+            "message": {
+              "content": "{\"candidate_ref\": \"36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891\", \"verdict\": {\"pass\": true, \"gates\": {\"1\": true, \"2\": true, \"3\": true, \"4\": true, \"5\": true, \"6\": true, \"7\": true, \"8\": true, \"9\": true}, \"tone\": \"confident plan, plain language, no pitch, no consultant-speak, no bare-mush effects\", \"claims\": \"qualitative\"}}"
+            }
+          }
+        ]
+      },
+      "usage": {
+        "prompt_tokens": 768,
+        "completion_tokens": 130,
+        "total_tokens": 898
+      },
+      "request_sha256": "93e5dd51babc27749c915be811a178021c31296cce6144dfd40b5b97e043463f",
+      "candidate_ref": "36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891",
+      "classification": "schema_invalid",
+      "repair_kind": null,
+      "verdict_sha256": null
+    },
+    {
+      "kind": "trial",
+      "model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+      "index": 14,
+      "started_at": "2026-08-22T18:04:28.403Z",
+      "ended_at": "2026-08-22T18:04:32.044Z",
+      "call_state": "received",
+      "error_code": null,
+      "envelope": {
+        "choices": [
+          {
+            "message": {
+              "content": "{\"candidate_ref\": \"36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891\", \"verdict\": {\"pass\": true, \"gates\": {\"1\": true, \"2\": true, \"3\": true, \"4\": true, \"5\": true, \"6\": true, \"7\": true, \"8\": true, \"9\": true}, \"tone\": \"confident plan, plain language, no pitch, no consultant-speak, no bare-mush effects\", \"claims\": \"qualitative\"}}"
+            }
+          }
+        ]
+      },
+      "usage": {
+        "prompt_tokens": 768,
+        "completion_tokens": 130,
+        "total_tokens": 898
+      },
+      "request_sha256": "93e5dd51babc27749c915be811a178021c31296cce6144dfd40b5b97e043463f",
+      "candidate_ref": "36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891",
+      "classification": "schema_invalid",
+      "repair_kind": null,
+      "verdict_sha256": null
+    },
+    {
+      "kind": "trial",
+      "model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+      "index": 15,
+      "started_at": "2026-08-22T18:04:32.110Z",
+      "ended_at": "2026-08-22T18:04:36.000Z",
+      "call_state": "received",
+      "error_code": null,
+      "envelope": {
+        "choices": [
+          {
+            "message": {
+              "content": "{\"candidate_ref\": \"36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891\", \"verdict\": {\"pass\": true, \"gates\": {\"1\": true, \"2\": true, \"3\": true, \"4\": true, \"5\": true, \"6\": true, \"7\": true, \"8\": true, \"9\": true}, \"tone\": \"confident plan, plain language, no pitch, no consultant-speak, no bare-mush effects\", \"claims\": \"qualitative\"}}"
+            }
+          }
+        ]
+      },
+      "usage": {
+        "prompt_tokens": 768,
+        "completion_tokens": 130,
+        "total_tokens": 898
+      },
+      "request_sha256": "93e5dd51babc27749c915be811a178021c31296cce6144dfd40b5b97e043463f",
+      "candidate_ref": "36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891",
+      "classification": "schema_invalid",
+      "repair_kind": null,
+      "verdict_sha256": null
+    },
+    {
+      "kind": "trial",
+      "model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+      "index": 16,
+      "started_at": "2026-08-22T18:04:36.018Z",
+      "ended_at": "2026-08-22T18:04:39.781Z",
+      "call_state": "received",
+      "error_code": null,
+      "envelope": {
+        "choices": [
+          {
+            "message": {
+              "content": "{\"candidate_ref\": \"36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891\", \"verdict\": {\"pass\": true, \"gates\": {\"1\": true, \"2\": true, \"3\": true, \"4\": true, \"5\": true, \"6\": true, \"7\": true, \"8\": true, \"9\": true}, \"tone\": \"confident plan, plain language, no pitch, no consultant-speak, no bare-mush effects\", \"claims\": \"qualitative\"}}"
+            }
+          }
+        ]
+      },
+      "usage": {
+        "prompt_tokens": 768,
+        "completion_tokens": 130,
+        "total_tokens": 898
+      },
+      "request_sha256": "93e5dd51babc27749c915be811a178021c31296cce6144dfd40b5b97e043463f",
+      "candidate_ref": "36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891",
+      "classification": "schema_invalid",
+      "repair_kind": null,
+      "verdict_sha256": null
+    },
+    {
+      "kind": "trial",
+      "model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+      "index": 17,
+      "started_at": "2026-08-22T18:04:39.845Z",
+      "ended_at": "2026-08-22T18:04:42.958Z",
+      "call_state": "received",
+      "error_code": null,
+      "envelope": {
+        "choices": [
+          {
+            "message": {
+              "content": "{\"candidate_ref\": \"36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891\", \"verdict\": {\"pass\": true, \"gates\": {\"1\": true, \"2\": true, \"3\": true, \"4\": true, \"5\": true, \"6\": true, \"7\": true, \"8\": true, \"9\": true}, \"tone\": true, \"claims\": true}}"
+            }
+          }
+        ]
+      },
+      "usage": {
+        "prompt_tokens": 768,
+        "completion_tokens": 108,
+        "total_tokens": 876
+      },
+      "request_sha256": "93e5dd51babc27749c915be811a178021c31296cce6144dfd40b5b97e043463f",
+      "candidate_ref": "36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891",
+      "classification": "schema_invalid",
+      "repair_kind": null,
+      "verdict_sha256": null
+    },
+    {
+      "kind": "trial",
+      "model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+      "index": 18,
+      "started_at": "2026-08-22T18:04:43.014Z",
+      "ended_at": "2026-08-22T18:04:46.665Z",
+      "call_state": "received",
+      "error_code": null,
+      "envelope": {
+        "choices": [
+          {
+            "message": {
+              "content": "{\"candidate_ref\": \"36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891\", \"verdict\": {\"pass\": true, \"gates\": {\"1\": true, \"2\": true, \"3\": true, \"4\": true, \"5\": true, \"6\": true, \"7\": true, \"8\": true, \"9\": true}, \"tone\": \"confident plan, plain language, no pitch, no consultant-speak, no bare-mush effects\", \"claims\": \"qualitative\"}}"
+            }
+          }
+        ]
+      },
+      "usage": {
+        "prompt_tokens": 768,
+        "completion_tokens": 130,
+        "total_tokens": 898
+      },
+      "request_sha256": "93e5dd51babc27749c915be811a178021c31296cce6144dfd40b5b97e043463f",
+      "candidate_ref": "36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891",
+      "classification": "schema_invalid",
+      "repair_kind": null,
+      "verdict_sha256": null
+    },
+    {
+      "kind": "trial",
+      "model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+      "index": 19,
+      "started_at": "2026-08-22T18:04:46.764Z",
+      "ended_at": "2026-08-22T18:04:50.479Z",
+      "call_state": "received",
+      "error_code": null,
+      "envelope": {
+        "choices": [
+          {
+            "message": {
+              "content": "{\"candidate_ref\": \"36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891\", \"verdict\": {\"pass\": true, \"gates\": {\"1\": true, \"2\": true, \"3\": true, \"4\": true, \"5\": true, \"6\": true, \"7\": true, \"8\": true, \"9\": true}, \"tone\": \"confident plan, plain language, no pitch, no consultant-speak, no bare-mush effects\", \"claims\": \"qualitative\"}}"
+            }
+          }
+        ]
+      },
+      "usage": {
+        "prompt_tokens": 768,
+        "completion_tokens": 130,
+        "total_tokens": 898
+      },
+      "request_sha256": "93e5dd51babc27749c915be811a178021c31296cce6144dfd40b5b97e043463f",
+      "candidate_ref": "36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891",
+      "classification": "schema_invalid",
+      "repair_kind": null,
+      "verdict_sha256": null
+    },
+    {
+      "kind": "trial",
+      "model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+      "index": 20,
+      "started_at": "2026-08-22T18:04:50.581Z",
+      "ended_at": "2026-08-22T18:04:56.885Z",
+      "call_state": "received",
+      "error_code": null,
+      "envelope": {
+        "choices": [
+          {
+            "message": {
+              "content": "{\"candidate_ref\": \"36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891\", \"verdict\": {\"pass\": true, \"gates\": {\"1\": true, \"2\": true, \"3\": true, \"4\": true, \"5\": true, \"6\": true, \"7\": true, \"8\": true, \"9\": true}, \"tone\": \"confident plan, plain language, no pitch, no consultant-speak, no bare-mush effects\", \"claims\": \"qualitative\"}}"
+            }
+          }
+        ]
+      },
+      "usage": {
+        "prompt_tokens": 768,
+        "completion_tokens": 130,
+        "total_tokens": 898
+      },
+      "request_sha256": "93e5dd51babc27749c915be811a178021c31296cce6144dfd40b5b97e043463f",
+      "candidate_ref": "36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891",
+      "classification": "schema_invalid",
+      "repair_kind": null,
+      "verdict_sha256": null
+    },
+    {
+      "kind": "trial",
+      "model": "@cf/meta/llama-3.1-8b-instruct-fast",
+      "index": 1,
+      "started_at": "2026-08-22T18:04:56.951Z",
+      "ended_at": "2026-08-22T18:04:57.776Z",
+      "call_state": "received",
+      "error_code": null,
+      "envelope": {
+        "choices": [
+          {
+            "message": {
+              "content": "{\n  \"candidate_ref\": \"36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891\",\n  \"verdict\": {\n    \"pass\": true,\n    \"gates\": {\n      \"1\": true,\n      \"2\": true,\n      \"3\": true,\n      \"4\": true,\n      \"5\": true,\n      \"6\": true,\n      \"7\": true,\n      \"8\": true,\n      \"9\": true\n    },\n    \"tone\": \"pass\",\n    \"claims\": \"pass\"\n  }\n}"
+            }
+          }
+        ]
+      },
+      "usage": {
+        "prompt_tokens": 768,
+        "completion_tokens": 133,
+        "total_tokens": 901
+      },
+      "request_sha256": "a3b74fb258de22438187aa7dd54b53f92ddb3fe0f7fccb61f5627acfc3332fc7",
+      "candidate_ref": "36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891",
+      "classification": "schema_invalid",
+      "repair_kind": null,
+      "verdict_sha256": null
+    },
+    {
+      "kind": "trial",
+      "model": "@cf/meta/llama-3.1-8b-instruct-fast",
+      "index": 2,
+      "started_at": "2026-08-22T18:04:57.831Z",
+      "ended_at": "2026-08-22T18:04:59.106Z",
+      "call_state": "received",
+      "error_code": null,
+      "envelope": {
+        "choices": [
+          {
+            "message": {
+              "content": "{\n  \"candidate_ref\": \"36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891\",\n  \"verdict\": {\n    \"pass\": true,\n    \"gates\": {\n      \"1\": true,\n      \"2\": true,\n      \"3\": true,\n      \"4\": true,\n      \"5\": true,\n      \"6\": true,\n      \"7\": true,\n      \"8\": true,\n      \"9\": true\n    },\n    \"tone\": \"pass\",\n    \"claims\": \"pass\"\n  }\n}"
+            }
+          }
+        ]
+      },
+      "usage": {
+        "prompt_tokens": 768,
+        "completion_tokens": 133,
+        "total_tokens": 901
+      },
+      "request_sha256": "a3b74fb258de22438187aa7dd54b53f92ddb3fe0f7fccb61f5627acfc3332fc7",
+      "candidate_ref": "36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891",
+      "classification": "schema_invalid",
+      "repair_kind": null,
+      "verdict_sha256": null
+    },
+    {
+      "kind": "trial",
+      "model": "@cf/meta/llama-3.1-8b-instruct-fast",
+      "index": 3,
+      "started_at": "2026-08-22T18:04:59.161Z",
+      "ended_at": "2026-08-22T18:05:00.568Z",
+      "call_state": "received",
+      "error_code": null,
+      "envelope": {
+        "choices": [
+          {
+            "message": {
+              "content": "{\n  \"candidate_ref\": \"36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891\",\n  \"verdict\": {\n    \"pass\": true,\n    \"gates\": {\n      \"1\": true,\n      \"2\": true,\n      \"3\": true,\n      \"4\": true,\n      \"5\": true,\n      \"6\": true,\n      \"7\": true,\n      \"8\": true,\n      \"9\": true\n    },\n    \"tone\": \"pass\",\n    \"claims\": \"pass\"\n  }\n}"
+            }
+          }
+        ]
+      },
+      "usage": {
+        "prompt_tokens": 768,
+        "completion_tokens": 133,
+        "total_tokens": 901
+      },
+      "request_sha256": "a3b74fb258de22438187aa7dd54b53f92ddb3fe0f7fccb61f5627acfc3332fc7",
+      "candidate_ref": "36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891",
+      "classification": "schema_invalid",
+      "repair_kind": null,
+      "verdict_sha256": null
+    },
+    {
+      "kind": "trial",
+      "model": "@cf/meta/llama-3.1-8b-instruct-fast",
+      "index": 4,
+      "started_at": "2026-08-22T18:05:00.611Z",
+      "ended_at": "2026-08-22T18:05:01.603Z",
+      "call_state": "received",
+      "error_code": null,
+      "envelope": {
+        "choices": [
+          {
+            "message": {
+              "content": "{\n  \"candidate_ref\": \"36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891\",\n  \"verdict\": {\n    \"pass\": true,\n    \"gates\": {\n      \"1\": true,\n      \"2\": true,\n      \"3\": true,\n      \"4\": true,\n      \"5\": true,\n      \"6\": true,\n      \"7\": true,\n      \"8\": true,\n      \"9\": true\n    },\n    \"tone\": \"pass\",\n    \"claims\": \"pass\"\n  }\n}"
+            }
+          }
+        ]
+      },
+      "usage": {
+        "prompt_tokens": 768,
+        "completion_tokens": 133,
+        "total_tokens": 901
+      },
+      "request_sha256": "a3b74fb258de22438187aa7dd54b53f92ddb3fe0f7fccb61f5627acfc3332fc7",
+      "candidate_ref": "36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891",
+      "classification": "schema_invalid",
+      "repair_kind": null,
+      "verdict_sha256": null
+    },
+    {
+      "kind": "trial",
+      "model": "@cf/meta/llama-3.1-8b-instruct-fast",
+      "index": 5,
+      "started_at": "2026-08-22T18:05:01.808Z",
+      "ended_at": "2026-08-22T18:05:02.880Z",
+      "call_state": "received",
+      "error_code": null,
+      "envelope": {
+        "choices": [
+          {
+            "message": {
+              "content": "{\n  \"candidate_ref\": \"36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891\",\n  \"verdict\": {\n    \"pass\": true,\n    \"gates\": {\n      \"1\": true,\n      \"2\": true,\n      \"3\": true,\n      \"4\": true,\n      \"5\": true,\n      \"6\": true,\n      \"7\": true,\n      \"8\": true,\n      \"9\": true\n    },\n    \"tone\": \"pass\",\n    \"claims\": \"pass\"\n  }\n}"
+            }
+          }
+        ]
+      },
+      "usage": {
+        "prompt_tokens": 768,
+        "completion_tokens": 133,
+        "total_tokens": 901
+      },
+      "request_sha256": "a3b74fb258de22438187aa7dd54b53f92ddb3fe0f7fccb61f5627acfc3332fc7",
+      "candidate_ref": "36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891",
+      "classification": "schema_invalid",
+      "repair_kind": null,
+      "verdict_sha256": null
+    },
+    {
+      "kind": "trial",
+      "model": "@cf/meta/llama-3.1-8b-instruct-fast",
+      "index": 6,
+      "started_at": "2026-08-22T18:05:02.961Z",
+      "ended_at": "2026-08-22T18:05:05.456Z",
+      "call_state": "received",
+      "error_code": null,
+      "envelope": {
+        "choices": [
+          {
+            "message": {
+              "content": "{\n  \"candidate_ref\": \"36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891\",\n  \"verdict\": {\n    \"pass\": true,\n    \"gates\": {\n      \"1\": true,\n      \"2\": true,\n      \"3\": true,\n      \"4\": true,\n      \"5\": true,\n      \"6\": true,\n      \"7\": true,\n      \"8\": true,\n      \"9\": true\n    },\n    \"tone\": \"pass\",\n    \"claims\": \"pass\"\n  }\n}"
+            }
+          }
+        ]
+      },
+      "usage": {
+        "prompt_tokens": 768,
+        "completion_tokens": 133,
+        "total_tokens": 901
+      },
+      "request_sha256": "a3b74fb258de22438187aa7dd54b53f92ddb3fe0f7fccb61f5627acfc3332fc7",
+      "candidate_ref": "36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891",
+      "classification": "schema_invalid",
+      "repair_kind": null,
+      "verdict_sha256": null
+    },
+    {
+      "kind": "trial",
+      "model": "@cf/meta/llama-3.1-8b-instruct-fast",
+      "index": 7,
+      "started_at": "2026-08-22T18:05:05.492Z",
+      "ended_at": "2026-08-22T18:05:06.574Z",
+      "call_state": "received",
+      "error_code": null,
+      "envelope": {
+        "choices": [
+          {
+            "message": {
+              "content": "{\n  \"candidate_ref\": \"36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891\",\n  \"verdict\": {\n    \"pass\": true,\n    \"gates\": {\n      \"1\": true,\n      \"2\": true,\n      \"3\": true,\n      \"4\": true,\n      \"5\": true,\n      \"6\": true,\n      \"7\": true,\n      \"8\": true,\n      \"9\": true\n    },\n    \"tone\": \"pass\",\n    \"claims\": \"pass\"\n  }\n}"
+            }
+          }
+        ]
+      },
+      "usage": {
+        "prompt_tokens": 768,
+        "completion_tokens": 133,
+        "total_tokens": 901
+      },
+      "request_sha256": "a3b74fb258de22438187aa7dd54b53f92ddb3fe0f7fccb61f5627acfc3332fc7",
+      "candidate_ref": "36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891",
+      "classification": "schema_invalid",
+      "repair_kind": null,
+      "verdict_sha256": null
+    },
+    {
+      "kind": "trial",
+      "model": "@cf/meta/llama-3.1-8b-instruct-fast",
+      "index": 8,
+      "started_at": "2026-08-22T18:05:06.664Z",
+      "ended_at": "2026-08-22T18:05:07.675Z",
+      "call_state": "received",
+      "error_code": null,
+      "envelope": {
+        "choices": [
+          {
+            "message": {
+              "content": "{\n  \"candidate_ref\": \"36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891\",\n  \"verdict\": {\n    \"pass\": true,\n    \"gates\": {\n      \"1\": true,\n      \"2\": true,\n      \"3\": true,\n      \"4\": true,\n      \"5\": true,\n      \"6\": true,\n      \"7\": true,\n      \"8\": true,\n      \"9\": true\n    },\n    \"tone\": \"pass\",\n    \"claims\": \"pass\"\n  }\n}"
+            }
+          }
+        ]
+      },
+      "usage": {
+        "prompt_tokens": 768,
+        "completion_tokens": 133,
+        "total_tokens": 901
+      },
+      "request_sha256": "a3b74fb258de22438187aa7dd54b53f92ddb3fe0f7fccb61f5627acfc3332fc7",
+      "candidate_ref": "36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891",
+      "classification": "schema_invalid",
+      "repair_kind": null,
+      "verdict_sha256": null
+    },
+    {
+      "kind": "trial",
+      "model": "@cf/meta/llama-3.1-8b-instruct-fast",
+      "index": 9,
+      "started_at": "2026-08-22T18:05:07.717Z",
+      "ended_at": "2026-08-22T18:05:08.722Z",
+      "call_state": "received",
+      "error_code": null,
+      "envelope": {
+        "choices": [
+          {
+            "message": {
+              "content": "{\n  \"candidate_ref\": \"36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891\",\n  \"verdict\": {\n    \"pass\": true,\n    \"gates\": {\n      \"1\": true,\n      \"2\": true,\n      \"3\": true,\n      \"4\": true,\n      \"5\": true,\n      \"6\": true,\n      \"7\": true,\n      \"8\": true,\n      \"9\": true\n    },\n    \"tone\": \"pass\",\n    \"claims\": \"pass\"\n  }\n}"
+            }
+          }
+        ]
+      },
+      "usage": {
+        "prompt_tokens": 768,
+        "completion_tokens": 133,
+        "total_tokens": 901
+      },
+      "request_sha256": "a3b74fb258de22438187aa7dd54b53f92ddb3fe0f7fccb61f5627acfc3332fc7",
+      "candidate_ref": "36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891",
+      "classification": "schema_invalid",
+      "repair_kind": null,
+      "verdict_sha256": null
+    },
+    {
+      "kind": "trial",
+      "model": "@cf/meta/llama-3.1-8b-instruct-fast",
+      "index": 10,
+      "started_at": "2026-08-22T18:05:08.756Z",
+      "ended_at": "2026-08-22T18:05:09.999Z",
+      "call_state": "received",
+      "error_code": null,
+      "envelope": {
+        "choices": [
+          {
+            "message": {
+              "content": "{\n  \"candidate_ref\": \"36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891\",\n  \"verdict\": {\n    \"pass\": true,\n    \"gates\": {\n      \"1\": true,\n      \"2\": true,\n      \"3\": true,\n      \"4\": true,\n      \"5\": true,\n      \"6\": true,\n      \"7\": true,\n      \"8\": true,\n      \"9\": true\n    },\n    \"tone\": \"pass\",\n    \"claims\": \"pass\"\n  }\n}"
+            }
+          }
+        ]
+      },
+      "usage": {
+        "prompt_tokens": 768,
+        "completion_tokens": 133,
+        "total_tokens": 901
+      },
+      "request_sha256": "a3b74fb258de22438187aa7dd54b53f92ddb3fe0f7fccb61f5627acfc3332fc7",
+      "candidate_ref": "36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891",
+      "classification": "schema_invalid",
+      "repair_kind": null,
+      "verdict_sha256": null
+    },
+    {
+      "kind": "trial",
+      "model": "@cf/meta/llama-3.1-8b-instruct-fast",
+      "index": 11,
+      "started_at": "2026-08-22T18:05:10.020Z",
+      "ended_at": "2026-08-22T18:05:11.094Z",
+      "call_state": "received",
+      "error_code": null,
+      "envelope": {
+        "choices": [
+          {
+            "message": {
+              "content": "{\n  \"candidate_ref\": \"36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891\",\n  \"verdict\": {\n    \"pass\": true,\n    \"gates\": {\n      \"1\": true,\n      \"2\": true,\n      \"3\": true,\n      \"4\": true,\n      \"5\": true,\n      \"6\": true,\n      \"7\": true,\n      \"8\": true,\n      \"9\": true\n    },\n    \"tone\": \"pass\",\n    \"claims\": \"pass\"\n  }\n}"
+            }
+          }
+        ]
+      },
+      "usage": {
+        "prompt_tokens": 768,
+        "completion_tokens": 133,
+        "total_tokens": 901
+      },
+      "request_sha256": "a3b74fb258de22438187aa7dd54b53f92ddb3fe0f7fccb61f5627acfc3332fc7",
+      "candidate_ref": "36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891",
+      "classification": "schema_invalid",
+      "repair_kind": null,
+      "verdict_sha256": null
+    },
+    {
+      "kind": "trial",
+      "model": "@cf/meta/llama-3.1-8b-instruct-fast",
+      "index": 12,
+      "started_at": "2026-08-22T18:05:11.115Z",
+      "ended_at": "2026-08-22T18:05:12.281Z",
+      "call_state": "received",
+      "error_code": null,
+      "envelope": {
+        "choices": [
+          {
+            "message": {
+              "content": "{\n  \"candidate_ref\": \"36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891\",\n  \"verdict\": {\n    \"pass\": true,\n    \"gates\": {\n      \"1\": true,\n      \"2\": true,\n      \"3\": true,\n      \"4\": true,\n      \"5\": true,\n      \"6\": true,\n      \"7\": true,\n      \"8\": true,\n      \"9\": true\n    },\n    \"tone\": \"pass\",\n    \"claims\": \"pass\"\n  }\n}"
+            }
+          }
+        ]
+      },
+      "usage": {
+        "prompt_tokens": 768,
+        "completion_tokens": 133,
+        "total_tokens": 901
+      },
+      "request_sha256": "a3b74fb258de22438187aa7dd54b53f92ddb3fe0f7fccb61f5627acfc3332fc7",
+      "candidate_ref": "36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891",
+      "classification": "schema_invalid",
+      "repair_kind": null,
+      "verdict_sha256": null
+    },
+    {
+      "kind": "trial",
+      "model": "@cf/meta/llama-3.1-8b-instruct-fast",
+      "index": 13,
+      "started_at": "2026-08-22T18:05:12.302Z",
+      "ended_at": "2026-08-22T18:05:13.371Z",
+      "call_state": "received",
+      "error_code": null,
+      "envelope": {
+        "choices": [
+          {
+            "message": {
+              "content": "{\n  \"candidate_ref\": \"36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891\",\n  \"verdict\": {\n    \"pass\": true,\n    \"gates\": {\n      \"1\": true,\n      \"2\": true,\n      \"3\": true,\n      \"4\": true,\n      \"5\": true,\n      \"6\": true,\n      \"7\": true,\n      \"8\": true,\n      \"9\": true\n    },\n    \"tone\": \"pass\",\n    \"claims\": \"pass\"\n  }\n}"
+            }
+          }
+        ]
+      },
+      "usage": {
+        "prompt_tokens": 768,
+        "completion_tokens": 133,
+        "total_tokens": 901
+      },
+      "request_sha256": "a3b74fb258de22438187aa7dd54b53f92ddb3fe0f7fccb61f5627acfc3332fc7",
+      "candidate_ref": "36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891",
+      "classification": "schema_invalid",
+      "repair_kind": null,
+      "verdict_sha256": null
+    },
+    {
+      "kind": "trial",
+      "model": "@cf/meta/llama-3.1-8b-instruct-fast",
+      "index": 14,
+      "started_at": "2026-08-22T18:05:13.502Z",
+      "ended_at": "2026-08-22T18:05:14.840Z",
+      "call_state": "received",
+      "error_code": null,
+      "envelope": {
+        "choices": [
+          {
+            "message": {
+              "content": "{\n  \"candidate_ref\": \"36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891\",\n  \"verdict\": {\n    \"pass\": true,\n    \"gates\": {\n      \"1\": true,\n      \"2\": true,\n      \"3\": true,\n      \"4\": true,\n      \"5\": true,\n      \"6\": true,\n      \"7\": true,\n      \"8\": true,\n      \"9\": true\n    },\n    \"tone\": \"pass\",\n    \"claims\": \"pass\"\n  }\n}"
+            }
+          }
+        ]
+      },
+      "usage": {
+        "prompt_tokens": 768,
+        "completion_tokens": 133,
+        "total_tokens": 901
+      },
+      "request_sha256": "a3b74fb258de22438187aa7dd54b53f92ddb3fe0f7fccb61f5627acfc3332fc7",
+      "candidate_ref": "36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891",
+      "classification": "schema_invalid",
+      "repair_kind": null,
+      "verdict_sha256": null
+    },
+    {
+      "kind": "trial",
+      "model": "@cf/meta/llama-3.1-8b-instruct-fast",
+      "index": 15,
+      "started_at": "2026-08-22T18:05:14.856Z",
+      "ended_at": "2026-08-22T18:05:15.978Z",
+      "call_state": "received",
+      "error_code": null,
+      "envelope": {
+        "choices": [
+          {
+            "message": {
+              "content": "{\n  \"candidate_ref\": \"36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891\",\n  \"verdict\": {\n    \"pass\": true,\n    \"gates\": {\n      \"1\": true,\n      \"2\": true,\n      \"3\": true,\n      \"4\": true,\n      \"5\": true,\n      \"6\": true,\n      \"7\": true,\n      \"8\": true,\n      \"9\": true\n    },\n    \"tone\": \"pass\",\n    \"claims\": \"pass\"\n  }\n}"
+            }
+          }
+        ]
+      },
+      "usage": {
+        "prompt_tokens": 768,
+        "completion_tokens": 133,
+        "total_tokens": 901
+      },
+      "request_sha256": "a3b74fb258de22438187aa7dd54b53f92ddb3fe0f7fccb61f5627acfc3332fc7",
+      "candidate_ref": "36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891",
+      "classification": "schema_invalid",
+      "repair_kind": null,
+      "verdict_sha256": null
+    },
+    {
+      "kind": "trial",
+      "model": "@cf/meta/llama-3.1-8b-instruct-fast",
+      "index": 16,
+      "started_at": "2026-08-22T18:05:16.004Z",
+      "ended_at": "2026-08-22T18:05:17.028Z",
+      "call_state": "received",
+      "error_code": null,
+      "envelope": {
+        "choices": [
+          {
+            "message": {
+              "content": "{\n  \"candidate_ref\": \"36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891\",\n  \"verdict\": {\n    \"pass\": true,\n    \"gates\": {\n      \"1\": true,\n      \"2\": true,\n      \"3\": true,\n      \"4\": true,\n      \"5\": true,\n      \"6\": true,\n      \"7\": true,\n      \"8\": true,\n      \"9\": true\n    },\n    \"tone\": \"pass\",\n    \"claims\": \"pass\"\n  }\n}"
+            }
+          }
+        ]
+      },
+      "usage": {
+        "prompt_tokens": 768,
+        "completion_tokens": 133,
+        "total_tokens": 901
+      },
+      "request_sha256": "a3b74fb258de22438187aa7dd54b53f92ddb3fe0f7fccb61f5627acfc3332fc7",
+      "candidate_ref": "36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891",
+      "classification": "schema_invalid",
+      "repair_kind": null,
+      "verdict_sha256": null
+    },
+    {
+      "kind": "trial",
+      "model": "@cf/meta/llama-3.1-8b-instruct-fast",
+      "index": 17,
+      "started_at": "2026-08-22T18:05:17.123Z",
+      "ended_at": "2026-08-22T18:05:18.369Z",
+      "call_state": "received",
+      "error_code": null,
+      "envelope": {
+        "choices": [
+          {
+            "message": {
+              "content": "{\n  \"candidate_ref\": \"36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891\",\n  \"verdict\": {\n    \"pass\": true,\n    \"gates\": {\n      \"1\": true,\n      \"2\": true,\n      \"3\": true,\n      \"4\": true,\n      \"5\": true,\n      \"6\": true,\n      \"7\": true,\n      \"8\": true,\n      \"9\": true\n    },\n    \"tone\": \"pass\",\n    \"claims\": \"pass\"\n  }\n}"
+            }
+          }
+        ]
+      },
+      "usage": {
+        "prompt_tokens": 768,
+        "completion_tokens": 133,
+        "total_tokens": 901
+      },
+      "request_sha256": "a3b74fb258de22438187aa7dd54b53f92ddb3fe0f7fccb61f5627acfc3332fc7",
+      "candidate_ref": "36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891",
+      "classification": "schema_invalid",
+      "repair_kind": null,
+      "verdict_sha256": null
+    },
+    {
+      "kind": "trial",
+      "model": "@cf/meta/llama-3.1-8b-instruct-fast",
+      "index": 18,
+      "started_at": "2026-08-22T18:05:18.385Z",
+      "ended_at": "2026-08-22T18:05:19.133Z",
+      "call_state": "received",
+      "error_code": null,
+      "envelope": {
+        "choices": [
+          {
+            "message": {
+              "content": "{\n  \"candidate_ref\": \"36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891\",\n  \"verdict\": {\n    \"pass\": true,\n    \"gates\": {\n      \"1\": true,\n      \"2\": true,\n      \"3\": true,\n      \"4\": true,\n      \"5\": true,\n      \"6\": true,\n      \"7\": true,\n      \"8\": true,\n      \"9\": true\n    },\n    \"tone\": \"pass\",\n    \"claims\": \"pass\"\n  }\n}"
+            }
+          }
+        ]
+      },
+      "usage": {
+        "prompt_tokens": 768,
+        "completion_tokens": 133,
+        "total_tokens": 901
+      },
+      "request_sha256": "a3b74fb258de22438187aa7dd54b53f92ddb3fe0f7fccb61f5627acfc3332fc7",
+      "candidate_ref": "36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891",
+      "classification": "schema_invalid",
+      "repair_kind": null,
+      "verdict_sha256": null
+    },
+    {
+      "kind": "trial",
+      "model": "@cf/meta/llama-3.1-8b-instruct-fast",
+      "index": 19,
+      "started_at": "2026-08-22T18:05:19.155Z",
+      "ended_at": "2026-08-22T18:05:20.184Z",
+      "call_state": "received",
+      "error_code": null,
+      "envelope": {
+        "choices": [
+          {
+            "message": {
+              "content": "{\n  \"candidate_ref\": \"36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891\",\n  \"verdict\": {\n    \"pass\": true,\n    \"gates\": {\n      \"1\": true,\n      \"2\": true,\n      \"3\": true,\n      \"4\": true,\n      \"5\": true,\n      \"6\": true,\n      \"7\": true,\n      \"8\": true,\n      \"9\": true\n    },\n    \"tone\": \"pass\",\n    \"claims\": \"pass\"\n  }\n}"
+            }
+          }
+        ]
+      },
+      "usage": {
+        "prompt_tokens": 768,
+        "completion_tokens": 133,
+        "total_tokens": 901
+      },
+      "request_sha256": "a3b74fb258de22438187aa7dd54b53f92ddb3fe0f7fccb61f5627acfc3332fc7",
+      "candidate_ref": "36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891",
+      "classification": "schema_invalid",
+      "repair_kind": null,
+      "verdict_sha256": null
+    },
+    {
+      "kind": "trial",
+      "model": "@cf/meta/llama-3.1-8b-instruct-fast",
+      "index": 20,
+      "started_at": "2026-08-22T18:05:20.248Z",
+      "ended_at": "2026-08-22T18:05:21.240Z",
+      "call_state": "received",
+      "error_code": null,
+      "envelope": {
+        "choices": [
+          {
+            "message": {
+              "content": "{\n  \"candidate_ref\": \"36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891\",\n  \"verdict\": {\n    \"pass\": true,\n    \"gates\": {\n      \"1\": true,\n      \"2\": true,\n      \"3\": true,\n      \"4\": true,\n      \"5\": true,\n      \"6\": true,\n      \"7\": true,\n      \"8\": true,\n      \"9\": true\n    },\n    \"tone\": \"pass\",\n    \"claims\": \"pass\"\n  }\n}"
+            }
+          }
+        ]
+      },
+      "usage": {
+        "prompt_tokens": 768,
+        "completion_tokens": 133,
+        "total_tokens": 901
+      },
+      "request_sha256": "a3b74fb258de22438187aa7dd54b53f92ddb3fe0f7fccb61f5627acfc3332fc7",
+      "candidate_ref": "36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891",
+      "classification": "schema_invalid",
+      "repair_kind": null,
+      "verdict_sha256": null
+    }
+  ],
+  "summary": {
+    "by_model": {
+      "@cf/meta/llama-3.3-70b-instruct-fp8-fast": {
+        "total": 20,
+        "direct_valid": 0,
+        "repaired_valid": 0,
+        "direct_rate": {
+          "numerator": 0,
+          "denominator": 20,
+          "percent": 0
+        },
+        "post_repair_rate": {
+          "numerator": 0,
+          "denominator": 20,
+          "percent": 0
+        }
+      },
+      "@cf/meta/llama-3.1-8b-instruct-fast": {
+        "total": 20,
+        "direct_valid": 0,
+        "repaired_valid": 0,
+        "direct_rate": {
+          "numerator": 0,
+          "denominator": 20,
+          "percent": 0
+        },
+        "post_repair_rate": {
+          "numerator": 0,
+          "denominator": 20,
+          "percent": 0
+        }
+      }
+    }
+  },
+  "outcome": {
+    "decision": "NO-GO",
+    "reasons": [
+      "@cf/meta/llama-3.3-70b-instruct-fp8-fast: direct-valid rate is below 95%.",
+      "@cf/meta/llama-3.1-8b-instruct-fast: direct-valid rate is below 95%."
+    ]
+  },
+  "predicate_results": [
+    {
+      "id": "evidence.shape",
+      "pass": true
+    },
+    {
+      "id": "oracle.identity",
+      "pass": true
+    },
+    {
+      "id": "legacy.immutable",
+      "pass": true
+    },
+    {
+      "id": "runtime.identity",
+      "pass": true
+    },
+    {
+      "id": "source.identity",
+      "pass": true
+    },
+    {
+      "id": "adapter.identity",
+      "pass": true
+    },
+    {
+      "id": "candidate.binding",
+      "pass": true
+    },
+    {
+      "id": "fixtures.executed",
+      "pass": true
+    },
+    {
+      "id": "records.classified",
+      "pass": true
+    },
+    {
+      "id": "records.closed",
+      "pass": true
+    },
+    {
+      "id": "run.authorization",
+      "pass": true
+    },
+    {
+      "id": "run.cardinality",
+      "pass": true
+    },
+    {
+      "id": "run.ordering",
+      "pass": true
+    },
+    {
+      "id": "run.common_request",
+      "pass": true
+    },
+    {
+      "id": "summary.rates",
+      "pass": true
+    },
+    {
+      "id": "outcome.deterministic",
+      "pass": true
+    },
+    {
+      "id": "predicates.retained",
+      "pass": true
+    },
+    {
+      "id": "report.deterministic",
+      "pass": true
+    }
+  ],
+  "report": "# Judge Recovery Evidence v2\n\n- Profile: **operational**\n- Decision: **NO-GO**\n- Run: `e848e2bd-dc86-40e0-90da-45bee83fcc6d` (2026-08-22T18:03:29.480Z to 2026-08-22T18:05:22.167Z)\n- Predicate oracle: `87e15af7b9ad5477862de03bf9b2b049f68932d41eb1cbbf2eaacee1c9ee7ade`\n- Fixtures: 79/79 passed\n- Calls: 42/42\n- Recorded call latency: 109497 ms\n- Usage: 32256 prompt + 5435 completion = 37691 reported tokens; 0 calls missing usage\n- Adapter health: `74d9241e74fdf9f9bf54c31f50882bfda8afb5412affff19a1a8befc03f69ce4`\n- Outbound request manifest: `131692f56e5f0205aad8cd390491920b43012edb03269837ef68fa3394a6c5b8`\n\n## Counted rates\n\n- `@cf/meta/llama-3.3-70b-instruct-fp8-fast`: 20 trials; 0/20 direct-valid (0.00%); 0/20 post-repair (0.00%)\n- `@cf/meta/llama-3.1-8b-instruct-fast`: 20 trials; 0/20 direct-valid (0.00%); 0/20 post-repair (0.00%)\n\n## Taxonomy\n\n- `provider_error`: 0\n- `timeout`: 0\n- `empty_response`: 0\n- `ambiguous_envelope`: 0\n- `output_too_large`: 0\n- `unrecoverable_json`: 0\n- `schema_invalid`: 42\n- `repaired_valid`: 0\n- `direct_valid`: 0\n\n## Source provenance\n\n- `package.json`: 3801 bytes, `bbe7d7c9512bf6944c684867fe03052976349c07c5a0c444106c09b9c70ca7d1`\n- `spikes/judge-fidelity/contract.mjs`: 28345 bytes, `c124dfbf2cb56727bb5fdc8b01622509867460304b3bbf3a635b8f004cc8d8f2`\n- `spikes/judge-fidelity/evidence-v2.mjs`: 38463 bytes, `560b50091eb5118014bdb030488b3a0b90db8e360325f0498b41a22d2f1ee1bd`\n- `spikes/judge-fidelity/fixture-executor.mjs`: 9257 bytes, `6c1504661b3bca904b8d1fdf214e4e4796ca0c82a6041e6433da66c94d142e38`\n- `spikes/judge-fidelity/fixtures.json`: 11555 bytes, `7a5020883ec817809fabc797a6e1bd4af34a24d9bb369a7cce626ca95a97d2e5`\n- `spikes/judge-fidelity/pricing.mjs`: 1243 bytes, `4ab46a4bd4ac34189a82344a4ca6540866364f7299aa9c5eb7e96c7572423b6e`\n- `spikes/judge-fidelity/qualification.mjs`: 40067 bytes, `cf4d15e2dd0d8579e26249603a16a9a00dd3ec2591e00f0bb34c6640cf305179`\n- `spikes/judge-fidelity/recovery-finder.mjs`: 23673 bytes, `4df0572cf69e95d8d1cf4b52682b9a8d600577ba8481b0778b88cb41f0ef8411`\n- `spikes/judge-fidelity/run.mjs`: 70249 bytes, `571fa582ffefcc055d65160e723ea6fafd524e0168d53732f356c698ccab08dd`\n- `spikes/judge-fidelity/start-adapter.mjs`: 1986 bytes, `be5e8958f40c9b1f217cbf3bc6310c19bdc9276c5f5efc7e672b7b05baab7939`\n- `spikes/judge-fidelity/test.mjs`: 130632 bytes, `3936df1fd1c71bceff51149efee8e1bc5d00dcfb150d78525e557b1a4a447f89`\n- `spikes/judge-fidelity/worker.mjs`: 8757 bytes, `cfde74de613619ab1edcdb65c20a4660f3960f256a627930635897105b23b98d`\n- `spikes/judge-fidelity/verify-launcher.mjs`: 1964 bytes, `4b493214762dfe77fa813fa0f4c3e1c23e1e1164ce2a7e2de8c63b88f2a8e6b3`\n- `spikes/judge-fidelity/verify-v2.mjs`: 2956 bytes, `fad9e45e6acc5266516ef92d67678bad3b3fcdd97a588f90d6eca7e8c71e48a5`\n- `spikes/judge-fidelity/wrangler.toml`: 299 bytes, `70799cb70abb4fd3de5bfb04da359290c9226841acecb9be9ac309f80e42dd2d`\n\n## Predicates\n\n- PASS `evidence.shape`\n- PASS `oracle.identity`\n- PASS `legacy.immutable`\n- PASS `runtime.identity`\n- PASS `source.identity`\n- PASS `adapter.identity`\n- PASS `candidate.binding`\n- PASS `fixtures.executed`\n- PASS `records.classified`\n- PASS `records.closed`\n- PASS `run.authorization`\n- PASS `run.cardinality`\n- PASS `run.ordering`\n- PASS `run.common_request`\n- PASS `summary.rates`\n- PASS `outcome.deterministic`\n- PASS `predicates.retained`\n- PASS `report.deterministic`\n\n## Reasons\n\n- @cf/meta/llama-3.3-70b-instruct-fp8-fast: direct-valid rate is below 95%.\n- @cf/meta/llama-3.1-8b-instruct-fast: direct-valid rate is below 95%.\n"
+}
