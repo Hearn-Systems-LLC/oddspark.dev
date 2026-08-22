@@ -1,0 +1,239 @@
+{
+  "manifests": {
+    "primary": {
+      "schema_version": "STRUCT-GENERATION/v2",
+      "role": "primary",
+      "provider": "cloudflare-workers-ai",
+      "resolved_model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+      "decision": "GO",
+      "reasons": [],
+      "evidence_sha256": "995ce4436b06dfd4f5fbfdeb619a2e1d4070cd615d669d00f4ddf2e7754264be",
+      "source_manifest_sha256": "24ddfded209daf1d23abab5a20b6708fce828ee1d4af015f6c4cb5b5af9f4e16",
+      "runtime_identity_sha256": "a3d5ae76d31669bc1f008f7ef3d0fdde14d4a5b1fcb0fc63e70d290cdae32feb",
+      "request_sha256": "d04115e10854b71a6bbe529e86b9753d5920dee150a874265115bbd37679b793",
+      "plan_ref": "54260261cb1e4db6f8f2eea66bc42b4cd184c0889663a2667045ee5f984850ab",
+      "predicate_results": [
+        {
+          "id": "evidence.shape",
+          "pass": true
+        },
+        {
+          "id": "oracle.identity",
+          "pass": true
+        },
+        {
+          "id": "legacy.immutable",
+          "pass": true
+        },
+        {
+          "id": "runtime.identity",
+          "pass": true
+        },
+        {
+          "id": "source.identity",
+          "pass": true
+        },
+        {
+          "id": "adapter.identity",
+          "pass": true
+        },
+        {
+          "id": "candidate.binding",
+          "pass": true
+        },
+        {
+          "id": "fixtures.executed",
+          "pass": true
+        },
+        {
+          "id": "records.classified",
+          "pass": true
+        },
+        {
+          "id": "records.closed",
+          "pass": true
+        },
+        {
+          "id": "run.authorization",
+          "pass": true
+        },
+        {
+          "id": "run.cardinality",
+          "pass": true
+        },
+        {
+          "id": "run.ordering",
+          "pass": true
+        },
+        {
+          "id": "run.common_request",
+          "pass": true
+        },
+        {
+          "id": "summary.rates",
+          "pass": true
+        },
+        {
+          "id": "outcome.deterministic",
+          "pass": true
+        },
+        {
+          "id": "predicates.retained",
+          "pass": true
+        },
+        {
+          "id": "report.deterministic",
+          "pass": true
+        },
+        {
+          "id": "roles.independent",
+          "pass": true
+        },
+        {
+          "id": "output.direct_candidate",
+          "pass": true
+        },
+        {
+          "id": "schedule.transient_retry_only",
+          "pass": true
+        },
+        {
+          "id": "cost.recomputed",
+          "pass": true
+        },
+        {
+          "id": "manifest.independent",
+          "pass": true
+        }
+      ]
+    },
+    "fallback": {
+      "schema_version": "STRUCT-GENERATION/v2",
+      "role": "fallback",
+      "provider": "cloudflare-workers-ai",
+      "resolved_model": "@cf/openai/gpt-oss-20b",
+      "decision": "NO-GO",
+      "reasons": [
+        "direct-valid threshold 19/20 not met"
+      ],
+      "evidence_sha256": "995ce4436b06dfd4f5fbfdeb619a2e1d4070cd615d669d00f4ddf2e7754264be",
+      "source_manifest_sha256": "24ddfded209daf1d23abab5a20b6708fce828ee1d4af015f6c4cb5b5af9f4e16",
+      "runtime_identity_sha256": "a3d5ae76d31669bc1f008f7ef3d0fdde14d4a5b1fcb0fc63e70d290cdae32feb",
+      "request_sha256": "4ca358197291cc50cee7684122b565f392a46e834cd3f1636cbea952ecbc4662",
+      "plan_ref": "54260261cb1e4db6f8f2eea66bc42b4cd184c0889663a2667045ee5f984850ab",
+      "predicate_results": [
+        {
+          "id": "evidence.shape",
+          "pass": true
+        },
+        {
+          "id": "oracle.identity",
+          "pass": true
+        },
+        {
+          "id": "legacy.immutable",
+          "pass": true
+        },
+        {
+          "id": "runtime.identity",
+          "pass": true
+        },
+        {
+          "id": "source.identity",
+          "pass": true
+        },
+        {
+          "id": "adapter.identity",
+          "pass": true
+        },
+        {
+          "id": "candidate.binding",
+          "pass": true
+        },
+        {
+          "id": "fixtures.executed",
+          "pass": true
+        },
+        {
+          "id": "records.classified",
+          "pass": true
+        },
+        {
+          "id": "records.closed",
+          "pass": true
+        },
+        {
+          "id": "run.authorization",
+          "pass": true
+        },
+        {
+          "id": "run.cardinality",
+          "pass": true
+        },
+        {
+          "id": "run.ordering",
+          "pass": true
+        },
+        {
+          "id": "run.common_request",
+          "pass": true
+        },
+        {
+          "id": "summary.rates",
+          "pass": true
+        },
+        {
+          "id": "outcome.deterministic",
+          "pass": true
+        },
+        {
+          "id": "predicates.retained",
+          "pass": true
+        },
+        {
+          "id": "report.deterministic",
+          "pass": true
+        },
+        {
+          "id": "roles.independent",
+          "pass": true
+        },
+        {
+          "id": "output.direct_candidate",
+          "pass": true
+        },
+        {
+          "id": "schedule.transient_retry_only",
+          "pass": true
+        },
+        {
+          "id": "cost.recomputed",
+          "pass": true
+        },
+        {
+          "id": "manifest.independent",
+          "pass": true
+        }
+      ]
+    }
+  },
+  "qualification_refs": {
+    "primary": "34731e26b1c1ef79acd444ba8e775143d9a616c3ab915f52481bd81475796bfc",
+    "fallback": null
+  },
+  "cycle_ref": "e615e7c03568bbf2ef9683131331909d1a5c5a6b6de2feabc3fd98bd9d0da8ae",
+  "role_qualification_set": {
+    "schema_version": "oddspark.generation-role-qualification-set/v1",
+    "role": "generation",
+    "cycle_ref": "e615e7c03568bbf2ef9683131331909d1a5c5a6b6de2feabc3fd98bd9d0da8ae",
+    "source_manifest_sha256": "24ddfded209daf1d23abab5a20b6708fce828ee1d4af015f6c4cb5b5af9f4e16",
+    "ordered_members": [
+      {
+        "role": "primary",
+        "resolved_model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+        "qualification_ref": "34731e26b1c1ef79acd444ba8e775143d9a616c3ab915f52481bd81475796bfc"
+      }
+    ]
+  },
+  "role_qualification_ref": "5cf5a547b29d31304af686c610da9c4c5959299faf12d434db28493de92404b1"
+}
