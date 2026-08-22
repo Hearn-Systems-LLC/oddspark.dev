@@ -73,8 +73,8 @@ export async function findPriorOperationalRecovery(directory, dependencies = {})
   const malformedCurrent = names.filter((name) => currentSuffix.test(name) && !legacy(name) && !RECEIPT.test(name) && !MARKER.test(name) && !/^[A-Za-z0-9][A-Za-z0-9._-]{0,127}-[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\.(?:evidence\.json|qualification\.json|report\.md)$/.test(name));
   if (malformedCurrent.length) throw new Error(`malformed current-looking artifact names: ${malformedCurrent.sort().join(", ")}`);
   const currentMember = /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}-[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\.(?:evidence\.json|qualification\.json|report\.md)$/;
-  const current = names.filter((name) => RECEIPT.test(name) || MARKER.test(name) || currentMember.test(name));
-  const receiptNames = names.filter((name) => RECEIPT.test(name)).sort(); const markerNames = names.filter((name) => MARKER.test(name)).sort();
+  const current = names.filter((name) => !legacy(name) && (RECEIPT.test(name) || MARKER.test(name) || currentMember.test(name)));
+  const receiptNames = current.filter((name) => RECEIPT.test(name)).sort(); const markerNames = current.filter((name) => MARKER.test(name)).sort();
   const receipts = []; for (const name of receiptNames) { const match = name.match(RECEIPT); let receipt; try { receipt = JSON.parse(await readStableNoFollow(path.join(directory, name))); } catch (error) { throw new Error(`unreadable receipt ${name}: ${error.message}`); } if (!receiptValid(receipt, match)) throw new Error(`invalid receipt ${name}`); receipts.push({ name, receipt }); }
   const planRefs = new Set(receipts.map(({ receipt }) => receipt.plan_ref)); const approvals = new Set(receipts.map(({ receipt }) => receipt.approval_sha256)); const runIds = new Set(receipts.map(({ receipt }) => receipt.approval_run_id)); const attempts = new Set(receipts.map(({ receipt }) => receipt.attempt_id));
   if (attempts.size !== receipts.length || planRefs.size > 1 || approvals.size > 1 || runIds.size > 1) throw new Error("receipt history crosses plan/run/approval cycle or duplicates an attempt");
