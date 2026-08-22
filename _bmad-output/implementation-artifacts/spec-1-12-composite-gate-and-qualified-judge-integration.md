@@ -78,6 +78,12 @@ operator_actions:
 
 ## Spec Change Log
 
+### 2026-08-22 — Operator action reconciliation (partial satisfaction)
+- Satisfied: voice-v1 semantic corpus is owner-approved by Justin (2026-08-19T15:44:16.836Z) and independently re-verified against current bytes — `semantic_identity` `b387b27c7fd91062ae7b0aec39ada8103b579655b5161e2556b614b1d2f6694e` (`npm run semantic:voice:verify`: `valid: true`, `readiness: "approved"`). Operator action 1 is complete.
+- Judge recovery matrix history: Story 1.4's live matrices were approved and run — v1 (2026-08-16) and three gpt-oss runs (2026-08-19) — all independently verified NO-GO; no passing judge identity exists from those cycles. Operator action 2's approve/run half is historical fact; its GO-evidence half remains open.
+- Open: no verified per-model STRUCT-JUDGE qualification exists yet, so no active judge descriptor can be resolved (operator actions 2–3 blocked on the same gap). The Story 1.4 Workers AI Llama judge qualification cycle harness is implemented and offline-verified but has never executed a live run. Unblocking requires Justin's fresh exact approval of a Llama judge plan and an operator-run live cycle (`npm run spike:judge:plan` → approval → `spike:judge:dev` + `spike:judge:live`), retaining GO evidence for at least one configuration.
+- Status stays `awaiting-operator` until judge GO evidence exists.
+
 ### 2026-08-18 — Review loop 1
 - Trigger: the first implementation returned the complete passing judge verdict, including provider-authored reason strings, despite the Epic-level no-raw-model-text boundary.
 - Amendment: require the Composite Gate result to project only safe decision metadata, explicitly forbid provider-authored reasons in every returned outcome, and make complete approved-rubric validation and redaction coverage explicit in the implementation map and acceptance surface.

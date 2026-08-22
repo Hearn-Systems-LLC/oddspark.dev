@@ -72,6 +72,12 @@ operator_actions:
 
 ## Spec Change Log
 
+### 2026-08-22 — Operator action reconciliation (partial satisfaction)
+- Satisfied: house Brief catalog v1 is owner-approved by Justin (2026-08-19T15:44:16.836Z) and independently re-verified against current bytes — `content_hash` `06f74672f2005a33c6ad030ac38d709e7021b70c45cf01dbd5d31741323ebc9b`, catalog `identity` `9334910e17f7fa610ee2a18d54b1485bf19d00b866f8e7cd8f5258a0d17e9ad8` (`npm run house-briefs:verify`: `readiness: "approved"`, `production_ready: true`). Operator action 1 is complete.
+- Satisfied: voice-v1 semantic corpus is owner-approved by Justin (2026-08-19T15:44:16.836Z) and re-verified — `semantic_identity` `b387b27c7fd91062ae7b0aec39ada8103b579655b5161e2556b614b1d2f6694e` (`npm run semantic:voice:verify`: `valid: true`, `readiness: "approved"`). Operator action 2 is complete.
+- Generation half of action 3 satisfied: Story 1.11 run l9 (attempt `406d10ea-8629-4a24-ab8f-8873b0332e96`) independently verified GO — resolved generation identity for the later activation manifest is the sole-member primary set: STRUCT-GENERATION qualification_ref `34731e26b1c1ef79acd444ba8e775143d9a616c3ab915f52481bd81475796bfc`, role_ref `5cf5a547b29d31304af686c610da9c4c5959299faf12d434db28493de92404b1`, cycle_ref `e615e7c03568bbf2ef9683131331909d1a5c5a6b6de2feabc3fd98bd9d0da8ae` (primary-only per Justin's 2026-08-22 topology decision; exhaustion/failure serves this story's approved house Brief). Operator action 4's generation line is resolved to these values.
+- Open: judge qualification has no live GO. All executed judge matrices (v1 2026-08-16; three gpt-oss runs 2026-08-19) are verified NO-GO, and the Story 1.4 Llama judge cycle harness has never run live. The active STRUCT-JUDGE identity cannot be resolved until Justin approves and an operator runs the Llama judge live cycle and it emits at least one verified configuration GO.
+- Status stays `awaiting-operator` until judge GO evidence exists.
 ## Review Triage Log
 
 ### 2026-08-18 — Review pass
