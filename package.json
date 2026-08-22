@@ -19,6 +19,7 @@
     "assembly:freeze": "node scripts/assembly-identity.mjs freeze",
     "assembly:verify": "node scripts/assembly-identity.mjs verify",
     "reader:preflight": "node scripts/reader-preflight.mjs",
+    "writer:preflight": "node scripts/writer-preflight.mjs",
     "assembly:test": "node --test scripts/assembly-identity.test.mjs",
     "reader-preflight:test": "node --test scripts/reader-preflight.test.mjs",
     "semantic:voice:test": "node --test scripts/semantic-corpus.test.mjs",

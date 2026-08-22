@@ -136,12 +136,12 @@ const fail = (label, problems) => {
   for (const problem of problems) console.error(`     - ${problem}`);
 };
 
-const sha256File = (relative) =>
+export const sha256File = (relative) =>
   createHash("sha256").update(readFileSync(path.join(ROOT, relative), "utf8"), "utf8").digest("hex");
 
 // Parse the transitive ./pipeline/ import closure of a module, relative to
 // the repo root.
-function importClosure(entryRelative) {
+export function importClosure(entryRelative) {
   const seen = new Set();
   const queue = [entryRelative];
   while (queue.length) {

@@ -122,7 +122,7 @@ development_status:
   1-22-honest-pipeline-explanation: backlog
   1-23-worker-runtime-assembly: review
   1-24-compatibility-reader-deployment: review
-  1-25-inactive-writer-deployment: backlog
+  1-25-inactive-writer-deployment: review
   1-26-atomic-local-only-activation: backlog
   epic-1-retrospective: optional
   epic-2: backlog

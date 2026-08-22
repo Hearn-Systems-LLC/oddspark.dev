@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { readFileSync } from "node:fs";
-import worker, { NeuronMeter, SparkCoordinator, deriveInactiveDomainDispatch, PRE_ACTIVATION_NOTICE } from "./src/worker.js";
+import worker, { NeuronMeter, SparkCoordinator, deriveInactiveDomainDispatch, runInactiveDomainWriter, INACTIVE_DOMAIN_WRITER_DEADLINE_MS, PRE_ACTIVATION_NOTICE } from "./src/worker.js";
 import { story15Cases } from "./scripts/brief-rendering.outer.mjs";
 import { buildCommittedBrief, CANDIDATE_SCHEMA_VERSION, deriveCandidateRef } from "./scripts/brief-contracts.mjs";
 import { HOUSE_NOTICE } from "./scripts/brief-rendering.mjs";
@@ -17,7 +17,16 @@ import {
 } from "./scripts/house-briefs.mjs";
 import { deriveIdentity as corpusIdentity, validateCorpus } from "./scripts/semantic-corpus.mjs";
 import { ACTIVATION_REASON_CODES, deriveActivationRef, evaluateProductionActivation } from "./src/pipeline/activation.mjs";
-import { activationPosture } from "./src/pipeline/assembly.mjs";
+import { activationPosture, createInactiveDomainWriter } from "./src/pipeline/assembly.mjs";
+import {
+  GENERATION_PARAMETERS,
+  GENERATION_PROMPT,
+  GENERATION_RESPONSE_FORMAT,
+  JUDGE_PARAMETERS,
+  JUDGE_PROMPT,
+  JUDGE_RESPONSE_FORMAT,
+  productionPipelineEnv,
+} from "./src/pipeline/production-ports.mjs";
 import { DOMAIN_RESULT_TTL_MS, LOCAL_RETENTION_MS, domainArtifactReadable, localArtifactLive } from "./src/pipeline/retention.mjs";
 import { computeAssemblyIdentity } from "./src/pipeline/identity.mjs";
 import { classifyCompatibleArtifact } from "./src/pipeline/receipts.mjs";
@@ -2500,6 +2509,404 @@ await test("an injected writer port still wins over the assembled writer", async
   assert.equal(injected, 1);
   assert.equal(response.body.id, "assembled-shadowed");
   assert.equal(h.coordStorage.map.get("metric:briefs_served"), 1);
+});
+
+/* ------------------------------------------------------------------ *
+ * Story 1.25: inactive writer deployment — bundled production pipeline env,
+ * writer-port deadline, and redacted activation posture observability.
+ * ------------------------------------------------------------------ */
+
+// The production-shaped content bundle, proven through the REAL verification
+// functions (the pipelineFixture approvals are test authority only). This is
+// the offline content seam input for productionPipelineEnv.
+function productionContentFixture() {
+  const fixture = pipelineFixture();
+  return {
+    priors: fixture.priors,
+    house: { catalog: fixture.house.catalog, approval: fixture.house.approval },
+    corpus: fixture.corpus,
+  };
+}
+
+// Capture the worker's structured log lines (console.log) emitted while fn
+// runs; returns { lines, raw } — parsed non-null JSON lines plus the raw
+// count, so callers assert expected line counts and a stray non-JSON or
+// unexpected emission can never pass unnoticed. console.log is always
+// restored, and the tests using this run strictly sequentially (each is
+// awaited), so the swap never races.
+async function captureLogLines(fn) {
+  const raw = [];
+  const original = console.log;
+  console.log = (value) => { raw.push(String(value)); };
+  try {
+    await fn();
+  } finally {
+    console.log = original;
+  }
+  const lines = [];
+  for (const line of raw) {
+    let parsed = null;
+    try { parsed = JSON.parse(line); } catch { /* non-JSON line */ }
+    if (parsed !== null && typeof parsed === "object") lines.push(parsed);
+  }
+  return { lines, rawCount: raw.length };
+}
+
+const postureLines = ({ lines }) => lines.filter((entry) => entry?.event === "activation_posture");
+const failureLines = ({ lines }) => lines.filter((entry) => entry?.event === "inactive_domain_writer_failure");
+
+await test("production pipeline env constructs from verified content and stays inert without a manifest", async () => {
+  createNetwork();
+  const content = productionContentFixture();
+  const h = createEnvironment();
+  const wired = productionPipelineEnv(h.env, content);
+  assert.ok(wired, "verified content must construct the pipeline env");
+  assert.deepEqual(Object.keys(wired).sort(), [
+    "PIPELINE_CORPUS", "PIPELINE_GENERATE_PROVIDER", "PIPELINE_HOUSE", "PIPELINE_JUDGE_PROVIDER", "PIPELINE_PRIORS",
+  ]);
+  // PIPELINE_JUDGE stays absent — qualification refs are never fabricated.
+  assert.equal("PIPELINE_JUDGE" in wired, false);
+  assert.equal(typeof wired.PIPELINE_GENERATE_PROVIDER, "function");
+  assert.equal(typeof wired.PIPELINE_JUDGE_PROVIDER, "function");
+
+  // Manifest checked first: the assembled writer is null even with every
+  // pipeline port verified and present.
+  const writer = createInactiveDomainWriter(
+    { ...h.env, ...wired },
+    { coordPost: (path, body) => h.env.COORD.get("global").fetch("https://coord" + path, { method: "POST", body: JSON.stringify(body) }) },
+  );
+  assert.equal(writer, null);
+
+  // Production strike parity: with the constructed pipeline env spread into
+  // the seam env (as the route now does) and no manifest, the legacy serve
+  // is byte-identical to the same strikes on a pipeline-free env — modulo
+  // the wall-clock fields the 1.24 artifact itself stamps per request.
+  const stripClock = (body) => {
+    const copy = structuredClone(body);
+    delete copy.struck;
+    if (copy.personalization) delete copy.personalization.scan_time;
+    return JSON.stringify(copy);
+  };
+  const plain = createEnvironment();
+  const withPipeline = createEnvironment();
+  Object.assign(withPipeline.env, productionPipelineEnv(withPipeline.env, content));
+  const [plainLocal, wiredLocal] = await Promise.all([strike(plain.env, undefined), strike(withPipeline.env, undefined)]);
+  assert.equal(wiredLocal.response.status, 200);
+  assert.equal(stripClock(wiredLocal.body), stripClock(plainLocal.body));
+
+  const networkA = createNetwork();
+  addSimpleSite(networkA);
+  const plainDomain = await strike(plain.env, "acmebakery.com");
+  const networkB = createNetwork();
+  addSimpleSite(networkB);
+  const wiredDomain = await strike(withPipeline.env, "acmebakery.com");
+  assert.equal(plainDomain.response.status, 200);
+  assert.equal(wiredDomain.response.status, 200);
+  assert.equal(stripClock(wiredDomain.body), stripClock(plainDomain.body));
+  // The legacy quarantined path served both: exactly one scan each, no writer.
+  assert.equal(networkA.siteCalls.length, 1);
+  assert.equal(networkB.siteCalls.length, 1);
+});
+
+await test("the bundled content currently fails closed: priors approval is still pending owner approval", async () => {
+  // content/local-priors/v1/approval.json is pending_owner_approval, so the
+  // REAL verifiers refuse the bundled bundle and construction returns null.
+  // This test is a deliberate tripwire: when exact owner approval lands, the
+  // bundled default constructs and this test must be revisited.
+  const h = createEnvironment();
+  assert.equal(productionPipelineEnv(h.env), null);
+});
+
+await test("bundled content hashes are pinned against byte drift (the writer:preflight constants)", async () => {
+  // writer:preflight is a release gate, not composed into `npm run check` —
+  // this fixture pins the SAME content-identity constants so plain `npm test`
+  // also fails the moment any bundled content byte drifts. The constants must
+  // match scripts/writer-preflight.mjs exactly.
+  const readJson = (path) => JSON.parse(readFileSync(new URL(path, import.meta.url), "utf8"));
+  const priorsCatalog = readJson("./content/local-priors/v1/priors.json");
+  assert.equal(priorsContentIdentity(priorsCatalog), "0d80450e2958633446a1cc9c3269888fdb8b6d1063071052c089d3d692ec3253");
+  const houseCatalog = readJson("./content/house-briefs/v1/catalog.json");
+  assert.equal(houseCatalogIdentity(houseCatalog), "06f74672f2005a33c6ad030ac38d709e7021b70c45cf01dbd5d31741323ebc9b");
+  const corpus = {
+    rubric: readJson("./semantic/voice/v1/rubric.json"),
+    goldens: readJson("./semantic/voice/v1/goldens.json"),
+    anti_goldens: readJson("./semantic/voice/v1/anti-goldens.json"),
+    approval: null,
+  };
+  const identity = corpusIdentity(corpus);
+  assert.equal(identity.semantic_identity, "b387b27c7fd91062ae7b0aec39ada8103b579655b5161e2556b614b1d2f6694e");
+  assert.deepEqual(identity.hashes, {
+    rubric: "3095066ef0bb56245b8a183ded6d07308fa83838c07f2c55455fd2b8905c29ff",
+    goldens: "da2203361ac3adde67c1a6972e4358bea49a84e3b83c5b2f38648ef979699915",
+    anti_goldens: "0727894e09348838403e921e1ac22f6b8a02dcfca86ea3bd7e0b9581a72525e0",
+    thresholds: "6c7b182ebf786e18a205818e5e89d25e9c809959f88d2bd3f8f25b85fffeb5ff",
+  });
+});
+
+await test("production pipeline env fails closed on drifted content — never partial", async () => {
+  const content = productionContentFixture();
+
+  // Corrupt one approval hash: the house approval no longer binds content.
+  const driftedHouse = structuredClone(content);
+  driftedHouse.house.approval = { ...driftedHouse.house.approval, content_hash: "f".repeat(64) };
+  assert.equal(productionPipelineEnv(createEnvironment().env, driftedHouse), null);
+
+  // Drifted priors content under a valid-looking approval.
+  const driftedPriors = structuredClone(content);
+  driftedPriors.priors.priors = { ...driftedPriors.priors.priors, region: { ...driftedPriors.priors.priors.region, framing: "drifted framing" } };
+  assert.equal(productionPipelineEnv(createEnvironment().env, driftedPriors), null);
+
+  // Unapproved corpus.
+  const pendingCorpus = structuredClone(content);
+  pendingCorpus.corpus.approval = { schema_version: 1, status: "pending_owner_approval", owner: null, corpus_version: "voice-v1", hashes: null, semantic_identity: null, approved_at: null };
+  assert.equal(productionPipelineEnv(createEnvironment().env, pendingCorpus), null);
+
+  // No AI binding or frozen model vars at all (AI_MODEL_FALLBACK is a
+  // presence-only misconfig guard; fallback wiring is a 1.11 product).
+  assert.equal(productionPipelineEnv({}, content), null);
+  assert.equal(productionPipelineEnv({ AI: { async run() {} } }, content), null);
+  assert.equal(productionPipelineEnv({ AI: { async run() {} }, AI_MODEL: "m" }, content), null);
+});
+
+await test("production providers wrap env.AI.run through the closed envelope decode", async () => {
+  const content = productionContentFixture();
+  const candidate = pipelineFixture().pipelineCandidate();
+  const verdict = pipelineFixture().pipelineVerdict("f".repeat(64)).verdict;
+  const aiCalls = [];
+  const envelope = (value) => ({ choices: [{ index: 0, message: { content: JSON.stringify(value) } }] });
+  // Dispatch on the exact frozen schema identity (the full required list of
+  // each response format), never a substring sniff: a generation schema that
+  // someday grows a "gates" field still cannot collide with the judge's
+  // exact list, and anything unrecognized fails loudly instead of silently
+  // returning the wrong fixture.
+  const GENERATION_REQUIRED = "version,mode,title,plan,why_fits,what_gets_better,before_after,change_level,stays_same,invitation,grounded_numbers";
+  const JUDGE_REQUIRED = "pass,gates,tone,claims";
+  const env = {
+    AI: {
+      async run(model, request) {
+        aiCalls.push({ model, request });
+        const required = request.response_format?.json_schema?.required?.join(",");
+        if (required === JUDGE_REQUIRED) return envelope(verdict);
+        if (required === GENERATION_REQUIRED) return envelope(candidate);
+        throw new Error("unrecognized response_format identity");
+      },
+    },
+    AI_MODEL: "mock-primary",
+    AI_MODEL_FALLBACK: "mock-fallback",
+  };
+  const wired = productionPipelineEnv(env, content);
+  assert.ok(wired);
+
+  const generated = await wired.PIPELINE_GENERATE_PROVIDER({ evidence: { version: 1, mode: "local", priors: {} }, seed: "a".repeat(64) });
+  assert.deepEqual(generated, candidate);
+  assert.equal(aiCalls[0].model, "mock-primary");
+  // The wire payload is exactly the frozen generation adapter shape.
+  assert.equal(aiCalls[0].request.messages[0].role, "system");
+  assert.equal(aiCalls[0].request.messages[0].content, GENERATION_PROMPT);
+  assert.equal(aiCalls[0].request.temperature, GENERATION_PARAMETERS.temperature);
+  assert.equal(aiCalls[0].request.max_tokens, GENERATION_PARAMETERS.max_tokens);
+  assert.deepEqual(aiCalls[0].request.response_format, GENERATION_RESPONSE_FORMAT);
+  assert.ok(Object.isFrozen(GENERATION_PARAMETERS) && Object.isFrozen(GENERATION_RESPONSE_FORMAT));
+
+  const judged = await wired.PIPELINE_JUDGE_PROVIDER({ candidate_ref: "f".repeat(64), candidate, evidence: {}, grounding_report: {} });
+  assert.deepEqual(judged, { candidate_ref: "f".repeat(64), verdict });
+  assert.equal(aiCalls[1].model, "mock-primary");
+  assert.equal(aiCalls[1].request.messages[0].content, JUDGE_PROMPT);
+  assert.equal(aiCalls[1].request.temperature, JUDGE_PARAMETERS.temperature);
+  assert.equal(aiCalls[1].request.max_tokens, JUDGE_PARAMETERS.max_tokens);
+  assert.deepEqual(aiCalls[1].request.response_format, JUDGE_RESPONSE_FORMAT);
+  assert.ok(Object.isFrozen(JUDGE_PARAMETERS) && Object.isFrozen(JUDGE_RESPONSE_FORMAT));
+
+  // A null or malformed judge request is a closed provider error.
+  for (const badRequest of [null, undefined, {}, { candidate_ref: 42 }]) {
+    await assert.rejects(wired.PIPELINE_JUDGE_PROVIDER(badRequest), /^Error: judge request must carry the frozen candidate_ref$/);
+  }
+
+  // Envelope violations fail closed: no repair, no coercion, no alternate locations.
+  for (const bad of [null, { choices: [] }, { choices: [{ index: 0, message: { content: "not json" } }] }, { response: JSON.stringify(candidate) }]) {
+    const badEnv = { ...env, AI: { async run() { return bad; } } };
+    const badWired = productionPipelineEnv(badEnv, content);
+    await assert.rejects(
+      badWired.PIPELINE_GENERATE_PROVIDER({ evidence: { version: 1, mode: "local", priors: {} }, seed: "a".repeat(64) }),
+      Error,
+    );
+  }
+});
+
+await test("the writer-port deadline constant is pinned and ordered above the writer's internal budgets", async () => {
+  // Pinned value: above the assembly's internal 15s strike budget plus 30s
+  // claim-wait horizon (assembly.mjs:40-45), below the platform wall-clock
+  // limit. Changing it is a deliberate, separately reviewed act.
+  assert.equal(INACTIVE_DOMAIN_WRITER_DEADLINE_MS, 60000);
+  assert.ok(INACTIVE_DOMAIN_WRITER_DEADLINE_MS > 15000 + 30000);
+  assert.ok(Number.isFinite(INACTIVE_DOMAIN_WRITER_DEADLINE_MS) && INACTIVE_DOMAIN_WRITER_DEADLINE_MS > 0);
+});
+
+await test("writer port deadline: a never-settling port fails closed; a settling port is unaffected; invalid deadlines fall back", async () => {
+  const dispatch = deriveInactiveDomainDispatch({ domain: "acmebakery.com" }, ROUND);
+
+  // Deadline expiry — injected through the exported seam, never a patched
+  // global timer — produces exactly the writer-error terminal and logs the
+  // redacted deadline failure class.
+  const hanging = { write: () => new Promise(() => {}) };
+  const deadlineCapture = await captureLogLines(async () => {
+    await assert.rejects(runInactiveDomainWriter(hanging, dispatch, 25), /^Error: inactive domain writer unavailable$/);
+  });
+  assert.equal(deadlineCapture.rawCount, 1);
+  assert.deepEqual(failureLines(deadlineCapture), [{ event: "inactive_domain_writer_failure", class: "deadline_expired" }]);
+
+  // A port that throws before the deadline logs the port_error class.
+  const throwing = { async write() { throw new Error("writer exploded with internal detail"); } };
+  const errorCapture = await captureLogLines(async () => {
+    await assert.rejects(runInactiveDomainWriter(throwing, dispatch, 25), /^Error: inactive domain writer unavailable$/);
+  });
+  assert.equal(errorCapture.rawCount, 1);
+  assert.deepEqual(failureLines(errorCapture), [{ event: "inactive_domain_writer_failure", class: "port_error" }]);
+  // The failure line is redacted: no port internals leak into it.
+  assert.equal(JSON.stringify(failureLines(errorCapture)).includes("internal detail"), false);
+
+  // A port that settles well before the deadline takes the unchanged
+  // 1.16/1.23 outcome-validation path, and the timer is cleared (no later
+  // failure line fires).
+  const settling = {
+    async write(value) {
+      return { status: "committed", scope: value.request_scope, artifact: inactiveDomainCommitted("deadline-settled", "acmebakery.com") };
+    },
+  };
+  const settleCapture = await captureLogLines(async () => {
+    const artifact = await runInactiveDomainWriter(settling, dispatch, 50);
+    assert.equal(artifact.id, "deadline-settled");
+    assert.equal(artifact.request_scope, "domain");
+  });
+  await new Promise((resolve) => setTimeout(resolve, 75)); // outlive the cleared timer
+  assert.equal(settleCapture.rawCount, 0);
+
+  // Non-finite or non-positive deadlines fall back to the pinned constant.
+  for (const bad of [Number.NaN, 0, -5, "25"]) {
+    const artifact = await runInactiveDomainWriter(settling, dispatch, bad);
+    assert.equal(artifact.id, "deadline-settled", String(bad));
+  }
+});
+
+await test("writer failure terminals: negotiated 502 carries zero metric and the redacted posture plus failure-class log lines", async () => {
+  createNetwork();
+  const h = createEnvironment();
+  h.env.INACTIVE_DOMAIN_WRITER = { async write() { throw new Error("writer exploded with internal detail"); } };
+  let response;
+  const capture = await captureLogLines(async () => {
+    response = await worker.fetch(sparkRequest("acmebakery.com"), h.env);
+  });
+  assert.equal(response.status, 502);
+  assert.match((await response.json()).error, /inactive domain writer unavailable/);
+  assert.equal(h.coordStorage.map.get("metric:briefs_served"), undefined);
+  assert.equal(h.coordStorage.map.get("metric:house_briefs_served"), undefined);
+  assert.equal(h.coordStorage.map.has(`receipt:domain:${ROUND}:acmebakery.com`), false);
+  // The 502 terminal carries exactly one redacted posture line and one
+  // redacted failure-class line — no internals, no stray emissions.
+  assert.equal(capture.rawCount, 2);
+  assert.deepEqual(postureLines(capture), [{ event: "activation_posture", enabled: false, reason: ACTIVATION_REASON_CODES.MISSING }]);
+  assert.deepEqual(failureLines(capture), [{ event: "inactive_domain_writer_failure", class: "port_error" }]);
+  assert.equal(JSON.stringify(capture.lines).includes("internal detail"), false);
+});
+
+await test("activation posture is logged once per seam resolution, redacted to the stable codes", async () => {
+  createNetwork();
+
+  // Absent manifest: MISSING, exactly one posture line per domain strike.
+  const absent = createEnvironment();
+  const absentCapture = await captureLogLines(async () => {
+    addSimpleSite(createNetwork());
+    const result = await strike(absent.env, "acmebakery.com");
+    assert.equal(result.response.status, 200);
+  });
+  assert.equal(absentCapture.rawCount, 1);
+  assert.deepEqual(postureLines(absentCapture), [{ event: "activation_posture", enabled: false, reason: ACTIVATION_REASON_CODES.MISSING }]);
+
+  // Local (no-website) strikes never reach the seam: no posture line.
+  const local = createEnvironment();
+  const localCapture = await captureLogLines(async () => {
+    const result = await strike(local.env, undefined);
+    assert.equal(result.response.status, 200);
+  });
+  assert.equal(localCapture.rawCount, 0);
+  assert.equal(postureLines(localCapture).length, 0);
+
+  // Malformed manifest: the stable reason code is logged and no manifest
+  // internals (refs, mode flags, identity strings) leak into the log line.
+  // A distinctive secret-looking ref is PLANTED in the malformed manifest so
+  // the redaction assertions below have teeth.
+  const secretRef = "deadbeef".repeat(8);
+  const malformed = createEnvironment({
+    pipeline: { manifest: { ...pipelineFixture().manifest, version: 2, generation_ref: secretRef } },
+  });
+  const malformedCapture = await captureLogLines(async () => {
+    addSimpleSite(createNetwork());
+    const result = await strike(malformed.env, "acmebakery.com");
+    assert.equal(result.response.status, 200);
+  });
+  assert.equal(malformedCapture.rawCount, 1);
+  assert.deepEqual(postureLines(malformedCapture), [{ event: "activation_posture", enabled: false, reason: ACTIVATION_REASON_CODES.VERSION }]);
+  const serialized = JSON.stringify(malformedCapture.lines);
+  assert.equal(serialized.includes(secretRef), false);
+  assert.equal(serialized.includes("full_request_ref"), false);
+
+  // Valid manifest: enabled posture with a null reason, still fully redacted
+  // (the fixture manifest's "a"-repeat refs never appear in the log).
+  const active = createEnvironment({ pipeline: {} });
+  const activeCapture = await captureLogLines(async () => {
+    const result = await strike(active.env, "acmebakery.com");
+    assert.equal(result.response.status, 200);
+  });
+  assert.equal(activeCapture.rawCount, 1);
+  assert.deepEqual(postureLines(activeCapture), [{ event: "activation_posture", enabled: true, reason: null }]);
+  assert.equal(JSON.stringify(activeCapture.lines).includes("a".repeat(64)), false);
+});
+
+await test("a posture/logging fault can never fail the request", async () => {
+  const network = createNetwork();
+  addSimpleSite(network);
+  const h = createEnvironment();
+  // The first read of ACTIVATION_MANIFEST (by the posture log) throws; the
+  // seam must swallow it and continue with the manifest absent.
+  let thrown = false;
+  Object.defineProperty(h.env, "ACTIVATION_MANIFEST", {
+    enumerable: true,
+    configurable: true,
+    get() {
+      if (!thrown) { thrown = true; throw new Error("manifest read exploded"); }
+      return undefined;
+    },
+  });
+  let result;
+  const capture = await captureLogLines(async () => {
+    result = await strike(h.env, "acmebakery.com");
+  });
+  assert.equal(result.response.status, 200);
+  assert.equal(result.body.personalization?.status, "personalized");
+  assert.equal(network.siteCalls.length, 1);
+  // The posture line was skipped for the faulting read; nothing else logged.
+  assert.equal(capture.rawCount, 0);
+  assert.equal(postureLines(capture).length, 0);
+
+  // A PERSISTENTLY throwing getter: the env spread and the assembly call
+  // re-read the binding, so both are guarded too — the request still fails
+  // closed to a null writer and the legacy path serves.
+  const stubbornNetwork = createNetwork();
+  addSimpleSite(stubbornNetwork);
+  const stubborn = createEnvironment();
+  Object.defineProperty(stubborn.env, "ACTIVATION_MANIFEST", {
+    enumerable: true,
+    configurable: true,
+    get() { throw new Error("manifest read always explodes"); },
+  });
+  let stubbornResult;
+  const stubbornCapture = await captureLogLines(async () => {
+    stubbornResult = await strike(stubborn.env, "acmebakery.com");
+  });
+  assert.equal(stubbornResult.response.status, 200);
+  assert.equal(stubbornResult.body.personalization?.status, "personalized");
+  assert.equal(stubbornNetwork.siteCalls.length, 1);
+  assert.equal(stubbornCapture.rawCount, 0);
 });
 
 globalThis.fetch = ORIGINAL_FETCH;

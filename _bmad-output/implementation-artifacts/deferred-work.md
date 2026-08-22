@@ -49,3 +49,15 @@ status: open
 - source_spec: `_bmad-output/implementation-artifacts/spec-1-23-worker-runtime-assembly.md`
   summary: Memoize per-request pipeline verification (corpus readiness, priors/house approval hashing) in the assembled writer's hot path.
   evidence: Story 1.23 review found createInactiveDomainWriter re-runs full verification on every domain request; tolerable pre-activation, worth bounding before Story 1.26 traffic.
+- source_spec: `_bmad-output/implementation-artifacts/spec-1-25-inactive-writer-deployment.md`
+  summary: A writer that settles after the port deadline still commits — the deadline bounds the response, not the write; cancellation semantics into the orchestrator are needed before activation traffic.
+  evidence: Story 1.25 review found `runInactiveDomainWriter` abandons but cannot cancel an in-flight `port.write`; a slow writer's coordinator side effects can land after the client received the negotiated 502. Inert while the writer is null (no manifest); must be resolved before Story 1.26 activation.
+- source_spec: `_bmad-output/implementation-artifacts/spec-1-25-inactive-writer-deployment.md`
+  summary: Provider ports wrap `env.AI.run` with no inner bound, so a hung provider call is only abandoned by the outer port deadline, never cancelled — orphan AI work per request.
+  evidence: Story 1.25 review of `src/pipeline/production-ports.mjs`; relevant once providers actually run post-activation (Story 1.26-era).
+- source_spec: `_bmad-output/implementation-artifacts/spec-1-25-inactive-writer-deployment.md`
+  summary: `productionPipelineEnv` re-runs full content verification per request with no per-isolate memoization, and a time-bound approval could flip the wiring mid-deployment between requests.
+  evidence: Story 1.25 review; same class as the deferred 1.23 hot-path memoization finding, worth bounding before Story 1.26 traffic.
+- source_spec: `_bmad-output/implementation-artifacts/spec-1-25-inactive-writer-deployment.md`
+  summary: The frozen provider envelope decode (`choices[0].message.content`, exactly one choice) is asserted only against hand-written mocks; the real Workers AI wire shape is unproven.
+  evidence: Story 1.25 review; proving it requires live calls, which belong to the qualification stories (1.11/1.19), not this deployment story.
