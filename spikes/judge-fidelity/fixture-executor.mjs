@@ -25,7 +25,7 @@ function verdictCase(document, fixture) {
 }
 
 function normalizationCall(document, fixture) {
-  const verdict = clone(document.valid_verdict); const text = JSON.stringify(verdict);
+  const verdict = clone(document.wire_valid_verdict); const text = JSON.stringify(verdict);
   const shapes = {
     provider_error: () => ({ call_state: "provider_error", error_code: "provider_rejected" }), timeout: () => ({ call_state: "timeout" }),
     empty: () => ({ call_state: "received", envelope: { response: "  " } }), unknown_location: () => ({ call_state: "received", envelope: { output: text } }),
@@ -34,7 +34,7 @@ function normalizationCall(document, fixture) {
     identical_duplicates: () => ({ call_state: "received", envelope: { response: text, result: text } }), semantic_but_not_byte_duplicates: () => ({ call_state: "received", envelope: { response: text, result: JSON.stringify(verdict, null, 2) } }),
     object_and_text_duplicates: () => ({ call_state: "received", envelope: { response: verdict, result: text } }), bom: () => ({ call_state: "received", envelope: { response: `\uFEFF${text}` } }),
     json_fence: () => ({ call_state: "received", envelope: { response: `\`\`\`json\n${text}\n\`\`\`` } }), double_encoded_json: () => ({ call_state: "received", envelope: { response: JSON.stringify(text) } }),
-    surrounding_prose: () => ({ call_state: "received", envelope: { response: `Start ${text} End` } }), surrounding_prose_with_string_braces: () => { verdict.gates[0].reason = "Uses {braces} and an escaped quote: \"okay\"."; return { call_state: "received", envelope: { response: `Start ${JSON.stringify(verdict)} End` } }; },
+    surrounding_prose: () => ({ call_state: "received", envelope: { response: `Start ${text} End` } }), surrounding_prose_with_string_braces: () => { verdict.gate_1.reason = "Uses {braces} and an escaped quote: \"okay\"."; return { call_state: "received", envelope: { response: `Start ${JSON.stringify(verdict)} End` } }; },
     truncated: () => ({ call_state: "received", envelope: { response: text.slice(0, -1) } }), two_objects: () => ({ call_state: "received", envelope: { response: `${text}\n${text}` } }),
     trailing_comma: () => ({ call_state: "received", envelope: { response: text.replace(/}$/, ",}") } }), single_quotes: () => ({ call_state: "received", envelope: { response: "{'pass':true}" } }),
     unquoted_keys: () => ({ call_state: "received", envelope: { response: "{pass:true}" } }), comments: () => ({ call_state: "received", envelope: { response: text.replace("{", "{/* no */") } }),
@@ -54,7 +54,7 @@ function normalizationCall(document, fixture) {
 
 async function v2Call(document, fixture) {
   const ref = await deriveCandidateRef("oddspark-candidate/v1", document.synthetic_input.candidate);
-  const result = { candidate_ref: ref, verdict: clone(document.valid_verdict) };
+  const result = { candidate_ref: ref, verdict: clone(document.wire_valid_verdict) };
   let call;
   switch (fixture.shape) {
     case "bound_direct": call = { call_state: "received", envelope: { response: result } }; break;
@@ -66,8 +66,8 @@ async function v2Call(document, fixture) {
     case "binding_mismatch": result.candidate_ref = "0".repeat(64); call = { call_state: "received", envelope: { response: result } }; break;
     case "outer_extra": result.extra = true; call = { call_state: "received", envelope: { response: result } }; break;
     case "verdict_extra": result.verdict.extra = true; call = { call_state: "received", envelope: { response: result } }; break;
-    case "verdict_blank_reason": result.verdict.gates[0].reason = " "; call = { call_state: "received", envelope: { response: result } }; break;
-    case "verdict_duplicate_gate": result.verdict.gates[0].gate = 2; call = { call_state: "received", envelope: { response: result } }; break;
+    case "verdict_blank_reason": result.verdict.gate_1.reason = " "; call = { call_state: "received", envelope: { response: result } }; break;
+    case "verdict_missing_gate": delete result.verdict.gate_9; call = { call_state: "received", envelope: { response: result } }; break;
     case "verdict_unsafe_pass": result.verdict.tone.pass = false; call = { call_state: "received", envelope: { response: result } }; break;
     case "bound_chained_repair": call = { call_state: "received", envelope: { response: `\uFEFF\`\`\`json\n${JSON.stringify(result)}\n\`\`\`` } }; break;
     case "bound_ambiguous_size": call = { call_state: "received", envelope: { response: "x".repeat(MAX_EXTRACTED_BYTES + 1), result } }; break;

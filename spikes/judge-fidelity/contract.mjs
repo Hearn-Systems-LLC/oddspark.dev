@@ -95,13 +95,50 @@ export const VERDICT_SCHEMA = {
   ],
 };
 
+// Wire schemas use only the constructs the Workers AI structured-output engine
+// actually enforces (type/properties/required/additionalProperties/minLength).
+// The 2026-08-22 live cycle proved allOf/contains/if-then/const are NOT enforced:
+// both Llama models returned boolean-map gates and string tone/claims 20/20.
+// The adapter maps the enforced wire shape losslessly to the canonical verdict.
+const WIRE_CHECK_SCHEMA = Object.freeze({
+  type: "object",
+  additionalProperties: false,
+  required: ["pass", "reason"],
+  properties: {
+    pass: { type: "boolean" },
+    reason: { type: "string", minLength: 1 },
+  },
+});
+
+export const WIRE_VERDICT_SCHEMA = {
+  $schema: "https://json-schema.org/draft/2020-12/schema",
+  title: "Oddspark judge wire verdict v2",
+  type: "object",
+  additionalProperties: false,
+  required: ["pass", "gate_1", "gate_2", "gate_3", "gate_4", "gate_5", "gate_6", "gate_7", "gate_8", "gate_9", "tone", "claims"],
+  properties: {
+    pass: { type: "boolean" },
+    gate_1: WIRE_CHECK_SCHEMA,
+    gate_2: WIRE_CHECK_SCHEMA,
+    gate_3: WIRE_CHECK_SCHEMA,
+    gate_4: WIRE_CHECK_SCHEMA,
+    gate_5: WIRE_CHECK_SCHEMA,
+    gate_6: WIRE_CHECK_SCHEMA,
+    gate_7: WIRE_CHECK_SCHEMA,
+    gate_8: WIRE_CHECK_SCHEMA,
+    gate_9: WIRE_CHECK_SCHEMA,
+    tone: WIRE_CHECK_SCHEMA,
+    claims: WIRE_CHECK_SCHEMA,
+  },
+};
+
 export const VERDICT_RESPONSE_FORMAT = {
   type: "json_schema",
   json_schema: VERDICT_SCHEMA,
 };
 
 export const JUDGE_RESULT_SCHEMA = Object.freeze({ type: "object", additionalProperties: false,
-  required: ["candidate_ref", "verdict"], properties: { candidate_ref: { type: "string", pattern: "^[a-f0-9]{64}$" }, verdict: VERDICT_SCHEMA } });
+  required: ["candidate_ref", "verdict"], properties: { candidate_ref: { type: "string", pattern: "^[a-f0-9]{64}$" }, verdict: WIRE_VERDICT_SCHEMA } });
 export const PREDICATE_ORACLE_VERSION = "oddspark-judge-evidence-predicates/v2";
 export const PREDICATE_ORACLE = Object.freeze([
   ["evidence.shape", "Evidence and every retained nested object are closed and strictly typed."], ["oracle.identity", "The ordered predicate oracle version and hash match this verifier."],
@@ -130,7 +167,7 @@ export const SYSTEM_PROMPT = `You are the independent Oddspark judge. Evaluate t
 
 Also evaluate tone (confident plan, plain language, no pitch, no consultant-speak, no bare-mush effects) and claims (qualitative unless supplied evidence grounds a number). Use the supplied grounding report; do not add a grounding field or a tenth gate.
 
-Return only one JSON value matching the supplied schema. Include gates 1 through 9 exactly once. Set top-level pass to true only when all nine gates, tone, and claims pass.`;
+Return only one JSON value matching the supplied schema. Report gate 1 through gate 9 as the separate gate_1 through gate_9 properties, each an object with a boolean pass and a non-empty reason string; tone and claims use that same object shape. Set top-level pass to true only when all nine gates, tone, and claims pass.`;
 
 function isObject(value) {
   return value !== null && typeof value === "object" && !Array.isArray(value);
@@ -222,6 +259,50 @@ export function validateVerdict(value) {
   }
 
   return { valid: errors.length === 0, errors };
+}
+
+const WIRE_GATE_KEYS = Object.freeze(Array.from({ length: 9 }, (_, index) => `gate_${index + 1}`));
+
+function validateWireCheck(value, path, errors) {
+  if (!checkKeys(value, ["pass", "reason"], ["pass", "reason"], path, errors)) return;
+  if (typeof value.pass !== "boolean") errors.push(`${path}.pass must be a boolean`);
+  checkNonEmptyString(value.reason, `${path}.reason`, errors);
+}
+
+/**
+ * Losslessly map one closed wire verdict (gate_1..gate_9 fixed properties, as enforced
+ * by the provider's structured output) to the canonical verdict (ordered gates array).
+ * Validates the exact closed wire shape, then re-validates the canonical mapping so the
+ * pass-consistency rule remains enforced at the same authority boundary as before.
+ */
+export function mapWireVerdictToCanonical(value) {
+  const errors = [];
+  const allowed = ["pass", ...WIRE_GATE_KEYS, "tone", "claims"];
+  if (!checkKeys(value, allowed, allowed, "verdict", errors)) return { valid: false, errors };
+  if (typeof value.pass !== "boolean") errors.push("verdict.pass must be a boolean");
+  for (const key of WIRE_GATE_KEYS) validateWireCheck(value[key], `verdict.${key}`, errors);
+  validateWireCheck(value.tone, "verdict.tone", errors);
+  validateWireCheck(value.claims, "verdict.claims", errors);
+  if (errors.length > 0) return { valid: false, errors };
+  const verdict = {
+    pass: value.pass,
+    gates: WIRE_GATE_KEYS.map((key, index) => ({ gate: index + 1, pass: value[key].pass, reason: value[key].reason })),
+    tone: { pass: value.tone.pass, reason: value.tone.reason },
+    claims: { pass: value.claims.pass, reason: value.claims.reason },
+  };
+  const canonical = validateVerdict(verdict);
+  if (!canonical.valid) return { valid: false, errors: canonical.errors };
+  return { valid: true, errors: [], verdict };
+}
+
+export function validateWireJudgeResult(value, expectedCandidateRef) {
+  const errors = [];
+  if (!checkKeys(value, ["candidate_ref", "verdict"], ["candidate_ref", "verdict"], "result", errors)) return { valid: false, errors };
+  if (typeof value.candidate_ref !== "string") errors.push("result.candidate_ref must be a string"); else if (value.candidate_ref !== expectedCandidateRef) errors.push("result.candidate_ref does not match the frozen candidate");
+  const mapped = mapWireVerdictToCanonical(value.verdict);
+  errors.push(...mapped.errors.map((error) => error.replace(/^verdict/, "result.verdict")));
+  if (errors.length > 0) return { valid: false, errors };
+  return { valid: true, errors: [], result: { candidate_ref: value.candidate_ref, verdict: mapped.verdict } };
 }
 
 function validateCandidate(candidate, errors) {
@@ -505,19 +586,19 @@ export async function extractJudgeContent(envelope) {
 }
 
 function parsedClassification(value, repairKind = null) {
-  const validation = validateVerdict(value);
-  if (!validation.valid) {
+  const mapped = mapWireVerdictToCanonical(value);
+  if (!mapped.valid) {
     return {
       classification: "schema_invalid",
       repair_kind: repairKind,
-      validation_errors: validation.errors,
+      validation_errors: mapped.errors,
     };
   }
   return {
     classification: repairKind ? "repaired_valid" : "direct_valid",
     repair_kind: repairKind,
     validation_errors: [],
-    verdict: value,
+    verdict: mapped.verdict,
   };
 }
 
@@ -612,9 +693,9 @@ export function parseJudgeContent(content, expectedCandidateRef = null) {
 }
 
 function parsedResultClassification(value, expectedCandidateRef, repairKind = null) {
-  const validation = validateJudgeResult(value, expectedCandidateRef);
+  const validation = validateWireJudgeResult(value, expectedCandidateRef);
   if (!validation.valid) return { classification: "schema_invalid", repair_kind: repairKind, validation_errors: validation.errors };
-  return { classification: repairKind ? "repaired_valid" : "direct_valid", repair_kind: repairKind, validation_errors: [], result: value, verdict: value.verdict };
+  return { classification: repairKind ? "repaired_valid" : "direct_valid", repair_kind: repairKind, validation_errors: [], result: validation.result, verdict: validation.result.verdict };
 }
 
 export async function classifyJudgeCall({ call_state, envelope, error_code }, expectedCandidateRef = null) {

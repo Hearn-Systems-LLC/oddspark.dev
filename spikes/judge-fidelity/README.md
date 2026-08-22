@@ -13,6 +13,8 @@ This is the isolated, operator-only Story 1.4 recovery harness for the frozen Wo
 
 The fixture is synthetic and uses `example.invalid`. This matrix measures provider-wire and canonical structural fidelity only.
 
+The provider-facing wire schema (`Oddspark judge wire verdict v2`) uses only constructs the Workers AI structured-output engine enforces: gates are fixed `gate_1`…`gate_9` properties with `{pass, reason}` objects, alongside `tone` and `claims`. The adapter maps this wire shape losslessly to the canonical verdict (ordered `gates` array) before classification; canonical validation, including the pass-consistency rule, is unchanged. (Amended 2026-08-22 after the first live cycle proved `allOf`/`contains`/`if-then`/`const` are not enforced by the provider — both models returned boolean-map gates and string tone/claims on every call.)
+
 ## Offline preparation and verification
 
 Run the complete offline contract suite:

@@ -6,8 +6,8 @@ import {
   deriveCandidateRef,
   sha256Hex,
   stableStringify,
-  validateJudgeResult,
   validateSpikeInput,
+  validateWireJudgeResult,
 } from "./contract.mjs";
 
 const MAX_REQUEST_BYTES = 256 * 1024;
@@ -135,7 +135,7 @@ function sanitizedEnvelope(result, candidateRef) {
   if (!result || typeof result !== "object") return envelope;
   for (const key of ["response", "result"]) {
     const value = result[key];
-    if (typeof value === "string" || validateJudgeResult(value, candidateRef).valid) envelope[key] = value;
+    if (typeof value === "string" || validateWireJudgeResult(value, candidateRef).valid) envelope[key] = value;
   }
   const content = result.choices?.[0]?.message?.content;
   if (content !== undefined) {

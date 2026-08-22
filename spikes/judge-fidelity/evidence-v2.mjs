@@ -18,6 +18,7 @@ import {
   SYSTEM_PROMPT,
   stableStringify,
   validateJudgeResult,
+  validateWireJudgeResult,
   validateSpikeInput,
 } from "./contract.mjs";
 
@@ -52,7 +53,9 @@ function closedEnvelopeShape(envelope, candidateRef) {
   for (const key of ["response", "result"]) {
     if (!Object.hasOwn(envelope, key)) continue;
     const value = envelope[key];
-    if (typeof value !== "string" && !validateJudgeResult(value, candidateRef).valid) return false;
+    // Wire shape is current; canonical object shape remains acceptable so
+    // pre-amendment retained evidence (e.g. the 2026-08-22 NO-GO cycle) still verifies.
+    if (typeof value !== "string" && !validateWireJudgeResult(value, candidateRef).valid && !validateJudgeResult(value, candidateRef).valid) return false;
   }
   if (Object.hasOwn(envelope, "choices")) {
     if (!Array.isArray(envelope.choices) || envelope.choices.length !== 1 || !exact(envelope.choices[0], ["message"]) || !exact(envelope.choices[0].message, ["content"]) || typeof envelope.choices[0].message.content !== "string") return false;

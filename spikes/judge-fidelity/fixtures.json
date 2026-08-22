@@ -1,5 +1,5 @@
 {
-  "fixture_version": 1,
+  "fixture_version": 2,
   "synthetic_input": {
     "synthetic": true,
     "candidate": {
@@ -17,15 +17,23 @@
         "after": "The same request enters the same form and appears in a short staff-approved follow-up queue."
       },
       "change_level": {
-        "time_range": "1–2 weeks",
+        "time_range": "1\u20132 weeks",
         "steps_changed": 2,
         "steps_removed": 1,
         "preliminary": true
       },
       "stays_same": {
-        "tools": ["Existing website request form", "Current appointment calendar"],
-        "authority": ["Front-desk staff decide when and how to contact a requester"],
-        "steps": ["Patients use the existing form", "Staff confirm appointments in the current calendar"]
+        "tools": [
+          "Existing website request form",
+          "Current appointment calendar"
+        ],
+        "authority": [
+          "Front-desk staff decide when and how to contact a requester"
+        ],
+        "steps": [
+          "Patients use the existing form",
+          "Staff confirm appointments in the current calendar"
+        ]
       },
       "invitation": "Hearn Systems can map the smallest version of this Spark around the existing form and show exactly how the relay would work.",
       "grounded_numbers": []
@@ -33,8 +41,14 @@
     "evidence_bundle": {
       "vertical": "Family dental practice",
       "clarity": "clear",
-      "capabilities": ["Online appointment requests", "Existing appointment calendar"],
-      "channels": ["Website request form", "Phone"],
+      "capabilities": [
+        "Online appointment requests",
+        "Existing appointment calendar"
+      ],
+      "channels": [
+        "Website request form",
+        "Phone"
+      ],
       "observation": {
         "url": "https://synthetic.example.invalid/appointments",
         "text": "Request an appointment online. Open late on Mondays. Call the front desk with questions."
@@ -64,102 +78,565 @@
   "valid_verdict": {
     "pass": true,
     "gates": [
-      { "gate": 1, "pass": true, "reason": "The request-follow-up routine is concrete and familiar." },
-      { "gate": 2, "pass": true, "reason": "The queue is a constructive intervention." },
-      { "gate": 3, "pass": true, "reason": "It extends rather than duplicates the current form." },
-      { "gate": 4, "pass": true, "reason": "It uses the observed form and phone channels." },
-      { "gate": 5, "pass": true, "reason": "The small relay is proportionate to the practice." },
-      { "gate": 6, "pass": true, "reason": "The workflow is deliverable as a software integration." },
-      { "gate": 7, "pass": true, "reason": "The form, calendar, and staff authority remain." },
-      { "gate": 8, "pass": true, "reason": "The situation and payoff are easy to retell." },
-      { "gate": 9, "pass": true, "reason": "The relay is distinctive but approachable." }
+      {
+        "gate": 1,
+        "pass": true,
+        "reason": "The request-follow-up routine is concrete and familiar."
+      },
+      {
+        "gate": 2,
+        "pass": true,
+        "reason": "The queue is a constructive intervention."
+      },
+      {
+        "gate": 3,
+        "pass": true,
+        "reason": "It extends rather than duplicates the current form."
+      },
+      {
+        "gate": 4,
+        "pass": true,
+        "reason": "It uses the observed form and phone channels."
+      },
+      {
+        "gate": 5,
+        "pass": true,
+        "reason": "The small relay is proportionate to the practice."
+      },
+      {
+        "gate": 6,
+        "pass": true,
+        "reason": "The workflow is deliverable as a software integration."
+      },
+      {
+        "gate": 7,
+        "pass": true,
+        "reason": "The form, calendar, and staff authority remain."
+      },
+      {
+        "gate": 8,
+        "pass": true,
+        "reason": "The situation and payoff are easy to retell."
+      },
+      {
+        "gate": 9,
+        "pass": true,
+        "reason": "The relay is distinctive but approachable."
+      }
     ],
-    "tone": { "pass": true, "reason": "The Brief is confident, plain, and no-pressure." },
-    "claims": { "pass": true, "reason": "Claims are qualitative and the breadcrumb is grounded." }
+    "tone": {
+      "pass": true,
+      "reason": "The Brief is confident, plain, and no-pressure."
+    },
+    "claims": {
+      "pass": true,
+      "reason": "Claims are qualitative and the breadcrumb is grounded."
+    }
+  },
+  "wire_valid_verdict": {
+    "pass": true,
+    "gate_1": {
+      "pass": true,
+      "reason": "The request-follow-up routine is concrete and familiar."
+    },
+    "gate_2": {
+      "pass": true,
+      "reason": "The queue is a constructive intervention."
+    },
+    "gate_3": {
+      "pass": true,
+      "reason": "It extends rather than duplicates the current form."
+    },
+    "gate_4": {
+      "pass": true,
+      "reason": "It uses the observed form and phone channels."
+    },
+    "gate_5": {
+      "pass": true,
+      "reason": "The small relay is proportionate to the practice."
+    },
+    "gate_6": {
+      "pass": true,
+      "reason": "The workflow is deliverable as a software integration."
+    },
+    "gate_7": {
+      "pass": true,
+      "reason": "The form, calendar, and staff authority remain."
+    },
+    "gate_8": {
+      "pass": true,
+      "reason": "The situation and payoff are easy to retell."
+    },
+    "gate_9": {
+      "pass": true,
+      "reason": "The relay is distinctive but approachable."
+    },
+    "tone": {
+      "pass": true,
+      "reason": "The Brief is confident, plain, and no-pressure."
+    },
+    "claims": {
+      "pass": true,
+      "reason": "Claims are qualitative and the breadcrumb is grounded."
+    }
   },
   "verdict_contract_cases": [
-    { "id": "valid-all-pass", "valid": true },
-    { "id": "valid-shuffled-gates", "valid": true, "reverse_gates": true },
-    { "id": "valid-fail-safe-all-reported-pass", "valid": true, "set": { "pass": false } },
-    { "id": "valid-fail-safe-with-reported-failure", "valid": true, "set": { "pass": false, "tone.pass": false } },
-    { "id": "null-verdict", "valid": false, "literal": null },
-    { "id": "array-verdict", "valid": false, "literal": [] },
-    { "id": "missing-claims", "valid": false, "delete": ["claims"] },
-    { "id": "extra-top-level", "valid": false, "set": { "grounding": { "pass": true, "reason": "extra" } } },
-    { "id": "pass-string", "valid": false, "set": { "pass": "true" } },
-    { "id": "short-gates", "valid": false, "truncate_gates": 8 },
-    { "id": "long-gates", "valid": false, "append_gate": { "gate": 9, "pass": true, "reason": "duplicate" } },
-    { "id": "duplicate-and-missing-gate", "valid": false, "set": { "gates.0.gate": 2 } },
-    { "id": "string-gate", "valid": false, "set": { "gates.0.gate": "1" } },
-    { "id": "fractional-gate", "valid": false, "set": { "gates.0.gate": 1.5 } },
-    { "id": "gate-zero", "valid": false, "set": { "gates.0.gate": 0 } },
-    { "id": "gate-ten", "valid": false, "set": { "gates.0.gate": 10 } },
-    { "id": "gate-missing-pass", "valid": false, "delete": ["gates.0.pass"] },
-    { "id": "gate-extra-property", "valid": false, "set": { "gates.0.score": 1 } },
-    { "id": "gate-empty-reason", "valid": false, "set": { "gates.0.reason": "  " } },
-    { "id": "tone-missing-reason", "valid": false, "delete": ["tone.reason"] },
-    { "id": "tone-empty-reason", "valid": false, "set": { "tone.reason": "  " } },
-    { "id": "tone-extra-property", "valid": false, "set": { "tone.score": 1 } },
-    { "id": "claims-empty-reason", "valid": false, "set": { "claims.reason": "" } },
-    { "id": "claims-extra-property", "valid": false, "set": { "claims.score": 1 } },
-    { "id": "claims-string-pass", "valid": false, "set": { "claims.pass": "true" } },
-    { "id": "unsafe-gate-aggregate-pass", "valid": false, "set": { "gates.8.pass": false } },
-    { "id": "unsafe-tone-aggregate-pass", "valid": false, "set": { "tone.pass": false } },
-    { "id": "unsafe-claims-aggregate-pass", "valid": false, "set": { "claims.pass": false } }
+    {
+      "id": "valid-all-pass",
+      "valid": true
+    },
+    {
+      "id": "valid-shuffled-gates",
+      "valid": true,
+      "reverse_gates": true
+    },
+    {
+      "id": "valid-fail-safe-all-reported-pass",
+      "valid": true,
+      "set": {
+        "pass": false
+      }
+    },
+    {
+      "id": "valid-fail-safe-with-reported-failure",
+      "valid": true,
+      "set": {
+        "pass": false,
+        "tone.pass": false
+      }
+    },
+    {
+      "id": "null-verdict",
+      "valid": false,
+      "literal": null
+    },
+    {
+      "id": "array-verdict",
+      "valid": false,
+      "literal": []
+    },
+    {
+      "id": "missing-claims",
+      "valid": false,
+      "delete": [
+        "claims"
+      ]
+    },
+    {
+      "id": "extra-top-level",
+      "valid": false,
+      "set": {
+        "grounding": {
+          "pass": true,
+          "reason": "extra"
+        }
+      }
+    },
+    {
+      "id": "pass-string",
+      "valid": false,
+      "set": {
+        "pass": "true"
+      }
+    },
+    {
+      "id": "short-gates",
+      "valid": false,
+      "truncate_gates": 8
+    },
+    {
+      "id": "long-gates",
+      "valid": false,
+      "append_gate": {
+        "gate": 9,
+        "pass": true,
+        "reason": "duplicate"
+      }
+    },
+    {
+      "id": "duplicate-and-missing-gate",
+      "valid": false,
+      "set": {
+        "gates.0.gate": 2
+      }
+    },
+    {
+      "id": "string-gate",
+      "valid": false,
+      "set": {
+        "gates.0.gate": "1"
+      }
+    },
+    {
+      "id": "fractional-gate",
+      "valid": false,
+      "set": {
+        "gates.0.gate": 1.5
+      }
+    },
+    {
+      "id": "gate-zero",
+      "valid": false,
+      "set": {
+        "gates.0.gate": 0
+      }
+    },
+    {
+      "id": "gate-ten",
+      "valid": false,
+      "set": {
+        "gates.0.gate": 10
+      }
+    },
+    {
+      "id": "gate-missing-pass",
+      "valid": false,
+      "delete": [
+        "gates.0.pass"
+      ]
+    },
+    {
+      "id": "gate-extra-property",
+      "valid": false,
+      "set": {
+        "gates.0.score": 1
+      }
+    },
+    {
+      "id": "gate-empty-reason",
+      "valid": false,
+      "set": {
+        "gates.0.reason": "  "
+      }
+    },
+    {
+      "id": "tone-missing-reason",
+      "valid": false,
+      "delete": [
+        "tone.reason"
+      ]
+    },
+    {
+      "id": "tone-empty-reason",
+      "valid": false,
+      "set": {
+        "tone.reason": "  "
+      }
+    },
+    {
+      "id": "tone-extra-property",
+      "valid": false,
+      "set": {
+        "tone.score": 1
+      }
+    },
+    {
+      "id": "claims-empty-reason",
+      "valid": false,
+      "set": {
+        "claims.reason": ""
+      }
+    },
+    {
+      "id": "claims-extra-property",
+      "valid": false,
+      "set": {
+        "claims.score": 1
+      }
+    },
+    {
+      "id": "claims-string-pass",
+      "valid": false,
+      "set": {
+        "claims.pass": "true"
+      }
+    },
+    {
+      "id": "unsafe-gate-aggregate-pass",
+      "valid": false,
+      "set": {
+        "gates.8.pass": false
+      }
+    },
+    {
+      "id": "unsafe-tone-aggregate-pass",
+      "valid": false,
+      "set": {
+        "tone.pass": false
+      }
+    },
+    {
+      "id": "unsafe-claims-aggregate-pass",
+      "valid": false,
+      "set": {
+        "claims.pass": false
+      }
+    }
   ],
   "normalization_cases": [
-    { "id": "provider-error", "shape": "provider_error", "classification": "provider_error" },
-    { "id": "timeout", "shape": "timeout", "classification": "timeout" },
-    { "id": "empty-response", "shape": "empty", "classification": "empty_response" },
-    { "id": "unknown-location", "shape": "unknown_location", "classification": "empty_response" },
-    { "id": "direct-response-object", "shape": "response_object", "classification": "direct_valid" },
-    { "id": "direct-response-text", "shape": "response_text", "classification": "direct_valid" },
-    { "id": "direct-result-text", "shape": "result_text", "classification": "direct_valid" },
-    { "id": "direct-choice-text", "shape": "choice_text", "classification": "direct_valid" },
-    { "id": "identical-duplicates", "shape": "identical_duplicates", "classification": "direct_valid" },
-    { "id": "semantic-not-byte-duplicates", "shape": "semantic_but_not_byte_duplicates", "classification": "ambiguous_envelope" },
-    { "id": "object-and-text-duplicates", "shape": "object_and_text_duplicates", "classification": "ambiguous_envelope" },
-    { "id": "repair-bom", "shape": "bom", "classification": "repaired_valid", "repair_kind": "bom" },
-    { "id": "repair-json-fence", "shape": "json_fence", "classification": "repaired_valid", "repair_kind": "json_fence" },
-    { "id": "repair-double-encoded", "shape": "double_encoded_json", "classification": "repaired_valid", "repair_kind": "double_encoded_json" },
-    { "id": "repair-prose", "shape": "surrounding_prose", "classification": "repaired_valid", "repair_kind": "surrounding_prose" },
-    { "id": "repair-prose-string-braces", "shape": "surrounding_prose_with_string_braces", "classification": "repaired_valid", "repair_kind": "surrounding_prose" },
-    { "id": "reject-truncated", "shape": "truncated", "classification": "unrecoverable_json" },
-    { "id": "reject-two-objects", "shape": "two_objects", "classification": "unrecoverable_json" },
-    { "id": "reject-trailing-comma", "shape": "trailing_comma", "classification": "unrecoverable_json" },
-    { "id": "reject-single-quotes", "shape": "single_quotes", "classification": "unrecoverable_json" },
-    { "id": "reject-unquoted-keys", "shape": "unquoted_keys", "classification": "unrecoverable_json" },
-    { "id": "reject-comments", "shape": "comments", "classification": "unrecoverable_json" },
-    { "id": "reject-unlabeled-fence", "shape": "unlabeled_fence", "classification": "unrecoverable_json" },
-    { "id": "reject-multiple-fences", "shape": "multiple_fences", "classification": "unrecoverable_json" },
-    { "id": "reject-array", "shape": "array", "classification": "schema_invalid" },
-    { "id": "reject-primitive", "shape": "primitive", "classification": "schema_invalid" },
-    { "id": "reject-schema", "shape": "schema_invalid", "classification": "schema_invalid" },
-    { "id": "reject-bom-plus-fence", "shape": "bom_plus_fence", "classification": "unrecoverable_json" },
-    { "id": "reject-fence-plus-prose", "shape": "fence_plus_prose", "classification": "unrecoverable_json" },
-    { "id": "reject-double-double", "shape": "double_double_encoded", "classification": "unrecoverable_json" },
-    { "id": "exact-size", "shape": "exact_size", "classification": "repaired_valid", "repair_kind": "surrounding_prose" },
-    { "id": "over-size", "shape": "over_size", "classification": "output_too_large" },
-    { "id": "conflict-before-size", "shape": "conflict_with_oversize", "classification": "ambiguous_envelope" },
-    { "id": "identical-oversize", "shape": "identical_oversize", "classification": "output_too_large" }
+    {
+      "id": "provider-error",
+      "shape": "provider_error",
+      "classification": "provider_error"
+    },
+    {
+      "id": "timeout",
+      "shape": "timeout",
+      "classification": "timeout"
+    },
+    {
+      "id": "empty-response",
+      "shape": "empty",
+      "classification": "empty_response"
+    },
+    {
+      "id": "unknown-location",
+      "shape": "unknown_location",
+      "classification": "empty_response"
+    },
+    {
+      "id": "direct-response-object",
+      "shape": "response_object",
+      "classification": "direct_valid"
+    },
+    {
+      "id": "direct-response-text",
+      "shape": "response_text",
+      "classification": "direct_valid"
+    },
+    {
+      "id": "direct-result-text",
+      "shape": "result_text",
+      "classification": "direct_valid"
+    },
+    {
+      "id": "direct-choice-text",
+      "shape": "choice_text",
+      "classification": "direct_valid"
+    },
+    {
+      "id": "identical-duplicates",
+      "shape": "identical_duplicates",
+      "classification": "direct_valid"
+    },
+    {
+      "id": "semantic-not-byte-duplicates",
+      "shape": "semantic_but_not_byte_duplicates",
+      "classification": "ambiguous_envelope"
+    },
+    {
+      "id": "object-and-text-duplicates",
+      "shape": "object_and_text_duplicates",
+      "classification": "ambiguous_envelope"
+    },
+    {
+      "id": "repair-bom",
+      "shape": "bom",
+      "classification": "repaired_valid",
+      "repair_kind": "bom"
+    },
+    {
+      "id": "repair-json-fence",
+      "shape": "json_fence",
+      "classification": "repaired_valid",
+      "repair_kind": "json_fence"
+    },
+    {
+      "id": "repair-double-encoded",
+      "shape": "double_encoded_json",
+      "classification": "repaired_valid",
+      "repair_kind": "double_encoded_json"
+    },
+    {
+      "id": "repair-prose",
+      "shape": "surrounding_prose",
+      "classification": "repaired_valid",
+      "repair_kind": "surrounding_prose"
+    },
+    {
+      "id": "repair-prose-string-braces",
+      "shape": "surrounding_prose_with_string_braces",
+      "classification": "repaired_valid",
+      "repair_kind": "surrounding_prose"
+    },
+    {
+      "id": "reject-truncated",
+      "shape": "truncated",
+      "classification": "unrecoverable_json"
+    },
+    {
+      "id": "reject-two-objects",
+      "shape": "two_objects",
+      "classification": "unrecoverable_json"
+    },
+    {
+      "id": "reject-trailing-comma",
+      "shape": "trailing_comma",
+      "classification": "unrecoverable_json"
+    },
+    {
+      "id": "reject-single-quotes",
+      "shape": "single_quotes",
+      "classification": "unrecoverable_json"
+    },
+    {
+      "id": "reject-unquoted-keys",
+      "shape": "unquoted_keys",
+      "classification": "unrecoverable_json"
+    },
+    {
+      "id": "reject-comments",
+      "shape": "comments",
+      "classification": "unrecoverable_json"
+    },
+    {
+      "id": "reject-unlabeled-fence",
+      "shape": "unlabeled_fence",
+      "classification": "unrecoverable_json"
+    },
+    {
+      "id": "reject-multiple-fences",
+      "shape": "multiple_fences",
+      "classification": "unrecoverable_json"
+    },
+    {
+      "id": "reject-array",
+      "shape": "array",
+      "classification": "schema_invalid"
+    },
+    {
+      "id": "reject-primitive",
+      "shape": "primitive",
+      "classification": "schema_invalid"
+    },
+    {
+      "id": "reject-schema",
+      "shape": "schema_invalid",
+      "classification": "schema_invalid"
+    },
+    {
+      "id": "reject-bom-plus-fence",
+      "shape": "bom_plus_fence",
+      "classification": "unrecoverable_json"
+    },
+    {
+      "id": "reject-fence-plus-prose",
+      "shape": "fence_plus_prose",
+      "classification": "unrecoverable_json"
+    },
+    {
+      "id": "reject-double-double",
+      "shape": "double_double_encoded",
+      "classification": "unrecoverable_json"
+    },
+    {
+      "id": "exact-size",
+      "shape": "exact_size",
+      "classification": "repaired_valid",
+      "repair_kind": "surrounding_prose"
+    },
+    {
+      "id": "over-size",
+      "shape": "over_size",
+      "classification": "output_too_large"
+    },
+    {
+      "id": "conflict-before-size",
+      "shape": "conflict_with_oversize",
+      "classification": "ambiguous_envelope"
+    },
+    {
+      "id": "identical-oversize",
+      "shape": "identical_oversize",
+      "classification": "output_too_large"
+    }
   ],
   "v2_cases": [
-    { "id": "bound-direct-object", "shape": "bound_direct", "classification": "direct_valid" },
-    { "id": "bound-direct-text", "shape": "bound_text", "classification": "direct_valid" },
-    { "id": "bound-repair-fence", "shape": "bound_fence", "classification": "repaired_valid", "repair_kind": "json_fence" },
-    { "id": "binding-missing", "shape": "binding_missing", "classification": "schema_invalid" },
-    { "id": "binding-extra", "shape": "binding_extra", "classification": "schema_invalid" },
-    { "id": "binding-non-string", "shape": "binding_non_string", "classification": "schema_invalid" },
-    { "id": "binding-mismatch", "shape": "binding_mismatch", "classification": "schema_invalid" },
-    { "id": "outer-extra", "shape": "outer_extra", "classification": "schema_invalid" },
-    { "id": "verdict-extra", "shape": "verdict_extra", "classification": "schema_invalid" },
-    { "id": "verdict-blank-reason", "shape": "verdict_blank_reason", "classification": "schema_invalid" },
-    { "id": "verdict-duplicate-gate", "shape": "verdict_duplicate_gate", "classification": "schema_invalid" },
-    { "id": "verdict-unsafe-pass", "shape": "verdict_unsafe_pass", "classification": "schema_invalid" },
-    { "id": "bound-chained-repair", "shape": "bound_chained_repair", "classification": "unrecoverable_json" },
-    { "id": "bound-ambiguous-before-size", "shape": "bound_ambiguous_size", "classification": "ambiguous_envelope" },
-    { "id": "bound-oversized", "shape": "bound_oversized", "classification": "output_too_large" },
-    { "id": "bound-provider-error", "shape": "provider_error", "classification": "provider_error" },
-    { "id": "bound-timeout", "shape": "timeout", "classification": "timeout" }
+    {
+      "id": "bound-direct-object",
+      "shape": "bound_direct",
+      "classification": "direct_valid"
+    },
+    {
+      "id": "bound-direct-text",
+      "shape": "bound_text",
+      "classification": "direct_valid"
+    },
+    {
+      "id": "bound-repair-fence",
+      "shape": "bound_fence",
+      "classification": "repaired_valid",
+      "repair_kind": "json_fence"
+    },
+    {
+      "id": "binding-missing",
+      "shape": "binding_missing",
+      "classification": "schema_invalid"
+    },
+    {
+      "id": "binding-extra",
+      "shape": "binding_extra",
+      "classification": "schema_invalid"
+    },
+    {
+      "id": "binding-non-string",
+      "shape": "binding_non_string",
+      "classification": "schema_invalid"
+    },
+    {
+      "id": "binding-mismatch",
+      "shape": "binding_mismatch",
+      "classification": "schema_invalid"
+    },
+    {
+      "id": "outer-extra",
+      "shape": "outer_extra",
+      "classification": "schema_invalid"
+    },
+    {
+      "id": "verdict-extra",
+      "shape": "verdict_extra",
+      "classification": "schema_invalid"
+    },
+    {
+      "id": "verdict-blank-reason",
+      "shape": "verdict_blank_reason",
+      "classification": "schema_invalid"
+    },
+    {
+      "id": "verdict-missing-gate",
+      "shape": "verdict_missing_gate",
+      "classification": "schema_invalid"
+    },
+    {
+      "id": "verdict-unsafe-pass",
+      "shape": "verdict_unsafe_pass",
+      "classification": "schema_invalid"
+    },
+    {
+      "id": "bound-chained-repair",
+      "shape": "bound_chained_repair",
+      "classification": "unrecoverable_json"
+    },
+    {
+      "id": "bound-ambiguous-before-size",
+      "shape": "bound_ambiguous_size",
+      "classification": "ambiguous_envelope"
+    },
+    {
+      "id": "bound-oversized",
+      "shape": "bound_oversized",
+      "classification": "output_too_large"
+    },
+    {
+      "id": "bound-provider-error",
+      "shape": "provider_error",
+      "classification": "provider_error"
+    },
+    {
+      "id": "bound-timeout",
+      "shape": "timeout",
+      "classification": "timeout"
+    }
   ]
 }

@@ -18,6 +18,7 @@ import {
   classifyJudgeCall,
   extractJudgeContent,
   fingerprintContractInput,
+  mapWireVerdictToCanonical,
   stableStringify,
   validateSpikeInput,
   validateVerdict,
@@ -131,13 +132,13 @@ function materializeContractCase(fixture) {
   return value;
 }
 
-function verdictText(value = fixtures.valid_verdict) {
+function verdictText(value = fixtures.wire_valid_verdict) {
   return JSON.stringify(value);
 }
 
 function materializeNormalizationCase(fixture) {
   const text = verdictText();
-  const invalid = clone(fixtures.valid_verdict);
+  const invalid = clone(fixtures.wire_valid_verdict);
   invalid.pass = "true";
 
   switch (fixture.shape) {
@@ -150,7 +151,7 @@ function materializeNormalizationCase(fixture) {
     case "unknown_location":
       return { call_state: "received", envelope: { output: text } };
     case "response_object":
-      return { call_state: "received", envelope: { response: clone(fixtures.valid_verdict) } };
+      return { call_state: "received", envelope: { response: clone(fixtures.wire_valid_verdict) } };
     case "response_text":
       return { call_state: "received", envelope: { response: text } };
     case "result_text":
@@ -160,9 +161,9 @@ function materializeNormalizationCase(fixture) {
     case "identical_duplicates":
       return { call_state: "received", envelope: { response: text, result: text } };
     case "semantic_but_not_byte_duplicates":
-      return { call_state: "received", envelope: { response: text, result: JSON.stringify(fixtures.valid_verdict, null, 2) } };
+      return { call_state: "received", envelope: { response: text, result: JSON.stringify(fixtures.wire_valid_verdict, null, 2) } };
     case "object_and_text_duplicates":
-      return { call_state: "received", envelope: { response: clone(fixtures.valid_verdict), result: text } };
+      return { call_state: "received", envelope: { response: clone(fixtures.wire_valid_verdict), result: text } };
     case "bom":
       return { call_state: "received", envelope: { response: `\uFEFF${text}` } };
     case "json_fence":
@@ -172,8 +173,8 @@ function materializeNormalizationCase(fixture) {
     case "surrounding_prose":
       return { call_state: "received", envelope: { response: `Judge verdict follows. ${text} End verdict.` } };
     case "surrounding_prose_with_string_braces": {
-      const withBraces = clone(fixtures.valid_verdict);
-      withBraces.gates[0].reason = "The routine uses {braces} and an escaped quote: \"okay\".";
+      const withBraces = clone(fixtures.wire_valid_verdict);
+      withBraces.gate_1.reason = "The routine uses {braces} and an escaped quote: \"okay\".";
       return { call_state: "received", envelope: { response: `Start ${verdictText(withBraces)} End` } };
     }
     case "truncated":
@@ -293,6 +294,26 @@ test("pass false is preserved while pass true cannot coexist with a reported fai
   unsafe.tone.reason = "The wording sounds like a pitch.";
   assert.equal(validateVerdict(unsafe).valid, false);
   assert.equal(unsafe.pass, true);
+});
+
+test("wire verdict maps losslessly to the exact canonical verdict", () => {
+  const mapped = mapWireVerdictToCanonical(clone(fixtures.wire_valid_verdict));
+  assert.equal(mapped.valid, true);
+  assert.deepEqual(mapped.verdict, fixtures.valid_verdict);
+
+  const missing = clone(fixtures.wire_valid_verdict);
+  delete missing.gate_9;
+  assert.equal(mapWireVerdictToCanonical(missing).valid, false);
+
+  const extra = clone(fixtures.wire_valid_verdict);
+  extra.gate_10 = { pass: true, reason: "extra" };
+  assert.equal(mapWireVerdictToCanonical(extra).valid, false);
+
+  const inconsistent = clone(fixtures.wire_valid_verdict);
+  inconsistent.gate_9.pass = false;
+  assert.equal(mapWireVerdictToCanonical(inconsistent).valid, false);
+  inconsistent.pass = false;
+  assert.equal(mapWireVerdictToCanonical(inconsistent).valid, true);
 });
 
 test("contract fingerprints are deterministic and bind every frozen input", async () => {
@@ -455,7 +476,7 @@ test("the adapter health route makes no inference and live POST makes exactly on
       async run(model, input) {
         calls.push({ model, input });
         return {
-          response: { candidate_ref: buildModelRequest(model, fixtures.synthetic_input).candidate_ref, verdict: clone(fixtures.valid_verdict) },
+          response: { candidate_ref: buildModelRequest(model, fixtures.synthetic_input).candidate_ref, verdict: clone(fixtures.wire_valid_verdict) },
           usage: { prompt_tokens: 100, completion_tokens: 200, total_tokens: 300, secret: 1 },
         };
       },
@@ -494,11 +515,11 @@ test("the adapter health route makes no inference and live POST makes exactly on
   assert.deepEqual(calls[0].input, buildRequestManifest(fixtures.synthetic_input).by_model[0].adapter_input);
   const body = await response.json();
   assert.equal(body.ok, true);
-  assert.deepEqual(body.envelope.response.verdict, fixtures.valid_verdict);
+  assert.deepEqual(body.envelope.response.verdict, fixtures.wire_valid_verdict);
   assert.deepEqual(body.usage, { prompt_tokens: 100, completion_tokens: 200, total_tokens: 300 });
   assert.equal(Object.hasOwn(body, "tool_calls"), false);
 
-  env.AI.run = async () => ({ response: { candidate_ref: buildModelRequest(MODELS[0], fixtures.synthetic_input).candidate_ref, verdict: clone(fixtures.valid_verdict), reasoning: "must not retain" } });
+  env.AI.run = async () => ({ response: { candidate_ref: buildModelRequest(MODELS[0], fixtures.synthetic_input).candidate_ref, verdict: clone(fixtures.wire_valid_verdict), reasoning: "must not retain" } });
   const metadataResponse = await adapter.fetch(new Request("http://127.0.0.1/run", {
     method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(buildModelRequest(MODELS[0], fixtures.synthetic_input)),
   }), env);
@@ -532,7 +553,7 @@ test("the sequential runner counts every invocation and never retries", async ()
     count: 3,
     async invoke() {
       invoked += 1;
-      return { call_state: "received", envelope: { response: clone(fixtures.valid_verdict) } };
+      return { call_state: "received", envelope: { response: clone(fixtures.wire_valid_verdict) } };
     },
   });
   assert.equal(invoked, 3);
@@ -630,7 +651,7 @@ test("the live protocol qualifies accepted configurations independently and neve
       tick += 10;
       if (position === 6) return { call_state: "timeout", started_at, ended_at };
       if (position === 29) return { call_state: "provider_error", error_code: "counted-provider-error", started_at, ended_at };
-      return { call_state: "received", envelope: { response: { candidate_ref: request_body.candidate_ref, verdict: clone(fixtures.valid_verdict) } }, usage: null, started_at, ended_at };
+      return { call_state: "received", envelope: { response: { candidate_ref: request_body.candidate_ref, verdict: clone(fixtures.wire_valid_verdict) } }, usage: null, started_at, ended_at };
     },
   });
   assert.equal(records.length, 42);
@@ -647,7 +668,7 @@ test("the live protocol qualifies accepted configurations independently and neve
     const started_at = new Date(tick).toISOString(); tick += 10;
     const ended_at = new Date(tick).toISOString(); tick += 10;
     if (request_body.model === MODELS[0] && calls === 1) return { call_state: "timeout", started_at, ended_at };
-    return { call_state: "received", envelope: { response: { candidate_ref: request_body.candidate_ref, verdict: clone(fixtures.valid_verdict) } }, started_at, ended_at };
+    return { call_state: "received", envelope: { response: { candidate_ref: request_body.candidate_ref, verdict: clone(fixtures.wire_valid_verdict) } }, started_at, ended_at };
   } });
   assert.equal(partial.length, 22);
   assert.equal(partial.filter(({ model }) => model === MODELS[0]).length, 1);
@@ -687,8 +708,8 @@ async function operationalEvidence({ blocked = false, endpoint = "http://127.0.0
     const modelIndex = MODELS.indexOf(request_body.model);
     const direct = callIndex === 0 || callIndex <= directByModel[modelIndex];
     const response = direct
-      ? { candidate_ref: request_body.candidate_ref, verdict: clone(fixtures.valid_verdict) }
-      : JSON.stringify({ candidate_ref: request_body.candidate_ref, verdict: { ...clone(fixtures.valid_verdict), pass: "true" } });
+      ? { candidate_ref: request_body.candidate_ref, verdict: clone(fixtures.wire_valid_verdict) }
+      : JSON.stringify({ candidate_ref: request_body.candidate_ref, verdict: { ...clone(fixtures.wire_valid_verdict), pass: "true" } });
     return { call_state: "received", started_at, ended_at, envelope: { response }, usage: missingUsage ? undefined : { prompt_tokens: 1, completion_tokens: 2, total_tokens: 3 } };
   } });
   const evidence = await buildOperationalEvidence({
@@ -1061,16 +1082,31 @@ test("approval templates require explicit timestamps and plan publication is ext
   assert.equal(await readFile(rollbackTemplate, "utf8"), "occupied");
 });
 
-test("plan command refuses against the retained completed called cycle (course-end governance)", async () => {
-  // The real results directory holds the completed 2026-08-22 called cycle; governance
-  // requires the CLI to refuse new plan generation while that recovery is retained.
-  const directory = await mkdtemp(path.join(tmpdir(), "oddspark-plan-refused-"));
+test("owner-reviewed 2026-08-22 cycle is immutable history; unreviewed spend still blocks planning", async () => {
+  // The completed called cycle is classified as owner-reviewed history (recovery-finder
+  // re-verifies marker bytes, bundle bindings, NO-GO outcome, and zero refs), so a newly
+  // granted matrix may be planned.
+  const directory = await mkdtemp(path.join(tmpdir(), "oddspark-plan-history-"));
   const output = path.join(directory, "recovery-plan.json");
+  await planCommand({ output, account_profile: "test-profile", plan: "paid", approval_run_id: "history-run" });
+  await access(output);
+
+  // An unreviewed receipt proving (or unable to disprove) provider invocation still blocks.
+  const blockedResults = await mkdtemp(path.join(tmpdir(), "oddspark-plan-blocked-"));
+  await writeFile(path.join(blockedResults, ".judge-llama-cycle-spend.json"), `${JSON.stringify({
+    schema_version: "oddspark.judge-cycle-spend/v2",
+    attempt_id: "00000000-0000-4000-8000-000000000001",
+    approval_run_id: "00000000-0000-4000-8000-000000000002",
+    created_at: "2026-08-22T00:00:00.000Z",
+    updated_at: "2026-08-22T00:00:00.000Z",
+    state: "calls-started",
+    calls_started: 1,
+    last_call: { sequence: 1, kind: "probe", model: MODELS[0], index: 1, marked_at: "2026-08-22T00:00:00.000Z" },
+  }, null, 2)}\n`);
   await assert.rejects(
-    planCommand({ output, account_profile: "test-profile", plan: "paid", approval_run_id: "refused-run" }),
+    planCommand({ output: path.join(directory, "blocked-plan.json"), account_profile: "test-profile", plan: "paid", approval_run_id: "blocked-run" }, { resultsDir: blockedResults }),
     /prior operational recovery already retained/,
   );
-  await assert.rejects(access(output));
 });
 
 test("runLive accepts the completed immutable on-disk disclosure and distinct canonical approval without network activity", async () => {
@@ -1090,7 +1126,7 @@ test("runLive accepts the completed immutable on-disk disclosure and distinct ca
       calls += 1;
       const started_at = new Date(setup.now.getTime() + calls * 2).toISOString();
       const ended_at = new Date(setup.now.getTime() + calls * 2 + 1).toISOString();
-      return { call_state: "received", started_at, ended_at, envelope: { response: { candidate_ref: request_body.candidate_ref, verdict: clone(fixtures.valid_verdict) } }, usage: null };
+      return { call_state: "received", started_at, ended_at, envelope: { response: { candidate_ref: request_body.candidate_ref, verdict: clone(fixtures.wire_valid_verdict) } }, usage: null };
     },
     async writeArtifacts(evidence) { retained = clone(evidence); return { jsonPath: "disk.json", markdownPath: "disk.md", qualificationPath: "disk-qualification.json" }; },
   });
@@ -1605,7 +1641,7 @@ test("exclusive recovery locking prevents concurrent live attempts from both inv
       const started_at = new Date(tick).toISOString(); tick += 10;
       const ended_at = new Date(tick).toISOString(); tick += 10;
       if (firstCalls === 1) return { call_state: "timeout", started_at, ended_at };
-      return { call_state: "received", started_at, ended_at, envelope: { response: { candidate_ref: request_body.candidate_ref, verdict: clone(fixtures.valid_verdict) } }, usage: null };
+      return { call_state: "received", started_at, ended_at, envelope: { response: { candidate_ref: request_body.candidate_ref, verdict: clone(fixtures.wire_valid_verdict) } }, usage: null };
     },
   });
   await firstMarked;
@@ -1736,7 +1772,7 @@ test("a successful filesystem-governed run reports verified evidence and refs de
       calls += 1;
       const started_at = new Date(tick).toISOString(); tick += 10;
       const ended_at = new Date(tick).toISOString(); tick += 10;
-      return { call_state: "received", started_at, ended_at, envelope: { response: { candidate_ref: request_body.candidate_ref, verdict: clone(fixtures.valid_verdict) } }, usage: null };
+      return { call_state: "received", started_at, ended_at, envelope: { response: { candidate_ref: request_body.candidate_ref, verdict: clone(fixtures.wire_valid_verdict) } }, usage: null };
     },
   }), "GO");
   assert.equal(calls, 42);
@@ -1935,7 +1971,7 @@ test("blocked and corrected attempts with one approval run id publish without co
       calls += 1;
       const started_at = new Date(tick).toISOString(); tick += 10;
       const ended_at = new Date(tick).toISOString(); tick += 10;
-      return { call_state: "received", started_at, ended_at, envelope: { response: { candidate_ref: request_body.candidate_ref, verdict: clone(fixtures.valid_verdict) } }, usage: null };
+      return { call_state: "received", started_at, ended_at, envelope: { response: { candidate_ref: request_body.candidate_ref, verdict: clone(fixtures.wire_valid_verdict) } }, usage: null };
     },
   }), "GO");
   assert.equal(calls, 42);
@@ -1974,7 +2010,7 @@ test("a rejected probe does not block the accepted peer or emit a failed configu
       const started_at = new Date(tick).toISOString(); tick += 10;
       const ended_at = new Date(tick).toISOString(); tick += 10;
       if (calls === 1) return { call_state: "timeout", started_at, ended_at };
-      return { call_state: "received", started_at, ended_at, envelope: { response: { candidate_ref: request_body.candidate_ref, verdict: clone(fixtures.valid_verdict) } }, usage: null };
+      return { call_state: "received", started_at, ended_at, envelope: { response: { candidate_ref: request_body.candidate_ref, verdict: clone(fixtures.wire_valid_verdict) } }, usage: null };
     },
     async retainInvalidEvidence() { throw new Error("unexpected invalid probe-stop evidence"); },
     async writeArtifacts(evidence, qualification) { retained = clone(evidence); bundle = clone(qualification); return { jsonPath: "probe.json", markdownPath: "probe.md", qualificationPath: "probe-qualification.json" }; },
@@ -2008,7 +2044,7 @@ test("exact fresh approval runs the full matrix and emits independently verified
       calls += 1;
       const started_at = new Date(tick).toISOString(); tick += 10;
       const ended_at = new Date(tick).toISOString(); tick += 10;
-      return { call_state: "received", started_at, ended_at, envelope: { response: { candidate_ref: request_body.candidate_ref, verdict: clone(fixtures.valid_verdict) } }, usage: { prompt_tokens: 1, completion_tokens: 2, total_tokens: 3 } };
+      return { call_state: "received", started_at, ended_at, envelope: { response: { candidate_ref: request_body.candidate_ref, verdict: clone(fixtures.wire_valid_verdict) } }, usage: { prompt_tokens: 1, completion_tokens: 2, total_tokens: 3 } };
     },
     async retainInvalidEvidence() { throw new Error("unexpected invalid evidence in full live fixture"); },
     async writeArtifacts(evidence, qualification) { retained = clone(evidence); bundle = clone(qualification); return { jsonPath: "full.json", markdownPath: "full.md", qualificationPath: "full-qualification.json" }; },
@@ -2040,7 +2076,7 @@ test("post-call verification failure retains the evidence file before failing cl
     async invoke({ request_body }) {
       const started_at = new Date(tick).toISOString(); tick += 10;
       const ended_at = new Date(tick).toISOString(); tick += 10;
-      return { call_state: "received", started_at, ended_at, envelope: { response: { candidate_ref: request_body.candidate_ref, verdict: clone(fixtures.valid_verdict) } }, usage: null };
+      return { call_state: "received", started_at, ended_at, envelope: { response: { candidate_ref: request_body.candidate_ref, verdict: clone(fixtures.wire_valid_verdict) } }, usage: null };
     },
     evidenceDependencies: { executeFixtures: async () => ({ declared_ids: ["post-call-drift"], passing_ids: [], failures: ["post-call-drift: failed"] }) },
     async retainInvalidEvidence(evidence) {
@@ -2080,7 +2116,7 @@ test("post-call source, runtime, and request identities are freshly re-read befo
       calls += 1;
       const started_at = new Date(tick).toISOString(); tick += 10;
       const ended_at = new Date(tick).toISOString(); tick += 10;
-      return { call_state: "received", started_at, ended_at, envelope: { response: { candidate_ref: request_body.candidate_ref, verdict: clone(fixtures.valid_verdict) } }, usage: null };
+      return { call_state: "received", started_at, ended_at, envelope: { response: { candidate_ref: request_body.candidate_ref, verdict: clone(fixtures.wire_valid_verdict) } }, usage: null };
     },
     async retainInvalidEvidence(evidence) { retained = clone(evidence); return "post-call-identity-invalid.json"; },
   }), /retained evidence failed verification/);
@@ -2113,7 +2149,7 @@ test("qualification and publication failures after calls retain discoverable evi
         const started_at = new Date(tick).toISOString(); tick += 10;
         const ended_at = new Date(tick).toISOString(); tick += 10;
         if (calls === 1) return { call_state: "timeout", started_at, ended_at };
-        return { call_state: "received", started_at, ended_at, envelope: { response: { candidate_ref: request_body.candidate_ref, verdict: clone(fixtures.valid_verdict) } }, usage: null };
+        return { call_state: "received", started_at, ended_at, envelope: { response: { candidate_ref: request_body.candidate_ref, verdict: clone(fixtures.wire_valid_verdict) } }, usage: null };
       },
     };
     if (failureMode === "qualification") dependencies.buildQualificationBundle = async () => { throw new Error("qualification construction failed"); };
