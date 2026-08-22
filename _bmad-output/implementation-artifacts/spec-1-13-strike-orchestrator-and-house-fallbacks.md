@@ -14,7 +14,7 @@ operator_actions:
   - 'Approve the exact current house Brief catalog as owner and preserve its computed catalog and approval identities.'
   - 'Approve the exact current voice-v1 semantic corpus as owner and preserve its computed hashes and semantic identity.'
   - 'Run and independently verify the live generation and judge qualification plans, retaining GO evidence for every production role identity.'
-  - 'Resolve the verified primary and fallback generation identities and the active STRUCT-JUDGE identity for the later activation manifest.'
+  - 'Resolve the verified primary generation identity (Story 1.11 run l9 sole-member role set) and the active STRUCT-JUDGE identity for the later activation manifest; the generation fallback leg stays unwired per Justin's 2026-08-22 topology decision — generation exhaustion or failure serves the approved house Brief.'
 ---
 
 <intent-contract>

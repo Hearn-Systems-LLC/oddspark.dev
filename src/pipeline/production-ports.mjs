@@ -11,9 +11,11 @@
 // location, passed unchanged to the closed Candidate classifier and
 // JudgeResult validator — no repair, coercion, prose/fence extraction, or
 // alternate locations. AI_MODEL_FALLBACK is a presence-only misconfig guard:
-// fallback model wiring is a Story 1.11 qualification product and stays
-// unwired here. PIPELINE_JUDGE carries qualification refs that do not exist
-// yet, so it is deliberately NOT constructed — never fabricated.
+// per Justin's 2026-08-22 topology decision (Story 1.11 spec change log) the
+// generation role is qualified primary-only and the fallback model leg stays
+// permanently unwired — generation exhaustion or failure serves the Story 1.13
+// approved house Brief. PIPELINE_JUDGE carries qualification refs that do not
+// exist yet, so it is deliberately NOT constructed — never fabricated.
 //
 // With ACTIVATION_MANIFEST absent none of this is consumed: the assembly
 // evaluates the manifest first and returns null before any port validation.
