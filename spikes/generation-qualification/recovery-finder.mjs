@@ -68,7 +68,7 @@ async function verifyCompletion(directory, receipt, markerName, dependencies) {
 /** Exhaustively classify the current Llama cycle before deciding whether it may run. */
 export async function findPriorOperationalRecovery(directory, dependencies = {}) {
   let names = []; try { names = await readdir(directory); } catch (error) { if (error.code === "ENOENT") return { state: "available", zero_call_attempts: [] }; throw error; }
-  const legacy = (name) => /^story-1-11-2026-08-19-r[23](?:-|\.)/.test(name) || /^story-1-11-2026-08-22-l[2467](?:-|\.)/.test(name);
+  const legacy = (name) => /^story-1-11-2026-08-19-r[23](?:-|\.)/.test(name) || /^story-1-11-2026-08-22-l[24678](?:-|\.)/.test(name);
   const currentSuffix = /\.(?:spend-receipt\.json|complete\.json|evidence\.json|qualification\.json|report\.md)$/;
   const malformedCurrent = names.filter((name) => currentSuffix.test(name) && !legacy(name) && !RECEIPT.test(name) && !MARKER.test(name) && !/^[A-Za-z0-9][A-Za-z0-9._-]{0,127}-[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\.(?:evidence\.json|qualification\.json|report\.md)$/.test(name));
   if (malformedCurrent.length) throw new Error(`malformed current-looking artifact names: ${malformedCurrent.sort().join(", ")}`);
