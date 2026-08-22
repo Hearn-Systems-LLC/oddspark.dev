@@ -1,0 +1,21 @@
+{
+  "schema_version": "oddspark.judge-cycle-completion/v2",
+  "basename": "2026-08-22-c0b94e4a-819dd1f7ed29e093-286bd0b2-4e62-4e1b-83c4-6b69653f2a31-v2",
+  "files": [
+    {
+      "name": "2026-08-22-c0b94e4a-819dd1f7ed29e093-286bd0b2-4e62-4e1b-83c4-6b69653f2a31-v2.json",
+      "bytes": 81932,
+      "sha256": "819dd1f7ed29e0930ddfd79488c696713df1013221f1db71d413792e91e885a2"
+    },
+    {
+      "name": "2026-08-22-c0b94e4a-819dd1f7ed29e093-286bd0b2-4e62-4e1b-83c4-6b69653f2a31-v2.md",
+      "bytes": 3651,
+      "sha256": "d1c48fab9e7df33be19012f316ee31c69a0f9f01877c84db6743c3c53130c9b0"
+    },
+    {
+      "name": "2026-08-22-c0b94e4a-819dd1f7ed29e093-286bd0b2-4e62-4e1b-83c4-6b69653f2a31-qualification.json",
+      "bytes": 78627,
+      "sha256": "4e5a146a87bbf273ec69f9003113100e08a4812d8a87b72be16d4bff80a25efc"
+    }
+  ]
+}
