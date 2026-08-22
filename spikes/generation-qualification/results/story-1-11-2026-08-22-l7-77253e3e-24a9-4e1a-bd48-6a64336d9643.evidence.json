@@ -1,0 +1,3641 @@
+{
+  "schema_version": "oddspark.generation-qualification-evidence/v2",
+  "run": {
+    "id": "77253e3e-24a9-4e1a-bd48-6a64336d9643",
+    "started_at": "2026-08-22T13:56:24.284Z",
+    "ended_at": "2026-08-22T13:59:15.871Z",
+    "call_cap": 42,
+    "calls_made": 22
+  },
+  "plan": {
+    "schema_version": "oddspark.generation-qualification-plan/v2",
+    "plan_ref": "8a5e57978826a9bef0c35b52661e10f987a98d30edd3662d49dc32c8102af545",
+    "approval_run_id": "story-1-11-2026-08-22-l7",
+    "created_at": "2026-08-22T13:55:04.002Z",
+    "provider": "cloudflare-workers-ai",
+    "authority": {
+      "account_profile": "operator-reviewed-profile",
+      "credential_path": "wrangler-remote-binding",
+      "headroom_confirmed": true
+    },
+    "roles": [
+      {
+        "role": "primary",
+        "resolved_model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+      },
+      {
+        "role": "fallback",
+        "resolved_model": "@cf/openai/gpt-oss-20b"
+      }
+    ],
+    "parameters": {
+      "temperature": 0,
+      "max_tokens": 2048
+    },
+    "timeout_policy": {
+      "adapter_timeout_ms": 120000,
+      "preflight_timeout_ms": 10000,
+      "probes_must_complete_before_trials": true,
+      "execution": "sequential",
+      "retries": 0,
+      "replacements": 0
+    },
+    "input": {
+      "evidence": {
+        "version": 1,
+        "mode": "local",
+        "priors": {
+          "region": "Blue Water Area",
+          "season": "summer",
+          "date": "2026-08-18",
+          "situation": "repeated inquiries",
+          "capability_bundle": [
+            "software",
+            "workflow automation"
+          ]
+        }
+      },
+      "seed": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "requests": [
+      {
+        "role": "primary",
+        "resolved_model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+        "body": {
+          "role": "primary",
+          "model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+          "messages": [
+            {
+              "role": "system",
+              "content": "You are a product strategist for small local businesses. The user message contains generation inputs (an evidence object — region, season, situation, capability_bundle — and a random seed). Your task: INVENT one new, practical improvement the business could make using software or workflow automation, and return it as exactly one JSON Candidate object matching the supplied JSON Schema.\n\nRules:\n- The user message is input only. NEVER copy, echo, or reshape it into the output. The output is a new object describing your invented idea.\n- Use these exact nested object shapes: why_fits is an object {\"text\": \"...\"} (never a dotted key, never a breadcrumb field); before_after is {\"before\": \"...\", \"after\": \"...\"}; change_level is {\"time_range\": \"...\", \"steps_changed\": 0, \"steps_removed\": 0, \"preliminary\": true} with non-negative integer step counts; stays_same is {\"tools\": [...], \"authority\": [...], \"steps\": [...]}.\n- version is exactly 1; mode is exactly \"local\"; title, plan, what_gets_better, invitation are nonblank strings.\n- grounded_numbers MUST be an empty array [] in local mode. Write every narrative field qualitatively: no digits or numeric tokens anywhere outside change_level's integer fields (use words like \"one afternoon\" instead).\n- Never mention prices or costs: no currency symbols and none of the words price, pricing, cost, fee, subscription, per month, per year.\n- invitation must contain the word \"Spark\" and be a confident, bounded next step addressed to the owner — a statement, not a question. Never hedge (\"if it is worth\", \"if it sounds useful\", \"not worth changing\", \"call it off\") and never use pitch language (\"act now\", \"book now\", \"limited time\", \"schedule a call\", \"don't miss\", \"last chance\").\n- Do not include a candidate_ref. Do not wrap, fence, explain, or add any text outside the JSON object."
+            },
+            {
+              "role": "user",
+              "content": "{\"evidence\":{\"mode\":\"local\",\"priors\":{\"capability_bundle\":[\"software\",\"workflow automation\"],\"date\":\"2026-08-18\",\"region\":\"Blue Water Area\",\"season\":\"summer\",\"situation\":\"repeated inquiries\"},\"version\":1},\"seed\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}"
+            }
+          ],
+          "temperature": 0,
+          "max_tokens": 2048,
+          "response_format": {
+            "type": "json_schema",
+            "json_schema": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "version",
+                "mode",
+                "title",
+                "plan",
+                "why_fits",
+                "what_gets_better",
+                "before_after",
+                "change_level",
+                "stays_same",
+                "invitation",
+                "grounded_numbers"
+              ],
+              "properties": {
+                "version": {
+                  "const": 1
+                },
+                "mode": {
+                  "enum": [
+                    "local",
+                    "domain"
+                  ]
+                },
+                "title": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "plan": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "why_fits": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "text"
+                  ],
+                  "properties": {
+                    "text": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "breadcrumb": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  }
+                },
+                "what_gets_better": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "before_after": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "before",
+                    "after"
+                  ],
+                  "properties": {
+                    "before": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "after": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  }
+                },
+                "change_level": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "time_range",
+                    "steps_changed",
+                    "steps_removed",
+                    "preliminary"
+                  ],
+                  "properties": {
+                    "time_range": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "steps_changed": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "steps_removed": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "preliminary": {
+                      "const": true
+                    }
+                  }
+                },
+                "stays_same": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "tools",
+                    "authority",
+                    "steps"
+                  ],
+                  "properties": {
+                    "tools": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "authority": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "steps": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    }
+                  }
+                },
+                "invitation": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "grounded_numbers": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "notice": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "allOf": [
+                {
+                  "if": {
+                    "properties": {
+                      "mode": {
+                        "const": "domain"
+                      }
+                    }
+                  },
+                  "then": {
+                    "properties": {
+                      "why_fits": {
+                        "required": [
+                          "text",
+                          "breadcrumb"
+                        ]
+                      }
+                    }
+                  },
+                  "else": {
+                    "properties": {
+                      "why_fits": {
+                        "not": {
+                          "required": [
+                            "breadcrumb"
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        },
+        "request_sha256": "d04115e10854b71a6bbe529e86b9753d5920dee150a874265115bbd37679b793",
+        "adapter_input_sha256": "d41b03281e87550ba5438e01d773ee1336275d23c9a0a8ea815e3239568f4ade"
+      },
+      {
+        "role": "fallback",
+        "resolved_model": "@cf/openai/gpt-oss-20b",
+        "body": {
+          "role": "fallback",
+          "model": "@cf/openai/gpt-oss-20b",
+          "messages": [
+            {
+              "role": "system",
+              "content": "You are a product strategist for small local businesses. The user message contains generation inputs (an evidence object — region, season, situation, capability_bundle — and a random seed). Your task: INVENT one new, practical improvement the business could make using software or workflow automation, and return it as exactly one JSON Candidate object matching the supplied JSON Schema.\n\nRules:\n- The user message is input only. NEVER copy, echo, or reshape it into the output. The output is a new object describing your invented idea.\n- Use these exact nested object shapes: why_fits is an object {\"text\": \"...\"} (never a dotted key, never a breadcrumb field); before_after is {\"before\": \"...\", \"after\": \"...\"}; change_level is {\"time_range\": \"...\", \"steps_changed\": 0, \"steps_removed\": 0, \"preliminary\": true} with non-negative integer step counts; stays_same is {\"tools\": [...], \"authority\": [...], \"steps\": [...]}.\n- version is exactly 1; mode is exactly \"local\"; title, plan, what_gets_better, invitation are nonblank strings.\n- grounded_numbers MUST be an empty array [] in local mode. Write every narrative field qualitatively: no digits or numeric tokens anywhere outside change_level's integer fields (use words like \"one afternoon\" instead).\n- Never mention prices or costs: no currency symbols and none of the words price, pricing, cost, fee, subscription, per month, per year.\n- invitation must contain the word \"Spark\" and be a confident, bounded next step addressed to the owner — a statement, not a question. Never hedge (\"if it is worth\", \"if it sounds useful\", \"not worth changing\", \"call it off\") and never use pitch language (\"act now\", \"book now\", \"limited time\", \"schedule a call\", \"don't miss\", \"last chance\").\n- Do not include a candidate_ref. Do not wrap, fence, explain, or add any text outside the JSON object."
+            },
+            {
+              "role": "user",
+              "content": "{\"evidence\":{\"mode\":\"local\",\"priors\":{\"capability_bundle\":[\"software\",\"workflow automation\"],\"date\":\"2026-08-18\",\"region\":\"Blue Water Area\",\"season\":\"summer\",\"situation\":\"repeated inquiries\"},\"version\":1},\"seed\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}"
+            }
+          ],
+          "temperature": 0,
+          "max_tokens": 2048,
+          "response_format": {
+            "type": "json_schema",
+            "json_schema": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "version",
+                "mode",
+                "title",
+                "plan",
+                "why_fits",
+                "what_gets_better",
+                "before_after",
+                "change_level",
+                "stays_same",
+                "invitation",
+                "grounded_numbers"
+              ],
+              "properties": {
+                "version": {
+                  "const": 1
+                },
+                "mode": {
+                  "enum": [
+                    "local",
+                    "domain"
+                  ]
+                },
+                "title": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "plan": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "why_fits": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "text"
+                  ],
+                  "properties": {
+                    "text": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "breadcrumb": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  }
+                },
+                "what_gets_better": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "before_after": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "before",
+                    "after"
+                  ],
+                  "properties": {
+                    "before": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "after": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  }
+                },
+                "change_level": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "time_range",
+                    "steps_changed",
+                    "steps_removed",
+                    "preliminary"
+                  ],
+                  "properties": {
+                    "time_range": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "steps_changed": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "steps_removed": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "preliminary": {
+                      "const": true
+                    }
+                  }
+                },
+                "stays_same": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "tools",
+                    "authority",
+                    "steps"
+                  ],
+                  "properties": {
+                    "tools": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "authority": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "steps": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    }
+                  }
+                },
+                "invitation": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "grounded_numbers": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "notice": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "allOf": [
+                {
+                  "if": {
+                    "properties": {
+                      "mode": {
+                        "const": "domain"
+                      }
+                    }
+                  },
+                  "then": {
+                    "properties": {
+                      "why_fits": {
+                        "required": [
+                          "text",
+                          "breadcrumb"
+                        ]
+                      }
+                    }
+                  },
+                  "else": {
+                    "properties": {
+                      "why_fits": {
+                        "not": {
+                          "required": [
+                            "breadcrumb"
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        },
+        "request_sha256": "4ca358197291cc50cee7684122b565f392a46e834cd3f1636cbea952ecbc4662",
+        "adapter_input_sha256": "d41b03281e87550ba5438e01d773ee1336275d23c9a0a8ea815e3239568f4ade"
+      }
+    ],
+    "sources": [
+      {
+        "path": "package.json",
+        "bytes": 3801,
+        "sha256": "bbe7d7c9512bf6944c684867fe03052976349c07c5a0c444106c09b9c70ca7d1"
+      },
+      {
+        "path": "runtime-baseline.json",
+        "bytes": 2900,
+        "sha256": "50d8e3fdb06b548a2b90d8f620cee6ed9620c33ed23314aa5f65db1ecec2cf35"
+      },
+      {
+        "path": "scripts/generation.mjs",
+        "bytes": 247,
+        "sha256": "616b68cb4b9e51014732dd60daca9207577d1ac1a73004b53291683c04af6f84"
+      },
+      {
+        "path": "scripts/brief-contracts.mjs",
+        "bytes": 245,
+        "sha256": "25b0ec6859bad24c938b0bded7ca45874c8c74d09e6bed9090f65d3ae68346d1"
+      },
+      {
+        "path": "spikes/judge-fidelity/contract.mjs",
+        "bytes": 28345,
+        "sha256": "c124dfbf2cb56727bb5fdc8b01622509867460304b3bbf3a635b8f004cc8d8f2"
+      },
+      {
+        "path": "spikes/generation-qualification/contract.mjs",
+        "bytes": 10114,
+        "sha256": "5e899da7e6062a041c28554c59aa184ae4c86318a2ad9050e253ff277fec0652"
+      },
+      {
+        "path": "spikes/generation-qualification/evidence-v2.mjs",
+        "bytes": 18601,
+        "sha256": "4e4b66f4208e5da004f724ee2db57974dd01e3b51a0a9f2119b1130ff220e7e0"
+      },
+      {
+        "path": "spikes/generation-qualification/fixture-executor.mjs",
+        "bytes": 2890,
+        "sha256": "60f950c422a0bd567b4753a645b754e3b67b514547241a72a13af52b00a90ab5"
+      },
+      {
+        "path": "spikes/generation-qualification/fixtures.json",
+        "bytes": 1147,
+        "sha256": "bc7a49026898e60c0717590ee6b2575b0f4dc32363322c2e06326b05f2ede9a3"
+      },
+      {
+        "path": "spikes/generation-qualification/pricing.mjs",
+        "bytes": 904,
+        "sha256": "7bd870f13ab6234e8dba707d98cb6c285b77a65d3cd4a94fc62ad0a0603b3fc8"
+      },
+      {
+        "path": "spikes/generation-qualification/qualification.mjs",
+        "bytes": 10391,
+        "sha256": "ecaebe9b3ea59b760e7e3bfddddb2ff6b0fc599ec0ea7dfc8826a5e2ceb42908"
+      },
+      {
+        "path": "spikes/generation-qualification/recovery-finder.mjs",
+        "bytes": 11653,
+        "sha256": "a322128746efedbbca46221cbd8cd6c7f667fe5fe613a0faa49ca26ea78b1290"
+      },
+      {
+        "path": "spikes/generation-qualification/run.mjs",
+        "bytes": 19038,
+        "sha256": "9bd63b3783efecd6095b77774df4b164eb2a1a75af944a96f66c7b4e1a70d5c3"
+      },
+      {
+        "path": "spikes/generation-qualification/start-adapter.mjs",
+        "bytes": 3647,
+        "sha256": "d3c11c52a66c6b0271d194529834b892a80beb7992421bfceff6ad4b5fe7518e"
+      },
+      {
+        "path": "spikes/generation-qualification/test.mjs",
+        "bytes": 33704,
+        "sha256": "36c083ee683d59416f9af93a99a87e994253a403ed6a75f21244be7a890d4da5"
+      },
+      {
+        "path": "spikes/generation-qualification/verify-v2.mjs",
+        "bytes": 805,
+        "sha256": "ae223fa409035d9efa535b2af9efd42f0f367980b3dc896c27167621c66d857c"
+      },
+      {
+        "path": "spikes/generation-qualification/worker.mjs",
+        "bytes": 5524,
+        "sha256": "d86af9f6665bede67cdb6f13564f83d13224c05b3744f68bc9714971aa6aa812"
+      },
+      {
+        "path": "spikes/generation-qualification/wrangler.toml",
+        "bytes": 298,
+        "sha256": "f61abbf68c7b3908700c596ad9c972b90b78fda5b94d500a35958594f03110c2"
+      }
+    ],
+    "runtime": {
+      "path": "runtime-baseline.json",
+      "bytes": 2900,
+      "sha256": "50d8e3fdb06b548a2b90d8f620cee6ed9620c33ed23314aa5f65db1ecec2cf35",
+      "runtime_identity_sha256": "a3d5ae76d31669bc1f008f7ef3d0fdde14d4a5b1fcb0fc63e70d290cdae32feb",
+      "node": "v24.18.0",
+      "wrangler": "4.123.0"
+    },
+    "expected_health": {
+      "ok": true,
+      "inference": false,
+      "schema_version": "oddspark.generation-adapter-health/v1",
+      "provider": "cloudflare-workers-ai",
+      "roles": [
+        {
+          "role": "primary",
+          "resolved_model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+        },
+        {
+          "role": "fallback",
+          "resolved_model": "@cf/openai/gpt-oss-20b"
+        }
+      ],
+      "parameters": {
+        "temperature": 0,
+        "max_tokens": 2048
+      },
+      "binding": "AI",
+      "worker_sha256": "d86af9f6665bede67cdb6f13564f83d13224c05b3744f68bc9714971aa6aa812",
+      "config_sha256": "f61abbf68c7b3908700c596ad9c972b90b78fda5b94d500a35958594f03110c2",
+      "runtime_sha256": "a3d5ae76d31669bc1f008f7ef3d0fdde14d4a5b1fcb0fc63e70d290cdae32feb"
+    },
+    "estimate": {
+      "pricing": {
+        "as_of": "2026-08-22",
+        "source": "https://developers.cloudflare.com/workers-ai/platform/pricing/",
+        "disclosure": "Cloudflare publishes $0.29/M input and $2.25/M output for the selected 70B endpoint and $0.20/M input and $0.30/M output for the selected gpt-oss-20b endpoint; both bindings are exact published rates.",
+        "currency": "USD",
+        "observed": {
+          "@cf/meta/llama-3.3-70b-instruct-fp8-fast": {
+            "input_per_million_usd": 0.29,
+            "output_per_million_usd": 2.25,
+            "exact": true
+          },
+          "@cf/openai/gpt-oss-20b": {
+            "input_per_million_usd": 0.2,
+            "output_per_million_usd": 0.3,
+            "exact": true
+          }
+        },
+        "budget": {
+          "@cf/meta/llama-3.3-70b-instruct-fp8-fast": {
+            "input_per_million_usd": 0.29,
+            "output_per_million_usd": 2.25,
+            "exact": true
+          },
+          "@cf/openai/gpt-oss-20b": {
+            "input_per_million_usd": 0.2,
+            "output_per_million_usd": 0.3,
+            "exact": true
+          }
+        }
+      },
+      "roles": [
+        {
+          "role": "primary",
+          "resolved_model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+          "calls": 21,
+          "input_tokens_upper_bound": 4211,
+          "max_output_tokens_per_call": 2048,
+          "pricing_exact": true,
+          "input_usd": 0.02564499,
+          "output_usd": 0.096768,
+          "maximum_usd": 0.12241299
+        },
+        {
+          "role": "fallback",
+          "resolved_model": "@cf/openai/gpt-oss-20b",
+          "calls": 21,
+          "input_tokens_upper_bound": 4194,
+          "max_output_tokens_per_call": 2048,
+          "pricing_exact": true,
+          "input_usd": 0.0176148,
+          "output_usd": 0.0129024,
+          "maximum_usd": 0.0305172
+        }
+      ],
+      "call_cap": 42,
+      "maximum_usd": 0.15293019
+    },
+    "retention": {
+      "provider_retention_disclosed": true,
+      "retained_locally": [
+        "plan",
+        "approval",
+        "records",
+        "bounded output envelopes",
+        "usage",
+        "latency",
+        "cost",
+        "source/runtime/adapter identities",
+        "predicate results",
+        "manifests",
+        "completion marker"
+      ],
+      "forbidden": [
+        "credentials",
+        "account identifiers",
+        "provider reasoning",
+        "unbounded raw output"
+      ]
+    },
+    "schedule": [
+      {
+        "role": "primary",
+        "probe": 1,
+        "trials_after_successful_probe": 20,
+        "sequential": true,
+        "retries": 0,
+        "replacements": 0
+      },
+      {
+        "role": "fallback",
+        "probe": 1,
+        "trials_after_successful_probe": 20,
+        "sequential": true,
+        "retries": 0,
+        "replacements": 0
+      }
+    ],
+    "call_cap": 42,
+    "predicate_ids": [
+      "evidence.shape",
+      "oracle.identity",
+      "legacy.immutable",
+      "runtime.identity",
+      "source.identity",
+      "adapter.identity",
+      "candidate.binding",
+      "fixtures.executed",
+      "records.classified",
+      "records.closed",
+      "run.authorization",
+      "run.cardinality",
+      "run.ordering",
+      "run.common_request",
+      "summary.rates",
+      "outcome.deterministic",
+      "predicates.retained",
+      "report.deterministic",
+      "roles.independent",
+      "output.direct_candidate",
+      "schedule.zero_retry",
+      "cost.recomputed",
+      "manifest.independent"
+    ]
+  },
+  "input": {
+    "evidence": {
+      "version": 1,
+      "mode": "local",
+      "priors": {
+        "region": "Blue Water Area",
+        "season": "summer",
+        "date": "2026-08-18",
+        "situation": "repeated inquiries",
+        "capability_bundle": [
+          "software",
+          "workflow automation"
+        ]
+      }
+    },
+    "seed": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  "requests": [
+    {
+      "role": "primary",
+      "resolved_model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+      "body": {
+        "role": "primary",
+        "model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a product strategist for small local businesses. The user message contains generation inputs (an evidence object — region, season, situation, capability_bundle — and a random seed). Your task: INVENT one new, practical improvement the business could make using software or workflow automation, and return it as exactly one JSON Candidate object matching the supplied JSON Schema.\n\nRules:\n- The user message is input only. NEVER copy, echo, or reshape it into the output. The output is a new object describing your invented idea.\n- Use these exact nested object shapes: why_fits is an object {\"text\": \"...\"} (never a dotted key, never a breadcrumb field); before_after is {\"before\": \"...\", \"after\": \"...\"}; change_level is {\"time_range\": \"...\", \"steps_changed\": 0, \"steps_removed\": 0, \"preliminary\": true} with non-negative integer step counts; stays_same is {\"tools\": [...], \"authority\": [...], \"steps\": [...]}.\n- version is exactly 1; mode is exactly \"local\"; title, plan, what_gets_better, invitation are nonblank strings.\n- grounded_numbers MUST be an empty array [] in local mode. Write every narrative field qualitatively: no digits or numeric tokens anywhere outside change_level's integer fields (use words like \"one afternoon\" instead).\n- Never mention prices or costs: no currency symbols and none of the words price, pricing, cost, fee, subscription, per month, per year.\n- invitation must contain the word \"Spark\" and be a confident, bounded next step addressed to the owner — a statement, not a question. Never hedge (\"if it is worth\", \"if it sounds useful\", \"not worth changing\", \"call it off\") and never use pitch language (\"act now\", \"book now\", \"limited time\", \"schedule a call\", \"don't miss\", \"last chance\").\n- Do not include a candidate_ref. Do not wrap, fence, explain, or add any text outside the JSON object."
+          },
+          {
+            "role": "user",
+            "content": "{\"evidence\":{\"mode\":\"local\",\"priors\":{\"capability_bundle\":[\"software\",\"workflow automation\"],\"date\":\"2026-08-18\",\"region\":\"Blue Water Area\",\"season\":\"summer\",\"situation\":\"repeated inquiries\"},\"version\":1},\"seed\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}"
+          }
+        ],
+        "temperature": 0,
+        "max_tokens": 2048,
+        "response_format": {
+          "type": "json_schema",
+          "json_schema": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "version",
+              "mode",
+              "title",
+              "plan",
+              "why_fits",
+              "what_gets_better",
+              "before_after",
+              "change_level",
+              "stays_same",
+              "invitation",
+              "grounded_numbers"
+            ],
+            "properties": {
+              "version": {
+                "const": 1
+              },
+              "mode": {
+                "enum": [
+                  "local",
+                  "domain"
+                ]
+              },
+              "title": {
+                "type": "string",
+                "minLength": 1
+              },
+              "plan": {
+                "type": "string",
+                "minLength": 1
+              },
+              "why_fits": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "text"
+                ],
+                "properties": {
+                  "text": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "breadcrumb": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
+              },
+              "what_gets_better": {
+                "type": "string",
+                "minLength": 1
+              },
+              "before_after": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "before",
+                  "after"
+                ],
+                "properties": {
+                  "before": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "after": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
+              },
+              "change_level": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "time_range",
+                  "steps_changed",
+                  "steps_removed",
+                  "preliminary"
+                ],
+                "properties": {
+                  "time_range": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "steps_changed": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "steps_removed": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "preliminary": {
+                    "const": true
+                  }
+                }
+              },
+              "stays_same": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "tools",
+                  "authority",
+                  "steps"
+                ],
+                "properties": {
+                  "tools": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "authority": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "steps": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  }
+                }
+              },
+              "invitation": {
+                "type": "string",
+                "minLength": 1
+              },
+              "grounded_numbers": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "notice": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "allOf": [
+              {
+                "if": {
+                  "properties": {
+                    "mode": {
+                      "const": "domain"
+                    }
+                  }
+                },
+                "then": {
+                  "properties": {
+                    "why_fits": {
+                      "required": [
+                        "text",
+                        "breadcrumb"
+                      ]
+                    }
+                  }
+                },
+                "else": {
+                  "properties": {
+                    "why_fits": {
+                      "not": {
+                        "required": [
+                          "breadcrumb"
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "request_sha256": "d04115e10854b71a6bbe529e86b9753d5920dee150a874265115bbd37679b793",
+      "adapter_input_sha256": "d41b03281e87550ba5438e01d773ee1336275d23c9a0a8ea815e3239568f4ade"
+    },
+    {
+      "role": "fallback",
+      "resolved_model": "@cf/openai/gpt-oss-20b",
+      "body": {
+        "role": "fallback",
+        "model": "@cf/openai/gpt-oss-20b",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a product strategist for small local businesses. The user message contains generation inputs (an evidence object — region, season, situation, capability_bundle — and a random seed). Your task: INVENT one new, practical improvement the business could make using software or workflow automation, and return it as exactly one JSON Candidate object matching the supplied JSON Schema.\n\nRules:\n- The user message is input only. NEVER copy, echo, or reshape it into the output. The output is a new object describing your invented idea.\n- Use these exact nested object shapes: why_fits is an object {\"text\": \"...\"} (never a dotted key, never a breadcrumb field); before_after is {\"before\": \"...\", \"after\": \"...\"}; change_level is {\"time_range\": \"...\", \"steps_changed\": 0, \"steps_removed\": 0, \"preliminary\": true} with non-negative integer step counts; stays_same is {\"tools\": [...], \"authority\": [...], \"steps\": [...]}.\n- version is exactly 1; mode is exactly \"local\"; title, plan, what_gets_better, invitation are nonblank strings.\n- grounded_numbers MUST be an empty array [] in local mode. Write every narrative field qualitatively: no digits or numeric tokens anywhere outside change_level's integer fields (use words like \"one afternoon\" instead).\n- Never mention prices or costs: no currency symbols and none of the words price, pricing, cost, fee, subscription, per month, per year.\n- invitation must contain the word \"Spark\" and be a confident, bounded next step addressed to the owner — a statement, not a question. Never hedge (\"if it is worth\", \"if it sounds useful\", \"not worth changing\", \"call it off\") and never use pitch language (\"act now\", \"book now\", \"limited time\", \"schedule a call\", \"don't miss\", \"last chance\").\n- Do not include a candidate_ref. Do not wrap, fence, explain, or add any text outside the JSON object."
+          },
+          {
+            "role": "user",
+            "content": "{\"evidence\":{\"mode\":\"local\",\"priors\":{\"capability_bundle\":[\"software\",\"workflow automation\"],\"date\":\"2026-08-18\",\"region\":\"Blue Water Area\",\"season\":\"summer\",\"situation\":\"repeated inquiries\"},\"version\":1},\"seed\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}"
+          }
+        ],
+        "temperature": 0,
+        "max_tokens": 2048,
+        "response_format": {
+          "type": "json_schema",
+          "json_schema": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "version",
+              "mode",
+              "title",
+              "plan",
+              "why_fits",
+              "what_gets_better",
+              "before_after",
+              "change_level",
+              "stays_same",
+              "invitation",
+              "grounded_numbers"
+            ],
+            "properties": {
+              "version": {
+                "const": 1
+              },
+              "mode": {
+                "enum": [
+                  "local",
+                  "domain"
+                ]
+              },
+              "title": {
+                "type": "string",
+                "minLength": 1
+              },
+              "plan": {
+                "type": "string",
+                "minLength": 1
+              },
+              "why_fits": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "text"
+                ],
+                "properties": {
+                  "text": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "breadcrumb": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
+              },
+              "what_gets_better": {
+                "type": "string",
+                "minLength": 1
+              },
+              "before_after": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "before",
+                  "after"
+                ],
+                "properties": {
+                  "before": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "after": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
+              },
+              "change_level": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "time_range",
+                  "steps_changed",
+                  "steps_removed",
+                  "preliminary"
+                ],
+                "properties": {
+                  "time_range": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "steps_changed": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "steps_removed": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "preliminary": {
+                    "const": true
+                  }
+                }
+              },
+              "stays_same": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "tools",
+                  "authority",
+                  "steps"
+                ],
+                "properties": {
+                  "tools": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "authority": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "steps": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  }
+                }
+              },
+              "invitation": {
+                "type": "string",
+                "minLength": 1
+              },
+              "grounded_numbers": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "notice": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "allOf": [
+              {
+                "if": {
+                  "properties": {
+                    "mode": {
+                      "const": "domain"
+                    }
+                  }
+                },
+                "then": {
+                  "properties": {
+                    "why_fits": {
+                      "required": [
+                        "text",
+                        "breadcrumb"
+                      ]
+                    }
+                  }
+                },
+                "else": {
+                  "properties": {
+                    "why_fits": {
+                      "not": {
+                        "required": [
+                          "breadcrumb"
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "request_sha256": "4ca358197291cc50cee7684122b565f392a46e834cd3f1636cbea952ecbc4662",
+      "adapter_input_sha256": "d41b03281e87550ba5438e01d773ee1336275d23c9a0a8ea815e3239568f4ade"
+    }
+  ],
+  "approval": {
+    "schema_version": "oddspark.generation-qualification-approval/v2",
+    "plan_ref": "8a5e57978826a9bef0c35b52661e10f987a98d30edd3662d49dc32c8102af545",
+    "approval_run_id": "story-1-11-2026-08-22-l7",
+    "approved_at": "2026-08-22T13:55:14.000Z",
+    "approved_by": "Justin",
+    "approved_call_cap": 42,
+    "approved_maximum_usd": 0.15293019,
+    "authorization": "execute-exact-plan-once"
+  },
+  "pricing": {
+    "pricing": {
+      "as_of": "2026-08-22",
+      "source": "https://developers.cloudflare.com/workers-ai/platform/pricing/",
+      "disclosure": "Cloudflare publishes $0.29/M input and $2.25/M output for the selected 70B endpoint and $0.20/M input and $0.30/M output for the selected gpt-oss-20b endpoint; both bindings are exact published rates.",
+      "currency": "USD",
+      "observed": {
+        "@cf/meta/llama-3.3-70b-instruct-fp8-fast": {
+          "input_per_million_usd": 0.29,
+          "output_per_million_usd": 2.25,
+          "exact": true
+        },
+        "@cf/openai/gpt-oss-20b": {
+          "input_per_million_usd": 0.2,
+          "output_per_million_usd": 0.3,
+          "exact": true
+        }
+      },
+      "budget": {
+        "@cf/meta/llama-3.3-70b-instruct-fp8-fast": {
+          "input_per_million_usd": 0.29,
+          "output_per_million_usd": 2.25,
+          "exact": true
+        },
+        "@cf/openai/gpt-oss-20b": {
+          "input_per_million_usd": 0.2,
+          "output_per_million_usd": 0.3,
+          "exact": true
+        }
+      }
+    },
+    "roles": [
+      {
+        "role": "primary",
+        "resolved_model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+        "calls": 21,
+        "input_tokens_upper_bound": 4211,
+        "max_output_tokens_per_call": 2048,
+        "pricing_exact": true,
+        "input_usd": 0.02564499,
+        "output_usd": 0.096768,
+        "maximum_usd": 0.12241299
+      },
+      {
+        "role": "fallback",
+        "resolved_model": "@cf/openai/gpt-oss-20b",
+        "calls": 21,
+        "input_tokens_upper_bound": 4194,
+        "max_output_tokens_per_call": 2048,
+        "pricing_exact": true,
+        "input_usd": 0.0176148,
+        "output_usd": 0.0129024,
+        "maximum_usd": 0.0305172
+      }
+    ],
+    "call_cap": 42,
+    "maximum_usd": 0.15293019
+  },
+  "sources": [
+    {
+      "path": "package.json",
+      "bytes": 3801,
+      "sha256": "bbe7d7c9512bf6944c684867fe03052976349c07c5a0c444106c09b9c70ca7d1"
+    },
+    {
+      "path": "runtime-baseline.json",
+      "bytes": 2900,
+      "sha256": "50d8e3fdb06b548a2b90d8f620cee6ed9620c33ed23314aa5f65db1ecec2cf35"
+    },
+    {
+      "path": "scripts/generation.mjs",
+      "bytes": 247,
+      "sha256": "616b68cb4b9e51014732dd60daca9207577d1ac1a73004b53291683c04af6f84"
+    },
+    {
+      "path": "scripts/brief-contracts.mjs",
+      "bytes": 245,
+      "sha256": "25b0ec6859bad24c938b0bded7ca45874c8c74d09e6bed9090f65d3ae68346d1"
+    },
+    {
+      "path": "spikes/judge-fidelity/contract.mjs",
+      "bytes": 28345,
+      "sha256": "c124dfbf2cb56727bb5fdc8b01622509867460304b3bbf3a635b8f004cc8d8f2"
+    },
+    {
+      "path": "spikes/generation-qualification/contract.mjs",
+      "bytes": 10114,
+      "sha256": "5e899da7e6062a041c28554c59aa184ae4c86318a2ad9050e253ff277fec0652"
+    },
+    {
+      "path": "spikes/generation-qualification/evidence-v2.mjs",
+      "bytes": 18601,
+      "sha256": "4e4b66f4208e5da004f724ee2db57974dd01e3b51a0a9f2119b1130ff220e7e0"
+    },
+    {
+      "path": "spikes/generation-qualification/fixture-executor.mjs",
+      "bytes": 2890,
+      "sha256": "60f950c422a0bd567b4753a645b754e3b67b514547241a72a13af52b00a90ab5"
+    },
+    {
+      "path": "spikes/generation-qualification/fixtures.json",
+      "bytes": 1147,
+      "sha256": "bc7a49026898e60c0717590ee6b2575b0f4dc32363322c2e06326b05f2ede9a3"
+    },
+    {
+      "path": "spikes/generation-qualification/pricing.mjs",
+      "bytes": 904,
+      "sha256": "7bd870f13ab6234e8dba707d98cb6c285b77a65d3cd4a94fc62ad0a0603b3fc8"
+    },
+    {
+      "path": "spikes/generation-qualification/qualification.mjs",
+      "bytes": 10391,
+      "sha256": "ecaebe9b3ea59b760e7e3bfddddb2ff6b0fc599ec0ea7dfc8826a5e2ceb42908"
+    },
+    {
+      "path": "spikes/generation-qualification/recovery-finder.mjs",
+      "bytes": 11653,
+      "sha256": "a322128746efedbbca46221cbd8cd6c7f667fe5fe613a0faa49ca26ea78b1290"
+    },
+    {
+      "path": "spikes/generation-qualification/run.mjs",
+      "bytes": 19038,
+      "sha256": "9bd63b3783efecd6095b77774df4b164eb2a1a75af944a96f66c7b4e1a70d5c3"
+    },
+    {
+      "path": "spikes/generation-qualification/start-adapter.mjs",
+      "bytes": 3647,
+      "sha256": "d3c11c52a66c6b0271d194529834b892a80beb7992421bfceff6ad4b5fe7518e"
+    },
+    {
+      "path": "spikes/generation-qualification/test.mjs",
+      "bytes": 33704,
+      "sha256": "36c083ee683d59416f9af93a99a87e994253a403ed6a75f21244be7a890d4da5"
+    },
+    {
+      "path": "spikes/generation-qualification/verify-v2.mjs",
+      "bytes": 805,
+      "sha256": "ae223fa409035d9efa535b2af9efd42f0f367980b3dc896c27167621c66d857c"
+    },
+    {
+      "path": "spikes/generation-qualification/worker.mjs",
+      "bytes": 5524,
+      "sha256": "d86af9f6665bede67cdb6f13564f83d13224c05b3744f68bc9714971aa6aa812"
+    },
+    {
+      "path": "spikes/generation-qualification/wrangler.toml",
+      "bytes": 298,
+      "sha256": "f61abbf68c7b3908700c596ad9c972b90b78fda5b94d500a35958594f03110c2"
+    }
+  ],
+  "runtime": {
+    "path": "runtime-baseline.json",
+    "bytes": 2900,
+    "sha256": "50d8e3fdb06b548a2b90d8f620cee6ed9620c33ed23314aa5f65db1ecec2cf35",
+    "runtime_identity_sha256": "a3d5ae76d31669bc1f008f7ef3d0fdde14d4a5b1fcb0fc63e70d290cdae32feb",
+    "node": "v24.18.0",
+    "wrangler": "4.123.0"
+  },
+  "legacy": [
+    {
+      "path": "spikes/generation-qualification/results/story-1-11-2026-08-19-r2-ead1cb17-38d7-41ce-8369-7fdc14098b29.complete.json",
+      "sha256": "16fa1e27c35c0b4eb4f3bac4ad3d30b884a908e3c3f435f35a59c6bed857790d",
+      "observed_sha256": "16fa1e27c35c0b4eb4f3bac4ad3d30b884a908e3c3f435f35a59c6bed857790d",
+      "immutable": true,
+      "current_authority": false
+    },
+    {
+      "path": "spikes/generation-qualification/results/story-1-11-2026-08-19-r2-ead1cb17-38d7-41ce-8369-7fdc14098b29.evidence.json",
+      "sha256": "b880864ded0e560d9fea3421f787257eec28aa4225a414b3bc275b97ee82b908",
+      "observed_sha256": "b880864ded0e560d9fea3421f787257eec28aa4225a414b3bc275b97ee82b908",
+      "immutable": true,
+      "current_authority": false
+    },
+    {
+      "path": "spikes/generation-qualification/results/story-1-11-2026-08-19-r2-ead1cb17-38d7-41ce-8369-7fdc14098b29.qualification.json",
+      "sha256": "545016f6e1d12d5dd416b3cda30bc299081e6f96d470cc12fe459e7041987b5d",
+      "observed_sha256": "545016f6e1d12d5dd416b3cda30bc299081e6f96d470cc12fe459e7041987b5d",
+      "immutable": true,
+      "current_authority": false
+    },
+    {
+      "path": "spikes/generation-qualification/results/story-1-11-2026-08-19-r2-ead1cb17-38d7-41ce-8369-7fdc14098b29.report.md",
+      "sha256": "9fcf5544c6bec83a2ee0140c29a54ed579f65bd552038498318784c942b53526",
+      "observed_sha256": "9fcf5544c6bec83a2ee0140c29a54ed579f65bd552038498318784c942b53526",
+      "immutable": true,
+      "current_authority": false
+    },
+    {
+      "path": "spikes/generation-qualification/results/story-1-11-2026-08-19-r2.approval.json",
+      "sha256": "2505dfa12dfb327a86e54b378377d1a0f89644ee83b69dca7075bed08ac10e64",
+      "observed_sha256": "2505dfa12dfb327a86e54b378377d1a0f89644ee83b69dca7075bed08ac10e64",
+      "immutable": true,
+      "current_authority": false
+    },
+    {
+      "path": "spikes/generation-qualification/results/story-1-11-2026-08-19-r2.plan.json",
+      "sha256": "c333d5066df41c45c8e26f846ad84b13edcaa54a58b6c818ae90e6adc0e1783c",
+      "observed_sha256": "c333d5066df41c45c8e26f846ad84b13edcaa54a58b6c818ae90e6adc0e1783c",
+      "immutable": true,
+      "current_authority": false
+    },
+    {
+      "path": "spikes/generation-qualification/results/story-1-11-2026-08-19-r2.spend-receipt.json",
+      "sha256": "1d072bd51470d25ef1e90c3f1f5e90761f52c5758877dfda3dd12954acd59fea",
+      "observed_sha256": "1d072bd51470d25ef1e90c3f1f5e90761f52c5758877dfda3dd12954acd59fea",
+      "immutable": true,
+      "current_authority": false
+    },
+    {
+      "path": "spikes/generation-qualification/results/story-1-11-2026-08-19-r3-f0da0590-4a83-4cf4-8401-6639af524959.complete.json",
+      "sha256": "09a077fd0964bba80aa5d1df786b3bbe8c10a364d2359f6e1c580b109c5ee707",
+      "observed_sha256": "09a077fd0964bba80aa5d1df786b3bbe8c10a364d2359f6e1c580b109c5ee707",
+      "immutable": true,
+      "current_authority": false
+    },
+    {
+      "path": "spikes/generation-qualification/results/story-1-11-2026-08-19-r3-f0da0590-4a83-4cf4-8401-6639af524959.evidence.json",
+      "sha256": "c3b15bf90ecd591e43f72719f6a8c30722e6d73c47b7aa7ec6afc7fbb48c7a9b",
+      "observed_sha256": "c3b15bf90ecd591e43f72719f6a8c30722e6d73c47b7aa7ec6afc7fbb48c7a9b",
+      "immutable": true,
+      "current_authority": false
+    },
+    {
+      "path": "spikes/generation-qualification/results/story-1-11-2026-08-19-r3-f0da0590-4a83-4cf4-8401-6639af524959.qualification.json",
+      "sha256": "a86b1cd1cc51b841c0b78d792e04abf89117edae483bfb29f2a3e2bc1274f8b2",
+      "observed_sha256": "a86b1cd1cc51b841c0b78d792e04abf89117edae483bfb29f2a3e2bc1274f8b2",
+      "immutable": true,
+      "current_authority": false
+    },
+    {
+      "path": "spikes/generation-qualification/results/story-1-11-2026-08-19-r3-f0da0590-4a83-4cf4-8401-6639af524959.report.md",
+      "sha256": "7c60b8a2baf66d4a12936140787ce985114c90dd366cb300aeb214c0d8c9186c",
+      "observed_sha256": "7c60b8a2baf66d4a12936140787ce985114c90dd366cb300aeb214c0d8c9186c",
+      "immutable": true,
+      "current_authority": false
+    },
+    {
+      "path": "spikes/generation-qualification/results/story-1-11-2026-08-19-r3.approval.json",
+      "sha256": "3b9236baefecf890db0d21d10092edf970eebe15ad977f6420cb5bc27b37642b",
+      "observed_sha256": "3b9236baefecf890db0d21d10092edf970eebe15ad977f6420cb5bc27b37642b",
+      "immutable": true,
+      "current_authority": false
+    },
+    {
+      "path": "spikes/generation-qualification/results/story-1-11-2026-08-19-r3.plan.json",
+      "sha256": "f206baef6aad3b18a1851b720b9a6db166219a269d5dd3383635c221268c0c19",
+      "observed_sha256": "f206baef6aad3b18a1851b720b9a6db166219a269d5dd3383635c221268c0c19",
+      "immutable": true,
+      "current_authority": false
+    },
+    {
+      "path": "spikes/generation-qualification/results/story-1-11-2026-08-19-r3.spend-receipt.json",
+      "sha256": "e323396d69b990964ba472662543e2e1ee575505e4ef2faf0dfc866e03a21a0c",
+      "observed_sha256": "e323396d69b990964ba472662543e2e1ee575505e4ef2faf0dfc866e03a21a0c",
+      "immutable": true,
+      "current_authority": false
+    }
+  ],
+  "adapter": {
+    "endpoint": "http://127.0.0.1:8789/",
+    "expected_health": {
+      "ok": true,
+      "inference": false,
+      "schema_version": "oddspark.generation-adapter-health/v1",
+      "provider": "cloudflare-workers-ai",
+      "roles": [
+        {
+          "role": "primary",
+          "resolved_model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+        },
+        {
+          "role": "fallback",
+          "resolved_model": "@cf/openai/gpt-oss-20b"
+        }
+      ],
+      "parameters": {
+        "temperature": 0,
+        "max_tokens": 2048
+      },
+      "binding": "AI",
+      "worker_sha256": "d86af9f6665bede67cdb6f13564f83d13224c05b3744f68bc9714971aa6aa812",
+      "config_sha256": "f61abbf68c7b3908700c596ad9c972b90b78fda5b94d500a35958594f03110c2",
+      "runtime_sha256": "a3d5ae76d31669bc1f008f7ef3d0fdde14d4a5b1fcb0fc63e70d290cdae32feb"
+    },
+    "observed_health": {
+      "ok": true,
+      "inference": false,
+      "schema_version": "oddspark.generation-adapter-health/v1",
+      "provider": "cloudflare-workers-ai",
+      "roles": [
+        {
+          "role": "primary",
+          "resolved_model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+        },
+        {
+          "role": "fallback",
+          "resolved_model": "@cf/openai/gpt-oss-20b"
+        }
+      ],
+      "parameters": {
+        "temperature": 0,
+        "max_tokens": 2048
+      },
+      "binding": "AI",
+      "worker_sha256": "d86af9f6665bede67cdb6f13564f83d13224c05b3744f68bc9714971aa6aa812",
+      "config_sha256": "f61abbf68c7b3908700c596ad9c972b90b78fda5b94d500a35958594f03110c2",
+      "runtime_sha256": "a3d5ae76d31669bc1f008f7ef3d0fdde14d4a5b1fcb0fc63e70d290cdae32feb"
+    },
+    "identity_match": true
+  },
+  "fixtures": {
+    "declared_ids": [
+      "direct",
+      "missing",
+      "extra",
+      "mistyped",
+      "wrapped",
+      "text",
+      "fenced",
+      "coerced",
+      "repaired",
+      "ambiguous",
+      "oversized",
+      "provider-error",
+      "timeout"
+    ],
+    "passing_ids": [
+      "direct",
+      "missing",
+      "extra",
+      "mistyped",
+      "wrapped",
+      "text",
+      "fenced",
+      "coerced",
+      "repaired",
+      "ambiguous",
+      "oversized",
+      "provider-error",
+      "timeout"
+    ],
+    "failures": [],
+    "passed": true
+  },
+  "records": [
+    {
+      "kind": "probe",
+      "role": "primary",
+      "resolved_model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+      "index": 1,
+      "started_at": "2026-08-22T13:56:24.306Z",
+      "ended_at": "2026-08-22T13:56:31.371Z",
+      "latency_ms": 7064,
+      "call_state": "received",
+      "classification": "direct_valid",
+      "candidate": {
+        "version": 1,
+        "mode": "local",
+        "title": "Streamlined Inquiry Management",
+        "plan": "Implement a centralized inquiry tracking system to efficiently manage and respond to repeated customer inquiries",
+        "what_gets_better": "Customer satisfaction and staff productivity",
+        "why_fits": {
+          "text": "The business can leverage software to automate and organize inquiries, reducing the time spent on manual tracking and allowing staff to focus on high-priority tasks"
+        },
+        "before_after": {
+          "before": "Manual tracking and response to inquiries, leading to delays and potential miscommunication",
+          "after": "Automated tracking and timely response to inquiries, enhancing customer experience and staff efficiency"
+        },
+        "change_level": {
+          "time_range": "one afternoon",
+          "steps_changed": 2,
+          "steps_removed": 1,
+          "preliminary": true
+        },
+        "stays_same": {
+          "tools": [
+            "existing computer systems"
+          ],
+          "authority": [
+            "current staff"
+          ],
+          "steps": [
+            "customer communication protocols"
+          ]
+        },
+        "grounded_numbers": [],
+        "invitation": "The owner will Spark a significant improvement in customer satisfaction by implementing this streamlined inquiry management system, starting with a thorough review of current workflows and staff responsibilities"
+      },
+      "candidate_ref": "3779acb0e03a8e63222d2aec441596e8ba97e5b5ca96f4dae2c136de6f2c4956",
+      "issues": [],
+      "retained": {
+        "version": 1,
+        "mode": "local",
+        "title": "Streamlined Inquiry Management",
+        "plan": "Implement a centralized inquiry tracking system to efficiently manage and respond to repeated customer inquiries",
+        "what_gets_better": "Customer satisfaction and staff productivity",
+        "why_fits": {
+          "text": "The business can leverage software to automate and organize inquiries, reducing the time spent on manual tracking and allowing staff to focus on high-priority tasks"
+        },
+        "before_after": {
+          "before": "Manual tracking and response to inquiries, leading to delays and potential miscommunication",
+          "after": "Automated tracking and timely response to inquiries, enhancing customer experience and staff efficiency"
+        },
+        "change_level": {
+          "time_range": "one afternoon",
+          "steps_changed": 2,
+          "steps_removed": 1,
+          "preliminary": true
+        },
+        "stays_same": {
+          "tools": [
+            "existing computer systems"
+          ],
+          "authority": [
+            "current staff"
+          ],
+          "steps": [
+            "customer communication protocols"
+          ]
+        },
+        "grounded_numbers": [],
+        "invitation": "The owner will Spark a significant improvement in customer satisfaction by implementing this streamlined inquiry management system, starting with a thorough review of current workflows and staff responsibilities"
+      },
+      "retained_sha256": "c65dc92e271cb3104fcb1e756a440c5e88b16328461b8c6c413638526beca019",
+      "retained_bytes": 1156,
+      "usage": {
+        "input_tokens": 510,
+        "output_tokens": 239
+      },
+      "cost_usd": 0.00068565,
+      "request_sha256": "d04115e10854b71a6bbe529e86b9753d5920dee150a874265115bbd37679b793"
+    },
+    {
+      "kind": "probe",
+      "role": "fallback",
+      "resolved_model": "@cf/openai/gpt-oss-20b",
+      "index": 1,
+      "started_at": "2026-08-22T13:56:31.409Z",
+      "ended_at": "2026-08-22T13:56:47.245Z",
+      "latency_ms": 15836,
+      "call_state": "provider_error",
+      "classification": "provider_error",
+      "candidate": null,
+      "candidate_ref": null,
+      "issues": [],
+      "retained": null,
+      "retained_sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b",
+      "retained_bytes": 4,
+      "usage": null,
+      "cost_usd": null,
+      "request_sha256": "4ca358197291cc50cee7684122b565f392a46e834cd3f1636cbea952ecbc4662"
+    },
+    {
+      "kind": "trial",
+      "role": "primary",
+      "resolved_model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+      "index": 1,
+      "started_at": "2026-08-22T13:56:47.290Z",
+      "ended_at": "2026-08-22T13:56:53.745Z",
+      "latency_ms": 6455,
+      "call_state": "received",
+      "classification": "direct_valid",
+      "candidate": {
+        "version": 1,
+        "mode": "local",
+        "title": "Streamlined Inquiry Management",
+        "plan": "Implement a centralized inquiry tracking system to efficiently manage and respond to repeated customer inquiries",
+        "what_gets_better": "Faster response times and improved customer satisfaction",
+        "why_fits": {
+          "text": "The business can leverage software to automate the process of tracking and responding to inquiries, freeing up staff to focus on higher-value tasks"
+        },
+        "before_after": {
+          "before": "Manual tracking and response to inquiries, leading to delays and potential missed opportunities",
+          "after": "Automated tracking and response, enabling timely and personalized engagement with customers"
+        },
+        "change_level": {
+          "time_range": "one afternoon",
+          "steps_changed": 2,
+          "steps_removed": 1,
+          "preliminary": true
+        },
+        "stays_same": {
+          "tools": [
+            "existing customer relationship management software"
+          ],
+          "authority": [
+            "current staff and management"
+          ],
+          "steps": [
+            "customer communication and support"
+          ]
+        },
+        "grounded_numbers": [],
+        "invitation": "The owner will Spark a new era of efficient customer engagement by implementing this streamlined inquiry management system, starting with a thorough review of current workflows and software capabilities."
+      },
+      "candidate_ref": "8a127a53e9226f19848b746f9552cb22c31014cc0a14d32b3f838fa343b4d991",
+      "issues": [],
+      "retained": {
+        "version": 1,
+        "mode": "local",
+        "title": "Streamlined Inquiry Management",
+        "plan": "Implement a centralized inquiry tracking system to efficiently manage and respond to repeated customer inquiries",
+        "what_gets_better": "Faster response times and improved customer satisfaction",
+        "why_fits": {
+          "text": "The business can leverage software to automate the process of tracking and responding to inquiries, freeing up staff to focus on higher-value tasks"
+        },
+        "before_after": {
+          "before": "Manual tracking and response to inquiries, leading to delays and potential missed opportunities",
+          "after": "Automated tracking and response, enabling timely and personalized engagement with customers"
+        },
+        "change_level": {
+          "time_range": "one afternoon",
+          "steps_changed": 2,
+          "steps_removed": 1,
+          "preliminary": true
+        },
+        "stays_same": {
+          "tools": [
+            "existing customer relationship management software"
+          ],
+          "authority": [
+            "current staff and management"
+          ],
+          "steps": [
+            "customer communication and support"
+          ]
+        },
+        "grounded_numbers": [],
+        "invitation": "The owner will Spark a new era of efficient customer engagement by implementing this streamlined inquiry management system, starting with a thorough review of current workflows and software capabilities."
+      },
+      "retained_sha256": "588055ba74963cf00b53c50c164e51d7e1b2fd3de49e1e7b2d47afbf5290ddbc",
+      "retained_bytes": 1177,
+      "usage": {
+        "input_tokens": 510,
+        "output_tokens": 244
+      },
+      "cost_usd": 0.0006969,
+      "request_sha256": "d04115e10854b71a6bbe529e86b9753d5920dee150a874265115bbd37679b793"
+    },
+    {
+      "kind": "trial",
+      "role": "primary",
+      "resolved_model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+      "index": 2,
+      "started_at": "2026-08-22T13:56:53.810Z",
+      "ended_at": "2026-08-22T13:57:12.743Z",
+      "latency_ms": 18934,
+      "call_state": "received",
+      "classification": "direct_valid",
+      "candidate": {
+        "version": 1,
+        "mode": "local",
+        "title": "Streamlined Inquiry Management",
+        "plan": "Implement a centralized inquiry tracking system to efficiently manage and respond to repeated customer inquiries",
+        "what_gets_better": "Faster response times and improved customer satisfaction",
+        "why_fits": {
+          "text": "The business can leverage software to automate the process of tracking and responding to inquiries, freeing up staff to focus on higher-value tasks"
+        },
+        "before_after": {
+          "before": "Manual tracking and response to inquiries, leading to delays and potential missed opportunities",
+          "after": "Automated tracking and response, enabling timely and personalized engagement with customers"
+        },
+        "change_level": {
+          "time_range": "one afternoon",
+          "steps_changed": 2,
+          "steps_removed": 1,
+          "preliminary": true
+        },
+        "stays_same": {
+          "tools": [
+            "existing computer systems"
+          ],
+          "authority": [
+            "current staff"
+          ],
+          "steps": [
+            "customer communication"
+          ]
+        },
+        "grounded_numbers": [],
+        "invitation": "The owner will Spark a new era of efficient customer engagement by implementing this streamlined inquiry management system, starting with a thorough review of current workflows and staff responsibilities"
+      },
+      "candidate_ref": "0447732bca4630227b9f1f0245e5d8d5fbc84d44e3f6e20a6fae2bde95d613ce",
+      "issues": [],
+      "retained": {
+        "version": 1,
+        "mode": "local",
+        "title": "Streamlined Inquiry Management",
+        "plan": "Implement a centralized inquiry tracking system to efficiently manage and respond to repeated customer inquiries",
+        "what_gets_better": "Faster response times and improved customer satisfaction",
+        "why_fits": {
+          "text": "The business can leverage software to automate the process of tracking and responding to inquiries, freeing up staff to focus on higher-value tasks"
+        },
+        "before_after": {
+          "before": "Manual tracking and response to inquiries, leading to delays and potential missed opportunities",
+          "after": "Automated tracking and response, enabling timely and personalized engagement with customers"
+        },
+        "change_level": {
+          "time_range": "one afternoon",
+          "steps_changed": 2,
+          "steps_removed": 1,
+          "preliminary": true
+        },
+        "stays_same": {
+          "tools": [
+            "existing computer systems"
+          ],
+          "authority": [
+            "current staff"
+          ],
+          "steps": [
+            "customer communication"
+          ]
+        },
+        "grounded_numbers": [],
+        "invitation": "The owner will Spark a new era of efficient customer engagement by implementing this streamlined inquiry management system, starting with a thorough review of current workflows and staff responsibilities"
+      },
+      "retained_sha256": "c67beb5ea02f14875d6da074396d61f576f05b371581e8c13446be6b398dc7cf",
+      "retained_bytes": 1125,
+      "usage": {
+        "input_tokens": 510,
+        "output_tokens": 237
+      },
+      "cost_usd": 0.0006811499999999999,
+      "request_sha256": "d04115e10854b71a6bbe529e86b9753d5920dee150a874265115bbd37679b793"
+    },
+    {
+      "kind": "trial",
+      "role": "primary",
+      "resolved_model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+      "index": 3,
+      "started_at": "2026-08-22T13:57:12.848Z",
+      "ended_at": "2026-08-22T13:57:18.522Z",
+      "latency_ms": 5674,
+      "call_state": "received",
+      "classification": "direct_valid",
+      "candidate": {
+        "version": 1,
+        "mode": "local",
+        "title": "Streamlined Inquiry Management",
+        "plan": "Implement a centralized inquiry tracking system to efficiently manage and respond to repeated customer inquiries",
+        "what_gets_better": "Faster response times and improved customer satisfaction",
+        "why_fits": {
+          "text": "The business can leverage software to automate and organize inquiries, reducing the time spent on manual tracking and follow-up"
+        },
+        "before_after": {
+          "before": "Manual tracking and follow-up on customer inquiries",
+          "after": "Automated tracking and response system"
+        },
+        "change_level": {
+          "time_range": "one afternoon",
+          "steps_changed": 2,
+          "steps_removed": 1,
+          "preliminary": true
+        },
+        "stays_same": {
+          "tools": [
+            "existing software"
+          ],
+          "authority": [
+            "business owner"
+          ],
+          "steps": [
+            "customer communication"
+          ]
+        },
+        "grounded_numbers": [],
+        "invitation": "The owner will Spark a new level of efficiency by implementing this system, starting with a thorough review of current workflows and software capabilities"
+      },
+      "candidate_ref": "4a916f2b778f8dbf516edc421362392fbc976c1a70c7753e7e7235a8b2226aac",
+      "issues": [],
+      "retained": {
+        "version": 1,
+        "mode": "local",
+        "title": "Streamlined Inquiry Management",
+        "plan": "Implement a centralized inquiry tracking system to efficiently manage and respond to repeated customer inquiries",
+        "what_gets_better": "Faster response times and improved customer satisfaction",
+        "why_fits": {
+          "text": "The business can leverage software to automate and organize inquiries, reducing the time spent on manual tracking and follow-up"
+        },
+        "before_after": {
+          "before": "Manual tracking and follow-up on customer inquiries",
+          "after": "Automated tracking and response system"
+        },
+        "change_level": {
+          "time_range": "one afternoon",
+          "steps_changed": 2,
+          "steps_removed": 1,
+          "preliminary": true
+        },
+        "stays_same": {
+          "tools": [
+            "existing software"
+          ],
+          "authority": [
+            "business owner"
+          ],
+          "steps": [
+            "customer communication"
+          ]
+        },
+        "grounded_numbers": [],
+        "invitation": "The owner will Spark a new level of efficiency by implementing this system, starting with a thorough review of current workflows and software capabilities"
+      },
+      "retained_sha256": "ddef344acc953359a6aa0c9b540afdd8cc9e3dce8121d7c06bd5bb742c80f862",
+      "retained_bytes": 952,
+      "usage": {
+        "input_tokens": 510,
+        "output_tokens": 214
+      },
+      "cost_usd": 0.0006294,
+      "request_sha256": "d04115e10854b71a6bbe529e86b9753d5920dee150a874265115bbd37679b793"
+    },
+    {
+      "kind": "trial",
+      "role": "primary",
+      "resolved_model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+      "index": 4,
+      "started_at": "2026-08-22T13:57:18.571Z",
+      "ended_at": "2026-08-22T13:57:26.521Z",
+      "latency_ms": 7951,
+      "call_state": "received",
+      "classification": "direct_valid",
+      "candidate": {
+        "version": 1,
+        "mode": "local",
+        "title": "Streamlined Inquiry Management",
+        "plan": "Implement a centralized inquiry tracking system to efficiently manage and respond to repeated customer inquiries",
+        "what_gets_better": "Customer satisfaction and staff productivity",
+        "why_fits": {
+          "text": "The business can leverage software to automate and organize inquiries, reducing the time spent on manual tracking and follow-ups"
+        },
+        "before_after": {
+          "before": "Manual tracking and follow-ups",
+          "after": "Automated tracking and timely responses"
+        },
+        "change_level": {
+          "time_range": "one afternoon",
+          "steps_changed": 2,
+          "steps_removed": 1,
+          "preliminary": true
+        },
+        "stays_same": {
+          "tools": [
+            "existing software"
+          ],
+          "authority": [
+            "current staff"
+          ],
+          "steps": [
+            "customer communication"
+          ]
+        },
+        "grounded_numbers": [],
+        "invitation": "Owner, let's Spark a more efficient inquiry management process by implementing a centralized tracking system, allowing you to focus on high-priority tasks and enhance customer experience"
+      },
+      "candidate_ref": "9d273cf46ebd3279d0db266b1466c9b4edffc5cacf8780865dc73f6834370dc6",
+      "issues": [],
+      "retained": {
+        "version": 1,
+        "mode": "local",
+        "title": "Streamlined Inquiry Management",
+        "plan": "Implement a centralized inquiry tracking system to efficiently manage and respond to repeated customer inquiries",
+        "what_gets_better": "Customer satisfaction and staff productivity",
+        "why_fits": {
+          "text": "The business can leverage software to automate and organize inquiries, reducing the time spent on manual tracking and follow-ups"
+        },
+        "before_after": {
+          "before": "Manual tracking and follow-ups",
+          "after": "Automated tracking and timely responses"
+        },
+        "change_level": {
+          "time_range": "one afternoon",
+          "steps_changed": 2,
+          "steps_removed": 1,
+          "preliminary": true
+        },
+        "stays_same": {
+          "tools": [
+            "existing software"
+          ],
+          "authority": [
+            "current staff"
+          ],
+          "steps": [
+            "customer communication"
+          ]
+        },
+        "grounded_numbers": [],
+        "invitation": "Owner, let's Spark a more efficient inquiry management process by implementing a centralized tracking system, allowing you to focus on high-priority tasks and enhance customer experience"
+      },
+      "retained_sha256": "eae5e2717d68db2b2e11d3b79969de00b725cc69932978e6492f11761136fb5d",
+      "retained_bytes": 952,
+      "usage": {
+        "input_tokens": 510,
+        "output_tokens": 214
+      },
+      "cost_usd": 0.0006294,
+      "request_sha256": "d04115e10854b71a6bbe529e86b9753d5920dee150a874265115bbd37679b793"
+    },
+    {
+      "kind": "trial",
+      "role": "primary",
+      "resolved_model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+      "index": 5,
+      "started_at": "2026-08-22T13:57:26.553Z",
+      "ended_at": "2026-08-22T13:57:32.278Z",
+      "latency_ms": 5725,
+      "call_state": "received",
+      "classification": "direct_valid",
+      "candidate": {
+        "version": 1,
+        "mode": "local",
+        "title": "Streamlined Inquiry Management",
+        "plan": "Implement a centralized inquiry tracking system to efficiently manage and respond to repeated customer inquiries",
+        "what_gets_better": "Faster response times and improved customer satisfaction",
+        "why_fits": {
+          "text": "The business can leverage software to automate and organize inquiries, reducing the time spent on manual tracking and follow-up"
+        },
+        "before_after": {
+          "before": "Manual tracking and follow-up on customer inquiries",
+          "after": "Automated tracking and response system"
+        },
+        "change_level": {
+          "time_range": "one afternoon",
+          "steps_changed": 2,
+          "steps_removed": 1,
+          "preliminary": true
+        },
+        "stays_same": {
+          "tools": [
+            "existing software"
+          ],
+          "authority": [
+            "business owner"
+          ],
+          "steps": [
+            "customer communication"
+          ]
+        },
+        "grounded_numbers": [],
+        "invitation": "The owner will Spark a new level of efficiency by implementing this system, starting with a thorough review of current workflows and software capabilities"
+      },
+      "candidate_ref": "4a916f2b778f8dbf516edc421362392fbc976c1a70c7753e7e7235a8b2226aac",
+      "issues": [],
+      "retained": {
+        "version": 1,
+        "mode": "local",
+        "title": "Streamlined Inquiry Management",
+        "plan": "Implement a centralized inquiry tracking system to efficiently manage and respond to repeated customer inquiries",
+        "what_gets_better": "Faster response times and improved customer satisfaction",
+        "why_fits": {
+          "text": "The business can leverage software to automate and organize inquiries, reducing the time spent on manual tracking and follow-up"
+        },
+        "before_after": {
+          "before": "Manual tracking and follow-up on customer inquiries",
+          "after": "Automated tracking and response system"
+        },
+        "change_level": {
+          "time_range": "one afternoon",
+          "steps_changed": 2,
+          "steps_removed": 1,
+          "preliminary": true
+        },
+        "stays_same": {
+          "tools": [
+            "existing software"
+          ],
+          "authority": [
+            "business owner"
+          ],
+          "steps": [
+            "customer communication"
+          ]
+        },
+        "grounded_numbers": [],
+        "invitation": "The owner will Spark a new level of efficiency by implementing this system, starting with a thorough review of current workflows and software capabilities"
+      },
+      "retained_sha256": "ddef344acc953359a6aa0c9b540afdd8cc9e3dce8121d7c06bd5bb742c80f862",
+      "retained_bytes": 952,
+      "usage": {
+        "input_tokens": 510,
+        "output_tokens": 214
+      },
+      "cost_usd": 0.0006294,
+      "request_sha256": "d04115e10854b71a6bbe529e86b9753d5920dee150a874265115bbd37679b793"
+    },
+    {
+      "kind": "trial",
+      "role": "primary",
+      "resolved_model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+      "index": 6,
+      "started_at": "2026-08-22T13:57:32.324Z",
+      "ended_at": "2026-08-22T13:57:38.334Z",
+      "latency_ms": 6010,
+      "call_state": "received",
+      "classification": "direct_valid",
+      "candidate": {
+        "version": 1,
+        "mode": "local",
+        "title": "Streamlined Inquiry Management",
+        "plan": "Implement a centralized inquiry tracking system to efficiently manage and respond to repeated customer inquiries",
+        "what_gets_better": "Faster response times and improved customer satisfaction",
+        "why_fits": {
+          "text": "The business can leverage software to automate the process of tracking and responding to inquiries, freeing up staff to focus on higher-value tasks"
+        },
+        "before_after": {
+          "before": "Manual tracking and response to inquiries, leading to delays and potential missed opportunities",
+          "after": "Automated tracking and response, enabling timely and personalized engagement with customers"
+        },
+        "change_level": {
+          "time_range": "one afternoon",
+          "steps_changed": 2,
+          "steps_removed": 1,
+          "preliminary": true
+        },
+        "stays_same": {
+          "tools": [
+            "existing customer relationship management software"
+          ],
+          "authority": [
+            "current staff"
+          ],
+          "steps": [
+            "customer communication protocols"
+          ]
+        },
+        "grounded_numbers": [],
+        "invitation": "Owner, let's Spark a more efficient inquiry management process by implementing automated tracking and response, allowing you to focus on growing your business"
+      },
+      "candidate_ref": "4e979a1a456ef4c1a234e814d0247c5d55f141600245c34b08380701f0f29ead",
+      "issues": [],
+      "retained": {
+        "version": 1,
+        "mode": "local",
+        "title": "Streamlined Inquiry Management",
+        "plan": "Implement a centralized inquiry tracking system to efficiently manage and respond to repeated customer inquiries",
+        "what_gets_better": "Faster response times and improved customer satisfaction",
+        "why_fits": {
+          "text": "The business can leverage software to automate the process of tracking and responding to inquiries, freeing up staff to focus on higher-value tasks"
+        },
+        "before_after": {
+          "before": "Manual tracking and response to inquiries, leading to delays and potential missed opportunities",
+          "after": "Automated tracking and response, enabling timely and personalized engagement with customers"
+        },
+        "change_level": {
+          "time_range": "one afternoon",
+          "steps_changed": 2,
+          "steps_removed": 1,
+          "preliminary": true
+        },
+        "stays_same": {
+          "tools": [
+            "existing customer relationship management software"
+          ],
+          "authority": [
+            "current staff"
+          ],
+          "steps": [
+            "customer communication protocols"
+          ]
+        },
+        "grounded_numbers": [],
+        "invitation": "Owner, let's Spark a more efficient inquiry management process by implementing automated tracking and response, allowing you to focus on growing your business"
+      },
+      "retained_sha256": "9a7cd8f6a0d0637a1210dc3e47d51baf8a87c4281345087e5ae572f8329f4b56",
+      "retained_bytes": 1115,
+      "usage": {
+        "input_tokens": 510,
+        "output_tokens": 236
+      },
+      "cost_usd": 0.0006789,
+      "request_sha256": "d04115e10854b71a6bbe529e86b9753d5920dee150a874265115bbd37679b793"
+    },
+    {
+      "kind": "trial",
+      "role": "primary",
+      "resolved_model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+      "index": 7,
+      "started_at": "2026-08-22T13:57:38.380Z",
+      "ended_at": "2026-08-22T13:57:44.480Z",
+      "latency_ms": 6100,
+      "call_state": "received",
+      "classification": "direct_valid",
+      "candidate": {
+        "version": 1,
+        "mode": "local",
+        "title": "Streamlined Inquiry Management",
+        "plan": "Implement a centralized inquiry tracking system to efficiently manage and respond to repeated customer inquiries",
+        "what_gets_better": "Faster response times and improved customer satisfaction",
+        "why_fits": {
+          "text": "The business can leverage software to automate and organize inquiries, reducing the time spent on manual tracking and follow-up"
+        },
+        "before_after": {
+          "before": "Manual tracking and follow-up on customer inquiries",
+          "after": "Automated tracking and response system"
+        },
+        "change_level": {
+          "time_range": "one afternoon",
+          "steps_changed": 2,
+          "steps_removed": 1,
+          "preliminary": true
+        },
+        "stays_same": {
+          "tools": [
+            "existing software"
+          ],
+          "authority": [
+            "owner"
+          ],
+          "steps": [
+            "customer communication"
+          ]
+        },
+        "grounded_numbers": [],
+        "invitation": "Owner, let's Spark a more efficient inquiry management process by implementing a centralized tracking system, allowing you to focus on high-priority tasks and enhance customer experience"
+      },
+      "candidate_ref": "ec0f597517a15775832a958e9c0a732aa96b607d43a0f3dc789539f5ed2fd099",
+      "issues": [],
+      "retained": {
+        "version": 1,
+        "mode": "local",
+        "title": "Streamlined Inquiry Management",
+        "plan": "Implement a centralized inquiry tracking system to efficiently manage and respond to repeated customer inquiries",
+        "what_gets_better": "Faster response times and improved customer satisfaction",
+        "why_fits": {
+          "text": "The business can leverage software to automate and organize inquiries, reducing the time spent on manual tracking and follow-up"
+        },
+        "before_after": {
+          "before": "Manual tracking and follow-up on customer inquiries",
+          "after": "Automated tracking and response system"
+        },
+        "change_level": {
+          "time_range": "one afternoon",
+          "steps_changed": 2,
+          "steps_removed": 1,
+          "preliminary": true
+        },
+        "stays_same": {
+          "tools": [
+            "existing software"
+          ],
+          "authority": [
+            "owner"
+          ],
+          "steps": [
+            "customer communication"
+          ]
+        },
+        "grounded_numbers": [],
+        "invitation": "Owner, let's Spark a more efficient inquiry management process by implementing a centralized tracking system, allowing you to focus on high-priority tasks and enhance customer experience"
+      },
+      "retained_sha256": "ab929c9ea24463bd571ae5084733e255b63ce432c79061d07a2a2633c91e1a46",
+      "retained_bytes": 975,
+      "usage": {
+        "input_tokens": 510,
+        "output_tokens": 219
+      },
+      "cost_usd": 0.00064065,
+      "request_sha256": "d04115e10854b71a6bbe529e86b9753d5920dee150a874265115bbd37679b793"
+    },
+    {
+      "kind": "trial",
+      "role": "primary",
+      "resolved_model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+      "index": 8,
+      "started_at": "2026-08-22T13:57:44.514Z",
+      "ended_at": "2026-08-22T13:57:50.361Z",
+      "latency_ms": 5847,
+      "call_state": "received",
+      "classification": "direct_valid",
+      "candidate": {
+        "version": 1,
+        "mode": "local",
+        "title": "Streamlined Inquiry Management",
+        "plan": "Implement a centralized inquiry tracking system to efficiently manage and respond to repeated customer inquiries",
+        "what_gets_better": "Faster response times and improved customer satisfaction",
+        "why_fits": {
+          "text": "The business can leverage software to automate and organize inquiries, reducing the time spent on manual tracking and follow-up"
+        },
+        "before_after": {
+          "before": "Manual tracking and follow-up on customer inquiries",
+          "after": "Automated tracking and response system"
+        },
+        "change_level": {
+          "time_range": "one afternoon",
+          "steps_changed": 2,
+          "steps_removed": 1,
+          "preliminary": true
+        },
+        "stays_same": {
+          "tools": [
+            "existing software"
+          ],
+          "authority": [
+            "business owner"
+          ],
+          "steps": [
+            "customer communication"
+          ]
+        },
+        "grounded_numbers": [],
+        "invitation": "The owner will Spark a significant improvement in customer satisfaction by implementing this streamlined inquiry management system over the course of one afternoon"
+      },
+      "candidate_ref": "42022a8d107df659e24e5258133a56b16f1704e646cf44ed917a233cafb8cbbc",
+      "issues": [],
+      "retained": {
+        "version": 1,
+        "mode": "local",
+        "title": "Streamlined Inquiry Management",
+        "plan": "Implement a centralized inquiry tracking system to efficiently manage and respond to repeated customer inquiries",
+        "what_gets_better": "Faster response times and improved customer satisfaction",
+        "why_fits": {
+          "text": "The business can leverage software to automate and organize inquiries, reducing the time spent on manual tracking and follow-up"
+        },
+        "before_after": {
+          "before": "Manual tracking and follow-up on customer inquiries",
+          "after": "Automated tracking and response system"
+        },
+        "change_level": {
+          "time_range": "one afternoon",
+          "steps_changed": 2,
+          "steps_removed": 1,
+          "preliminary": true
+        },
+        "stays_same": {
+          "tools": [
+            "existing software"
+          ],
+          "authority": [
+            "business owner"
+          ],
+          "steps": [
+            "customer communication"
+          ]
+        },
+        "grounded_numbers": [],
+        "invitation": "The owner will Spark a significant improvement in customer satisfaction by implementing this streamlined inquiry management system over the course of one afternoon"
+      },
+      "retained_sha256": "76480890461291103ca3f0ef7bec415c4efd24fa9a51c737f49505450d4f5b4a",
+      "retained_bytes": 961,
+      "usage": {
+        "input_tokens": 510,
+        "output_tokens": 212
+      },
+      "cost_usd": 0.0006249,
+      "request_sha256": "d04115e10854b71a6bbe529e86b9753d5920dee150a874265115bbd37679b793"
+    },
+    {
+      "kind": "trial",
+      "role": "primary",
+      "resolved_model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+      "index": 9,
+      "started_at": "2026-08-22T13:57:50.471Z",
+      "ended_at": "2026-08-22T13:57:56.176Z",
+      "latency_ms": 5705,
+      "call_state": "received",
+      "classification": "direct_valid",
+      "candidate": {
+        "version": 1,
+        "mode": "local",
+        "title": "Streamlined Inquiry Management",
+        "plan": "Implement a centralized inquiry tracking system to efficiently manage and respond to repeated customer inquiries",
+        "what_gets_better": "Faster response times and improved customer satisfaction",
+        "why_fits": {
+          "text": "The business can leverage software to automate and organize inquiries, reducing the time spent on manual tracking and follow-up"
+        },
+        "before_after": {
+          "before": "Manual tracking and follow-up on customer inquiries",
+          "after": "Automated tracking and response system"
+        },
+        "change_level": {
+          "time_range": "one afternoon",
+          "steps_changed": 2,
+          "steps_removed": 1,
+          "preliminary": true
+        },
+        "stays_same": {
+          "tools": [
+            "existing software"
+          ],
+          "authority": [
+            "business owner"
+          ],
+          "steps": [
+            "customer communication"
+          ]
+        },
+        "grounded_numbers": [],
+        "invitation": "The owner will Spark a new level of efficiency by implementing this system, starting with a thorough review of current workflows and software capabilities"
+      },
+      "candidate_ref": "4a916f2b778f8dbf516edc421362392fbc976c1a70c7753e7e7235a8b2226aac",
+      "issues": [],
+      "retained": {
+        "version": 1,
+        "mode": "local",
+        "title": "Streamlined Inquiry Management",
+        "plan": "Implement a centralized inquiry tracking system to efficiently manage and respond to repeated customer inquiries",
+        "what_gets_better": "Faster response times and improved customer satisfaction",
+        "why_fits": {
+          "text": "The business can leverage software to automate and organize inquiries, reducing the time spent on manual tracking and follow-up"
+        },
+        "before_after": {
+          "before": "Manual tracking and follow-up on customer inquiries",
+          "after": "Automated tracking and response system"
+        },
+        "change_level": {
+          "time_range": "one afternoon",
+          "steps_changed": 2,
+          "steps_removed": 1,
+          "preliminary": true
+        },
+        "stays_same": {
+          "tools": [
+            "existing software"
+          ],
+          "authority": [
+            "business owner"
+          ],
+          "steps": [
+            "customer communication"
+          ]
+        },
+        "grounded_numbers": [],
+        "invitation": "The owner will Spark a new level of efficiency by implementing this system, starting with a thorough review of current workflows and software capabilities"
+      },
+      "retained_sha256": "ddef344acc953359a6aa0c9b540afdd8cc9e3dce8121d7c06bd5bb742c80f862",
+      "retained_bytes": 952,
+      "usage": {
+        "input_tokens": 510,
+        "output_tokens": 214
+      },
+      "cost_usd": 0.0006294,
+      "request_sha256": "d04115e10854b71a6bbe529e86b9753d5920dee150a874265115bbd37679b793"
+    },
+    {
+      "kind": "trial",
+      "role": "primary",
+      "resolved_model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+      "index": 10,
+      "started_at": "2026-08-22T13:57:56.254Z",
+      "ended_at": "2026-08-22T13:58:02.406Z",
+      "latency_ms": 6152,
+      "call_state": "received",
+      "classification": "direct_valid",
+      "candidate": {
+        "version": 1,
+        "mode": "local",
+        "title": "Streamlined Inquiry Management",
+        "plan": "Implement a centralized inquiry tracking system to efficiently manage and respond to repeated customer inquiries",
+        "what_gets_better": "Faster response times and improved customer satisfaction",
+        "why_fits": {
+          "text": "The business can leverage software to automate the process of tracking and responding to inquiries, freeing up staff to focus on higher-value tasks"
+        },
+        "before_after": {
+          "before": "Manual tracking and response to inquiries, leading to delays and potential missed opportunities",
+          "after": "Automated tracking and response, enabling timely and personalized engagement with customers"
+        },
+        "change_level": {
+          "time_range": "one afternoon",
+          "steps_changed": 2,
+          "steps_removed": 1,
+          "preliminary": true
+        },
+        "stays_same": {
+          "tools": [
+            "existing customer relationship management software"
+          ],
+          "authority": [
+            "current staff"
+          ],
+          "steps": [
+            "customer communication protocols"
+          ]
+        },
+        "grounded_numbers": [],
+        "invitation": "Owner, let's Spark a more efficient inquiry management process by implementing automated tracking and response, allowing you to devote more time to growing your business"
+      },
+      "candidate_ref": "be0042800d84ca078e1fa9bdc7afcf72e193159eb579c7e5c60c92aaf0e6da6f",
+      "issues": [],
+      "retained": {
+        "version": 1,
+        "mode": "local",
+        "title": "Streamlined Inquiry Management",
+        "plan": "Implement a centralized inquiry tracking system to efficiently manage and respond to repeated customer inquiries",
+        "what_gets_better": "Faster response times and improved customer satisfaction",
+        "why_fits": {
+          "text": "The business can leverage software to automate the process of tracking and responding to inquiries, freeing up staff to focus on higher-value tasks"
+        },
+        "before_after": {
+          "before": "Manual tracking and response to inquiries, leading to delays and potential missed opportunities",
+          "after": "Automated tracking and response, enabling timely and personalized engagement with customers"
+        },
+        "change_level": {
+          "time_range": "one afternoon",
+          "steps_changed": 2,
+          "steps_removed": 1,
+          "preliminary": true
+        },
+        "stays_same": {
+          "tools": [
+            "existing customer relationship management software"
+          ],
+          "authority": [
+            "current staff"
+          ],
+          "steps": [
+            "customer communication protocols"
+          ]
+        },
+        "grounded_numbers": [],
+        "invitation": "Owner, let's Spark a more efficient inquiry management process by implementing automated tracking and response, allowing you to devote more time to growing your business"
+      },
+      "retained_sha256": "e06cc608f4010dfcf2af7a7fbad859683c38abc6854c72b9b6b9eea41f81b61e",
+      "retained_bytes": 1126,
+      "usage": {
+        "input_tokens": 510,
+        "output_tokens": 238
+      },
+      "cost_usd": 0.0006833999999999999,
+      "request_sha256": "d04115e10854b71a6bbe529e86b9753d5920dee150a874265115bbd37679b793"
+    },
+    {
+      "kind": "trial",
+      "role": "primary",
+      "resolved_model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+      "index": 11,
+      "started_at": "2026-08-22T13:58:02.445Z",
+      "ended_at": "2026-08-22T13:58:14.799Z",
+      "latency_ms": 12354,
+      "call_state": "received",
+      "classification": "direct_valid",
+      "candidate": {
+        "version": 1,
+        "mode": "local",
+        "title": "Streamlined Inquiry Management",
+        "plan": "Implement a centralized inquiry tracking system to efficiently manage and respond to repeated customer inquiries",
+        "what_gets_better": "Faster response times and improved customer satisfaction",
+        "why_fits": {
+          "text": "The business can leverage software to automate the process of tracking and responding to inquiries, freeing up staff to focus on higher-value tasks"
+        },
+        "before_after": {
+          "before": "Manual tracking and response to inquiries, leading to delays and potential missed opportunities",
+          "after": "Automated tracking and response, enabling timely and personalized engagement with customers"
+        },
+        "change_level": {
+          "time_range": "one afternoon",
+          "steps_changed": 2,
+          "steps_removed": 1,
+          "preliminary": true
+        },
+        "stays_same": {
+          "tools": [
+            "existing customer relationship management software"
+          ],
+          "authority": [
+            "business owner and staff"
+          ],
+          "steps": [
+            "customer communication and support"
+          ]
+        },
+        "grounded_numbers": [],
+        "invitation": "The owner will Spark a significant improvement in customer satisfaction by implementing this streamlined inquiry management system, starting with a thorough review of current workflows and available software solutions."
+      },
+      "candidate_ref": "1bb35c50397a79c893f343cd3413a2d53973a3db84086cf06672623fa0b428a2",
+      "issues": [],
+      "retained": {
+        "version": 1,
+        "mode": "local",
+        "title": "Streamlined Inquiry Management",
+        "plan": "Implement a centralized inquiry tracking system to efficiently manage and respond to repeated customer inquiries",
+        "what_gets_better": "Faster response times and improved customer satisfaction",
+        "why_fits": {
+          "text": "The business can leverage software to automate the process of tracking and responding to inquiries, freeing up staff to focus on higher-value tasks"
+        },
+        "before_after": {
+          "before": "Manual tracking and response to inquiries, leading to delays and potential missed opportunities",
+          "after": "Automated tracking and response, enabling timely and personalized engagement with customers"
+        },
+        "change_level": {
+          "time_range": "one afternoon",
+          "steps_changed": 2,
+          "steps_removed": 1,
+          "preliminary": true
+        },
+        "stays_same": {
+          "tools": [
+            "existing customer relationship management software"
+          ],
+          "authority": [
+            "business owner and staff"
+          ],
+          "steps": [
+            "customer communication and support"
+          ]
+        },
+        "grounded_numbers": [],
+        "invitation": "The owner will Spark a significant improvement in customer satisfaction by implementing this streamlined inquiry management system, starting with a thorough review of current workflows and available software solutions."
+      },
+      "retained_sha256": "eab48db31b657fb7ceb66694e20619749d5ac29d385e5233a2fea1b4460ee627",
+      "retained_bytes": 1188,
+      "usage": {
+        "input_tokens": 510,
+        "output_tokens": 244
+      },
+      "cost_usd": 0.0006969,
+      "request_sha256": "d04115e10854b71a6bbe529e86b9753d5920dee150a874265115bbd37679b793"
+    },
+    {
+      "kind": "trial",
+      "role": "primary",
+      "resolved_model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+      "index": 12,
+      "started_at": "2026-08-22T13:58:14.839Z",
+      "ended_at": "2026-08-22T13:58:21.499Z",
+      "latency_ms": 6660,
+      "call_state": "received",
+      "classification": "direct_valid",
+      "candidate": {
+        "version": 1,
+        "mode": "local",
+        "title": "Streamlined Inquiry Management",
+        "plan": "Implement a centralized inquiry tracking system to efficiently manage and respond to repeated customer inquiries",
+        "what_gets_better": "Faster response times and improved customer satisfaction",
+        "why_fits": {
+          "text": "The business can leverage software to automate and organize inquiries, reducing the time spent on manual tracking and follow-up"
+        },
+        "before_after": {
+          "before": "Manual tracking and follow-up on customer inquiries",
+          "after": "Automated tracking and response system"
+        },
+        "change_level": {
+          "time_range": "one afternoon",
+          "steps_changed": 2,
+          "steps_removed": 1,
+          "preliminary": true
+        },
+        "stays_same": {
+          "tools": [
+            "existing customer relationship management software"
+          ],
+          "authority": [
+            "business owner"
+          ],
+          "steps": [
+            "customer communication"
+          ]
+        },
+        "grounded_numbers": [],
+        "invitation": "The owner will Spark a significant improvement in customer satisfaction by implementing this streamlined inquiry management system, starting with a thorough review of current workflows and software capabilities"
+      },
+      "candidate_ref": "e3ab54ea421fb42647c9531b1d45ced9b9ce98b825cce0fbd0b7b7be28dff1db",
+      "issues": [],
+      "retained": {
+        "version": 1,
+        "mode": "local",
+        "title": "Streamlined Inquiry Management",
+        "plan": "Implement a centralized inquiry tracking system to efficiently manage and respond to repeated customer inquiries",
+        "what_gets_better": "Faster response times and improved customer satisfaction",
+        "why_fits": {
+          "text": "The business can leverage software to automate and organize inquiries, reducing the time spent on manual tracking and follow-up"
+        },
+        "before_after": {
+          "before": "Manual tracking and follow-up on customer inquiries",
+          "after": "Automated tracking and response system"
+        },
+        "change_level": {
+          "time_range": "one afternoon",
+          "steps_changed": 2,
+          "steps_removed": 1,
+          "preliminary": true
+        },
+        "stays_same": {
+          "tools": [
+            "existing customer relationship management software"
+          ],
+          "authority": [
+            "business owner"
+          ],
+          "steps": [
+            "customer communication"
+          ]
+        },
+        "grounded_numbers": [],
+        "invitation": "The owner will Spark a significant improvement in customer satisfaction by implementing this streamlined inquiry management system, starting with a thorough review of current workflows and software capabilities"
+      },
+      "retained_sha256": "2e3713d9ba484c36702eab1b8a5a56d3d4b781c4d98363773caa7e33612b8ad7",
+      "retained_bytes": 1041,
+      "usage": {
+        "input_tokens": 510,
+        "output_tokens": 221
+      },
+      "cost_usd": 0.0006451499999999999,
+      "request_sha256": "d04115e10854b71a6bbe529e86b9753d5920dee150a874265115bbd37679b793"
+    },
+    {
+      "kind": "trial",
+      "role": "primary",
+      "resolved_model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+      "index": 13,
+      "started_at": "2026-08-22T13:58:21.546Z",
+      "ended_at": "2026-08-22T13:58:32.118Z",
+      "latency_ms": 10572,
+      "call_state": "received",
+      "classification": "direct_valid",
+      "candidate": {
+        "version": 1,
+        "mode": "local",
+        "title": "Streamlined Inquiry Management",
+        "plan": "Implement a centralized inquiry tracking system to efficiently manage and respond to repeated customer inquiries",
+        "what_gets_better": "Faster response times and improved customer satisfaction",
+        "why_fits": {
+          "text": "The business can leverage software to automate and organize inquiries, reducing the time spent on manual tracking and follow-up"
+        },
+        "before_after": {
+          "before": "Manual tracking and follow-up on customer inquiries",
+          "after": "Automated tracking and response system"
+        },
+        "change_level": {
+          "time_range": "one afternoon",
+          "steps_changed": 2,
+          "steps_removed": 1,
+          "preliminary": true
+        },
+        "stays_same": {
+          "tools": [
+            "existing software"
+          ],
+          "authority": [
+            "business owner"
+          ],
+          "steps": [
+            "customer communication"
+          ]
+        },
+        "grounded_numbers": [],
+        "invitation": "The owner will Spark a significant improvement in customer satisfaction by implementing the new inquiry management system this week"
+      },
+      "candidate_ref": "559ff6929fc2912e3268a6c807a7dfbd0250134bb234a855fc714d19774f21e7",
+      "issues": [],
+      "retained": {
+        "version": 1,
+        "mode": "local",
+        "title": "Streamlined Inquiry Management",
+        "plan": "Implement a centralized inquiry tracking system to efficiently manage and respond to repeated customer inquiries",
+        "what_gets_better": "Faster response times and improved customer satisfaction",
+        "why_fits": {
+          "text": "The business can leverage software to automate and organize inquiries, reducing the time spent on manual tracking and follow-up"
+        },
+        "before_after": {
+          "before": "Manual tracking and follow-up on customer inquiries",
+          "after": "Automated tracking and response system"
+        },
+        "change_level": {
+          "time_range": "one afternoon",
+          "steps_changed": 2,
+          "steps_removed": 1,
+          "preliminary": true
+        },
+        "stays_same": {
+          "tools": [
+            "existing software"
+          ],
+          "authority": [
+            "business owner"
+          ],
+          "steps": [
+            "customer communication"
+          ]
+        },
+        "grounded_numbers": [],
+        "invitation": "The owner will Spark a significant improvement in customer satisfaction by implementing the new inquiry management system this week"
+      },
+      "retained_sha256": "23d5d044608325515d917c18feda7b01bedd71f2d3d3eab5d8cdadfbc0e1a611",
+      "retained_bytes": 929,
+      "usage": {
+        "input_tokens": 510,
+        "output_tokens": 208
+      },
+      "cost_usd": 0.0006159,
+      "request_sha256": "d04115e10854b71a6bbe529e86b9753d5920dee150a874265115bbd37679b793"
+    },
+    {
+      "kind": "trial",
+      "role": "primary",
+      "resolved_model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+      "index": 14,
+      "started_at": "2026-08-22T13:58:32.231Z",
+      "ended_at": "2026-08-22T13:58:38.402Z",
+      "latency_ms": 6171,
+      "call_state": "received",
+      "classification": "direct_valid",
+      "candidate": {
+        "version": 1,
+        "mode": "local",
+        "title": "Streamlined Inquiry Management",
+        "plan": "Implement a centralized inquiry tracking system to efficiently manage and respond to repeated customer inquiries",
+        "what_gets_better": "Faster response times and improved customer satisfaction",
+        "why_fits": {
+          "text": "The business can leverage software to automate the process of tracking and responding to inquiries, freeing up staff to focus on higher-value tasks"
+        },
+        "before_after": {
+          "before": "Manual tracking and response to inquiries, leading to delays and potential missed opportunities",
+          "after": "Automated tracking and response, enabling timely and personalized engagement with customers"
+        },
+        "change_level": {
+          "time_range": "one afternoon",
+          "steps_changed": 2,
+          "steps_removed": 1,
+          "preliminary": true
+        },
+        "stays_same": {
+          "tools": [
+            "existing customer relationship management software"
+          ],
+          "authority": [
+            "current staff"
+          ],
+          "steps": [
+            "customer communication protocols"
+          ]
+        },
+        "grounded_numbers": [],
+        "invitation": "Owner, let's Spark a more efficient inquiry management process by implementing automated tracking and response, allowing you to focus on growing your business"
+      },
+      "candidate_ref": "4e979a1a456ef4c1a234e814d0247c5d55f141600245c34b08380701f0f29ead",
+      "issues": [],
+      "retained": {
+        "version": 1,
+        "mode": "local",
+        "title": "Streamlined Inquiry Management",
+        "plan": "Implement a centralized inquiry tracking system to efficiently manage and respond to repeated customer inquiries",
+        "what_gets_better": "Faster response times and improved customer satisfaction",
+        "why_fits": {
+          "text": "The business can leverage software to automate the process of tracking and responding to inquiries, freeing up staff to focus on higher-value tasks"
+        },
+        "before_after": {
+          "before": "Manual tracking and response to inquiries, leading to delays and potential missed opportunities",
+          "after": "Automated tracking and response, enabling timely and personalized engagement with customers"
+        },
+        "change_level": {
+          "time_range": "one afternoon",
+          "steps_changed": 2,
+          "steps_removed": 1,
+          "preliminary": true
+        },
+        "stays_same": {
+          "tools": [
+            "existing customer relationship management software"
+          ],
+          "authority": [
+            "current staff"
+          ],
+          "steps": [
+            "customer communication protocols"
+          ]
+        },
+        "grounded_numbers": [],
+        "invitation": "Owner, let's Spark a more efficient inquiry management process by implementing automated tracking and response, allowing you to focus on growing your business"
+      },
+      "retained_sha256": "9a7cd8f6a0d0637a1210dc3e47d51baf8a87c4281345087e5ae572f8329f4b56",
+      "retained_bytes": 1115,
+      "usage": {
+        "input_tokens": 510,
+        "output_tokens": 236
+      },
+      "cost_usd": 0.0006789,
+      "request_sha256": "d04115e10854b71a6bbe529e86b9753d5920dee150a874265115bbd37679b793"
+    },
+    {
+      "kind": "trial",
+      "role": "primary",
+      "resolved_model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+      "index": 15,
+      "started_at": "2026-08-22T13:58:38.514Z",
+      "ended_at": "2026-08-22T13:58:45.006Z",
+      "latency_ms": 6492,
+      "call_state": "received",
+      "classification": "direct_valid",
+      "candidate": {
+        "version": 1,
+        "mode": "local",
+        "title": "Streamlined Inquiry Management",
+        "plan": "Implement a centralized inquiry tracking system to efficiently manage and respond to repeated customer inquiries",
+        "what_gets_better": "Faster response times and improved customer satisfaction",
+        "why_fits": {
+          "text": "The business can leverage software to automate the process of tracking and responding to inquiries, freeing up staff to focus on higher-value tasks"
+        },
+        "before_after": {
+          "before": "Manual tracking and response to inquiries, leading to delays and potential missed opportunities",
+          "after": "Automated tracking and response, enabling timely and personalized engagement with customers"
+        },
+        "change_level": {
+          "time_range": "one afternoon",
+          "steps_changed": 2,
+          "steps_removed": 1,
+          "preliminary": true
+        },
+        "stays_same": {
+          "tools": [
+            "existing customer relationship management software"
+          ],
+          "authority": [
+            "business owner and staff"
+          ],
+          "steps": [
+            "customer communication and support"
+          ]
+        },
+        "grounded_numbers": [],
+        "invitation": "The owner will Spark a significant improvement in customer satisfaction by implementing this streamlined inquiry management system, starting with a thorough review of current workflows and available software solutions"
+      },
+      "candidate_ref": "eecb8f9351241635ec0bb191b9345809bd694f91f3f0ecd9a7444837aa597d7f",
+      "issues": [],
+      "retained": {
+        "version": 1,
+        "mode": "local",
+        "title": "Streamlined Inquiry Management",
+        "plan": "Implement a centralized inquiry tracking system to efficiently manage and respond to repeated customer inquiries",
+        "what_gets_better": "Faster response times and improved customer satisfaction",
+        "why_fits": {
+          "text": "The business can leverage software to automate the process of tracking and responding to inquiries, freeing up staff to focus on higher-value tasks"
+        },
+        "before_after": {
+          "before": "Manual tracking and response to inquiries, leading to delays and potential missed opportunities",
+          "after": "Automated tracking and response, enabling timely and personalized engagement with customers"
+        },
+        "change_level": {
+          "time_range": "one afternoon",
+          "steps_changed": 2,
+          "steps_removed": 1,
+          "preliminary": true
+        },
+        "stays_same": {
+          "tools": [
+            "existing customer relationship management software"
+          ],
+          "authority": [
+            "business owner and staff"
+          ],
+          "steps": [
+            "customer communication and support"
+          ]
+        },
+        "grounded_numbers": [],
+        "invitation": "The owner will Spark a significant improvement in customer satisfaction by implementing this streamlined inquiry management system, starting with a thorough review of current workflows and available software solutions"
+      },
+      "retained_sha256": "f16ca6d99ac2149884079916705aaa432dfad4693f1007d0cde43d57fd63ce28",
+      "retained_bytes": 1187,
+      "usage": {
+        "input_tokens": 510,
+        "output_tokens": 243
+      },
+      "cost_usd": 0.00069465,
+      "request_sha256": "d04115e10854b71a6bbe529e86b9753d5920dee150a874265115bbd37679b793"
+    },
+    {
+      "kind": "trial",
+      "role": "primary",
+      "resolved_model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+      "index": 16,
+      "started_at": "2026-08-22T13:58:45.081Z",
+      "ended_at": "2026-08-22T13:58:51.518Z",
+      "latency_ms": 6437,
+      "call_state": "received",
+      "classification": "direct_valid",
+      "candidate": {
+        "version": 1,
+        "mode": "local",
+        "title": "Streamlined Inquiry Management",
+        "plan": "Implement a centralized inquiry tracking system to efficiently manage and respond to repeated customer inquiries",
+        "what_gets_better": "Faster response times and improved customer satisfaction",
+        "why_fits": {
+          "text": "The business can leverage software to automate the process of tracking and responding to inquiries, freeing up staff to focus on higher-value tasks"
+        },
+        "before_after": {
+          "before": "Manual tracking and response to inquiries, leading to delays and potential missed opportunities",
+          "after": "Automated tracking and response, enabling timely and personalized engagement with customers"
+        },
+        "change_level": {
+          "time_range": "one afternoon",
+          "steps_changed": 2,
+          "steps_removed": 1,
+          "preliminary": true
+        },
+        "stays_same": {
+          "tools": [
+            "existing customer relationship management software"
+          ],
+          "authority": [
+            "current staff and management"
+          ],
+          "steps": [
+            "customer communication and issue resolution"
+          ]
+        },
+        "grounded_numbers": [],
+        "invitation": "Owner, let's Spark a more efficient inquiry management process by implementing automated tracking and response, allowing you to focus on growing your business and delivering exceptional customer experiences"
+      },
+      "candidate_ref": "0baca68091d845136b45ac859724a2f2276877ee611a07535f546476f8cc66e1",
+      "issues": [],
+      "retained": {
+        "version": 1,
+        "mode": "local",
+        "title": "Streamlined Inquiry Management",
+        "plan": "Implement a centralized inquiry tracking system to efficiently manage and respond to repeated customer inquiries",
+        "what_gets_better": "Faster response times and improved customer satisfaction",
+        "why_fits": {
+          "text": "The business can leverage software to automate the process of tracking and responding to inquiries, freeing up staff to focus on higher-value tasks"
+        },
+        "before_after": {
+          "before": "Manual tracking and response to inquiries, leading to delays and potential missed opportunities",
+          "after": "Automated tracking and response, enabling timely and personalized engagement with customers"
+        },
+        "change_level": {
+          "time_range": "one afternoon",
+          "steps_changed": 2,
+          "steps_removed": 1,
+          "preliminary": true
+        },
+        "stays_same": {
+          "tools": [
+            "existing customer relationship management software"
+          ],
+          "authority": [
+            "current staff and management"
+          ],
+          "steps": [
+            "customer communication and issue resolution"
+          ]
+        },
+        "grounded_numbers": [],
+        "invitation": "Owner, let's Spark a more efficient inquiry management process by implementing automated tracking and response, allowing you to focus on growing your business and delivering exceptional customer experiences"
+      },
+      "retained_sha256": "3c031d8b96d518cb8829a78cea536c6b8ce9066448e28da1e98a12b296fbd66a",
+      "retained_bytes": 1189,
+      "usage": {
+        "input_tokens": 510,
+        "output_tokens": 245
+      },
+      "cost_usd": 0.0006991499999999999,
+      "request_sha256": "d04115e10854b71a6bbe529e86b9753d5920dee150a874265115bbd37679b793"
+    },
+    {
+      "kind": "trial",
+      "role": "primary",
+      "resolved_model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+      "index": 17,
+      "started_at": "2026-08-22T13:58:51.558Z",
+      "ended_at": "2026-08-22T13:58:57.642Z",
+      "latency_ms": 6083,
+      "call_state": "received",
+      "classification": "direct_valid",
+      "candidate": {
+        "version": 1,
+        "mode": "local",
+        "title": "Streamlined Inquiry Management",
+        "plan": "Implement a centralized inquiry tracking system to efficiently manage and respond to repeated customer inquiries",
+        "what_gets_better": "Faster response times and improved customer satisfaction",
+        "why_fits": {
+          "text": "The business can leverage software to automate the process of tracking and responding to inquiries, freeing up staff to focus on higher-value tasks"
+        },
+        "before_after": {
+          "before": "Manual tracking and response to inquiries, leading to delays and potential missed opportunities",
+          "after": "Automated tracking and response, enabling timely and personalized engagement with customers"
+        },
+        "change_level": {
+          "time_range": "one afternoon",
+          "steps_changed": 2,
+          "steps_removed": 1,
+          "preliminary": true
+        },
+        "stays_same": {
+          "tools": [
+            "existing customer relationship management software"
+          ],
+          "authority": [
+            "current staff"
+          ],
+          "steps": [
+            "customer communication protocols"
+          ]
+        },
+        "grounded_numbers": [],
+        "invitation": "Owner, let's Spark a more efficient inquiry management process by implementing automated tracking and response, allowing you to focus on growing your business"
+      },
+      "candidate_ref": "4e979a1a456ef4c1a234e814d0247c5d55f141600245c34b08380701f0f29ead",
+      "issues": [],
+      "retained": {
+        "version": 1,
+        "mode": "local",
+        "title": "Streamlined Inquiry Management",
+        "plan": "Implement a centralized inquiry tracking system to efficiently manage and respond to repeated customer inquiries",
+        "what_gets_better": "Faster response times and improved customer satisfaction",
+        "why_fits": {
+          "text": "The business can leverage software to automate the process of tracking and responding to inquiries, freeing up staff to focus on higher-value tasks"
+        },
+        "before_after": {
+          "before": "Manual tracking and response to inquiries, leading to delays and potential missed opportunities",
+          "after": "Automated tracking and response, enabling timely and personalized engagement with customers"
+        },
+        "change_level": {
+          "time_range": "one afternoon",
+          "steps_changed": 2,
+          "steps_removed": 1,
+          "preliminary": true
+        },
+        "stays_same": {
+          "tools": [
+            "existing customer relationship management software"
+          ],
+          "authority": [
+            "current staff"
+          ],
+          "steps": [
+            "customer communication protocols"
+          ]
+        },
+        "grounded_numbers": [],
+        "invitation": "Owner, let's Spark a more efficient inquiry management process by implementing automated tracking and response, allowing you to focus on growing your business"
+      },
+      "retained_sha256": "9a7cd8f6a0d0637a1210dc3e47d51baf8a87c4281345087e5ae572f8329f4b56",
+      "retained_bytes": 1115,
+      "usage": {
+        "input_tokens": 510,
+        "output_tokens": 236
+      },
+      "cost_usd": 0.0006789,
+      "request_sha256": "d04115e10854b71a6bbe529e86b9753d5920dee150a874265115bbd37679b793"
+    },
+    {
+      "kind": "trial",
+      "role": "primary",
+      "resolved_model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+      "index": 18,
+      "started_at": "2026-08-22T13:58:57.747Z",
+      "ended_at": "2026-08-22T13:59:03.800Z",
+      "latency_ms": 6053,
+      "call_state": "received",
+      "classification": "direct_valid",
+      "candidate": {
+        "version": 1,
+        "mode": "local",
+        "title": "Streamlined Inquiry Management",
+        "plan": "Implement a centralized inquiry tracking system to efficiently manage and respond to repeated customer inquiries",
+        "what_gets_better": "Faster response times and improved customer satisfaction",
+        "why_fits": {
+          "text": "The business can leverage software to automate the process of tracking and responding to inquiries, freeing up staff to focus on higher-value tasks"
+        },
+        "before_after": {
+          "before": "Manual tracking and response to inquiries, leading to delays and potential missed opportunities",
+          "after": "Automated tracking and response, enabling timely and personalized engagement with customers"
+        },
+        "change_level": {
+          "time_range": "one afternoon",
+          "steps_changed": 2,
+          "steps_removed": 1,
+          "preliminary": true
+        },
+        "stays_same": {
+          "tools": [
+            "existing customer relationship management software"
+          ],
+          "authority": [
+            "current staff"
+          ],
+          "steps": [
+            "customer communication protocols"
+          ]
+        },
+        "grounded_numbers": [],
+        "invitation": "Owner, let's Spark a more efficient inquiry management process by implementing automated tracking and response, allowing you to focus on growing your business"
+      },
+      "candidate_ref": "4e979a1a456ef4c1a234e814d0247c5d55f141600245c34b08380701f0f29ead",
+      "issues": [],
+      "retained": {
+        "version": 1,
+        "mode": "local",
+        "title": "Streamlined Inquiry Management",
+        "plan": "Implement a centralized inquiry tracking system to efficiently manage and respond to repeated customer inquiries",
+        "what_gets_better": "Faster response times and improved customer satisfaction",
+        "why_fits": {
+          "text": "The business can leverage software to automate the process of tracking and responding to inquiries, freeing up staff to focus on higher-value tasks"
+        },
+        "before_after": {
+          "before": "Manual tracking and response to inquiries, leading to delays and potential missed opportunities",
+          "after": "Automated tracking and response, enabling timely and personalized engagement with customers"
+        },
+        "change_level": {
+          "time_range": "one afternoon",
+          "steps_changed": 2,
+          "steps_removed": 1,
+          "preliminary": true
+        },
+        "stays_same": {
+          "tools": [
+            "existing customer relationship management software"
+          ],
+          "authority": [
+            "current staff"
+          ],
+          "steps": [
+            "customer communication protocols"
+          ]
+        },
+        "grounded_numbers": [],
+        "invitation": "Owner, let's Spark a more efficient inquiry management process by implementing automated tracking and response, allowing you to focus on growing your business"
+      },
+      "retained_sha256": "9a7cd8f6a0d0637a1210dc3e47d51baf8a87c4281345087e5ae572f8329f4b56",
+      "retained_bytes": 1115,
+      "usage": {
+        "input_tokens": 510,
+        "output_tokens": 236
+      },
+      "cost_usd": 0.0006789,
+      "request_sha256": "d04115e10854b71a6bbe529e86b9753d5920dee150a874265115bbd37679b793"
+    },
+    {
+      "kind": "trial",
+      "role": "primary",
+      "resolved_model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+      "index": 19,
+      "started_at": "2026-08-22T13:59:03.878Z",
+      "ended_at": "2026-08-22T13:59:10.141Z",
+      "latency_ms": 6263,
+      "call_state": "received",
+      "classification": "direct_valid",
+      "candidate": {
+        "version": 1,
+        "mode": "local",
+        "title": "Streamlined Inquiry Management",
+        "plan": "Implement a centralized inquiry tracking system to efficiently manage and respond to repeated customer inquiries",
+        "what_gets_better": "Faster response times and improved customer satisfaction",
+        "why_fits": {
+          "text": "The business can leverage software to automate and organize inquiries, reducing the time spent on manual tracking and follow-up"
+        },
+        "before_after": {
+          "before": "Manual tracking and follow-up on customer inquiries",
+          "after": "Automated tracking and response system"
+        },
+        "change_level": {
+          "time_range": "one afternoon",
+          "steps_changed": 2,
+          "steps_removed": 1,
+          "preliminary": true
+        },
+        "stays_same": {
+          "tools": [
+            "existing computer systems"
+          ],
+          "authority": [
+            "current staff"
+          ],
+          "steps": [
+            "customer communication"
+          ]
+        },
+        "grounded_numbers": [],
+        "invitation": "The owner will Spark a significant improvement in customer satisfaction by implementing this streamlined inquiry management system, starting with a thorough review of current workflows and software capabilities"
+      },
+      "candidate_ref": "c6a24032078c5cb4908f94a6a7701c853356543789c1151eacee36efc17cba74",
+      "issues": [],
+      "retained": {
+        "version": 1,
+        "mode": "local",
+        "title": "Streamlined Inquiry Management",
+        "plan": "Implement a centralized inquiry tracking system to efficiently manage and respond to repeated customer inquiries",
+        "what_gets_better": "Faster response times and improved customer satisfaction",
+        "why_fits": {
+          "text": "The business can leverage software to automate and organize inquiries, reducing the time spent on manual tracking and follow-up"
+        },
+        "before_after": {
+          "before": "Manual tracking and follow-up on customer inquiries",
+          "after": "Automated tracking and response system"
+        },
+        "change_level": {
+          "time_range": "one afternoon",
+          "steps_changed": 2,
+          "steps_removed": 1,
+          "preliminary": true
+        },
+        "stays_same": {
+          "tools": [
+            "existing computer systems"
+          ],
+          "authority": [
+            "current staff"
+          ],
+          "steps": [
+            "customer communication"
+          ]
+        },
+        "grounded_numbers": [],
+        "invitation": "The owner will Spark a significant improvement in customer satisfaction by implementing this streamlined inquiry management system, starting with a thorough review of current workflows and software capabilities"
+      },
+      "retained_sha256": "2ee0b7d0c674e62e7eafa784413b50b66c9b3eb92ef569f4e48025c6b67d5578",
+      "retained_bytes": 1015,
+      "usage": {
+        "input_tokens": 510,
+        "output_tokens": 219
+      },
+      "cost_usd": 0.00064065,
+      "request_sha256": "d04115e10854b71a6bbe529e86b9753d5920dee150a874265115bbd37679b793"
+    },
+    {
+      "kind": "trial",
+      "role": "primary",
+      "resolved_model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+      "index": 20,
+      "started_at": "2026-08-22T13:59:10.173Z",
+      "ended_at": "2026-08-22T13:59:15.870Z",
+      "latency_ms": 5697,
+      "call_state": "received",
+      "classification": "direct_valid",
+      "candidate": {
+        "version": 1,
+        "mode": "local",
+        "title": "Streamlined Inquiry Management",
+        "plan": "Implement a centralized inquiry tracking system to efficiently manage and respond to repeated customer inquiries",
+        "what_gets_better": "Faster response times and improved customer satisfaction",
+        "why_fits": {
+          "text": "The business can leverage software to automate and organize inquiries, reducing the time spent on manual tracking and follow-up"
+        },
+        "before_after": {
+          "before": "Manual tracking and follow-up on customer inquiries",
+          "after": "Automated tracking and response system"
+        },
+        "change_level": {
+          "time_range": "one afternoon",
+          "steps_changed": 2,
+          "steps_removed": 1,
+          "preliminary": true
+        },
+        "stays_same": {
+          "tools": [
+            "existing software"
+          ],
+          "authority": [
+            "business owner"
+          ],
+          "steps": [
+            "customer communication"
+          ]
+        },
+        "grounded_numbers": [],
+        "invitation": "The owner will Spark a new level of efficiency by implementing this system, starting with a thorough review of current workflows and software capabilities"
+      },
+      "candidate_ref": "4a916f2b778f8dbf516edc421362392fbc976c1a70c7753e7e7235a8b2226aac",
+      "issues": [],
+      "retained": {
+        "version": 1,
+        "mode": "local",
+        "title": "Streamlined Inquiry Management",
+        "plan": "Implement a centralized inquiry tracking system to efficiently manage and respond to repeated customer inquiries",
+        "what_gets_better": "Faster response times and improved customer satisfaction",
+        "why_fits": {
+          "text": "The business can leverage software to automate and organize inquiries, reducing the time spent on manual tracking and follow-up"
+        },
+        "before_after": {
+          "before": "Manual tracking and follow-up on customer inquiries",
+          "after": "Automated tracking and response system"
+        },
+        "change_level": {
+          "time_range": "one afternoon",
+          "steps_changed": 2,
+          "steps_removed": 1,
+          "preliminary": true
+        },
+        "stays_same": {
+          "tools": [
+            "existing software"
+          ],
+          "authority": [
+            "business owner"
+          ],
+          "steps": [
+            "customer communication"
+          ]
+        },
+        "grounded_numbers": [],
+        "invitation": "The owner will Spark a new level of efficiency by implementing this system, starting with a thorough review of current workflows and software capabilities"
+      },
+      "retained_sha256": "ddef344acc953359a6aa0c9b540afdd8cc9e3dce8121d7c06bd5bb742c80f862",
+      "retained_bytes": 952,
+      "usage": {
+        "input_tokens": 510,
+        "output_tokens": 214
+      },
+      "cost_usd": 0.0006294,
+      "request_sha256": "d04115e10854b71a6bbe529e86b9753d5920dee150a874265115bbd37679b793"
+    }
+  ],
+  "summary": {
+    "by_role": {
+      "primary": {
+        "resolved_model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+        "total": 20,
+        "direct_valid": 20,
+        "invalid_output": 0,
+        "output_too_large": 0,
+        "provider_error": 0,
+        "timeout": 0,
+        "direct_rate": {
+          "numerator": 20,
+          "denominator": 20,
+          "percent": 100
+        },
+        "latency_ms": [
+          6455,
+          18934,
+          5674,
+          7951,
+          5725,
+          6010,
+          6100,
+          5847,
+          5705,
+          6152,
+          12354,
+          6660,
+          10572,
+          6171,
+          6492,
+          6437,
+          6083,
+          6053,
+          6263,
+          5697
+        ],
+        "usage": [
+          {
+            "input_tokens": 510,
+            "output_tokens": 244
+          },
+          {
+            "input_tokens": 510,
+            "output_tokens": 237
+          },
+          {
+            "input_tokens": 510,
+            "output_tokens": 214
+          },
+          {
+            "input_tokens": 510,
+            "output_tokens": 214
+          },
+          {
+            "input_tokens": 510,
+            "output_tokens": 214
+          },
+          {
+            "input_tokens": 510,
+            "output_tokens": 236
+          },
+          {
+            "input_tokens": 510,
+            "output_tokens": 219
+          },
+          {
+            "input_tokens": 510,
+            "output_tokens": 212
+          },
+          {
+            "input_tokens": 510,
+            "output_tokens": 214
+          },
+          {
+            "input_tokens": 510,
+            "output_tokens": 238
+          },
+          {
+            "input_tokens": 510,
+            "output_tokens": 244
+          },
+          {
+            "input_tokens": 510,
+            "output_tokens": 221
+          },
+          {
+            "input_tokens": 510,
+            "output_tokens": 208
+          },
+          {
+            "input_tokens": 510,
+            "output_tokens": 236
+          },
+          {
+            "input_tokens": 510,
+            "output_tokens": 243
+          },
+          {
+            "input_tokens": 510,
+            "output_tokens": 245
+          },
+          {
+            "input_tokens": 510,
+            "output_tokens": 236
+          },
+          {
+            "input_tokens": 510,
+            "output_tokens": 236
+          },
+          {
+            "input_tokens": 510,
+            "output_tokens": 219
+          },
+          {
+            "input_tokens": 510,
+            "output_tokens": 214
+          }
+        ],
+        "cost_usd": 0.013181999999999998,
+        "cost_known": true,
+        "missing_usage": 0
+      },
+      "fallback": {
+        "resolved_model": "@cf/openai/gpt-oss-20b",
+        "total": 0,
+        "direct_valid": 0,
+        "invalid_output": 0,
+        "output_too_large": 0,
+        "provider_error": 0,
+        "timeout": 0,
+        "direct_rate": {
+          "numerator": 0,
+          "denominator": 0,
+          "percent": 0
+        },
+        "latency_ms": [],
+        "usage": [],
+        "cost_usd": 0,
+        "cost_known": true,
+        "missing_usage": 0
+      }
+    }
+  },
+  "oracle": {
+    "version": "oddspark-judge-evidence-predicates/v2",
+    "hash": "87e15af7b9ad5477862de03bf9b2b049f68932d41eb1cbbf2eaacee1c9ee7ade",
+    "predicate_ids": [
+      "evidence.shape",
+      "oracle.identity",
+      "legacy.immutable",
+      "runtime.identity",
+      "source.identity",
+      "adapter.identity",
+      "candidate.binding",
+      "fixtures.executed",
+      "records.classified",
+      "records.closed",
+      "run.authorization",
+      "run.cardinality",
+      "run.ordering",
+      "run.common_request",
+      "summary.rates",
+      "outcome.deterministic",
+      "predicates.retained",
+      "report.deterministic",
+      "roles.independent",
+      "output.direct_candidate",
+      "schedule.zero_retry",
+      "cost.recomputed",
+      "manifest.independent"
+    ]
+  },
+  "outcome": {
+    "by_role": {
+      "primary": {
+        "decision": "GO",
+        "reasons": []
+      },
+      "fallback": {
+        "decision": "NO-GO",
+        "reasons": [
+          "probe did not return a direct Candidate",
+          "expected 20 trials, found 0",
+          "direct-valid threshold 19/20 not met"
+        ]
+      }
+    }
+  },
+  "predicate_results": [
+    {
+      "id": "evidence.shape",
+      "pass": true
+    },
+    {
+      "id": "oracle.identity",
+      "pass": true
+    },
+    {
+      "id": "legacy.immutable",
+      "pass": true
+    },
+    {
+      "id": "runtime.identity",
+      "pass": true
+    },
+    {
+      "id": "source.identity",
+      "pass": true
+    },
+    {
+      "id": "adapter.identity",
+      "pass": true
+    },
+    {
+      "id": "candidate.binding",
+      "pass": true
+    },
+    {
+      "id": "fixtures.executed",
+      "pass": true
+    },
+    {
+      "id": "records.classified",
+      "pass": true
+    },
+    {
+      "id": "records.closed",
+      "pass": true
+    },
+    {
+      "id": "run.authorization",
+      "pass": true
+    },
+    {
+      "id": "run.cardinality",
+      "pass": true
+    },
+    {
+      "id": "run.ordering",
+      "pass": true
+    },
+    {
+      "id": "run.common_request",
+      "pass": true
+    },
+    {
+      "id": "summary.rates",
+      "pass": true
+    },
+    {
+      "id": "outcome.deterministic",
+      "pass": true
+    },
+    {
+      "id": "predicates.retained",
+      "pass": true
+    },
+    {
+      "id": "report.deterministic",
+      "pass": true
+    },
+    {
+      "id": "roles.independent",
+      "pass": true
+    },
+    {
+      "id": "output.direct_candidate",
+      "pass": true
+    },
+    {
+      "id": "schedule.zero_retry",
+      "pass": true
+    },
+    {
+      "id": "cost.recomputed",
+      "pass": true
+    },
+    {
+      "id": "manifest.independent",
+      "pass": true
+    }
+  ],
+  "report": "# Generation Structural Qualification\n\n- Run: `77253e3e-24a9-4e1a-bd48-6a64336d9643`\n- Calls: 22/42\n\n| Role | Model | Trials | Direct valid | Decision |\n| --- | --- | ---: | ---: | --- |\n| primary | `@cf/meta/llama-3.3-70b-instruct-fp8-fast` | 20 | 20/20 | GO |\n| fallback | `@cf/openai/gpt-oss-20b` | 0 | 0/0 | NO-GO |\n\nPrimary and fallback results are independent. Failures remain in their role denominator; no retry, replacement, repair, coercion, or prose extraction is allowed.\n\n"
+}

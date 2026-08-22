@@ -1,0 +1,21 @@
+{
+  "schema_version": "oddspark.generation-qualification-complete/v1",
+  "basename": "story-1-11-2026-08-22-l7-77253e3e-24a9-4e1a-bd48-6a64336d9643",
+  "files": [
+    {
+      "name": "story-1-11-2026-08-22-l7-77253e3e-24a9-4e1a-bd48-6a64336d9643.evidence.json",
+      "bytes": 139907,
+      "sha256": "94bbd5e6f2ce47094251770bacf16db85a5a793b5105cfecd926fdfcbac979ef"
+    },
+    {
+      "name": "story-1-11-2026-08-22-l7-77253e3e-24a9-4e1a-bd48-6a64336d9643.report.md",
+      "bytes": 484,
+      "sha256": "f1e865db1c00ee2521863ab41fcdabf58f38c4946f991a140c868aee80090f80"
+    },
+    {
+      "name": "story-1-11-2026-08-22-l7-77253e3e-24a9-4e1a-bd48-6a64336d9643.qualification.json",
+      "bytes": 6264,
+      "sha256": "d136232734bbf556e82fc9cadef24b36f1daa634a1eb88edfed97f43314a295d"
+    }
+  ]
+}
