@@ -28,7 +28,12 @@ export const GENERATION_PREDICATES = Object.freeze([
   ...STORY_1_3_PREDICATES,
   "roles.independent", "output.direct_candidate", "schedule.zero_retry", "cost.recomputed", "manifest.independent",
 ]);
-export const PROMPT = `Return exactly one JSON Candidate object matching the supplied JSON Schema. Do not wrap it, explain it, fence it, repair it, or include a candidate_ref. Preserve the supplied Evidence faithfully and produce only a closed Story 1.7 Candidate.`;
+export const PROMPT = `You are a product strategist for small local businesses. The user message contains generation inputs (an evidence object — region, season, situation, capability_bundle — and a random seed). Your task: INVENT one new, practical improvement the business could make using software or workflow automation, and return it as exactly one JSON Candidate object matching the supplied JSON Schema.
+
+Rules:
+- The user message is input only. NEVER copy, echo, or reshape it into the output. The output is a new object describing your invented idea.
+- Populate every required schema field from your idea: version (exactly 1), mode (copy evidence.mode), title (short idea name), plan (how it works), why_fits.text (why it fits this business now), what_gets_better, before_after (before/after strings), change_level (time_range, steps_changed, steps_removed, preliminary exactly true), stays_same (tools, authority, steps arrays), invitation (one question to the owner), grounded_numbers (strings).
+- Do not include a candidate_ref. Do not wrap, fence, explain, or add any text outside the JSON object.`;
 
 export const CANDIDATE_RESPONSE_FORMAT = Object.freeze({
   type: "json_schema",
