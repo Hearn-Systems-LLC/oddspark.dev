@@ -19,7 +19,8 @@ import {
   legacySparkJson,
   legacySparkPresentation,
 } from "./pipeline/legacy-rendering.mjs";
-import { createInactiveDomainWriter } from "./pipeline/assembly.mjs";
+import { activationPosture, createInactiveDomainWriter } from "./pipeline/assembly.mjs";
+import { productionPipelineEnv } from "./pipeline/production-ports.mjs";
 
 /**
  * oddspark.dev
@@ -1576,6 +1577,16 @@ export const PRE_ACTIVATION_NOTICE = "Website reading is not switched on yet, so
 
 const INACTIVE_DOMAIN_WRITER_ERROR = "inactive domain writer unavailable";
 
+// Story 1.25: the writer port call is bounded by a finite 60s deadline —
+// chosen above the writer's own internal budgets (15s strike + 30s
+// claim-wait horizon) and intended to sit below typical Workers CPU/wall
+// limits; no guaranteed platform bound is claimed. Expiry fails closed to
+// exactly the writer-error terminal below: the in-flight write is abandoned
+// (never cancelled into the coordinator), no metric is recorded, and the
+// route negotiates the same 502 as any other writer fault. Exported so
+// offline fixtures pin its value and ordering.
+export const INACTIVE_DOMAIN_WRITER_DEADLINE_MS = 60000;
+
 export function deriveInactiveDomainDispatch(website, round) {
   // Input guards have already accepted this domain; a scope that fails to
   // parse here is a defect and fails closed rather than re-adjudicating input.
@@ -1594,12 +1605,34 @@ export function deriveInactiveDomainDispatch(website, round) {
   });
 }
 
-async function runInactiveDomainWriter(port, dispatch) {
+// Exported for offline fixtures: tests inject a short deadline through this
+// seam to prove the fail-closed timeout path without waiting out the
+// production budget. A non-finite or non-positive deadline falls back to the
+// pinned constant; the timer is always cleared when the write settles first.
+// The timer rejects with a cheap sentinel (never a constructed Error); the
+// single writer-error terminal is thrown once, below.
+const WRITER_DEADLINE_EXPIRED = Object.freeze({ marker: "inactive-domain-writer-deadline" });
+export async function runInactiveDomainWriter(port, dispatch, deadlineMs = INACTIVE_DOMAIN_WRITER_DEADLINE_MS) {
+  const boundedMs = Number.isFinite(deadlineMs) && deadlineMs > 0 ? deadlineMs : INACTIVE_DOMAIN_WRITER_DEADLINE_MS;
   let outcome;
+  let timer;
   try {
-    outcome = await port.write(dispatch);
+    outcome = await Promise.race([
+      Promise.resolve(port.write(dispatch)),
+      new Promise((_, reject) => {
+        timer = setTimeout(() => reject(WRITER_DEADLINE_EXPIRED), boundedMs);
+      }),
+    ]);
   } catch (err) {
+    const expired = err === WRITER_DEADLINE_EXPIRED;
+    // Redacted failure class only — never port internals, dispatch data, or
+    // request data. Logging can never fail the request.
+    try {
+      console.log(JSON.stringify({ class: expired ? "deadline_expired" : "port_error", event: "inactive_domain_writer_failure" }));
+    } catch { /* observability is best-effort */ }
     throw new Error(INACTIVE_DOMAIN_WRITER_ERROR);
+  } finally {
+    clearTimeout(timer);
   }
   // Hostile outcomes (throwing getters, Proxies) must fail closed to the same
   // terminal rather than leaking an internal message into the negotiated 502.
@@ -2782,9 +2815,34 @@ export default {
         // closed with the 1.16 writer error. Either way the assembled writer
         // itself has no legacy generator fallback.
         const injectedWriter = env.INACTIVE_DOMAIN_WRITER;
+        // Story 1.25: emit the redacted activation posture (stable reason
+        // codes only — never manifest internals, request data, or PII) as
+        // structured Workers Logs, once per writer-seam resolution. Logs
+        // only: no metric, no coordinator write, no stored data; a logging
+        // fault can never fail the request.
+        try {
+          // `event` pinned last so a future posture field can never shadow it.
+          console.log(JSON.stringify({ ...activationPosture(env), event: "activation_posture" }));
+        } catch { /* observability is best-effort */ }
+        // The assembled writer now sees the production pipeline environment:
+        // bundled, hash/approval-verified content plus AI-bound provider ports
+        // (null-safe — a verification failure contributes nothing). The
+        // activation manifest stays absent, so the writer remains null and
+        // the legacy fallthrough below is byte-identical to the 1.24 artifact.
+        // `env` itself is never mutated. Any fault reading the environment or
+        // constructing the writer (e.g. a throwing ACTIVATION_MANIFEST
+        // binding getter) fails closed to a null writer — the request is
+        // unaffected and keeps the legacy fallthrough.
+        let assembledWriter = null;
+        try {
+          assembledWriter = createInactiveDomainWriter(
+            { ...env, ...(productionPipelineEnv(env) ?? {}) },
+            { coordPost: (path, body) => coordPost(env, path, body) },
+          );
+        } catch { /* fail closed: no writer */ }
         const inactiveWriter = injectedWriter != null && typeof injectedWriter.write === "function"
           ? injectedWriter
-          : createInactiveDomainWriter(env, { coordPost: (path, body) => coordPost(env, path, body) });
+          : assembledWriter;
         if (inactiveWriter) {
           const dispatch = deriveInactiveDomainDispatch(intent.website, round);
           const artifact = await runInactiveDomainWriter(inactiveWriter, dispatch);

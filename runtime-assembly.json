@@ -2,7 +2,7 @@
   "schema_version": 1,
   "entrypoint": {
     "path": "src/worker.js",
-    "sha256": "951a2b7f57608e2f5c815973554e490706c82a5d287fbf560775325064fcd3a6"
+    "sha256": "57ad0bf345e3e75129ec26047f8ac650573f22c282b0ff2a78d0c74387caecc7"
   },
   "modules": [
     {
@@ -54,6 +54,10 @@
       "sha256": "b5bb447e4b40bfec57b146ca070dee2d62b329e04db93e8f8a118325469cbd45"
     },
     {
+      "path": "src/pipeline/production-ports.mjs",
+      "sha256": "ffbabc008db62af4e30349b6e9073bb4a832506ce015159e37f3bcb6aafa9936"
+    },
+    {
       "path": "src/pipeline/receipts.mjs",
       "sha256": "a3b8c857afc17c406cec05e34e70da2ab67b611246c190f804892e63b41871ec"
     },
@@ -70,5 +74,5 @@
       "sha256": "a11d0b9313de346d9bff8edc11de1557dc767f24e49992c1ea252ee5b64bc7db"
     }
   ],
-  "assembly_identity_sha256": "c8a459a9eb6f012da795ece15ea9eeefe8e179aa83cec9e2bbd4e88936bdf268"
+  "assembly_identity_sha256": "83abaf4f3fd8144150a69bdac11a7bb516b5ac06795eb3c16832682bbcda9ef8"
 }

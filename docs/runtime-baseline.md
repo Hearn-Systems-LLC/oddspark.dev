@@ -205,3 +205,62 @@ The assembled inactive-domain writer and its activation port read the
 `PIPELINE_*`/`ACTIVATION_MANIFEST` bindings from the Worker's environment;
 production wiring of those bindings is deferred to Stories 1.25/1.26, and
 offline fixtures for them create test authority only.
+
+## Inactive-writer deployment gate (Story 1.25)
+
+Story 1.25 wires the production pipeline env in code while the writer stays
+inactive: `src/pipeline/production-ports.mjs` constructs the `PIPELINE_*`
+content and provider ports from **bundled content** — the owner-governed
+priors, house catalog, and voice corpus are imported as modules
+(`content/local-priors/v1/`, `content/house-briefs/v1/`,
+`semantic/voice/v1/`), verified at construction by the real closed verifiers
+(`verifyLocalPriors`, house `verifyApproval`, `validateCorpus`), with any
+failure returning null and never a partial env. Nothing is var-bound, so
+`wrangler.toml` carries zero Story 1.25 delta and the 1.24 reader-config
+assertion keeps passing. The provider ports wrap `env.AI.run` through the
+closed generation/judge adapters (frozen prompt/parameters/wire schema,
+exactly one JSON value decoded from the frozen response location, no repair)
+against `env.AI_MODEL`; `AI_MODEL_FALLBACK` is a presence-only misconfig
+guard (fallback wiring is a Story 1.11 qualification product).
+`PIPELINE_JUDGE` stays absent — its qualification refs do not exist yet and
+are never fabricated. `ACTIVATION_MANIFEST` remains absent, so
+`createInactiveDomainWriter` returns null before any port validation and
+production strike/read behavior is byte-identical to the 1.24 artifact.
+
+Note: `content/local-priors/v1/approval.json` is still
+`pending_owner_approval`, so the bundled priors currently fail construction
+(`productionPipelineEnv` returns null). That is fail-closed by design and
+gates nothing while the manifest is absent; it must be revisited when exact
+owner approval of the priors catalog lands.
+
+`npm run writer:preflight` (`scripts/writer-preflight.mjs`) is the current
+release gate for the inactive-writer deploy (`reader:preflight` remains the
+1.24 lineage gate). It is fully offline, creates/mutates nothing, emits one
+pass/fail line per check (crash-safe: malformed input yields a FAIL line,
+never a stack trace), and exits non-zero on any failure:
+
+1. runtime-baseline verify;
+2. wrangler config dry runs (zero warnings = dry-run cleanliness);
+3. `assembly:verify`;
+4. entrypoint-bound import-closure identity — the deployed entrypoint and its
+   parsed transitive closure (now including `production-ports.mjs` and the
+   bundled content JSON) must hash byte-identical to the frozen assembly;
+5. bundled-content verification, one line per content family: content bytes
+   are pinned by **hash constants in the preflight script** (any drift
+   FAILs) and approvals are re-verified by the real closed verifiers — this
+   pinning is independent of the frozen assembly identity, which covers
+   module sources only; a family still `pending_owner_approval` is reported
+   as such, never silently treated as wireable;
+6. inactive-posture config assertion — no `ACTIVATION_MANIFEST` or
+   `PIPELINE_*`/`INACTIVE_DOMAIN_WRITER` vars/bindings, no `[env.*]`
+   sections, `main` pinned, legacy AI/KV/DO bindings intact (section-parsed,
+   key-order insensitive);
+7. offline assembly smoke — the pipeline env is constructed through the
+   module's offline content seam with a fully-approved content set and its
+   ports asserted present (proving wireability), then absent and malformed
+   manifests must each yield a null writer.
+
+It is deliberately **not** composed into `npm run check`: it is a release
+gate, run explicitly before a separately approved deployment. Deployment
+itself requires separate explicit approval; rollback redeploys the 1.24
+artifact with no data change.
