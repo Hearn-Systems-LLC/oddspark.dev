@@ -105,6 +105,9 @@ context:
   - `[medium]` `[patch]` src/worker.js pipeline imports pinned to `./pipeline/` by an import audit.
   - `[low]` `[patch]` Pipeline fixtures cloned per environment; claim deadline-exceeded branch tested.
 
+### 2026-08-22 — Independent close-out review
+- Result: PASS. Merge `b144716` / feat `601a6ed`. Canonical `src/pipeline/` graph, fail-closed activation posture, and offline I/O matrix hold at HEAD. `activationPosture` observability DW satisfied by Story 1.25; per-request verification memoization remains open.
+
 ## Design Notes
 
 - Move, don't rewrite: every canonical module keeps its validated logic; the only logic edits are Node-API excisions (`node:crypto` → contracts SHA-256) and deduplicating `canonicalJson`/`domainHash` to the contracts single source. Behavior-preserving moves are what make "Worker and Node import the same modules" auditable.

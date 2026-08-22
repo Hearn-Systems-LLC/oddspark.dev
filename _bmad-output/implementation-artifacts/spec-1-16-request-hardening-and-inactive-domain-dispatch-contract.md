@@ -71,6 +71,9 @@ context:
 
 ## Spec Change Log
 
+### 2026-08-22 — Independent close-out review
+- Result: PASS. Merge `6e67992` / feat `e1a831b`. Frozen dispatch, writer-port fault matrix, Vary+no-store, and HTML/JSON 400 hold at HEAD. Writer-port timeout DW satisfied by Story 1.25.
+
 ## Design Notes
 
 - The dispatch value is the contract Story 1.23's assembled writer will consume; keep it closed and frozen so no later writer can negotiate extra authority out of it.

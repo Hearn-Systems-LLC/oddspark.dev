@@ -44,9 +44,11 @@ status: open
 - source_spec: `_bmad-output/implementation-artifacts/spec-1-16-request-hardening-and-inactive-domain-dispatch-contract.md`
   summary: Bound inactive-domain writer-port latency with a deadline so a hung writer cannot park a request until the platform wall-clock limit.
   evidence: Story 1.16 review found `port.write(dispatch)` is awaited without a timeout; tolerable with the test fake but matters once Story 1.23 wires the real assembled writer.
+  status: resolved 2026-08-22 — satisfied by Story 1.25 (`INACTIVE_DOMAIN_WRITER_DEADLINE_MS` + `Promise.race` in `src/worker.js:1588,1615-1636`). Residual is the 1.25 DW: deadline bounds the response, not in-flight write cancellation.
 - source_spec: `_bmad-output/implementation-artifacts/spec-1-23-worker-runtime-assembly.md`
   summary: Wire the redacted activationPosture reason codes into Worker observability so a disabled/misconfigured writer is operationally visible.
   evidence: Story 1.23 review found activationPosture is exported and tested but has no consumer; relevant when Story 1.25 deploys the inactive writer.
+  status: resolved 2026-08-22 — satisfied by Story 1.25 (`activationPosture` logged redacted at `src/worker.js:2823-2826`; fixtures `test.mjs:2812-2862`).
 - source_spec: `_bmad-output/implementation-artifacts/spec-1-23-worker-runtime-assembly.md`
   summary: Memoize per-request pipeline verification (corpus readiness, priors/house approval hashing) in the assembled writer's hot path.
   evidence: Story 1.23 review found createInactiveDomainWriter re-runs full verification on every domain request; tolerable pre-activation, worth bounding before Story 1.26 traffic.

@@ -100,6 +100,9 @@ context:
   - `[medium]` `[patch]` Domain-scope legacy permalink serves labeled `domain_html`, not `local_permalink`.
   - `[low]` `[patch]` Code-point-safe shortening, empty-line wrap fix, `servable` spelling, permalink-meter and fail-closed unit pins, viz-placeholder assertion.
 
+### 2026-08-22 — Independent close-out review
+- Result: PASS. Merge `a813cc7` / feat `86b9277`. Legacy lossless reader, 1.15 committed path, fail-closed unsupported versions, and `reader:preflight` hold at HEAD. Deploy recorded in Auto Run Result (`d3fe3b3f-e717-4fd9-a995-6ea43d3fe191`).
+
 ## Design Notes
 
 - The legacy path is a READER, not a revival: it renders stored legacy artifacts from their own fields. The 1.15 boundary stands for committed artifacts; the supersession is scoped to this story by explicit human ruling (2026-08-21).

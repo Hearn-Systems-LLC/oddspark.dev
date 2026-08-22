@@ -114,6 +114,9 @@ context:
   - `[medium]` `[defer]` Real Workers AI envelope shape unproven (mocks only) — belongs to qualification stories 1.11/1.19.
   - `[low]` `[patch]` Content-hash pin mirrored into `test.mjs` so `npm test` catches drift; `captureLogLines` hardened (raw-count assertions, null filtering, finally-restore).
 
+### 2026-08-22 — Independent close-out review
+- Result: PASS. Merge `f7a97ee` / feat `e840161`. Inactive writer wiring, 60s port deadline, redacted posture logs, and `writer:preflight` hold at HEAD. Production deploy remains gated on separate explicit approval (unchecked by design). Four deferred items remain accurate.
+
 ## Verification
 
 **Commands:**
