@@ -152,3 +152,9 @@ Share judge governance semantics, never judge hash domains or evidence bytes. Pr
 
 - Runtime identity now hash-binds and isolates the generation spike configuration.
   [`runtime-baseline.mjs:21`](../../scripts/runtime-baseline.mjs#L21)
+
+### 2026-08-22 — Live Llama qualification run l2 executed: both roles NO-GO
+- Run `story-1-11-2026-08-22-l2`, attempt `57ef2429-0bac-48a9-9486-7cbc07dd32c7`, plan_ref `686e93d9…`, under Justin's fresh exact approval (2026-08-22T13:11:02.000Z, cap 42, max $0.22452192). Independently verified post-run: all 23 predicates pass, evidence/report/qualification bytes reproducible.
+- Outcome: both probes returned but echoed the request input instead of producing a closed Candidate (`invalid_output`, closed-schema rejection). Both roles NO-GO with zero trials; 2 calls, known spend $0.00016776; allowance consumed; no refs emitted. Evidence set retained immutably under `spikes/generation-qualification/results/story-1-11-2026-08-22-l2-*`.
+- Harness fix preceding the run (commit `0f00d98`): recovery-finder excluded legacy gpt-oss r2/r3 artifacts from the malformed-name check but not from current-cycle classification, blocking any live run; fixed with a regression test (36/36 self-test).
+- Next: per the governance rule, both NO-GO roles require architecture review (prompt/contract iteration and/or model selection) before any new qualification cycle; a new cycle needs a fresh plan and fresh exact approval.
