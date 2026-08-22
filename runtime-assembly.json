@@ -55,7 +55,7 @@
     },
     {
       "path": "src/pipeline/production-ports.mjs",
-      "sha256": "b5bc790c6aea30bde0f736fb184789d5bdc4db55e2741a1ad28e6d98b85d4899"
+      "sha256": "ee98c31a976dc330fdf64a5d69e4a74c861a3d0e9eba29db51f00a9b767f20e3"
     },
     {
       "path": "src/pipeline/receipts.mjs",
@@ -74,5 +74,5 @@
       "sha256": "a11d0b9313de346d9bff8edc11de1557dc767f24e49992c1ea252ee5b64bc7db"
     }
   ],
-  "assembly_identity_sha256": "37236738fe68b05ace2176f7e55444ab338fc7414af6a98223e1a9c3a0bf6efc"
+  "assembly_identity_sha256": "cc56cccf5787914ce12d23ddb36248568e8aae0b1a71b203ebeb8632aad01907"
 }

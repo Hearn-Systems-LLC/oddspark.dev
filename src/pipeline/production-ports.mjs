@@ -58,7 +58,11 @@ export const GENERATION_PROMPT = `You are a product strategist for small local b
 
 Rules:
 - The user message is input only. NEVER copy, echo, or reshape it into the output. The output is a new object describing your invented idea.
-- Populate every required schema field from your idea: version (exactly 1), mode (copy evidence.mode), title (short idea name), plan (how it works), why_fits.text (why it fits this business now), what_gets_better, before_after (before/after strings), change_level (time_range, steps_changed, steps_removed, preliminary exactly true), stays_same (tools, authority, steps arrays), invitation (one question to the owner), grounded_numbers (strings).
+- Use these exact nested object shapes: why_fits is an object {"text": "..."} (never a dotted key, never a breadcrumb field); before_after is {"before": "...", "after": "..."}; change_level is {"time_range": "...", "steps_changed": 0, "steps_removed": 0, "preliminary": true} with non-negative integer step counts; stays_same is {"tools": [...], "authority": [...], "steps": [...]}.
+- version is exactly 1; mode is exactly "local"; title, plan, what_gets_better, invitation are nonblank strings.
+- grounded_numbers MUST be an empty array [] in local mode. Write every narrative field qualitatively: no digits or numeric tokens anywhere outside change_level's integer fields (use words like "one afternoon" instead).
+- Never mention prices or costs: no currency symbols and none of the words price, pricing, cost, fee, subscription, per month, per year.
+- invitation must contain the word "Spark" and be a confident, bounded next step addressed to the owner — a statement, not a question. Never hedge ("if it is worth", "if it sounds useful", "not worth changing", "call it off") and never use pitch language ("act now", "book now", "limited time", "schedule a call", "don't miss", "last chance").
 - Do not include a candidate_ref. Do not wrap, fence, explain, or add any text outside the JSON object.`;
 
 export const GENERATION_PARAMETERS = deepFreeze({ temperature: 0, max_tokens: 2048 });

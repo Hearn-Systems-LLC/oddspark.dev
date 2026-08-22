@@ -1,0 +1,1831 @@
+{
+  "schema_version": "oddspark.generation-qualification-evidence/v2",
+  "run": {
+    "id": "e8e33b1d-4902-4012-9e04-b1aba4def738",
+    "started_at": "2026-08-22T13:27:47.786Z",
+    "ended_at": "2026-08-22T13:27:57.054Z",
+    "call_cap": 42,
+    "calls_made": 2
+  },
+  "plan": {
+    "schema_version": "oddspark.generation-qualification-plan/v2",
+    "plan_ref": "6a0322a3bb3dd4ea4f2045d408b95fb80dcf18e528fb442293f9bc59008ad6a7",
+    "approval_run_id": "story-1-11-2026-08-22-l4",
+    "created_at": "2026-08-22T13:26:00.824Z",
+    "provider": "cloudflare-workers-ai",
+    "authority": {
+      "account_profile": "operator-reviewed-profile",
+      "credential_path": "wrangler-remote-binding",
+      "headroom_confirmed": true
+    },
+    "roles": [
+      {
+        "role": "primary",
+        "resolved_model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+      },
+      {
+        "role": "fallback",
+        "resolved_model": "@cf/meta/llama-3.1-8b-instruct-fast"
+      }
+    ],
+    "parameters": {
+      "temperature": 0,
+      "max_tokens": 2048
+    },
+    "timeout_policy": {
+      "adapter_timeout_ms": 120000,
+      "preflight_timeout_ms": 10000,
+      "probes_must_complete_before_trials": true,
+      "execution": "sequential",
+      "retries": 0,
+      "replacements": 0
+    },
+    "input": {
+      "evidence": {
+        "version": 1,
+        "mode": "local",
+        "priors": {
+          "region": "Blue Water Area",
+          "season": "summer",
+          "date": "2026-08-18",
+          "situation": "repeated inquiries",
+          "capability_bundle": [
+            "software",
+            "workflow automation"
+          ]
+        }
+      },
+      "seed": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "requests": [
+      {
+        "role": "primary",
+        "resolved_model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+        "body": {
+          "role": "primary",
+          "model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+          "messages": [
+            {
+              "role": "system",
+              "content": "You are a product strategist for small local businesses. The user message contains generation inputs (an evidence object — region, season, situation, capability_bundle — and a random seed). Your task: INVENT one new, practical improvement the business could make using software or workflow automation, and return it as exactly one JSON Candidate object matching the supplied JSON Schema.\n\nRules:\n- The user message is input only. NEVER copy, echo, or reshape it into the output. The output is a new object describing your invented idea.\n- Populate every required schema field from your idea: version (exactly 1), mode (copy evidence.mode), title (short idea name), plan (how it works), why_fits.text (why it fits this business now), what_gets_better, before_after (before/after strings), change_level (time_range, steps_changed, steps_removed, preliminary exactly true), stays_same (tools, authority, steps arrays), invitation (one question to the owner), grounded_numbers (strings).\n- Do not include a candidate_ref. Do not wrap, fence, explain, or add any text outside the JSON object."
+            },
+            {
+              "role": "user",
+              "content": "{\"evidence\":{\"mode\":\"local\",\"priors\":{\"capability_bundle\":[\"software\",\"workflow automation\"],\"date\":\"2026-08-18\",\"region\":\"Blue Water Area\",\"season\":\"summer\",\"situation\":\"repeated inquiries\"},\"version\":1},\"seed\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}"
+            }
+          ],
+          "temperature": 0,
+          "max_tokens": 2048,
+          "response_format": {
+            "type": "json_schema",
+            "json_schema": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "version",
+                "mode",
+                "title",
+                "plan",
+                "why_fits",
+                "what_gets_better",
+                "before_after",
+                "change_level",
+                "stays_same",
+                "invitation",
+                "grounded_numbers"
+              ],
+              "properties": {
+                "version": {
+                  "const": 1
+                },
+                "mode": {
+                  "enum": [
+                    "local",
+                    "domain"
+                  ]
+                },
+                "title": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "plan": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "why_fits": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "text"
+                  ],
+                  "properties": {
+                    "text": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "breadcrumb": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  }
+                },
+                "what_gets_better": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "before_after": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "before",
+                    "after"
+                  ],
+                  "properties": {
+                    "before": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "after": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  }
+                },
+                "change_level": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "time_range",
+                    "steps_changed",
+                    "steps_removed",
+                    "preliminary"
+                  ],
+                  "properties": {
+                    "time_range": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "steps_changed": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "steps_removed": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "preliminary": {
+                      "const": true
+                    }
+                  }
+                },
+                "stays_same": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "tools",
+                    "authority",
+                    "steps"
+                  ],
+                  "properties": {
+                    "tools": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "authority": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "steps": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    }
+                  }
+                },
+                "invitation": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "grounded_numbers": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "notice": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "allOf": [
+                {
+                  "if": {
+                    "properties": {
+                      "mode": {
+                        "const": "domain"
+                      }
+                    }
+                  },
+                  "then": {
+                    "properties": {
+                      "why_fits": {
+                        "required": [
+                          "text",
+                          "breadcrumb"
+                        ]
+                      }
+                    }
+                  },
+                  "else": {
+                    "properties": {
+                      "why_fits": {
+                        "not": {
+                          "required": [
+                            "breadcrumb"
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        },
+        "request_sha256": "f631b1a97129f420e134cc50ecf57eba0c9b5cc6c2ea8a9b2e73ddb85a0a0adc",
+        "adapter_input_sha256": "86c2271f4a3066b111f008171eabba67a6cea0b99a42a4e7517303136cc83549"
+      },
+      {
+        "role": "fallback",
+        "resolved_model": "@cf/meta/llama-3.1-8b-instruct-fast",
+        "body": {
+          "role": "fallback",
+          "model": "@cf/meta/llama-3.1-8b-instruct-fast",
+          "messages": [
+            {
+              "role": "system",
+              "content": "You are a product strategist for small local businesses. The user message contains generation inputs (an evidence object — region, season, situation, capability_bundle — and a random seed). Your task: INVENT one new, practical improvement the business could make using software or workflow automation, and return it as exactly one JSON Candidate object matching the supplied JSON Schema.\n\nRules:\n- The user message is input only. NEVER copy, echo, or reshape it into the output. The output is a new object describing your invented idea.\n- Populate every required schema field from your idea: version (exactly 1), mode (copy evidence.mode), title (short idea name), plan (how it works), why_fits.text (why it fits this business now), what_gets_better, before_after (before/after strings), change_level (time_range, steps_changed, steps_removed, preliminary exactly true), stays_same (tools, authority, steps arrays), invitation (one question to the owner), grounded_numbers (strings).\n- Do not include a candidate_ref. Do not wrap, fence, explain, or add any text outside the JSON object."
+            },
+            {
+              "role": "user",
+              "content": "{\"evidence\":{\"mode\":\"local\",\"priors\":{\"capability_bundle\":[\"software\",\"workflow automation\"],\"date\":\"2026-08-18\",\"region\":\"Blue Water Area\",\"season\":\"summer\",\"situation\":\"repeated inquiries\"},\"version\":1},\"seed\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}"
+            }
+          ],
+          "temperature": 0,
+          "max_tokens": 2048,
+          "response_format": {
+            "type": "json_schema",
+            "json_schema": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "version",
+                "mode",
+                "title",
+                "plan",
+                "why_fits",
+                "what_gets_better",
+                "before_after",
+                "change_level",
+                "stays_same",
+                "invitation",
+                "grounded_numbers"
+              ],
+              "properties": {
+                "version": {
+                  "const": 1
+                },
+                "mode": {
+                  "enum": [
+                    "local",
+                    "domain"
+                  ]
+                },
+                "title": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "plan": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "why_fits": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "text"
+                  ],
+                  "properties": {
+                    "text": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "breadcrumb": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  }
+                },
+                "what_gets_better": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "before_after": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "before",
+                    "after"
+                  ],
+                  "properties": {
+                    "before": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "after": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  }
+                },
+                "change_level": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "time_range",
+                    "steps_changed",
+                    "steps_removed",
+                    "preliminary"
+                  ],
+                  "properties": {
+                    "time_range": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "steps_changed": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "steps_removed": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "preliminary": {
+                      "const": true
+                    }
+                  }
+                },
+                "stays_same": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "tools",
+                    "authority",
+                    "steps"
+                  ],
+                  "properties": {
+                    "tools": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "authority": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "steps": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    }
+                  }
+                },
+                "invitation": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "grounded_numbers": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "notice": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "allOf": [
+                {
+                  "if": {
+                    "properties": {
+                      "mode": {
+                        "const": "domain"
+                      }
+                    }
+                  },
+                  "then": {
+                    "properties": {
+                      "why_fits": {
+                        "required": [
+                          "text",
+                          "breadcrumb"
+                        ]
+                      }
+                    }
+                  },
+                  "else": {
+                    "properties": {
+                      "why_fits": {
+                        "not": {
+                          "required": [
+                            "breadcrumb"
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        },
+        "request_sha256": "7065658261da102efcc7b950673c4e3a888c818267cf3d5e250dcb18aa8fd12b",
+        "adapter_input_sha256": "86c2271f4a3066b111f008171eabba67a6cea0b99a42a4e7517303136cc83549"
+      }
+    ],
+    "sources": [
+      {
+        "path": "package.json",
+        "bytes": 3801,
+        "sha256": "bbe7d7c9512bf6944c684867fe03052976349c07c5a0c444106c09b9c70ca7d1"
+      },
+      {
+        "path": "runtime-baseline.json",
+        "bytes": 2900,
+        "sha256": "3faf6a613b22be43f65580346ed6955c2c84ccaece90d13dbe39a92ff73b7abb"
+      },
+      {
+        "path": "scripts/generation.mjs",
+        "bytes": 247,
+        "sha256": "616b68cb4b9e51014732dd60daca9207577d1ac1a73004b53291683c04af6f84"
+      },
+      {
+        "path": "scripts/brief-contracts.mjs",
+        "bytes": 245,
+        "sha256": "25b0ec6859bad24c938b0bded7ca45874c8c74d09e6bed9090f65d3ae68346d1"
+      },
+      {
+        "path": "spikes/judge-fidelity/contract.mjs",
+        "bytes": 28345,
+        "sha256": "c124dfbf2cb56727bb5fdc8b01622509867460304b3bbf3a635b8f004cc8d8f2"
+      },
+      {
+        "path": "spikes/generation-qualification/contract.mjs",
+        "bytes": 9183,
+        "sha256": "6500679effb67e825d29005d85ea587a406f410c3d19e306280b463f8339bbb3"
+      },
+      {
+        "path": "spikes/generation-qualification/evidence-v2.mjs",
+        "bytes": 18601,
+        "sha256": "4e4b66f4208e5da004f724ee2db57974dd01e3b51a0a9f2119b1130ff220e7e0"
+      },
+      {
+        "path": "spikes/generation-qualification/fixture-executor.mjs",
+        "bytes": 2890,
+        "sha256": "60f950c422a0bd567b4753a645b754e3b67b514547241a72a13af52b00a90ab5"
+      },
+      {
+        "path": "spikes/generation-qualification/fixtures.json",
+        "bytes": 1147,
+        "sha256": "bc7a49026898e60c0717590ee6b2575b0f4dc32363322c2e06326b05f2ede9a3"
+      },
+      {
+        "path": "spikes/generation-qualification/pricing.mjs",
+        "bytes": 953,
+        "sha256": "b920f5f408f7f5aa368b48f612ef2de1ab52b2d3c1f3dd749169b7d8c2dd6b8d"
+      },
+      {
+        "path": "spikes/generation-qualification/qualification.mjs",
+        "bytes": 10391,
+        "sha256": "ecaebe9b3ea59b760e7e3bfddddb2ff6b0fc599ec0ea7dfc8826a5e2ceb42908"
+      },
+      {
+        "path": "spikes/generation-qualification/recovery-finder.mjs",
+        "bytes": 11649,
+        "sha256": "fd758652359bb7f377dbcb4e3421cc1041efc52a7d70e6f8552bc5c5db8a1854"
+      },
+      {
+        "path": "spikes/generation-qualification/run.mjs",
+        "bytes": 19038,
+        "sha256": "9bd63b3783efecd6095b77774df4b164eb2a1a75af944a96f66c7b4e1a70d5c3"
+      },
+      {
+        "path": "spikes/generation-qualification/start-adapter.mjs",
+        "bytes": 3647,
+        "sha256": "d3c11c52a66c6b0271d194529834b892a80beb7992421bfceff6ad4b5fe7518e"
+      },
+      {
+        "path": "spikes/generation-qualification/test.mjs",
+        "bytes": 33540,
+        "sha256": "417a5d334785111bb64bbe7d4aec19983671142c67bd6a6da3e41003744e3703"
+      },
+      {
+        "path": "spikes/generation-qualification/verify-v2.mjs",
+        "bytes": 805,
+        "sha256": "ae223fa409035d9efa535b2af9efd42f0f367980b3dc896c27167621c66d857c"
+      },
+      {
+        "path": "spikes/generation-qualification/worker.mjs",
+        "bytes": 5524,
+        "sha256": "d86af9f6665bede67cdb6f13564f83d13224c05b3744f68bc9714971aa6aa812"
+      },
+      {
+        "path": "spikes/generation-qualification/wrangler.toml",
+        "bytes": 311,
+        "sha256": "9ba2abe917d0e52d1338fe1ae2f27755f772d8b62cb9b35d8663746295c24777"
+      }
+    ],
+    "runtime": {
+      "path": "runtime-baseline.json",
+      "bytes": 2900,
+      "sha256": "3faf6a613b22be43f65580346ed6955c2c84ccaece90d13dbe39a92ff73b7abb",
+      "runtime_identity_sha256": "b5f2d4b994ab5440dcab711eaf7ec9ac0543cfe7e9ca783b31a734366adbb3be",
+      "node": "v24.18.0",
+      "wrangler": "4.123.0"
+    },
+    "expected_health": {
+      "ok": true,
+      "inference": false,
+      "schema_version": "oddspark.generation-adapter-health/v1",
+      "provider": "cloudflare-workers-ai",
+      "roles": [
+        {
+          "role": "primary",
+          "resolved_model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+        },
+        {
+          "role": "fallback",
+          "resolved_model": "@cf/meta/llama-3.1-8b-instruct-fast"
+        }
+      ],
+      "parameters": {
+        "temperature": 0,
+        "max_tokens": 2048
+      },
+      "binding": "AI",
+      "worker_sha256": "d86af9f6665bede67cdb6f13564f83d13224c05b3744f68bc9714971aa6aa812",
+      "config_sha256": "9ba2abe917d0e52d1338fe1ae2f27755f772d8b62cb9b35d8663746295c24777",
+      "runtime_sha256": "b5f2d4b994ab5440dcab711eaf7ec9ac0543cfe7e9ca783b31a734366adbb3be"
+    },
+    "estimate": {
+      "pricing": {
+        "as_of": "2026-08-19",
+        "source": "https://developers.cloudflare.com/workers-ai/platform/pricing/",
+        "disclosure": "Cloudflare publishes $0.29/M input and $2.25/M output for the selected 70B endpoint. No exact price binding was found for the selected 8B fast endpoint, so its maximum is conservatively budgeted at the documented 70B rate; this is not observed 8B pricing.",
+        "currency": "USD",
+        "observed": {
+          "@cf/meta/llama-3.3-70b-instruct-fp8-fast": {
+            "input_per_million_usd": 0.29,
+            "output_per_million_usd": 2.25,
+            "exact": true
+          },
+          "@cf/meta/llama-3.1-8b-instruct-fast": null
+        },
+        "budget": {
+          "@cf/meta/llama-3.3-70b-instruct-fp8-fast": {
+            "input_per_million_usd": 0.29,
+            "output_per_million_usd": 2.25,
+            "exact": true
+          },
+          "@cf/meta/llama-3.1-8b-instruct-fast": {
+            "input_per_million_usd": 0.29,
+            "output_per_million_usd": 2.25,
+            "exact": false
+          }
+        }
+      },
+      "roles": [
+        {
+          "role": "primary",
+          "resolved_model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+          "calls": 21,
+          "input_tokens_upper_bound": 3401,
+          "max_output_tokens_per_call": 2048,
+          "pricing_exact": true,
+          "input_usd": 0.02071209,
+          "output_usd": 0.096768,
+          "maximum_usd": 0.11748009000000001
+        },
+        {
+          "role": "fallback",
+          "resolved_model": "@cf/meta/llama-3.1-8b-instruct-fast",
+          "calls": 21,
+          "input_tokens_upper_bound": 3397,
+          "max_output_tokens_per_call": 2048,
+          "pricing_exact": false,
+          "input_usd": 0.020687729999999998,
+          "output_usd": 0.096768,
+          "maximum_usd": 0.11745573000000001
+        }
+      ],
+      "call_cap": 42,
+      "maximum_usd": 0.23493582000000002
+    },
+    "retention": {
+      "provider_retention_disclosed": true,
+      "retained_locally": [
+        "plan",
+        "approval",
+        "records",
+        "bounded output envelopes",
+        "usage",
+        "latency",
+        "cost",
+        "source/runtime/adapter identities",
+        "predicate results",
+        "manifests",
+        "completion marker"
+      ],
+      "forbidden": [
+        "credentials",
+        "account identifiers",
+        "provider reasoning",
+        "unbounded raw output"
+      ]
+    },
+    "schedule": [
+      {
+        "role": "primary",
+        "probe": 1,
+        "trials_after_successful_probe": 20,
+        "sequential": true,
+        "retries": 0,
+        "replacements": 0
+      },
+      {
+        "role": "fallback",
+        "probe": 1,
+        "trials_after_successful_probe": 20,
+        "sequential": true,
+        "retries": 0,
+        "replacements": 0
+      }
+    ],
+    "call_cap": 42,
+    "predicate_ids": [
+      "evidence.shape",
+      "oracle.identity",
+      "legacy.immutable",
+      "runtime.identity",
+      "source.identity",
+      "adapter.identity",
+      "candidate.binding",
+      "fixtures.executed",
+      "records.classified",
+      "records.closed",
+      "run.authorization",
+      "run.cardinality",
+      "run.ordering",
+      "run.common_request",
+      "summary.rates",
+      "outcome.deterministic",
+      "predicates.retained",
+      "report.deterministic",
+      "roles.independent",
+      "output.direct_candidate",
+      "schedule.zero_retry",
+      "cost.recomputed",
+      "manifest.independent"
+    ]
+  },
+  "input": {
+    "evidence": {
+      "version": 1,
+      "mode": "local",
+      "priors": {
+        "region": "Blue Water Area",
+        "season": "summer",
+        "date": "2026-08-18",
+        "situation": "repeated inquiries",
+        "capability_bundle": [
+          "software",
+          "workflow automation"
+        ]
+      }
+    },
+    "seed": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  "requests": [
+    {
+      "role": "primary",
+      "resolved_model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+      "body": {
+        "role": "primary",
+        "model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a product strategist for small local businesses. The user message contains generation inputs (an evidence object — region, season, situation, capability_bundle — and a random seed). Your task: INVENT one new, practical improvement the business could make using software or workflow automation, and return it as exactly one JSON Candidate object matching the supplied JSON Schema.\n\nRules:\n- The user message is input only. NEVER copy, echo, or reshape it into the output. The output is a new object describing your invented idea.\n- Populate every required schema field from your idea: version (exactly 1), mode (copy evidence.mode), title (short idea name), plan (how it works), why_fits.text (why it fits this business now), what_gets_better, before_after (before/after strings), change_level (time_range, steps_changed, steps_removed, preliminary exactly true), stays_same (tools, authority, steps arrays), invitation (one question to the owner), grounded_numbers (strings).\n- Do not include a candidate_ref. Do not wrap, fence, explain, or add any text outside the JSON object."
+          },
+          {
+            "role": "user",
+            "content": "{\"evidence\":{\"mode\":\"local\",\"priors\":{\"capability_bundle\":[\"software\",\"workflow automation\"],\"date\":\"2026-08-18\",\"region\":\"Blue Water Area\",\"season\":\"summer\",\"situation\":\"repeated inquiries\"},\"version\":1},\"seed\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}"
+          }
+        ],
+        "temperature": 0,
+        "max_tokens": 2048,
+        "response_format": {
+          "type": "json_schema",
+          "json_schema": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "version",
+              "mode",
+              "title",
+              "plan",
+              "why_fits",
+              "what_gets_better",
+              "before_after",
+              "change_level",
+              "stays_same",
+              "invitation",
+              "grounded_numbers"
+            ],
+            "properties": {
+              "version": {
+                "const": 1
+              },
+              "mode": {
+                "enum": [
+                  "local",
+                  "domain"
+                ]
+              },
+              "title": {
+                "type": "string",
+                "minLength": 1
+              },
+              "plan": {
+                "type": "string",
+                "minLength": 1
+              },
+              "why_fits": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "text"
+                ],
+                "properties": {
+                  "text": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "breadcrumb": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
+              },
+              "what_gets_better": {
+                "type": "string",
+                "minLength": 1
+              },
+              "before_after": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "before",
+                  "after"
+                ],
+                "properties": {
+                  "before": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "after": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
+              },
+              "change_level": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "time_range",
+                  "steps_changed",
+                  "steps_removed",
+                  "preliminary"
+                ],
+                "properties": {
+                  "time_range": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "steps_changed": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "steps_removed": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "preliminary": {
+                    "const": true
+                  }
+                }
+              },
+              "stays_same": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "tools",
+                  "authority",
+                  "steps"
+                ],
+                "properties": {
+                  "tools": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "authority": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "steps": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  }
+                }
+              },
+              "invitation": {
+                "type": "string",
+                "minLength": 1
+              },
+              "grounded_numbers": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "notice": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "allOf": [
+              {
+                "if": {
+                  "properties": {
+                    "mode": {
+                      "const": "domain"
+                    }
+                  }
+                },
+                "then": {
+                  "properties": {
+                    "why_fits": {
+                      "required": [
+                        "text",
+                        "breadcrumb"
+                      ]
+                    }
+                  }
+                },
+                "else": {
+                  "properties": {
+                    "why_fits": {
+                      "not": {
+                        "required": [
+                          "breadcrumb"
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "request_sha256": "f631b1a97129f420e134cc50ecf57eba0c9b5cc6c2ea8a9b2e73ddb85a0a0adc",
+      "adapter_input_sha256": "86c2271f4a3066b111f008171eabba67a6cea0b99a42a4e7517303136cc83549"
+    },
+    {
+      "role": "fallback",
+      "resolved_model": "@cf/meta/llama-3.1-8b-instruct-fast",
+      "body": {
+        "role": "fallback",
+        "model": "@cf/meta/llama-3.1-8b-instruct-fast",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a product strategist for small local businesses. The user message contains generation inputs (an evidence object — region, season, situation, capability_bundle — and a random seed). Your task: INVENT one new, practical improvement the business could make using software or workflow automation, and return it as exactly one JSON Candidate object matching the supplied JSON Schema.\n\nRules:\n- The user message is input only. NEVER copy, echo, or reshape it into the output. The output is a new object describing your invented idea.\n- Populate every required schema field from your idea: version (exactly 1), mode (copy evidence.mode), title (short idea name), plan (how it works), why_fits.text (why it fits this business now), what_gets_better, before_after (before/after strings), change_level (time_range, steps_changed, steps_removed, preliminary exactly true), stays_same (tools, authority, steps arrays), invitation (one question to the owner), grounded_numbers (strings).\n- Do not include a candidate_ref. Do not wrap, fence, explain, or add any text outside the JSON object."
+          },
+          {
+            "role": "user",
+            "content": "{\"evidence\":{\"mode\":\"local\",\"priors\":{\"capability_bundle\":[\"software\",\"workflow automation\"],\"date\":\"2026-08-18\",\"region\":\"Blue Water Area\",\"season\":\"summer\",\"situation\":\"repeated inquiries\"},\"version\":1},\"seed\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}"
+          }
+        ],
+        "temperature": 0,
+        "max_tokens": 2048,
+        "response_format": {
+          "type": "json_schema",
+          "json_schema": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "version",
+              "mode",
+              "title",
+              "plan",
+              "why_fits",
+              "what_gets_better",
+              "before_after",
+              "change_level",
+              "stays_same",
+              "invitation",
+              "grounded_numbers"
+            ],
+            "properties": {
+              "version": {
+                "const": 1
+              },
+              "mode": {
+                "enum": [
+                  "local",
+                  "domain"
+                ]
+              },
+              "title": {
+                "type": "string",
+                "minLength": 1
+              },
+              "plan": {
+                "type": "string",
+                "minLength": 1
+              },
+              "why_fits": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "text"
+                ],
+                "properties": {
+                  "text": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "breadcrumb": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
+              },
+              "what_gets_better": {
+                "type": "string",
+                "minLength": 1
+              },
+              "before_after": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "before",
+                  "after"
+                ],
+                "properties": {
+                  "before": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "after": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
+              },
+              "change_level": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "time_range",
+                  "steps_changed",
+                  "steps_removed",
+                  "preliminary"
+                ],
+                "properties": {
+                  "time_range": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "steps_changed": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "steps_removed": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "preliminary": {
+                    "const": true
+                  }
+                }
+              },
+              "stays_same": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "tools",
+                  "authority",
+                  "steps"
+                ],
+                "properties": {
+                  "tools": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "authority": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "steps": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  }
+                }
+              },
+              "invitation": {
+                "type": "string",
+                "minLength": 1
+              },
+              "grounded_numbers": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "notice": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "allOf": [
+              {
+                "if": {
+                  "properties": {
+                    "mode": {
+                      "const": "domain"
+                    }
+                  }
+                },
+                "then": {
+                  "properties": {
+                    "why_fits": {
+                      "required": [
+                        "text",
+                        "breadcrumb"
+                      ]
+                    }
+                  }
+                },
+                "else": {
+                  "properties": {
+                    "why_fits": {
+                      "not": {
+                        "required": [
+                          "breadcrumb"
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "request_sha256": "7065658261da102efcc7b950673c4e3a888c818267cf3d5e250dcb18aa8fd12b",
+      "adapter_input_sha256": "86c2271f4a3066b111f008171eabba67a6cea0b99a42a4e7517303136cc83549"
+    }
+  ],
+  "approval": {
+    "schema_version": "oddspark.generation-qualification-approval/v2",
+    "plan_ref": "6a0322a3bb3dd4ea4f2045d408b95fb80dcf18e528fb442293f9bc59008ad6a7",
+    "approval_run_id": "story-1-11-2026-08-22-l4",
+    "approved_at": "2026-08-22T13:26:39.000Z",
+    "approved_by": "Justin",
+    "approved_call_cap": 42,
+    "approved_maximum_usd": 0.23493582000000002,
+    "authorization": "execute-exact-plan-once"
+  },
+  "pricing": {
+    "pricing": {
+      "as_of": "2026-08-19",
+      "source": "https://developers.cloudflare.com/workers-ai/platform/pricing/",
+      "disclosure": "Cloudflare publishes $0.29/M input and $2.25/M output for the selected 70B endpoint. No exact price binding was found for the selected 8B fast endpoint, so its maximum is conservatively budgeted at the documented 70B rate; this is not observed 8B pricing.",
+      "currency": "USD",
+      "observed": {
+        "@cf/meta/llama-3.3-70b-instruct-fp8-fast": {
+          "input_per_million_usd": 0.29,
+          "output_per_million_usd": 2.25,
+          "exact": true
+        },
+        "@cf/meta/llama-3.1-8b-instruct-fast": null
+      },
+      "budget": {
+        "@cf/meta/llama-3.3-70b-instruct-fp8-fast": {
+          "input_per_million_usd": 0.29,
+          "output_per_million_usd": 2.25,
+          "exact": true
+        },
+        "@cf/meta/llama-3.1-8b-instruct-fast": {
+          "input_per_million_usd": 0.29,
+          "output_per_million_usd": 2.25,
+          "exact": false
+        }
+      }
+    },
+    "roles": [
+      {
+        "role": "primary",
+        "resolved_model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+        "calls": 21,
+        "input_tokens_upper_bound": 3401,
+        "max_output_tokens_per_call": 2048,
+        "pricing_exact": true,
+        "input_usd": 0.02071209,
+        "output_usd": 0.096768,
+        "maximum_usd": 0.11748009000000001
+      },
+      {
+        "role": "fallback",
+        "resolved_model": "@cf/meta/llama-3.1-8b-instruct-fast",
+        "calls": 21,
+        "input_tokens_upper_bound": 3397,
+        "max_output_tokens_per_call": 2048,
+        "pricing_exact": false,
+        "input_usd": 0.020687729999999998,
+        "output_usd": 0.096768,
+        "maximum_usd": 0.11745573000000001
+      }
+    ],
+    "call_cap": 42,
+    "maximum_usd": 0.23493582000000002
+  },
+  "sources": [
+    {
+      "path": "package.json",
+      "bytes": 3801,
+      "sha256": "bbe7d7c9512bf6944c684867fe03052976349c07c5a0c444106c09b9c70ca7d1"
+    },
+    {
+      "path": "runtime-baseline.json",
+      "bytes": 2900,
+      "sha256": "3faf6a613b22be43f65580346ed6955c2c84ccaece90d13dbe39a92ff73b7abb"
+    },
+    {
+      "path": "scripts/generation.mjs",
+      "bytes": 247,
+      "sha256": "616b68cb4b9e51014732dd60daca9207577d1ac1a73004b53291683c04af6f84"
+    },
+    {
+      "path": "scripts/brief-contracts.mjs",
+      "bytes": 245,
+      "sha256": "25b0ec6859bad24c938b0bded7ca45874c8c74d09e6bed9090f65d3ae68346d1"
+    },
+    {
+      "path": "spikes/judge-fidelity/contract.mjs",
+      "bytes": 28345,
+      "sha256": "c124dfbf2cb56727bb5fdc8b01622509867460304b3bbf3a635b8f004cc8d8f2"
+    },
+    {
+      "path": "spikes/generation-qualification/contract.mjs",
+      "bytes": 9183,
+      "sha256": "6500679effb67e825d29005d85ea587a406f410c3d19e306280b463f8339bbb3"
+    },
+    {
+      "path": "spikes/generation-qualification/evidence-v2.mjs",
+      "bytes": 18601,
+      "sha256": "4e4b66f4208e5da004f724ee2db57974dd01e3b51a0a9f2119b1130ff220e7e0"
+    },
+    {
+      "path": "spikes/generation-qualification/fixture-executor.mjs",
+      "bytes": 2890,
+      "sha256": "60f950c422a0bd567b4753a645b754e3b67b514547241a72a13af52b00a90ab5"
+    },
+    {
+      "path": "spikes/generation-qualification/fixtures.json",
+      "bytes": 1147,
+      "sha256": "bc7a49026898e60c0717590ee6b2575b0f4dc32363322c2e06326b05f2ede9a3"
+    },
+    {
+      "path": "spikes/generation-qualification/pricing.mjs",
+      "bytes": 953,
+      "sha256": "b920f5f408f7f5aa368b48f612ef2de1ab52b2d3c1f3dd749169b7d8c2dd6b8d"
+    },
+    {
+      "path": "spikes/generation-qualification/qualification.mjs",
+      "bytes": 10391,
+      "sha256": "ecaebe9b3ea59b760e7e3bfddddb2ff6b0fc599ec0ea7dfc8826a5e2ceb42908"
+    },
+    {
+      "path": "spikes/generation-qualification/recovery-finder.mjs",
+      "bytes": 11649,
+      "sha256": "fd758652359bb7f377dbcb4e3421cc1041efc52a7d70e6f8552bc5c5db8a1854"
+    },
+    {
+      "path": "spikes/generation-qualification/run.mjs",
+      "bytes": 19038,
+      "sha256": "9bd63b3783efecd6095b77774df4b164eb2a1a75af944a96f66c7b4e1a70d5c3"
+    },
+    {
+      "path": "spikes/generation-qualification/start-adapter.mjs",
+      "bytes": 3647,
+      "sha256": "d3c11c52a66c6b0271d194529834b892a80beb7992421bfceff6ad4b5fe7518e"
+    },
+    {
+      "path": "spikes/generation-qualification/test.mjs",
+      "bytes": 33540,
+      "sha256": "417a5d334785111bb64bbe7d4aec19983671142c67bd6a6da3e41003744e3703"
+    },
+    {
+      "path": "spikes/generation-qualification/verify-v2.mjs",
+      "bytes": 805,
+      "sha256": "ae223fa409035d9efa535b2af9efd42f0f367980b3dc896c27167621c66d857c"
+    },
+    {
+      "path": "spikes/generation-qualification/worker.mjs",
+      "bytes": 5524,
+      "sha256": "d86af9f6665bede67cdb6f13564f83d13224c05b3744f68bc9714971aa6aa812"
+    },
+    {
+      "path": "spikes/generation-qualification/wrangler.toml",
+      "bytes": 311,
+      "sha256": "9ba2abe917d0e52d1338fe1ae2f27755f772d8b62cb9b35d8663746295c24777"
+    }
+  ],
+  "runtime": {
+    "path": "runtime-baseline.json",
+    "bytes": 2900,
+    "sha256": "3faf6a613b22be43f65580346ed6955c2c84ccaece90d13dbe39a92ff73b7abb",
+    "runtime_identity_sha256": "b5f2d4b994ab5440dcab711eaf7ec9ac0543cfe7e9ca783b31a734366adbb3be",
+    "node": "v24.18.0",
+    "wrangler": "4.123.0"
+  },
+  "legacy": [
+    {
+      "path": "spikes/generation-qualification/results/story-1-11-2026-08-19-r2-ead1cb17-38d7-41ce-8369-7fdc14098b29.complete.json",
+      "sha256": "16fa1e27c35c0b4eb4f3bac4ad3d30b884a908e3c3f435f35a59c6bed857790d",
+      "observed_sha256": "16fa1e27c35c0b4eb4f3bac4ad3d30b884a908e3c3f435f35a59c6bed857790d",
+      "immutable": true,
+      "current_authority": false
+    },
+    {
+      "path": "spikes/generation-qualification/results/story-1-11-2026-08-19-r2-ead1cb17-38d7-41ce-8369-7fdc14098b29.evidence.json",
+      "sha256": "b880864ded0e560d9fea3421f787257eec28aa4225a414b3bc275b97ee82b908",
+      "observed_sha256": "b880864ded0e560d9fea3421f787257eec28aa4225a414b3bc275b97ee82b908",
+      "immutable": true,
+      "current_authority": false
+    },
+    {
+      "path": "spikes/generation-qualification/results/story-1-11-2026-08-19-r2-ead1cb17-38d7-41ce-8369-7fdc14098b29.qualification.json",
+      "sha256": "545016f6e1d12d5dd416b3cda30bc299081e6f96d470cc12fe459e7041987b5d",
+      "observed_sha256": "545016f6e1d12d5dd416b3cda30bc299081e6f96d470cc12fe459e7041987b5d",
+      "immutable": true,
+      "current_authority": false
+    },
+    {
+      "path": "spikes/generation-qualification/results/story-1-11-2026-08-19-r2-ead1cb17-38d7-41ce-8369-7fdc14098b29.report.md",
+      "sha256": "9fcf5544c6bec83a2ee0140c29a54ed579f65bd552038498318784c942b53526",
+      "observed_sha256": "9fcf5544c6bec83a2ee0140c29a54ed579f65bd552038498318784c942b53526",
+      "immutable": true,
+      "current_authority": false
+    },
+    {
+      "path": "spikes/generation-qualification/results/story-1-11-2026-08-19-r2.approval.json",
+      "sha256": "2505dfa12dfb327a86e54b378377d1a0f89644ee83b69dca7075bed08ac10e64",
+      "observed_sha256": "2505dfa12dfb327a86e54b378377d1a0f89644ee83b69dca7075bed08ac10e64",
+      "immutable": true,
+      "current_authority": false
+    },
+    {
+      "path": "spikes/generation-qualification/results/story-1-11-2026-08-19-r2.plan.json",
+      "sha256": "c333d5066df41c45c8e26f846ad84b13edcaa54a58b6c818ae90e6adc0e1783c",
+      "observed_sha256": "c333d5066df41c45c8e26f846ad84b13edcaa54a58b6c818ae90e6adc0e1783c",
+      "immutable": true,
+      "current_authority": false
+    },
+    {
+      "path": "spikes/generation-qualification/results/story-1-11-2026-08-19-r2.spend-receipt.json",
+      "sha256": "1d072bd51470d25ef1e90c3f1f5e90761f52c5758877dfda3dd12954acd59fea",
+      "observed_sha256": "1d072bd51470d25ef1e90c3f1f5e90761f52c5758877dfda3dd12954acd59fea",
+      "immutable": true,
+      "current_authority": false
+    },
+    {
+      "path": "spikes/generation-qualification/results/story-1-11-2026-08-19-r3-f0da0590-4a83-4cf4-8401-6639af524959.complete.json",
+      "sha256": "09a077fd0964bba80aa5d1df786b3bbe8c10a364d2359f6e1c580b109c5ee707",
+      "observed_sha256": "09a077fd0964bba80aa5d1df786b3bbe8c10a364d2359f6e1c580b109c5ee707",
+      "immutable": true,
+      "current_authority": false
+    },
+    {
+      "path": "spikes/generation-qualification/results/story-1-11-2026-08-19-r3-f0da0590-4a83-4cf4-8401-6639af524959.evidence.json",
+      "sha256": "c3b15bf90ecd591e43f72719f6a8c30722e6d73c47b7aa7ec6afc7fbb48c7a9b",
+      "observed_sha256": "c3b15bf90ecd591e43f72719f6a8c30722e6d73c47b7aa7ec6afc7fbb48c7a9b",
+      "immutable": true,
+      "current_authority": false
+    },
+    {
+      "path": "spikes/generation-qualification/results/story-1-11-2026-08-19-r3-f0da0590-4a83-4cf4-8401-6639af524959.qualification.json",
+      "sha256": "a86b1cd1cc51b841c0b78d792e04abf89117edae483bfb29f2a3e2bc1274f8b2",
+      "observed_sha256": "a86b1cd1cc51b841c0b78d792e04abf89117edae483bfb29f2a3e2bc1274f8b2",
+      "immutable": true,
+      "current_authority": false
+    },
+    {
+      "path": "spikes/generation-qualification/results/story-1-11-2026-08-19-r3-f0da0590-4a83-4cf4-8401-6639af524959.report.md",
+      "sha256": "7c60b8a2baf66d4a12936140787ce985114c90dd366cb300aeb214c0d8c9186c",
+      "observed_sha256": "7c60b8a2baf66d4a12936140787ce985114c90dd366cb300aeb214c0d8c9186c",
+      "immutable": true,
+      "current_authority": false
+    },
+    {
+      "path": "spikes/generation-qualification/results/story-1-11-2026-08-19-r3.approval.json",
+      "sha256": "3b9236baefecf890db0d21d10092edf970eebe15ad977f6420cb5bc27b37642b",
+      "observed_sha256": "3b9236baefecf890db0d21d10092edf970eebe15ad977f6420cb5bc27b37642b",
+      "immutable": true,
+      "current_authority": false
+    },
+    {
+      "path": "spikes/generation-qualification/results/story-1-11-2026-08-19-r3.plan.json",
+      "sha256": "f206baef6aad3b18a1851b720b9a6db166219a269d5dd3383635c221268c0c19",
+      "observed_sha256": "f206baef6aad3b18a1851b720b9a6db166219a269d5dd3383635c221268c0c19",
+      "immutable": true,
+      "current_authority": false
+    },
+    {
+      "path": "spikes/generation-qualification/results/story-1-11-2026-08-19-r3.spend-receipt.json",
+      "sha256": "e323396d69b990964ba472662543e2e1ee575505e4ef2faf0dfc866e03a21a0c",
+      "observed_sha256": "e323396d69b990964ba472662543e2e1ee575505e4ef2faf0dfc866e03a21a0c",
+      "immutable": true,
+      "current_authority": false
+    }
+  ],
+  "adapter": {
+    "endpoint": "http://127.0.0.1:8789/",
+    "expected_health": {
+      "ok": true,
+      "inference": false,
+      "schema_version": "oddspark.generation-adapter-health/v1",
+      "provider": "cloudflare-workers-ai",
+      "roles": [
+        {
+          "role": "primary",
+          "resolved_model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+        },
+        {
+          "role": "fallback",
+          "resolved_model": "@cf/meta/llama-3.1-8b-instruct-fast"
+        }
+      ],
+      "parameters": {
+        "temperature": 0,
+        "max_tokens": 2048
+      },
+      "binding": "AI",
+      "worker_sha256": "d86af9f6665bede67cdb6f13564f83d13224c05b3744f68bc9714971aa6aa812",
+      "config_sha256": "9ba2abe917d0e52d1338fe1ae2f27755f772d8b62cb9b35d8663746295c24777",
+      "runtime_sha256": "b5f2d4b994ab5440dcab711eaf7ec9ac0543cfe7e9ca783b31a734366adbb3be"
+    },
+    "observed_health": {
+      "ok": true,
+      "inference": false,
+      "schema_version": "oddspark.generation-adapter-health/v1",
+      "provider": "cloudflare-workers-ai",
+      "roles": [
+        {
+          "role": "primary",
+          "resolved_model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+        },
+        {
+          "role": "fallback",
+          "resolved_model": "@cf/meta/llama-3.1-8b-instruct-fast"
+        }
+      ],
+      "parameters": {
+        "temperature": 0,
+        "max_tokens": 2048
+      },
+      "binding": "AI",
+      "worker_sha256": "d86af9f6665bede67cdb6f13564f83d13224c05b3744f68bc9714971aa6aa812",
+      "config_sha256": "9ba2abe917d0e52d1338fe1ae2f27755f772d8b62cb9b35d8663746295c24777",
+      "runtime_sha256": "b5f2d4b994ab5440dcab711eaf7ec9ac0543cfe7e9ca783b31a734366adbb3be"
+    },
+    "identity_match": true
+  },
+  "fixtures": {
+    "declared_ids": [
+      "direct",
+      "missing",
+      "extra",
+      "mistyped",
+      "wrapped",
+      "text",
+      "fenced",
+      "coerced",
+      "repaired",
+      "ambiguous",
+      "oversized",
+      "provider-error",
+      "timeout"
+    ],
+    "passing_ids": [
+      "direct",
+      "missing",
+      "extra",
+      "mistyped",
+      "wrapped",
+      "text",
+      "fenced",
+      "coerced",
+      "repaired",
+      "ambiguous",
+      "oversized",
+      "provider-error",
+      "timeout"
+    ],
+    "failures": [],
+    "passed": true
+  },
+  "records": [
+    {
+      "kind": "probe",
+      "role": "primary",
+      "resolved_model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+      "index": 1,
+      "started_at": "2026-08-22T13:27:47.807Z",
+      "ended_at": "2026-08-22T13:27:54.600Z",
+      "latency_ms": 6794,
+      "call_state": "received",
+      "classification": "invalid_output",
+      "candidate": null,
+      "candidate_ref": null,
+      "issues": [
+        {
+          "path": "brief.grounded_numbers[0]",
+          "rule": "canonical_number",
+          "message": "must be a canonical numeric token"
+        },
+        {
+          "path": "brief.grounded_numbers[1]",
+          "rule": "canonical_number",
+          "message": "must be a canonical numeric token"
+        },
+        {
+          "path": "brief.invitation",
+          "rule": "invitation",
+          "message": "must name the Spark, offer a confident bounded next step, and avoid pitch language"
+        },
+        {
+          "path": "brief.grounded_numbers",
+          "rule": "local_qualitative",
+          "message": "must be empty in local mode"
+        },
+        {
+          "path": "brief",
+          "rule": "local_qualitative",
+          "message": "local narrative claims must be qualitative"
+        }
+      ],
+      "retained": {
+        "version": 1,
+        "mode": "local",
+        "title": "Automated FAQ Chatbot",
+        "plan": "Implement a chatbot on the business website that uses natural language processing to answer frequently asked questions, freeing up staff to focus on more complex inquiries",
+        "why_fits": {
+          "text": "The repeated inquiries during the summer season in the Blue Water Area indicate a need for efficient customer support, which can be met with automated software"
+        },
+        "what_gets_better": "Customer support efficiency and staff productivity",
+        "before_after": {
+          "before": "Manual response to each inquiry",
+          "after": "Automated response to frequent questions"
+        },
+        "change_level": {
+          "time_range": "short-term",
+          "steps_changed": 2,
+          "steps_removed": 1,
+          "preliminary": true
+        },
+        "stays_same": {
+          "tools": [
+            "phone",
+            "email"
+          ],
+          "authority": [
+            "customer support staff"
+          ],
+          "steps": [
+            "complex inquiry handling"
+          ]
+        },
+        "invitation": "How would you like to prioritize the development of the chatbot's question-answering capabilities?",
+        "grounded_numbers": [
+          "50% reduction in manual inquiries",
+          "20% increase in staff productivity"
+        ]
+      },
+      "retained_sha256": "ae8528e16803c6ee70c0106b67d2fbf9dcecf5fad70ca6459c6f87eafd3b6407",
+      "retained_bytes": 1029,
+      "usage": {
+        "input_tokens": 323,
+        "output_tokens": 242
+      },
+      "cost_usd": 0.00063817,
+      "request_sha256": "f631b1a97129f420e134cc50ecf57eba0c9b5cc6c2ea8a9b2e73ddb85a0a0adc"
+    },
+    {
+      "kind": "probe",
+      "role": "fallback",
+      "resolved_model": "@cf/meta/llama-3.1-8b-instruct-fast",
+      "index": 1,
+      "started_at": "2026-08-22T13:27:54.663Z",
+      "ended_at": "2026-08-22T13:27:57.053Z",
+      "latency_ms": 2390,
+      "call_state": "received",
+      "classification": "invalid_output",
+      "candidate": null,
+      "candidate_ref": null,
+      "issues": [
+        {
+          "path": "brief",
+          "rule": "closed_schema",
+          "message": "keys differ; missing=[why_fits], unknown=[why_fits.text]"
+        }
+      ],
+      "retained": {
+        "version": 1,
+        "mode": "local",
+        "title": "Automated Customer Inquiry Response",
+        "plan": "Implement a software solution that uses natural language processing (NLP) to analyze customer inquiries and provide automated responses based on pre-defined templates. The system will be integrated with the business's existing workflow automation tools to ensure seamless communication with customers.",
+        "why_fits.text": "This improvement fits the business now because it addresses the repeated inquiries from customers during the summer season, when the business is likely to receive more requests for information. By automating responses, the business can free up staff to focus on more complex customer issues and improve overall customer satisfaction.",
+        "what_gets_better": "Customer response times and staff productivity",
+        "before_after": "Before: Manual responses to customer inquiries, resulting in delayed responses and increased staff workload. After: Automated responses to customer inquiries, resulting in faster response times and improved staff productivity.",
+        "change_level": {
+          "time_range": "immediate",
+          "steps_changed": 2,
+          "steps_removed": 1,
+          "preliminary": true
+        },
+        "stays_same": {
+          "tools": [
+            "existing workflow automation tools"
+          ],
+          "authority": "business owner",
+          "steps": [
+            "customer inquiry analysis",
+            "response template selection"
+          ]
+        },
+        "invitation": "How will you ensure that the automated responses are tailored to the specific needs of your customers?",
+        "grounded_numbers": [
+          "30% reduction in customer inquiry response times",
+          "20% increase in staff productivity"
+        ]
+      },
+      "retained_sha256": "6b9b80839a82e45cfb164d56ce4295767ae77c3623a04eebff879abce49169d0",
+      "retained_bytes": 1532,
+      "usage": {
+        "input_tokens": 323,
+        "output_tokens": 329
+      },
+      "cost_usd": null,
+      "request_sha256": "7065658261da102efcc7b950673c4e3a888c818267cf3d5e250dcb18aa8fd12b"
+    }
+  ],
+  "summary": {
+    "by_role": {
+      "primary": {
+        "resolved_model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+        "total": 0,
+        "direct_valid": 0,
+        "invalid_output": 0,
+        "output_too_large": 0,
+        "provider_error": 0,
+        "timeout": 0,
+        "direct_rate": {
+          "numerator": 0,
+          "denominator": 0,
+          "percent": 0
+        },
+        "latency_ms": [],
+        "usage": [],
+        "cost_usd": 0,
+        "cost_known": true,
+        "missing_usage": 0
+      },
+      "fallback": {
+        "resolved_model": "@cf/meta/llama-3.1-8b-instruct-fast",
+        "total": 0,
+        "direct_valid": 0,
+        "invalid_output": 0,
+        "output_too_large": 0,
+        "provider_error": 0,
+        "timeout": 0,
+        "direct_rate": {
+          "numerator": 0,
+          "denominator": 0,
+          "percent": 0
+        },
+        "latency_ms": [],
+        "usage": [],
+        "cost_usd": 0,
+        "cost_known": true,
+        "missing_usage": 0
+      }
+    }
+  },
+  "oracle": {
+    "version": "oddspark-judge-evidence-predicates/v2",
+    "hash": "87e15af7b9ad5477862de03bf9b2b049f68932d41eb1cbbf2eaacee1c9ee7ade",
+    "predicate_ids": [
+      "evidence.shape",
+      "oracle.identity",
+      "legacy.immutable",
+      "runtime.identity",
+      "source.identity",
+      "adapter.identity",
+      "candidate.binding",
+      "fixtures.executed",
+      "records.classified",
+      "records.closed",
+      "run.authorization",
+      "run.cardinality",
+      "run.ordering",
+      "run.common_request",
+      "summary.rates",
+      "outcome.deterministic",
+      "predicates.retained",
+      "report.deterministic",
+      "roles.independent",
+      "output.direct_candidate",
+      "schedule.zero_retry",
+      "cost.recomputed",
+      "manifest.independent"
+    ]
+  },
+  "outcome": {
+    "by_role": {
+      "primary": {
+        "decision": "NO-GO",
+        "reasons": [
+          "probe did not return a direct Candidate",
+          "expected 20 trials, found 0",
+          "direct-valid threshold 19/20 not met"
+        ]
+      },
+      "fallback": {
+        "decision": "NO-GO",
+        "reasons": [
+          "probe did not return a direct Candidate",
+          "expected 20 trials, found 0",
+          "direct-valid threshold 19/20 not met"
+        ]
+      }
+    }
+  },
+  "predicate_results": [
+    {
+      "id": "evidence.shape",
+      "pass": true
+    },
+    {
+      "id": "oracle.identity",
+      "pass": true
+    },
+    {
+      "id": "legacy.immutable",
+      "pass": true
+    },
+    {
+      "id": "runtime.identity",
+      "pass": true
+    },
+    {
+      "id": "source.identity",
+      "pass": true
+    },
+    {
+      "id": "adapter.identity",
+      "pass": true
+    },
+    {
+      "id": "candidate.binding",
+      "pass": true
+    },
+    {
+      "id": "fixtures.executed",
+      "pass": true
+    },
+    {
+      "id": "records.classified",
+      "pass": true
+    },
+    {
+      "id": "records.closed",
+      "pass": true
+    },
+    {
+      "id": "run.authorization",
+      "pass": true
+    },
+    {
+      "id": "run.cardinality",
+      "pass": true
+    },
+    {
+      "id": "run.ordering",
+      "pass": true
+    },
+    {
+      "id": "run.common_request",
+      "pass": true
+    },
+    {
+      "id": "summary.rates",
+      "pass": true
+    },
+    {
+      "id": "outcome.deterministic",
+      "pass": true
+    },
+    {
+      "id": "predicates.retained",
+      "pass": true
+    },
+    {
+      "id": "report.deterministic",
+      "pass": true
+    },
+    {
+      "id": "roles.independent",
+      "pass": true
+    },
+    {
+      "id": "output.direct_candidate",
+      "pass": true
+    },
+    {
+      "id": "schedule.zero_retry",
+      "pass": true
+    },
+    {
+      "id": "cost.recomputed",
+      "pass": true
+    },
+    {
+      "id": "manifest.independent",
+      "pass": true
+    }
+  ],
+  "report": "# Generation Structural Qualification\n\n- Run: `e8e33b1d-4902-4012-9e04-b1aba4def738`\n- Calls: 2/42\n\n| Role | Model | Trials | Direct valid | Decision |\n| --- | --- | ---: | ---: | --- |\n| primary | `@cf/meta/llama-3.3-70b-instruct-fp8-fast` | 0 | 0/0 | NO-GO |\n| fallback | `@cf/meta/llama-3.1-8b-instruct-fast` | 0 | 0/0 | NO-GO |\n\nPrimary and fallback results are independent. Failures remain in their role denominator; no retry, replacement, repair, coercion, or prose extraction is allowed.\n\n"
+}
