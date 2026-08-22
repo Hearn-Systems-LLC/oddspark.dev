@@ -8,10 +8,12 @@ export const PROVIDER = "cloudflare-workers-ai";
 export const LEGACY_ROLE_IDENTITIES = Object.freeze([
   Object.freeze({ role: "primary", resolved_model: "@cf/openai/gpt-oss-120b" }),
   Object.freeze({ role: "fallback", resolved_model: "@cf/openai/gpt-oss-20b" }),
+  Object.freeze({ role: "primary", resolved_model: "@cf/meta/llama-3.3-70b-instruct-fp8-fast" }),
+  Object.freeze({ role: "fallback", resolved_model: "@cf/meta/llama-3.1-8b-instruct-fast" }),
 ]);
 export const ROLE_IDENTITIES = Object.freeze([
   Object.freeze({ role: "primary", resolved_model: "@cf/meta/llama-3.3-70b-instruct-fp8-fast" }),
-  Object.freeze({ role: "fallback", resolved_model: "@cf/meta/llama-3.1-8b-instruct-fast" }),
+  Object.freeze({ role: "fallback", resolved_model: "@cf/openai/gpt-oss-20b" }),
 ]);
 export const PARAMETERS = Object.freeze({ temperature: 0, max_tokens: 2048 });
 export const TIMEOUT_POLICY = Object.freeze({ adapter_timeout_ms: 120000, preflight_timeout_ms: 10000, probes_must_complete_before_trials: true, execution: "sequential", retries: 0, replacements: 0 });

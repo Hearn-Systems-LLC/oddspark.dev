@@ -9,4 +9,4 @@ remote = true
 
 [vars]
 PRIMARY_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
-FALLBACK_MODEL = "@cf/meta/llama-3.1-8b-instruct-fast"
+FALLBACK_MODEL = "@cf/openai/gpt-oss-20b"
