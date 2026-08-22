@@ -1083,14 +1083,14 @@ test("approval templates require explicit timestamps and plan publication is ext
   assert.equal(await readFile(rollbackTemplate, "utf8"), "occupied");
 });
 
-test("owner-reviewed 2026-08-22 cycle is immutable history; unreviewed spend still blocks planning", async () => {
-  // The completed called cycle is classified as owner-reviewed history (recovery-finder
-  // re-verifies marker bytes, bundle bindings, NO-GO outcome, and zero refs), so a newly
-  // granted matrix may be planned.
-  const directory = await mkdtemp(path.join(tmpdir(), "oddspark-plan-history-"));
-  const output = path.join(directory, "recovery-plan.json");
-  await planCommand({ output, account_profile: "test-profile", plan: "paid", approval_run_id: "history-run" });
-  await access(output);
+test("retained unreviewed spent cycle blocks planning; fabricated receipts block in isolation", async () => {
+  // The real results directory holds the completed 467ba931 called cycle (NO-GO, pending
+  // owner review), so the plan command must refuse new plan generation against it.
+  const refusedDir = await mkdtemp(path.join(tmpdir(), "oddspark-plan-refused-"));
+  await assert.rejects(
+    planCommand({ output: path.join(refusedDir, "recovery-plan.json"), account_profile: "test-profile", plan: "paid", approval_run_id: "refused-run" }),
+    /prior operational recovery already retained/,
+  );
 
   // An unreviewed receipt proving (or unable to disprove) provider invocation still blocks.
   const blockedResults = await mkdtemp(path.join(tmpdir(), "oddspark-plan-blocked-"));
@@ -1105,7 +1105,7 @@ test("owner-reviewed 2026-08-22 cycle is immutable history; unreviewed spend sti
     last_call: { sequence: 1, kind: "probe", model: MODELS[0], index: 1, marked_at: "2026-08-22T00:00:00.000Z" },
   }, null, 2)}\n`);
   await assert.rejects(
-    planCommand({ output: path.join(directory, "blocked-plan.json"), account_profile: "test-profile", plan: "paid", approval_run_id: "blocked-run" }, { resultsDir: blockedResults }),
+    planCommand({ output: path.join(refusedDir, "blocked-plan.json"), account_profile: "test-profile", plan: "paid", approval_run_id: "blocked-run" }, { resultsDir: blockedResults }),
     /prior operational recovery already retained/,
   );
 });
