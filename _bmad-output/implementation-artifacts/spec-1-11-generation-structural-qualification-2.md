@@ -19,7 +19,7 @@ context:
 
 ## Boundaries & Constraints
 
-**Always:** Use primary `@cf/meta/llama-3.3-70b-instruct-fp8-fast` and fallback `@cf/meta/llama-3.1-8b-instruct-fast`. Complete both probes before trials; give each accepted role 20 sequential trials with zero retry/replacement and a 42-call cap. Require 19/20 direct-valid trials plus every integrity predicate for configuration GO. Decode exactly one complete structured response value, then apply the unchanged closed Candidate classifier. Preserve and verify gpt-oss artifacts as legacy. Consume allowance at first durable call-start; retain verified zero-call preflights without consuming it; make any called incomplete/ambiguous attempt terminal `consumed_incomplete`. Bind source, runtime, request, fixtures, pricing, approval, attempt, and publication to retained bytes. Emit refs only for GO configurations and a closed generation `RoleQualificationSet`/role ref only when at least one member is GO.
+**Always:** Use primary `@cf/meta/llama-3.3-70b-instruct-fp8-fast` and fallback `@cf/openai/gpt-oss-20b` (reselected per Justin 2026-08-22 after the 8B Llama's repeated structural NO-GOs; l2–l8 cycles preserved as legacy history). Complete both probes before trials; give each accepted role 20 sequential trials. Per Justin's 2026-08-22 governance amendment, a scheduled call may retry ONLY when its attempt ends in a transient call state (`provider_error` or `timeout`) — never for an output classification — at most 1 retry per scheduled call (2 attempts), every attempt retained in evidence, and a trial's outcome is its final attempt's classification; the call cap is 63 (42 scheduled + up to 21 retries) and cost estimates must cover retry headroom. Require 19/20 direct-valid trials plus every integrity predicate for configuration GO. Decode exactly one complete structured response value, then apply the unchanged closed Candidate classifier. Preserve and verify prior-cycle artifacts as legacy. Consume allowance at first durable call-start; retain verified zero-call preflights without consuming it; make any called incomplete/ambiguous attempt terminal `consumed_incomplete`. Bind source, runtime, request, fixtures, pricing, approval, attempt, and publication to retained bytes. Emit refs only for GO configurations and a closed generation `RoleQualificationSet`/role ref only when at least one member is GO.
 
 **Ask First:** Any adapter start or provider call; approval of exact plan bytes, run ID, call/cost cap, profile, plan/headroom, or retention; changing selected models, threshold, retry policy, Candidate schema, role-set contract, or cycle allowance; deployment or activation.
 
@@ -33,6 +33,7 @@ context:
 | Structured transport | One complete Candidate value | Decode once, classify unchanged | Wrapper, prose, ambiguity, repair, or schema violation rejects |
 | Partial success | One GO; one NO-GO | Failed ref null; role set/ref identifies usable member | Never grant failed member authority |
 | Interrupted run | Durable call-start; final set unverifiable | Retained `consumed_incomplete`; no refs | Block replacement pending owner review |
+| Transient provider fault | Attempt ends `provider_error`/`timeout` | One retry of that scheduled call; both attempts retained; trial counts its final attempt | Second transient failure stands as the trial outcome; output classifications never retry |
 | Historical bytes | Valid r2/r3 or forged legacy-looking set | Known history verifies without current authority | Unknown/malformed sibling blocks |
 
 </frozen-after-approval>
@@ -103,6 +104,11 @@ context:
 - Amended: Tasks now require exhaustive classification before any result, inode-bound stale-safe locking, directory fsync and partial cleanup, publication confinement/re-read, complete receipt/evidence/approval/spend chronology, closed marker members, adapter lifetime authority, and subprocess proof of the external unapproved plan bundle.
 - Known-bad state avoided: Coherent completion masking orphan state, successor-lock deletion, power-loss reopening allowance, path escape, forged spend/history, expired adapter authority, or planning artifacts contaminating operational recovery.
 - KEEP: Preserve every prior KEEP instruction and all 27 real lifecycle tests where still applicable; no provider-backed execution.
+
+### 2026-08-22 — Governance amendment (human renegotiation): transient-retry policy + gpt-oss-20b fallback
+- Authorization: Justin, 2026-08-22, two explicit decisions after reviewing l6–l8 evidence: (1) reselect the fallback to `@cf/openai/gpt-oss-20b` after the 8B Llama's three distinct structural failure modes; (2) amend the zero-retry policy so transient provider faults (`provider_error`/`timeout`) may retry a scheduled call once, since a provider 502 evidences infrastructure, not model fidelity. Output classifications remain unretryable; denominators still count 20 scheduled trials per role; call cap rises to 63 with honest retry headroom in cost estimates.
+- Amended: frozen Boundaries and I/O matrix updated above; contract, runner, evidence, qualification, and pricing modules to follow under this change log. `schedule.zero_retry` predicate becomes `schedule.transient_retry_only`.
+- Known-bad state avoided: converting transient provider instability into repeated model NO-GOs (l7/l8) while pretending the zero-retry evidence says something about model fidelity; and any retry of a model-output failure, which would weaken the fidelity signal.
 
 ## Design Notes
 

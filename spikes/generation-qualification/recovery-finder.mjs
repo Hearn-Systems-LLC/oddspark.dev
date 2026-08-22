@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { constants } from "node:fs";
 import { lstat, open, readdir } from "node:fs/promises";
 import path from "node:path";
-import { CALL_CAP } from "./contract.mjs";
+import { CALL_CAP, LEGACY_CALL_CAP } from "./contract.mjs";
 import { deriveManifests, derivePlanRef, validateApproval } from "./qualification.mjs";
 import { verifyEvidence } from "./evidence-v2.mjs";
 
@@ -35,7 +35,7 @@ export function receiptValid(receipt, match) {
   const stateKeys = { "zero-call": common, calling: [...common, "first_call_started_at"], consumed_incomplete: [...common, "first_call_started_at", "failed_at", "original_error"], "completed-spent": [...common, "first_call_started_at", "completed_at", "calls_made", "actual_spend_usd", "actual_spend_known", "completion_marker"] };
   if (!receipt || !exact(receipt, stateKeys[receipt?.state] ?? []) || receipt.schema_version !== "oddspark.generation-spend-receipt/v1") return false;
   if (receipt.approval_run_id !== match.groups.run || receipt.attempt_id !== match.groups.attempt || !UUID.test(receipt.attempt_id) || !/^[a-f0-9]{64}$/.test(receipt.plan_ref) || !/^[a-f0-9]{64}$/.test(receipt.approval_sha256)) return false;
-  if (!canonicalTime(receipt.reserved_at) || receipt.call_cap !== CALL_CAP || !Number.isInteger(receipt.calls_started) || receipt.calls_started < 0 || receipt.calls_started > CALL_CAP) return false;
+  if (!canonicalTime(receipt.reserved_at) || (receipt.call_cap !== CALL_CAP && receipt.call_cap !== LEGACY_CALL_CAP) || !Number.isInteger(receipt.calls_started) || receipt.calls_started < 0 || receipt.calls_started > receipt.call_cap) return false;
   const allowed = new Set(["zero-call", "calling", "consumed_incomplete", "completed-spent"]); if (!allowed.has(receipt.state)) return false;
   if ((receipt.state === "zero-call") !== (receipt.calls_started === 0)) return false;
   if (receipt.calls_started > 0 && !canonicalTime(receipt.first_call_started_at)) return false;

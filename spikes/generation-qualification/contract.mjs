@@ -16,10 +16,12 @@ export const ROLE_IDENTITIES = Object.freeze([
   Object.freeze({ role: "fallback", resolved_model: "@cf/openai/gpt-oss-20b" }),
 ]);
 export const PARAMETERS = Object.freeze({ temperature: 0, max_tokens: 2048 });
-export const TIMEOUT_POLICY = Object.freeze({ adapter_timeout_ms: 120000, preflight_timeout_ms: 10000, probes_must_complete_before_trials: true, execution: "sequential", retries: 0, replacements: 0 });
+export const TIMEOUT_POLICY = Object.freeze({ adapter_timeout_ms: 120000, preflight_timeout_ms: 10000, probes_must_complete_before_trials: true, execution: "sequential", transient_retries: 1, retry_states: Object.freeze(["provider_error", "timeout"]), replacements: 0 });
+export const LEGACY_TIMEOUT_POLICY = Object.freeze({ adapter_timeout_ms: 120000, preflight_timeout_ms: 10000, probes_must_complete_before_trials: true, execution: "sequential", retries: 0, replacements: 0 });
 export const TRIALS_PER_ROLE = 20;
 export const PROBES_PER_ROLE = 1;
-export const CALL_CAP = 42;
+export const CALL_CAP = 63;
+export const LEGACY_CALL_CAP = 42;
 export const DIRECT_VALID_THRESHOLD = 19;
 export const MAX_RETAINED_OUTPUT_BYTES = 64 * 1024;
 export const TAXONOMY = Object.freeze(["direct_valid", "invalid_output", "output_too_large", "provider_error", "timeout"]);
@@ -28,8 +30,9 @@ export const STORY_1_3_ORACLE_HASH = PREDICATE_ORACLE_HASH;
 export const STORY_1_3_PREDICATES = Object.freeze(PREDICATE_ORACLE.map(({ id }) => id));
 export const GENERATION_PREDICATES = Object.freeze([
   ...STORY_1_3_PREDICATES,
-  "roles.independent", "output.direct_candidate", "schedule.zero_retry", "cost.recomputed", "manifest.independent",
+  "roles.independent", "output.direct_candidate", "schedule.transient_retry_only", "cost.recomputed", "manifest.independent",
 ]);
+export const LEGACY_GENERATION_PREDICATES = Object.freeze(GENERATION_PREDICATES.map((id) => (id === "schedule.transient_retry_only" ? "schedule.zero_retry" : id)));
 export const PROMPT = `You are a product strategist for small local businesses. The user message contains generation inputs (an evidence object — region, season, situation, capability_bundle — and a random seed). Your task: INVENT one new, practical improvement the business could make using software or workflow automation, and return it as exactly one JSON Candidate object matching the supplied JSON Schema.
 
 Rules:
