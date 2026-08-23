@@ -1937,7 +1937,7 @@ function page(initial, live, state = {}) {
 
   <section class="viz">
     <h2>Seed Geometry</h2>
-    <div class="stage" id="stage" tabindex="0" aria-label="Seed Geometry"><canvas id="cv" aria-hidden="true"></canvas></div>
+    <div class="stage" id="stage" role="region" tabindex="0" aria-label="Seed Geometry"><canvas id="cv" aria-hidden="true"></canvas></div>
     <div class="legend" id="legend"></div>
   </section>
 
@@ -2479,8 +2479,9 @@ function esc(s) {
 }
 
 /* ------------------------------------------------------------------ *
- * How it works. Mermaid from CDN; if the CDN is down the raw diagram
- * source is still legible in the <pre> blocks. No build step.
+ * How it works. The ordered flows are the durable content; Mermaid is
+ * a progressive enhancement and remains outside the accessibility and
+ * keyboard surfaces unless it renders successfully.
  * ------------------------------------------------------------------ */
 
 function howPage() {
@@ -2490,19 +2491,19 @@ function howPage() {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>how oddspark works / oddspark</title>
-<meta name="description" content="The plumbing behind oddspark: drand randomness, solar X-ray flux, one SHA-256, and a 5 minute window.">
+<meta name="description" content="How oddspark turns bounded evidence into one committed Opportunity Brief, with privacy, fallback, and receipt limits explained.">
 <link rel="canonical" href="https://oddspark.dev/how">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="oddspark">
 <meta property="og:title" content="how oddspark works / oddspark">
-<meta property="og:description" content="The plumbing behind oddspark: drand randomness, solar X-ray flux, one SHA-256, and a 5 minute window.">
+<meta property="og:description" content="How oddspark turns bounded evidence into one committed Opportunity Brief, with privacy, fallback, and receipt limits explained.">
 <meta property="og:url" content="https://oddspark.dev/how">
 <meta property="og:image" content="https://oddspark.dev/og.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="how oddspark works / oddspark">
-<meta name="twitter:description" content="The plumbing behind oddspark: drand randomness, solar X-ray flux, one SHA-256, and a 5 minute window.">
+<meta name="twitter:description" content="How oddspark turns bounded evidence into one committed Opportunity Brief, with privacy, fallback, and receipt limits explained.">
 <meta name="twitter:image" content="https://oddspark.dev/og.png">
 <link rel="icon" href="${FAVICON}">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -2511,8 +2512,8 @@ function howPage() {
 <style>
   :root{
     --void:#0B0D10; --panel:#101419; --rule:#1D242C;
-    --text:#C6CFD8; --dim:#67737F; --faint:#3D4750;
-    --entropy:#6E8FB8; --solar:#C9A227;
+    --text:#C6CFD8; --dim-raised:#7E8B98;
+    --entropy:#6E8FB8; --gold:#C9A227; --border-strong:#7E8B98;
     --mono:"Courier Prime",ui-monospace,SFMono-Regular,Menlo,monospace;
     --serif:"Newsreader",Georgia,serif;
   }
@@ -2531,7 +2532,7 @@ function howPage() {
     gap:16px; padding:22px 0 18px; border-bottom:1px solid var(--rule);
   }
   .mark{font-weight:700; letter-spacing:.14em; text-transform:lowercase; font-size:13px}
-  .mark span{color:var(--solar)}
+  .mark span{color:var(--gold)}
   a{color:var(--entropy); text-decoration:none}
   a:hover{border-bottom:1px solid var(--entropy)}
   header a{font-size:11px; letter-spacing:.1em}
@@ -2543,21 +2544,30 @@ function howPage() {
   section{border-top:1px solid var(--rule); margin-top:44px; padding-top:20px}
   h2{
     font-size:10.5px; letter-spacing:.24em; text-transform:uppercase;
-    color:var(--dim); font-weight:400; margin:0 0 14px;
+    color:var(--dim-raised); font-weight:400; margin:0 0 14px;
   }
   p{font-family:var(--serif); font-size:16.5px; line-height:1.62; margin:0 0 18px}
-  p code, li code{font-family:var(--mono); font-size:.85em; color:var(--solar)}
-  .diagram{
-    background:var(--panel); border:1px solid var(--rule);
-    padding:22px 16px; margin:18px 0 26px; overflow-x:auto;
+  p code, li code{font-family:var(--mono); font-size:.85em; color:var(--gold)}
+  .diagram-figure{margin:18px 0 16px}
+  .diagram-scroll{
+    background:var(--panel); border:1px solid var(--border-strong);
+    padding:22px 16px; overflow-x:auto;
   }
-  .mermaid{display:flex; justify-content:center; min-width:520px}
+  .diagram-scroll:focus-visible, a:focus-visible{
+    outline:2px solid var(--entropy); outline-offset:2px;
+  }
+  .mermaid{display:flex; justify-content:center; min-width:640px}
+  .mermaid:not([data-processed]){visibility:hidden}
+  .flow{margin:0; padding-left:24px}
+  .flow li{font-family:var(--serif); font-size:16.5px; line-height:1.55; margin:0 0 10px; padding-left:5px}
+  .flow li::marker{color:var(--gold); font-family:var(--mono)}
+  .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
   footer{
     margin-top:44px; padding-top:18px; border-top:1px solid var(--rule);
-    display:flex; flex-wrap:wrap; gap:8px 22px; font-size:11px; color:var(--faint);
+    display:flex; flex-wrap:wrap; gap:8px 22px; font-size:11px; color:var(--dim-raised);
   }
   /* Builder's credit, same treatment as the front page footer. */
-  .built{color:var(--dim); border-bottom:0}
+  .built{color:var(--dim-raised); border-bottom:0}
   .built:hover{color:var(--text); border-bottom:0}
   .built svg{height:.78em; width:auto; vertical-align:baseline; margin-left:.3em}
 </style>
@@ -2571,107 +2581,110 @@ function howPage() {
   </header>
 
   <h1>How does this work?</h1>
-  <p class="lede">One button, one recommendation, and a receipt. The recommendation
-  is a deterministic function of two live public feeds, so anyone can recompute
-  the seed and confirm the spark was not invented after the fact.</p>
+  <p class="lede">One button starts a bounded Evidence-to-Render pipeline. It can
+  return a qualified Opportunity Brief or an approved house Brief, while keeping
+  rejected work and private material out of the page.</p>
+  <p>A published seed is transparent input to generation. Model output is
+  nondeterministic, so the seed is not a promise that another run will produce
+  identical words. The current receipt references the approved Evidence and
+  binds the committed artifact; it does not claim that the public can recreate
+  or independently prove the model run.</p>
 
   <section>
-    <h2>1 &middot; What happens when you press Strike</h2>
-    <p>The Worker asks drand for the latest round and floors it to a multiple of
-    100. Quicknet emits a round every 3 seconds, so that is a 5 minute window:
-    the first strike in a window does the work, every later strike in the same
-    window serves the same cached spark out of KV. A thousand visitors in five
-    minutes cost one generation.</p>
-    <div class="diagram"><pre class="mermaid">
-sequenceDiagram
-  autonumber
-  participant B as Browser
-  participant W as Worker
-  participant D as drand quicknet
-  participant N as NOAA SWPC
-  participant K as Workers KV
-  participant A as Workers AI
-  B->>W: POST /api/spark
-  W->>D: GET /rounds/latest
-  D-->>W: round R
-  Note over W: window = R - (R mod 100)
-  W->>K: GET w:window
-  alt already struck this window
-    K-->>W: spark id
-    W->>K: GET spark
-    K-->>W: stored spark
-    W-->>B: cached spark
-  else first strike of the window
-    W->>D: GET /rounds/window
-    D-->>W: signature
-    W->>N: GET xrays-1-day.json
-    N-->>W: flux + time_tag
-    Note over W: randomness = SHA256(signature)<br/>seed = SHA256(randomness : round : flux : time_tag)
-    W->>A: run the model of the day on the four seed axes
-    A-->>W: headline, premise, question
-    Note over W,A: usage.neurons added to a Durable Object counter<br/>past 2,500/day the cheaper fallback model takes over
-    W->>K: PUT spark + w:window pointer
-    W-->>B: fresh spark
-  end
-    </pre></div>
+    <h2>1 &middot; Evidence to Render</h2>
+    <p>Each stage has one job. Only a Candidate that passes deterministic local
+    checks and an independent Judge can reach the authoritative commit. A
+    rejected Candidate is never rendered.</p>
+    <div class="diagram-scroll" data-diagram="pipeline" role="region" tabindex="-1" aria-label="Scrollable diagram: the Evidence-to-Render pipeline" hidden>
+      <figure class="diagram-figure" aria-hidden="true"><pre class="mermaid">flowchart LR
+  accTitle: The Evidence-to-Render pipeline
+  accDescr: Evidence is assembled before generation. A Candidate passes the Local Gate and Judge before Commit and Render.
+  E[Evidence] --> G[Generate] --> L[Local Gate] --> J[Judge] --> C[Commit] --> R[Render]
+      </pre></figure>
+    </div>
+    <ol class="flow" data-flow="pipeline">
+      <li data-step="evidence"><strong>Evidence.</strong> Assemble an immutable, allowlisted grounding bundle.</li>
+      <li data-step="generate"><strong>Generate.</strong> Ask the active generation role for one Candidate.</li>
+      <li data-step="local-gate"><strong>Local Gate.</strong> Check schema, grounding, privacy, names, and number provenance without another model call.</li>
+      <li data-step="judge"><strong>Judge.</strong> Independently assess all nine gates, tone, and claims.</li>
+      <li data-step="commit"><strong>Commit.</strong> Ask COORD to authoritatively accept one qualified Brief.</li>
+      <li data-step="render"><strong>Render.</strong> Show only the committed Brief and its permitted receipt details.</li>
+    </ol>
   </section>
 
   <section>
-    <h2>2 &middot; The seed derivation</h2>
-    <p>Drand&rsquo;s own definition of randomness for unchained beacons like quicknet
-    is the SHA-256 of the round signature. That, the floored round number, the
-    current GOES X-ray flux, and its timestamp are hashed once more. Every input
-    is published and archived by someone else, so the whole chain is reproducible
-    by a third party. On a toy. That is the joke.</p>
-    <div class="diagram"><pre class="mermaid">
-flowchart LR
-  sig["drand signature<br/>round floored to 100"] --> rnd["randomness = SHA256(signature)"]
-  flx["GOES X-ray flux<br/>0.1-0.8nm + time_tag"] --> seed
-  rnd --> seed["seed = SHA256(randomness : round : flux : time_tag)"]
-  seed --> id["id = seed[0:8]<br/>the permalink"]
-  seed --> axes["bytes 0-3 pick<br/>domain / lens / form / friction"]
-  axes --> ai["Workers AI prompt<br/>one recommendation"]
-    </pre></div>
+    <h2>2 &middot; Evidence and privacy</h2>
+    <p>Evidence can use approved local priors and public feed inputs. A submitted
+    website may be read only when that capability is active. Private sources,
+    personal information, raw pages, and rejected Candidates are excluded before
+    persistence or model use. The published seed is separate input, not Evidence.</p>
+    <div class="diagram-scroll" data-diagram="privacy" role="region" tabindex="-1" aria-label="Scrollable diagram: Evidence and the privacy boundary" hidden>
+      <figure class="diagram-figure" aria-hidden="true"><pre class="mermaid">flowchart LR
+  accTitle: Evidence and the privacy boundary
+  accDescr: Approved public and local inputs enter Evidence. Private sources remain outside, and the seed enters Generate separately.
+  A[Approved public and local inputs] --> E[Evidence]
+  P[Private sources stay outside] -. blocked .-> E
+  E --> G[Generate]
+  S[Published seed input] --> G
+      </pre></figure>
+    </div>
+    <ol class="flow" data-flow="privacy">
+      <li data-step="allowlisted-inputs"><strong>Use allowlisted inputs.</strong> Build Evidence only from approved local priors and permitted public observations.</li>
+      <li data-step="privacy-boundary"><strong>Keep the boundary.</strong> Exclude private sources, personal information, raw pages, and rejected Candidates before persistence or model use.</li>
+      <li data-step="seed-separation"><strong>Separate the seed.</strong> Pass the published seed to Generate as transparent input, not as Evidence or a reproduction guarantee.</li>
+      <li data-step="evidence-ledger"><strong>Count Evidence calls.</strong> Any metered Evidence request consumes the same shared call ledger used by generation and judging.</li>
+    </ol>
   </section>
 
   <section>
-    <h2>3 &middot; Same seed, same object</h2>
-    <p>The panel beside the text is not decoration; it is the seed rendered as an
-    object. The sun core reads the live flux. The shell seats one node per byte of
-    the hash on a Fibonacci sphere, each byte setting its own node&rsquo;s orbital
-    radius, and byte 0 sets the weave stride. A permalink always draws the
-    identical form. Hand-rolled projection and painter&rsquo;s-algorithm depth
-    sorting on a 2D canvas; no rendering library.</p>
-    <div class="diagram"><pre class="mermaid">
-flowchart TD
-  seed["seed: 32 bytes"] --> shell["shell: 32 nodes, one per byte"]
-  shell --> pos["position: Fibonacci sphere, even spacing"]
-  shell --> rad["orbital radius: each byte's own value"]
-  seed --> weave["byte 0: weave stride, the lacing pattern"]
-  flx["live X-ray flux"] --> core["core: radius, color, ray count"]
-  pos --> canvas["2D canvas<br/>hand-rolled projection + depth sort"]
-  rad --> canvas
-  weave --> canvas
-  core --> canvas
-    </pre></div>
+    <h2>3 &middot; Bounded attempts and house fallback</h2>
+    <p>Evidence, generation, and judging share one cap of six model calls. The
+    orchestrator starts only a complete Generate-and-Judge pair that fits in the
+    remaining budget and deadline. There can be at most three such pairs when
+    Evidence used no calls, and fewer when it did.</p>
+    <div class="diagram-scroll" data-diagram="attempts" role="region" tabindex="-1" aria-label="Scrollable diagram: the shared six-call ledger" hidden>
+      <figure class="diagram-figure" aria-hidden="true"><pre class="mermaid">flowchart LR
+  accTitle: The shared six-call ledger
+  accDescr: Evidence calls and complete Generate-and-Judge pairs share six calls. Safe exhaustion can select an approved house Brief before authoritative commit.
+  L[Six-call shared ledger] --> E[Evidence calls]
+  L --> P[Complete Generate and Judge pair]
+  P --> Q{Qualified?}
+  Q -->|yes| C[COORD commit]
+  Q -->|no and another pair fits| P
+  Q -->|failure or exhausted| H[Approved house Brief]
+  H --> C
+      </pre></figure>
+    </div>
+    <ol class="flow" data-flow="attempts">
+      <li data-step="shared-cap"><strong>Share six calls.</strong> Evidence, Generate, and Judge debit one request-level ledger capped at six model calls.</li>
+      <li data-step="complete-pairs"><strong>Start complete pairs only.</strong> A Candidate attempt begins only when both its Generate and Judge calls fit inside the budget and deadline.</li>
+      <li data-step="qualified-result"><strong>Use a qualified result.</strong> A Candidate proceeds only after both the Local Gate and Judge pass it.</li>
+      <li data-step="house-fallback"><strong>Fall back safely.</strong> On failure or exhaustion, select an approved house Brief only when its catalog authority is valid and COORD can safely commit it. A house Brief is curated content, not another model.</li>
+    </ol>
   </section>
 
   <section>
-    <h2>4 &middot; Routing, and the artifact curl sees</h2>
-    <p>The Worker sniffs <code>User-Agent</code> and <code>Accept</code>. A browser
-    gets the page; curl and wget get a plain-text rendering with the full
-    provenance block, an artifact the browser never shows.</p>
-    <div class="diagram"><pre class="mermaid">
-flowchart TD
-  req["request"] --> which{"path"}
-  which -->|"/"| home{"who is asking?"}
-  home -->|"browser (Accept: text/html)"| html["the page + canvas"]
-  home -->|"curl / wget / no html"| text["strike + text/plain<br/>idea + full provenance"]
-  which -->|"/s/:id"| perm["permalink, server-hydrated<br/>curl gets text here too"]
-  which -->|"POST /api/spark"| strike["strike; full JSON with provenance"]
-  which -->|"/api/spark/:id"| raw["one stored spark, raw JSON"]
-  which -->|"/api/sun"| sun["current flare class only"]
-    </pre></div>
+    <h2>4 &middot; Authority and receipt honesty</h2>
+    <p>COORD is the authority for claiming work, reading current state, committing
+    the Brief, and counting served outcomes. KV is a projection for compatible
+    reads, not commit authority. If COORD is uncertain, oddspark does not render
+    a new Brief.</p>
+    <div class="diagram-scroll" data-diagram="receipt" role="region" tabindex="-1" aria-label="Scrollable diagram: commit authority and receipt limits" hidden>
+      <figure class="diagram-figure" aria-hidden="true"><pre class="mermaid">flowchart LR
+  accTitle: Commit authority and receipt limits
+  accDescr: COORD owns claims, reads, commits, and served counts. KV is projection-only, while the receipt reports bounded facts without promising repeatable model output.
+  Q[Qualified Brief] --> C[COORD authority]
+  C --> K[KV projection]
+  C --> R[Receipt and Render]
+  N[Model output varies between runs] --> R
+      </pre></figure>
+    </div>
+    <ol class="flow" data-flow="receipt">
+      <li data-step="coord-authority"><strong>Trust COORD.</strong> COORD alone claims, reads, commits, and counts served outcomes.</li>
+      <li data-step="kv-projection"><strong>Treat KV as projection-only.</strong> KV may support compatible reads but cannot authorize a commit.</li>
+      <li data-step="bounded-receipt"><strong>Read the receipt narrowly.</strong> It references the approved Evidence and binds the committed artifact; receipt-proof claims remain off until an active ReceiptClaimManifest authorizes exact wording.</li>
+      <li data-step="nondeterminism"><strong>Expect nondeterminism.</strong> The same published seed can lead a model to different valid wording on another run.</li>
+    </ol>
   </section>
 
   <footer>
@@ -2683,35 +2696,52 @@ flowchart TD
 
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11.17.0/dist/mermaid.min.js"></script>
 <script>
+if (globalThis.mermaid) {
 mermaid.initialize({
-  startOnLoad: true,
+  startOnLoad: false,
   securityLevel: "strict",
   theme: "base",
   themeVariables: {
     background: "#0B0D10",
     primaryColor: "#101419",
     primaryTextColor: "#C6CFD8",
-    primaryBorderColor: "#3D4750",
-    lineColor: "#67737F",
+    primaryBorderColor: "#7E8B98",
+    lineColor: "#7E8B98",
     secondaryColor: "#101419",
     tertiaryColor: "#0B0D10",
     clusterBkg: "#0B0D10",
     edgeLabelBackground: "#101419",
     actorBkg: "#101419",
-    actorBorder: "#3D4750",
+    actorBorder: "#7E8B98",
     actorTextColor: "#C6CFD8",
-    actorLineColor: "#3D4750",
+    actorLineColor: "#7E8B98",
     signalColor: "#C6CFD8",
     signalTextColor: "#C6CFD8",
     noteBkgColor: "#101419",
-    noteBorderColor: "#3D4750",
+    noteBorderColor: "#7E8B98",
     noteTextColor: "#C6CFD8",
     fontFamily: "'Courier Prime', monospace",
     fontSize: "13px"
-  }
+  },
+  themeCSS: ".node rect,.node polygon,.node circle,.actor,.note{stroke:#7E8B98!important}.edgePath path,.flowchart-link,.messageLine0,.messageLine1{stroke:#7E8B98!important}"
 });
+mermaid.run({nodes:document.querySelectorAll(".mermaid")}).then(function(){
+  document.querySelectorAll(".diagram-scroll").forEach(function(scroller){
+    var figure = scroller.querySelector(".diagram-figure");
+    var source = figure && figure.querySelector(".mermaid");
+    var svg = source && source.querySelector("svg");
+    if (!source || source.getAttribute("data-processed") !== "true" || !svg) return;
+    figure.setAttribute("aria-hidden", "true");
+    svg.setAttribute("aria-hidden", "true");
+    scroller.setAttribute("tabindex", "0");
+    scroller.hidden = false;
+  });
+}).catch(function(){
+  /* The ordered flows remain the complete, visible explanation. */
+});
+}
 </script>
 </body>
 </html>`;

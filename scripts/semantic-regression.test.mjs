@@ -186,5 +186,14 @@ test("harness has no live-capable imports and CI dispatches the focused suite ex
   for (const forbidden of ["node:http", "node:https", "fetch(", "WebSocket", "wrangler", "provider_url", "api_key"]) assert.equal(source.includes(forbidden), false);
   assert.match(source, /runCompositeGate/);
   const ci = await readFile(fileURLToPath(new URL("../.github/check-ci.mjs", import.meta.url)), "utf8");
+  const workflow = await readFile(fileURLToPath(new URL("../.github/workflows/test.yml", import.meta.url)), "utf8");
+  const packageJson = JSON.parse(await readFile(fileURLToPath(new URL("../package.json", import.meta.url)), "utf8"));
   assert.equal(ci.split("node --test scripts/semantic-regression.test.mjs").length - 1, 1);
+  assert.equal(ci.split("node --test scripts/how-page.test.mjs").length - 1, 1);
+  assert.equal(ci.split("REQUIRE_CHROME=1 node --test scripts/how-page.browser.test.mjs").length - 1, 1);
+  assert.equal(String(packageJson.scripts?.check).split("scripts/how-page.test.mjs").length - 1, 0);
+  assert.equal(String(packageJson.scripts?.check).split("scripts/how-page.browser.test.mjs").length - 1, 0);
+  assert.equal(workflow.split("node .github/check-ci.mjs").length - 1, 1);
+  assert.equal(workflow.split("scripts/how-page.test.mjs").length - 1, 0);
+  assert.equal(workflow.split("scripts/how-page.browser.test.mjs").length - 1, 0);
 });
