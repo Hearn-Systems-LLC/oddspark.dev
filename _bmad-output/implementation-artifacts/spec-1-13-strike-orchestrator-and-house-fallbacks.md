@@ -2,7 +2,7 @@
 title: 'Story 1.13: Strike Orchestrator and House Fallbacks'
 type: 'feature'
 created: '2026-08-18'
-status: 'awaiting-operator'
+status: 'done'
 baseline_revision: 'f2bed959ebba7714c4bd8f8abc45a0659b9eba46'
 review_loop_iteration: 0
 followup_review_recommended: true
@@ -79,6 +79,7 @@ operator_actions:
 - Open: judge qualification has no live GO. All executed judge matrices (v1 2026-08-16; three gpt-oss runs 2026-08-19) are verified NO-GO, and the Story 1.4 Llama judge cycle harness has never run live. The active STRUCT-JUDGE identity cannot be resolved until Justin approves and an operator runs the Llama judge live cycle and it emits at least one verified configuration GO.
 - Status stays `awaiting-operator` until judge GO evidence exists.
 - 2026-08-22 update: the Llama judge cycle executed live (42 calls, approval run `e848e2bd`) and returned verified NO-GO on both configurations — 20/20 `schema_invalid` each (noncanonical verdict shape from unenforced advanced JSON-Schema constructs). Justin granted one new matrix under a flattened provider-enforceable wire schema (spec-1-4-workers-ai-llama-judge-qualification-cycle.md change log, 2026-08-22 amendment). The active STRUCT-JUDGE identity stays unresolved until that cycle emits verified GO evidence.
+- 2026-08-23 resolution: the third Llama judge matrix executed live (approval run `a0ed5363`, plan ref `bd862b49…`, 42 calls) and returned independently verified **GO** on both configurations (`npm run spike:judge:verify` PASS 18 predicates/79 fixtures; `npm run spike:judge:qualification:verify` PASS, GO; 2 refs). Judge half of action 3 / the judge-identity resolution is now satisfied: the active STRUCT-JUDGE identity for the later activation manifest is the qualified role set role_qualification_ref `4c70414b247316618f0a219eeecf1aa408d029af931abc45c15a65fda15b5d6a`, cycle_ref `2bc68963f9ba590a80a113a3c96eafd58c309a0bf32de5c1b2826733b791708a` — members `@cf/meta/llama-3.3-70b-instruct-fp8-fast` (`648dcdb86c12b6169f6ae47ec7c0479977fd5ccbf8f651e39cad0c2589d85c2a`) and `@cf/meta/llama-3.1-8b-instruct-fast` (`3b9f521048b3c6c8bc5b9cda3cc65b090066cbd28e0c845e574fa7c38648abdc`). All operator actions complete; status moves to done pending independent review.
 ## Review Triage Log
 
 ### 2026-08-18 — Review pass

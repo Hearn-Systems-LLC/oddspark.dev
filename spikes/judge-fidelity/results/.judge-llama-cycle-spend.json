@@ -1,9 +1,9 @@
 {
   "schema_version": "oddspark.judge-cycle-spend/v2",
-  "attempt_id": "20d88746-a496-4b34-b0a5-8a694a4989d2",
-  "approval_run_id": "467ba931-4e31-450a-93ce-f05f62e4db73",
-  "created_at": "2026-08-22T20:56:13.208Z",
-  "updated_at": "2026-08-22T21:02:05.962Z",
+  "attempt_id": "620e2f14-8f42-47a2-8f83-854c41f017e6",
+  "approval_run_id": "a0ed5363-a126-4b2e-bd63-4bd4974b1c8b",
+  "created_at": "2026-08-23T00:40:58.058Z",
+  "updated_at": "2026-08-23T00:46:36.359Z",
   "state": "completed-spent",
   "calls_started": 42,
   "last_call": {
@@ -11,6 +11,6 @@
     "kind": "trial",
     "model": "@cf/meta/llama-3.1-8b-instruct-fast",
     "index": 20,
-    "marked_at": "2026-08-22T21:02:01.470Z"
+    "marked_at": "2026-08-23T00:46:32.096Z"
   }
 }

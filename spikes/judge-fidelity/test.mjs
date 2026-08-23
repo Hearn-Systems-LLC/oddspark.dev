@@ -1103,12 +1103,15 @@ test("approval templates require explicit timestamps and plan publication is ext
 });
 
 test("owner-reviewed cycles are immutable history; unreviewed spend still blocks planning", async () => {
-  // Both completed 2026-08-22 called cycles (e848e2bd, 467ba931) are owner-reviewed and
-  // classified as immutable history, so the granted third matrix may be planned.
+  // The completed 2026-08-22 called cycles (e848e2bd, 467ba931) are owner-reviewed
+  // immutable history, but the 2026-08-23 GO cycle (a0ed5363) is retained as an
+  // unreviewed spend: planning a further matrix must refuse until the owner reviews
+  // and reclassifies it. Flip this branch back to success upon reclassification.
   const directory = await mkdtemp(path.join(tmpdir(), "oddspark-plan-history-"));
-  const output = path.join(directory, "recovery-plan.json");
-  await planCommand({ output, account_profile: "test-profile", plan: "paid", approval_run_id: "history-run" });
-  await access(output);
+  await assert.rejects(
+    planCommand({ output: path.join(directory, "recovery-plan.json"), account_profile: "test-profile", plan: "paid", approval_run_id: "history-run" }),
+    /prior operational recovery already retained/,
+  );
 
   // An unreviewed receipt proving (or unable to disprove) provider invocation still blocks.
   const blockedResults = await mkdtemp(path.join(tmpdir(), "oddspark-plan-blocked-"));

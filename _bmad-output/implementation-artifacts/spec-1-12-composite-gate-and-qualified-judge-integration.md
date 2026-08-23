@@ -2,7 +2,7 @@
 title: 'Story 1.12: Composite Gate and Qualified Judge Integration'
 type: 'feature'
 created: '2026-08-18'
-status: 'awaiting-operator'
+status: 'done'
 baseline_revision: 'cec6d943ff2745da6c7587931e06f3e7b7fbcf15'
 review_loop_iteration: 1
 followup_review_recommended: true
@@ -84,6 +84,7 @@ operator_actions:
 - Open: no verified per-model STRUCT-JUDGE qualification exists yet, so no active judge descriptor can be resolved (operator actions 2–3 blocked on the same gap). The Story 1.4 Workers AI Llama judge qualification cycle harness is implemented and offline-verified but has never executed a live run. Unblocking requires Justin's fresh exact approval of a Llama judge plan and an operator-run live cycle (`npm run spike:judge:plan` → approval → `spike:judge:dev` + `spike:judge:live`), retaining GO evidence for at least one configuration.
 - Status stays `awaiting-operator` until judge GO evidence exists.
 - 2026-08-22 update: the Llama judge cycle executed live (42 calls, approval run `e848e2bd`) and returned verified NO-GO on both configurations — 20/20 `schema_invalid` each (noncanonical verdict shape: boolean-map gates, string tone/claims, caused by unenforced advanced JSON-Schema constructs). Justin granted one new matrix under a flattened provider-enforceable wire schema (spec-1-4-workers-ai-llama-judge-qualification-cycle.md change log, 2026-08-22 amendment). Operator actions 2–3 remain open until that cycle emits verified GO evidence.
+- 2026-08-23 resolution: the third Llama judge matrix executed live (approval run `a0ed5363`, plan ref `bd862b49…`, 42 calls) and returned independently verified **GO** on both configurations (`npm run spike:judge:verify` PASS 18 predicates/79 fixtures; `npm run spike:judge:qualification:verify` PASS, GO; 2 refs). Operator actions 2–3 are satisfied: verified per-model STRUCT-JUDGE qualifications exist — `@cf/meta/llama-3.3-70b-instruct-fp8-fast` `648dcdb86c12b6169f6ae47ec7c0479977fd5ccbf8f651e39cad0c2589d85c2a`, `@cf/meta/llama-3.1-8b-instruct-fast` `3b9f521048b3c6c8bc5b9cda3cc65b090066cbd28e0c845e574fa7c38648abdc` — and the active judge descriptor resolves to the qualified role set `4c70414b247316618f0a219eeecf1aa408d029af931abc45c15a65fda15b5d6a` (cycle_ref `2bc68963f9ba590a80a113a3c96eafd58c309a0bf32de5c1b2826733b791708a`). All three operator actions complete; status moves to done pending independent review.
 
 ### 2026-08-18 — Review loop 1
 - Trigger: the first implementation returned the complete passing judge verdict, including provider-authored reason strings, despite the Epic-level no-raw-model-text boundary.
