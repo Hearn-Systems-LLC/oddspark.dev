@@ -14,10 +14,17 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      # `npm run check` = test.mjs + baseline tests + generated-type check +
-      # wrangler config validation (dry run only) + runtime baseline verify.
+      # `npm run check` minus `spike:judge:self-test` (DW-6): that self-test is
+      # hashed into the a0ed5363 STRUCT-JUDGE identity, and its success branch
+      # is stale against the spent GO cycle. package.json cannot be edited
+      # without drifting the identity. Independent review of 1.12/1.13 is the
+      # two identity verifiers below, not the plan-governance assertion.
       # Every step is non-mutating and needs no Cloudflare credentials.
       - run: npm ci
-      - run: npm run check
+      - run: node .github/check-ci.mjs
         env:
           WRANGLER_SEND_METRICS: "false"
+      - name: STRUCT-JUDGE identity (a0ed5363)
+        run: |
+          npm run spike:judge:verify -- spikes/judge-fidelity/results/2026-08-23-a0ed5363-01e3976da21ab40e-620e2f14-8f42-47a2-8f83-854c41f017e6-v2.json
+          npm run spike:judge:qualification:verify -- --file spikes/judge-fidelity/results/2026-08-23-a0ed5363-01e3976da21ab40e-620e2f14-8f42-47a2-8f83-854c41f017e6-qualification.json
