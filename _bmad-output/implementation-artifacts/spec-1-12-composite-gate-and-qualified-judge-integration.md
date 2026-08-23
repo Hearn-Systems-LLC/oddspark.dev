@@ -15,7 +15,7 @@ deferred:
     evidence: |-
       Composite Gate correctly reuses the Story 1.7 validators, but those pre-existing contracts require only a nonblank source URL that belongs to the declared Evidence URL set; URL safety is not enforced at that authority boundary.
     location: >-
-      scripts/brief-contracts.mjs:227
+      src/pipeline/contracts.mjs:345
     severity: medium
 operator_actions:
   - 'Approve the exact voice-v1 semantic corpus as owner, preserving its computed hashes and semantic identity.'
@@ -85,6 +85,7 @@ operator_actions:
 - Status stays `awaiting-operator` until judge GO evidence exists.
 - 2026-08-22 update: the Llama judge cycle executed live (42 calls, approval run `e848e2bd`) and returned verified NO-GO on both configurations — 20/20 `schema_invalid` each (noncanonical verdict shape: boolean-map gates, string tone/claims, caused by unenforced advanced JSON-Schema constructs). Justin granted one new matrix under a flattened provider-enforceable wire schema (spec-1-4-workers-ai-llama-judge-qualification-cycle.md change log, 2026-08-22 amendment). Operator actions 2–3 remain open until that cycle emits verified GO evidence.
 - 2026-08-23 resolution: the third Llama judge matrix executed live (approval run `a0ed5363`, plan ref `bd862b49…`, 42 calls) and returned independently verified **GO** on both configurations (`npm run spike:judge:verify` PASS 18 predicates/79 fixtures; `npm run spike:judge:qualification:verify` PASS, GO; 2 refs). Operator actions 2–3 are satisfied: verified per-model STRUCT-JUDGE qualifications exist — `@cf/meta/llama-3.3-70b-instruct-fp8-fast` `648dcdb86c12b6169f6ae47ec7c0479977fd5ccbf8f651e39cad0c2589d85c2a`, `@cf/meta/llama-3.1-8b-instruct-fast` `3b9f521048b3c6c8bc5b9cda3cc65b090066cbd28e0c845e574fa7c38648abdc` — and the active judge descriptor resolves to the qualified role set `4c70414b247316618f0a219eeecf1aa408d029af931abc45c15a65fda15b5d6a` (cycle_ref `2bc68963f9ba590a80a113a3c96eafd58c309a0bf32de5c1b2826733b791708a`). All three operator actions complete; status moves to done pending independent review.
+- 2026-08-23 independent-review reconciliation: close-out review could not re-verify the qualified-judge identity at `fc1f2b6` because that commit flipped the plan-governance assertion in evidence-pinned `spikes/judge-fidelity/test.mjs` (HEAD bytes `d3f9222d…` / 136764 vs pinned `ebd31881…` / 136568). Working tree restored to the evidence-pinned bytes. Independent re-verification at the restored tree: `npm run spike:judge:verify` PASS (18 predicates, 79 fixtures); `npm run spike:judge:qualification:verify` PASS / GO / 2 refs (`648dcdb8…`, `3b9f5210…`; role set `4c70414b…`). Justin classified the a0ed5363 cycle as owner-reviewed immutable history (spec-1-4 change log, same date); no successor matrix; evidence is not rewritten. Operator actions remain satisfied.
 
 ### 2026-08-18 — Review loop 1
 - Trigger: the first implementation returned the complete passing judge verdict, including provider-authored reason strings, despite the Epic-level no-raw-model-text boundary.

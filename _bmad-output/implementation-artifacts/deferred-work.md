@@ -24,7 +24,7 @@ status: open
 
 ### DW-4: Domain Evidence and GroundingReport contracts accept declared non-HTTP, credential-bearing, or private-network source URLs.
 origin: spec-deferred 7184ecebddd6
-location: scripts/brief-contracts.mjs:227
+location: src/pipeline/contracts.mjs:345
 source_spec: `spec-1-12-composite-gate-and-qualified-judge-integration.md`
 severity: medium
 reason: Composite Gate correctly reuses the Story 1.7 validators, but those pre-existing contracts require only a nonblank source URL that belongs to the declared Evidence URL set; URL safety is not enforced at that authority boundary.
@@ -36,6 +36,14 @@ location: n/a
 source_spec: `spec-1-14-authoritative-commit-and-compatibility-reader.md`
 severity: low
 reason: The follow-up-review damping cap (limits.max_followup_reviews = 1) was spent with the story finalized (status: done, verify green) while the review pass still recommended an independent follow-up. The work was committed by bmad-loop run 20260818-211736-da17; this entry preserves the lingering recommendation for a deliberate later review.
+status: open
+
+### DW-6: Judge plan-governance assertion is hard-coded in an evidence-pinned source file
+origin: identity-coupling 2026-08-23
+location: spikes/judge-fidelity/test.mjs:1105
+source_spec: `spec-1-4-workers-ai-llama-judge-qualification-cycle.md`
+severity: medium
+reason: `spikes/judge-fidelity/test.mjs` is a member of `EVIDENCE_SOURCE_PATHS` (`spikes/judge-fidelity/evidence-v2.mjs:25`). The 2026-08-23 GO evidence pins `test.mjs` sha256 `ebd31881b11859b42a3df7862a1aac98d959413375f1c1014224d75e70cec36d` (136568 bytes). Commit `fc1f2b6` flipped the plan-governance test at test.mjs:1103-1115 to expect refusal while a0ed5363 is unreviewed, producing `d3f9222d…` / 136764 bytes and failing independent `spike:judge:verify` / `spike:judge:qualification:verify` (source.identity and derived predicates). Restoring the pinned bytes makes identity verify (18 predicates, 79 fixtures; qualification PASS / GO / 2 refs) but the restored success branch calls `planCommand` against the real results directory, which still refuses because a0ed5363 is a verified spent GO cycle (`prior operational recovery already retained`). Residual: `npm run spike:judge:self-test` is 80/81 until this assertion is data-driven. Encoding the next review-state change in this file, or adding a0ed5363 to the `recovery-finder.mjs` allowlist (also evidence-pinned), will drift the active STRUCT-JUDGE identity again. Data-drive this assertion from retained cycle/spend/approval records in a file that is not in `EVIDENCE_SOURCE_PATHS`, without rewriting retained evidence or re-running the live cycle.
 status: open
 - source_spec: none
   summary: Reconcile Story 1.11 generation structural qualification with the approved Workers AI Llama pair and prepare its fresh governed plan.

@@ -93,6 +93,12 @@ baseline_commit: '90f3bba0799ade70b74abd71fade5817e89907de'
   - Zero-call preflight NO-GOs under the same plan window (approval-shape then missing-probe) are retained as non-consuming evidence: `…-a64f9601-bc745f5e…`, `…-a0ed5363-c024fbc0…`, `…-a0ed5363-e7a55294…`, `…-a0ed5363-5808d7c9…` sets; each carried `cycle_available: true`.
   - Story 1.12 operator actions 2–3 and Story 1.13's judge-identity resolution are now satisfiable; the active STRUCT-JUDGE identity for the later activation manifest is the role set above.
 
+- 2026-08-23 — Governance record (human renegotiation): a0ed5363 cycle is owner-reviewed immutable history.
+  - Authorization: Justin, 2026-08-23, after independent close-out review found Stories 1.12/1.13 blocked solely because `spikes/judge-fidelity/test.mjs` drifted from the evidence-pinned bytes. Same owner-review precedent as e848e2bd (2026-08-22 wire-schema amendment) and 467ba931 (2026-08-22 adapter single-representation amendment).
+  - Decision: approval run `a0ed5363-a126-4b2e-bd63-4bd4974b1c8b`, attempt `620e2f14-8f42-47a2-8f83-854c41f017e6`, spend state `completed-spent`, and the four non-consuming 2026-08-23 zero-call preflights are owner-reviewed immutable history. Retained evidence/receipt bytes and emitted refs are not rewritten. No successor matrix is granted. The cycle remains the active STRUCT-JUDGE identity and must continue to verify against current source bytes.
+  - Working-tree correction: restore `spikes/judge-fidelity/test.mjs` to the evidence-pinned identity `ebd31881b11859b42a3df7862a1aac98d959413375f1c1014224d75e70cec36d` (136568 bytes, HEAD~1 / pre-fc1f2b6 governance-test flip). Do not re-run the live cycle. Do not re-pin evidence. Do not edit `recovery-finder.mjs` allowlists (that file is itself evidence-pinned; adding a0ed5363 there would drift the active identity the way the test flip did).
+  - Known-bad state avoided: treating a GO identity as identity-drifted history (the NO-GO predecessor pattern) or flipping a byte-pinned source to encode the next review-state change.
+
 
 
 ## Design Notes
