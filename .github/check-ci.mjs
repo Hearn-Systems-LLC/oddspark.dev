@@ -12,6 +12,7 @@ import path from "node:path";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const SKIP = "npm run spike:judge:self-test";
+const SEMANTIC_REGRESSION = "node --test scripts/semantic-regression.test.mjs";
 const pkg = JSON.parse(readFileSync(path.join(root, "package.json"), "utf8"));
 const steps = String(pkg.scripts?.check ?? "").split("&&").map((step) => step.trim()).filter(Boolean);
 
@@ -28,3 +29,7 @@ for (const step of steps) {
   const result = spawnSync(step, { cwd: root, env: process.env, shell: true, stdio: "inherit" });
   if (result.status) process.exit(result.status);
 }
+
+console.log(`run   ${SEMANTIC_REGRESSION}`);
+const semanticRegression = spawnSync(SEMANTIC_REGRESSION, { cwd: root, env: process.env, shell: true, stdio: "inherit" });
+if (semanticRegression.status) process.exit(semanticRegression.status);

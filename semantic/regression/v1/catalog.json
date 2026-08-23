@@ -1,0 +1,467 @@
+{
+  "schema_version": 1,
+  "suite_version": "semantic-regression-v1",
+  "catalog_identity": "a92f9d51a80f0e6aabffd75a014a74dddd09f920e1afa3e79aa54ee1a2f3b69b",
+  "configurations": [
+    "primary",
+    "fallback"
+  ],
+  "corpus": {
+    "corpus_version": "voice-v1",
+    "semantic_identity": "b387b27c7fd91062ae7b0aec39ada8103b579655b5161e2556b614b1d2f6694e",
+    "golden_ids": [
+      "local-after-hours-callback-card",
+      "local-lakeside-weather-handoff",
+      "local-counter-special-tally",
+      "website-menu-sold-out-bridge",
+      "website-trail-status-note",
+      "website-donation-thank-you-handoff"
+    ],
+    "anti_golden_ids": [
+      "anti-consultant-speak",
+      "anti-unsupported-claims",
+      "anti-weak-preservation",
+      "anti-capability-duplication",
+      "anti-poor-scope",
+      "anti-invitation-pressure"
+    ]
+  },
+  "fixtures": [
+    {
+      "id": "golden-local-after-hours-callback-card",
+      "kind": "corpus_golden",
+      "corpus_ref": "local-after-hours-callback-card",
+      "input": "corpus",
+      "verdict": {
+        "failed_checks": [],
+        "candidate_ref": "bound",
+        "top_level_pass": "conjunction"
+      },
+      "expected": {
+        "ok": true,
+        "code": "passed",
+        "judge_calls": 1,
+        "failed_checks": []
+      }
+    },
+    {
+      "id": "golden-local-lakeside-weather-handoff",
+      "kind": "corpus_golden",
+      "corpus_ref": "local-lakeside-weather-handoff",
+      "input": "corpus",
+      "verdict": {
+        "failed_checks": [],
+        "candidate_ref": "bound",
+        "top_level_pass": "conjunction"
+      },
+      "expected": {
+        "ok": true,
+        "code": "passed",
+        "judge_calls": 1,
+        "failed_checks": []
+      }
+    },
+    {
+      "id": "golden-local-counter-special-tally",
+      "kind": "corpus_golden",
+      "corpus_ref": "local-counter-special-tally",
+      "input": "corpus",
+      "verdict": {
+        "failed_checks": [],
+        "candidate_ref": "bound",
+        "top_level_pass": "conjunction"
+      },
+      "expected": {
+        "ok": true,
+        "code": "passed",
+        "judge_calls": 1,
+        "failed_checks": []
+      }
+    },
+    {
+      "id": "golden-website-menu-sold-out-bridge",
+      "kind": "corpus_golden",
+      "corpus_ref": "website-menu-sold-out-bridge",
+      "input": "corpus",
+      "verdict": {
+        "failed_checks": [],
+        "candidate_ref": "bound",
+        "top_level_pass": "conjunction"
+      },
+      "expected": {
+        "ok": true,
+        "code": "passed",
+        "judge_calls": 1,
+        "failed_checks": []
+      }
+    },
+    {
+      "id": "golden-website-trail-status-note",
+      "kind": "corpus_golden",
+      "corpus_ref": "website-trail-status-note",
+      "input": "corpus",
+      "verdict": {
+        "failed_checks": [],
+        "candidate_ref": "bound",
+        "top_level_pass": "conjunction"
+      },
+      "expected": {
+        "ok": true,
+        "code": "passed",
+        "judge_calls": 1,
+        "failed_checks": []
+      }
+    },
+    {
+      "id": "golden-website-donation-thank-you-handoff",
+      "kind": "corpus_golden",
+      "corpus_ref": "website-donation-thank-you-handoff",
+      "input": "corpus",
+      "verdict": {
+        "failed_checks": [],
+        "candidate_ref": "bound",
+        "top_level_pass": "conjunction"
+      },
+      "expected": {
+        "ok": true,
+        "code": "passed",
+        "judge_calls": 1,
+        "failed_checks": []
+      }
+    },
+    {
+      "id": "anti-consultant-speak",
+      "kind": "corpus_anti_golden",
+      "corpus_ref": "anti-consultant-speak",
+      "input": "corpus",
+      "verdict": {
+        "failed_checks": [
+          "gate-8"
+        ],
+        "candidate_ref": "bound",
+        "top_level_pass": "conjunction"
+      },
+      "expected": {
+        "ok": false,
+        "code": "semantic_rejected",
+        "judge_calls": 1,
+        "failed_checks": [
+          "gate-8"
+        ]
+      }
+    },
+    {
+      "id": "anti-unsupported-claims",
+      "kind": "corpus_anti_golden",
+      "corpus_ref": "anti-unsupported-claims",
+      "input": "corpus",
+      "verdict": {
+        "failed_checks": [
+          "gate-1"
+        ],
+        "candidate_ref": "bound",
+        "top_level_pass": "conjunction"
+      },
+      "expected": {
+        "ok": false,
+        "code": "semantic_rejected",
+        "judge_calls": 1,
+        "failed_checks": [
+          "gate-1"
+        ]
+      }
+    },
+    {
+      "id": "anti-weak-preservation",
+      "kind": "corpus_anti_golden",
+      "corpus_ref": "anti-weak-preservation",
+      "input": "corpus",
+      "verdict": {
+        "failed_checks": [
+          "gate-7"
+        ],
+        "candidate_ref": "bound",
+        "top_level_pass": "conjunction"
+      },
+      "expected": {
+        "ok": false,
+        "code": "semantic_rejected",
+        "judge_calls": 1,
+        "failed_checks": [
+          "gate-7"
+        ]
+      }
+    },
+    {
+      "id": "anti-capability-duplication",
+      "kind": "corpus_anti_golden",
+      "corpus_ref": "anti-capability-duplication",
+      "input": "corpus",
+      "verdict": {
+        "failed_checks": [
+          "gate-3"
+        ],
+        "candidate_ref": "bound",
+        "top_level_pass": "conjunction"
+      },
+      "expected": {
+        "ok": false,
+        "code": "semantic_rejected",
+        "judge_calls": 1,
+        "failed_checks": [
+          "gate-3"
+        ]
+      }
+    },
+    {
+      "id": "anti-poor-scope",
+      "kind": "corpus_anti_golden",
+      "corpus_ref": "anti-poor-scope",
+      "input": "corpus",
+      "verdict": {
+        "failed_checks": [
+          "gate-5",
+          "gate-6"
+        ],
+        "candidate_ref": "bound",
+        "top_level_pass": "conjunction"
+      },
+      "expected": {
+        "ok": false,
+        "code": "semantic_rejected",
+        "judge_calls": 1,
+        "failed_checks": [
+          "gate-5",
+          "gate-6"
+        ]
+      }
+    },
+    {
+      "id": "anti-invitation-pressure",
+      "kind": "corpus_anti_golden",
+      "corpus_ref": "anti-invitation-pressure",
+      "input": "corpus",
+      "verdict": {
+        "failed_checks": [
+          "gate-8"
+        ],
+        "candidate_ref": "bound",
+        "top_level_pass": "conjunction"
+      },
+      "expected": {
+        "ok": false,
+        "code": "semantic_rejected",
+        "judge_calls": 1,
+        "failed_checks": [
+          "gate-8"
+        ]
+      }
+    },
+    {
+      "id": "contradiction-gate-2",
+      "kind": "contradiction",
+      "corpus_ref": null,
+      "input": "valid_local",
+      "verdict": {
+        "failed_checks": [
+          "gate-2"
+        ],
+        "candidate_ref": "bound",
+        "top_level_pass": "conjunction"
+      },
+      "expected": {
+        "ok": false,
+        "code": "semantic_rejected",
+        "judge_calls": 1,
+        "failed_checks": [
+          "gate-2"
+        ]
+      }
+    },
+    {
+      "id": "contradiction-gate-4",
+      "kind": "contradiction",
+      "corpus_ref": null,
+      "input": "valid_local",
+      "verdict": {
+        "failed_checks": [
+          "gate-4"
+        ],
+        "candidate_ref": "bound",
+        "top_level_pass": "conjunction"
+      },
+      "expected": {
+        "ok": false,
+        "code": "semantic_rejected",
+        "judge_calls": 1,
+        "failed_checks": [
+          "gate-4"
+        ]
+      }
+    },
+    {
+      "id": "contradiction-gate-9",
+      "kind": "contradiction",
+      "corpus_ref": null,
+      "input": "valid_local",
+      "verdict": {
+        "failed_checks": [
+          "gate-9"
+        ],
+        "candidate_ref": "bound",
+        "top_level_pass": "conjunction"
+      },
+      "expected": {
+        "ok": false,
+        "code": "semantic_rejected",
+        "judge_calls": 1,
+        "failed_checks": [
+          "gate-9"
+        ]
+      }
+    },
+    {
+      "id": "contradiction-tone",
+      "kind": "contradiction",
+      "corpus_ref": null,
+      "input": "valid_local",
+      "verdict": {
+        "failed_checks": [
+          "tone"
+        ],
+        "candidate_ref": "bound",
+        "top_level_pass": "conjunction"
+      },
+      "expected": {
+        "ok": false,
+        "code": "semantic_rejected",
+        "judge_calls": 1,
+        "failed_checks": [
+          "tone"
+        ]
+      }
+    },
+    {
+      "id": "contradiction-claims",
+      "kind": "contradiction",
+      "corpus_ref": null,
+      "input": "valid_local",
+      "verdict": {
+        "failed_checks": [
+          "claims"
+        ],
+        "candidate_ref": "bound",
+        "top_level_pass": "conjunction"
+      },
+      "expected": {
+        "ok": false,
+        "code": "semantic_rejected",
+        "judge_calls": 1,
+        "failed_checks": [
+          "claims"
+        ]
+      }
+    },
+    {
+      "id": "contract-candidate-binding",
+      "kind": "contract_safety",
+      "corpus_ref": null,
+      "input": "valid_local",
+      "verdict": {
+        "failed_checks": [],
+        "candidate_ref": "mismatch",
+        "top_level_pass": "conjunction"
+      },
+      "expected": {
+        "ok": false,
+        "code": "judge_contract_rejected",
+        "judge_calls": 1,
+        "failed_checks": []
+      }
+    },
+    {
+      "id": "contract-pass-conjunction",
+      "kind": "contract_safety",
+      "corpus_ref": null,
+      "input": "valid_local",
+      "verdict": {
+        "failed_checks": [
+          "gate-1"
+        ],
+        "candidate_ref": "bound",
+        "top_level_pass": true
+      },
+      "expected": {
+        "ok": false,
+        "code": "judge_contract_rejected",
+        "judge_calls": 1,
+        "failed_checks": []
+      }
+    },
+    {
+      "id": "local-invalid-schema",
+      "kind": "local_failure",
+      "corpus_ref": null,
+      "input": "invalid_schema",
+      "verdict": null,
+      "expected": {
+        "ok": false,
+        "code": "local_rejected",
+        "judge_calls": 0,
+        "failed_checks": []
+      }
+    },
+    {
+      "id": "local-mode-linkage",
+      "kind": "local_failure",
+      "corpus_ref": null,
+      "input": "mode_linkage",
+      "verdict": null,
+      "expected": {
+        "ok": false,
+        "code": "local_rejected",
+        "judge_calls": 0,
+        "failed_checks": []
+      }
+    },
+    {
+      "id": "local-personal-name",
+      "kind": "local_failure",
+      "corpus_ref": null,
+      "input": "personal_name",
+      "verdict": null,
+      "expected": {
+        "ok": false,
+        "code": "local_rejected",
+        "judge_calls": 0,
+        "failed_checks": []
+      }
+    },
+    {
+      "id": "local-number",
+      "kind": "local_failure",
+      "corpus_ref": null,
+      "input": "unsupported_number",
+      "verdict": null,
+      "expected": {
+        "ok": false,
+        "code": "local_rejected",
+        "judge_calls": 0,
+        "failed_checks": []
+      }
+    },
+    {
+      "id": "local-grounding",
+      "kind": "local_failure",
+      "corpus_ref": null,
+      "input": "unsupported_grounding",
+      "verdict": null,
+      "expected": {
+        "ok": false,
+        "code": "local_rejected",
+        "judge_calls": 0,
+        "failed_checks": []
+      }
+    }
+  ]
+}
