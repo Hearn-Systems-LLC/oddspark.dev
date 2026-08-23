@@ -109,8 +109,8 @@ development_status:
   1-9-local-evidence-assembly: done
   1-10-generation-contract-and-offline-adapter: done
   1-11-generation-structural-qualification: review
-  1-12-composite-gate-and-qualified-judge-integration: review
-  1-13-strike-orchestrator-and-house-fallbacks: review
+  1-12-composite-gate-and-qualified-judge-integration: done
+  1-13-strike-orchestrator-and-house-fallbacks: done
   1-14-authoritative-commit-and-compatibility-reader: done
   1-15-committed-brief-rendering: done
   1-16-request-hardening-and-inactive-domain-dispatch-contract: done
