@@ -2,7 +2,7 @@
 title: 'Story 1.17: Semantic Regression Suite'
 type: 'feature'
 created: '2026-08-23'
-status: 'in-progress'
+status: 'done'
 baseline_commit: 'bfd5d05a46272dce6ebc8e3356c64a11a5b0fdd7'
 review_loop_iteration: 0
 context:

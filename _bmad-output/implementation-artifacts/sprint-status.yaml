@@ -114,7 +114,7 @@ development_status:
   1-14-authoritative-commit-and-compatibility-reader: done
   1-15-committed-brief-rendering: done
   1-16-request-hardening-and-inactive-domain-dispatch-contract: done
-  1-17-semantic-regression-suite: backlog
+  1-17-semantic-regression-suite: done
   1-18-semantic-qualification: backlog
   1-19-local-full-request-qualification: backlog
   1-20-atomic-activation-contract-and-release-decision-view: backlog
