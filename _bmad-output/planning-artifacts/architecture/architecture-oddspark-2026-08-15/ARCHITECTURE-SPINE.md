@@ -24,16 +24,29 @@ companions:
 
 # Architecture Spine — Oddspark Opportunity Brief Pipeline
 
+## 2026-08-24 Simplification Override
+
+This decision supersedes every active three-specialist, twelve-call, specialist-qualification, and composite-specialist-authority rule elsewhere in this document. Those passages remain historical context only.
+
+The active Candidate path is intentionally direct:
+
+1. Generate one Candidate.
+2. Run the existing deterministic schema, linkage, privacy, grounding, reference, and prohibited-token checks.
+3. If those pass, invoke one candidate-bound lightweight quality judge exactly once.
+4. Save/show the Candidate only when the deterministic checks and judge pass; otherwise use the reviewed house fallback.
+
+Cached or already saved Sparks and house fallbacks are never judged again. There is no coherence/fit/quality waterfall, judge retry, specialist qualification system, or twelve-call/four-slot reservation system. The existing broad `CanonicalVerdict` contract is retained as the single lightweight judge port until a later deliberately scoped replacement is approved. Normal fail-closed result validation, provider-error handling, timeout handling, and model-call accounting remain required.
+
 ## Design Paradigm
 
 **Pipes-and-filters, single orchestrator.** The generator is a pipeline of typed, runtime-neutral ES-module stages assembled behind the single public Worker entrypoint. Stages are single-pass: each consumes only the previous stage's output and returns a typed value. The retry loop lives in exactly one place — the strike orchestrator at the existing `buildSpark` / `buildDomainSpark` call sites.
 
 ```mermaid
 flowchart LR
-    IN["POST /api/spark<br/>(button, optional domain)"] --> ORCH["Strike orchestrator<br/>(12-call ledger; four-slot attempts)"]
+    IN["POST /api/spark<br/>(button, optional domain)"] --> ORCH["Strike orchestrator<br/>(bounded generation attempts)"]
     ORCH --> EV["1 · Evidence<br/>local priors | site scan"]
     EV --> GEN["2 · Generate<br/>one candidate Brief (seeded)"]
-    GEN --> GATE["3 · Gate<br/>deterministic checks + 3 specialist waterfall"]
+    GEN --> GATE["3 · Gate<br/>deterministic checks + 1 quality judge"]
     GATE -->|fail| ORCH
     GATE -->|pass| COMMIT["4 · Commit<br/>COORD authority → KV projection"]
     ORCH -->|exhausted| HOUSE["pre-vetted<br/>house Brief"]

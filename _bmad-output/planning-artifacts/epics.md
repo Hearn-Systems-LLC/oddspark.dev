@@ -28,8 +28,8 @@ This document provides the complete 48-story epic and story breakdown for oddspa
 
 - FR1: Coherent local generation — no domain → Candidate grounded in Port Huron / Blue Water Area context, current date/time, seasonality, Delivery-Envelope capability bundle; no legacy random-axis vocabulary in output.
 - FR2: Website-grounded generation — domain → Evidence Bundle from public site + vertical knowledge; Candidate traceable to bundle; exactly one Breadcrumb (specific, positive/neutral, no personal details); no duplication of detected capabilities; no business-specific facts absent from the bundle.
-- FR3: Composite Gate evaluation — deterministic schema, linkage, grounding, privacy, number-provenance, exact-reference, required-field, and banned-token checks run before an isolated coherence → fit → quality semantic-specialist waterfall of at most three calls; every specialist result is candidate-bound, check-scoped, pointer-supported, and fail-closed, while deterministic code alone computes the final conjunction; rejected Candidates leave no visible trace.
-- FR4: Bounded regeneration — one twelve-model-call strike ledger starts only complete generation-plus-three-specialist attempts. `E=0` permits at most 3 Candidates and `E=1` at most 2; deterministic or earlier-specialist rejection releases only uninvoked downstream reservations, invoked failures/timeouts/invalid outputs consume their call, the same Candidate is never re-judged, and exhaustion or insufficient deadline returns a gate-passing house Brief.
+- FR3: Composite Gate evaluation — deterministic schema, linkage, grounding, privacy, number-provenance, exact-reference, required-field, and banned-token checks run before at most one candidate-bound lightweight quality-judge call; deterministic rejection uses zero judge calls, and reject/unknown/malformed/error/timeout results fail closed without judge retry.
+- FR4: Bounded regeneration — the existing strike orchestrator owns generation attempts and their single judge calls; exhaustion or insufficient deadline returns a gate-passing house Brief, and cached/saved Sparks plus house fallbacks are never judged.
 - FR5: Contract-complete rendering — all 8 result-card elements in order; Change Level = preliminary time range + workflow-step impact; What Stays the Same names tools + authority + steps; confident-plan voice (voice rubric + ≥3 golden Briefs per mode as pre-launch deliverable).
 - FR6: Claim discipline — no numeric ROI/percentages in local mode; domain-mode numbers traceable to the site; qualitative effects name who/what physically changes; no pricing anywhere.
 - FR7: Spark-specific invitation — CTA references the exact Spark; no pricing/urgency/pitch register; explicitly allows "not worth changing."
@@ -43,7 +43,7 @@ This document provides the complete 48-story epic and story breakdown for oddspa
 - NFR1: Privacy — no PII/cookies/sessions/reviews/off-site research for personalization or generation; abuse-limit carve-out has no tracking role; robots.txt respected.
 - NFR2: Performance — strike completes within STRIKE_BUDGET_MS wall-clock or degrades to house Brief; existing 4s scan budget carries over.
 - NFR3: Security — domain input validated/size-limited per existing worker guards (body 4KB, URL 2048, redirect caps, public-host-only).
-- NFR4: Cost — ≤12 model calls per strike through independently qualified generation and specialist selectors and the shared ledger/deadline. Workers AI retains best-effort/fail-open `NeuronMeter` without creating extra capacity; another provider requires a separately approved cost-control convention.
+- NFR4: Cost — each newly generated Candidate uses one generation call and at most one quality-judge call; cached/saved Sparks and house fallbacks use no judge call. Workers AI retains best-effort/fail-open `NeuronMeter`; another provider requires a separately approved cost-control convention.
 - NFR5: Reliability — Candidate/model/qualification/budget failure degrades to an authoritative committed or house Brief while COORD is reachable; COORD read/claim/commit uncertainty returns 502 and never renders uncommitted output.
 
 ### Additional Requirements
@@ -766,49 +766,40 @@ So that a schema-valid judge cannot pass deliberate contradictions or unsupporte
 **And** only a verified `GO` emits new current `SEMANTIC` authority
 **And** `NO-GO`, incomplete, ambiguous, over-cap, or identity-mismatched evidence emits no ref and blocks Story 1.19.
 
-### Story 1.18.2: Specialist Judge Pipeline Recovery
+### Story 1.18.2: Direct Quality Gate Simplification
 
-As a product owner and operator,
-I want deterministic prechecks and three independently qualified semantic specialists,
-So that weak ideas cannot pass through broad-model compensation while approved goldens remain usable.
+As a product owner,
+I want one deterministic precheck followed by at most one lightweight quality judge,
+So that weak Candidates are filtered without turning every Spark into a costly multi-agent review process.
 
-**Requirements:** FR3–FR7; NFR2; NFR4; AD-2; AD-3; AD-9; AD-11
+**Requirements:** FR3–FR7; NFR2; NFR4; simplified AD-2/AD-3 override
 
-**Dependency:** retained Story 1.18 and Story 1.18.1 `NO-GO` evidence; owner-approved 2026-08-24 specialist architecture course correction. Every live stage additionally requires a fresh exact-run approval.
+**Dependency:** existing deterministic Gate, single-judge contract, strike orchestrator, and reviewed house Brief fallback.
 
 **Acceptance Criteria:**
 
-**Given** a locally valid Candidate and immutable Evidence
+**Given** a newly generated Candidate
 **When** the Gate evaluates it
-**Then** deterministic code owns schemas, linkage, grounding/privacy/number provenance, required preservation fields, exact declared references, banned phrases, SpecialistResult validation, and final conjunction
-**And** coherence owns Gates 1/2/8, fit owns Gates 3/4/5/6, and quality owns Gate 7/Gate 9/non-token tone/qualitative claims/invitation pressure
-**And** the first non-pass, unknown, contradiction, malformed pointer, provider failure, or timeout rejects without invoking later specialists.
+**Then** all existing deterministic schema, linkage, privacy, grounding, reference, number-provenance, and prohibited-token checks run first
+**And** deterministic rejection invokes no judge.
 
-**Given** a specialist invocation
-**When** its closed result returns
-**Then** it contains exactly its assigned checks, exact `candidate_ref`, `pass|reject|unknown`, non-empty reasons, and at least one canonical allowed RFC 6901 pointer across Candidate/Evidence/GroundingReport per check
-**And** pointers use named immutable roots, canonical escaping/indexing, existing non-empty targets, uniqueness after decoded-token normalization, and check-specific prefix allowlists; absence-based passes cite every complete Candidate field assessed
-**And** it emits no overall Candidate verdict and detailed findings remain internal.
+**Given** a Candidate that passes deterministic checks
+**When** semantic quality is evaluated
+**Then** exactly one candidate-bound quality-judge call returns the existing closed verdict contract
+**And** pass accepts the Candidate while reject, unknown, malformed output, provider failure, or timeout rejects it without retry.
 
-**Given** qualified primary/fallback candidates for each specialist
-**When** runtime selects configurations
-**Then** selection is independent per specialist, freezes all three choices before coherence from one availability/circuit snapshot, and chooses only configurations with both current structural and exact-zero-mismatch semantic GO
-**And** an invoked failure never re-judges the same Candidate or creates a fourth semantic call.
+**Given** a rejected Candidate or exhausted attempt budget
+**When** the request completes
+**Then** the existing reviewed house Brief fallback is used without judging the fallback.
 
-**Given** the twelve-call ledger and one hard route deadline
-**When** an attempt is admitted
-**Then** one generation and three specialist slots reserve atomically; only never-invoked downstream slots release
-**And** `E=0` permits at most three Candidates, `E=1` at most two, and insufficient capacity/time serves the approved house path.
+**Given** a cached or previously saved Spark
+**When** it is served
+**Then** it is not generated or judged again.
 
-**Given** offline fixtures and separately approved live qualification plans
-**When** structural and semantic verification run
-**Then** each specialist/configuration qualifies independently, semantic qualification exhaustively runs all applicable specialists despite production short-circuiting, and every approved golden and deliberate negative/control matches exactly
-**And** only three current specialist role refs produce one `JudgePipelineQualificationSet`/`judge_ref`, and only exact zero-mismatch evidence produces its combined `semantic_ref`.
-
-**Given** architecture approval alone
-**When** Story 1.18.2 begins
-**Then** offline contract, pipeline, adversarial tests, and unapproved exact-plan disclosures may be prepared
-**And** no provider call, deployment, activation, model/provider substitution, or remote mutation is authorized.
+**Given** this course correction
+**When** Story 1.18.2 is implemented
+**Then** the three-specialist waterfall, specialist qualification machinery, and twelve-call/four-slot reservation design are removed from active architecture and code
+**And** no provider call, deployment, activation, push, merge, or remote mutation is authorized by the offline implementation work.
 
 ### Story 1.19: Local Full-Request Qualification
 
