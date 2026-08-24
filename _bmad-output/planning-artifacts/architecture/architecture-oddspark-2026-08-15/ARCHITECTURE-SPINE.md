@@ -37,6 +37,8 @@ The active Candidate path is intentionally direct:
 
 Cached or already saved Sparks and house fallbacks are never judged again. There is no coherence/fit/quality waterfall, judge retry, specialist qualification system, or twelve-call/four-slot reservation system. The existing broad `CanonicalVerdict` contract is retained as the single lightweight judge port until a later deliberately scoped replacement is approved. Normal fail-closed result validation, provider-error handling, timeout handling, and model-call accounting remain required.
 
+**Activation authority under this override (sprint-change-proposal-2026-08-24-4, Justin 2026-08-24):** `ProductionActivationManifest` v2 binds `generation_ref` (structural), `judge_ref` (structural role ref of the single quality judge), `house_catalog_ref`, and per-mode full-request refs; hash domain `oddspark-production-activation/v2`. No semantic ref exists or is required. `ActivationRecord.kind` is exactly one of `activation_manifest|source_identity|runtime_identity|generation_role|judge_role|qualification_report|full_request|evidence_role|house_catalog|receiver|receipt_claim`. The `DeadlineAuthorityManifest`, twelve-token ledger, specialist expectation/semantic/composite manifests, and specialist record kinds in AD-9 and AD-11 below are superseded historical context. The orchestrator's existing bounded attempts, owner-approved route ceiling, and commit reserve remain; Story 1.19 measures the direct path and emits the local full-request ref.
+
 ## Design Paradigm
 
 **Pipes-and-filters, single orchestrator.** The generator is a pipeline of typed, runtime-neutral ES-module stages assembled behind the single public Worker entrypoint. Stages are single-pass: each consumes only the previous stage's output and returns a typed value. The retry loop lives in exactly one place — the strike orchestrator at the existing `buildSpark` / `buildDomainSpark` call sites.
@@ -192,7 +194,7 @@ flowchart LR
 | Naming | KV keys keep prefix namespacing (`w:`, `pw:`, `profile:`, `n:`, new `m:`); persisted artifacts carry integer `version` + provenance; Brief ids stay `seed[0:8]` / `p-<hash[0:16]>`. [ADOPTED] |
 | Data & formats | Failure outcomes follow the precedence table below; AD-12 selects JSON or shell HTML without changing the outcome. No path renders uncommitted generated output, raw model text, or the legacy seed. [ADOPTED] |
 | State & mutation | All cross-request coordination via COORD transactions (claim/commit/profile/slot); DO access only through thin `coordPost`/`meterStub` helpers; side effects best-effort with justified try/catch. [ADOPTED] |
-| Verification | Pipeline stages and the Brief schema stay Node-importable pure functions. Deterministic transport and UX fixtures remain offline. Current judge proof has four separate tiers: deterministic ownership/pointer/aggregator fixtures; independently approved structural qualification for coherence, fit, and quality; Story 1.18.2 exhaustive zero-mismatch combined semantic qualification; and Story 1.19 full-waterfall latency/cost/selection/ledger/deadline evidence. Stories 1.18/1.18.1 broad-judge results remain failed history only. Story 1.2 toolchain/runtime validation precedes live stages; later runtime-bound change invalidates affected evidence transitively. Exact identities bind every retained result; credentialed live tests require fresh approval and never run in CI. |
+| Verification | Pipeline stages and the Brief schema stay Node-importable pure functions. Deterministic transport and UX fixtures remain offline. Current judge proof has three tiers: deterministic Gate fixtures; independently approved structural qualification for generation and the single quality judge; and Story 1.19 direct-path full-request latency/cost/attempt/commit evidence. Stories 1.18/1.18.1 broad-judge results remain failed history only. Story 1.2 toolchain/runtime validation precedes live stages; later runtime-bound change invalidates affected evidence transitively. Exact identities bind every retained result; credentialed live tests require fresh approval and never run in CI. |
 | Story status | A mixed story remains `in-progress` until all required slices pass. A completed `SAFE` slice is retained evidence, not authority to mark `review`/`done`; `NO-GO`, missing approval, and blocked release work remain explicit despite green offline tests. |
 | Mode and cache | Clear domain evidence → domain Brief under domain request scope. Domain downgrade → local Brief plus notice, still under domain request scope. Local request → local Brief under global window scope. Exhaustion → house Brief under the original request scope. Request scope owns claim/cache identity and AD-12 redirect/permalink eligibility; effective mode owns rendering. Dynamic HTTP responses are `no-store`; COORD remains authority and KV remains a projection. |
 | Terminal outcomes | The failure-precedence table below is authoritative over generic error/degradation wording elsewhere in this document; AD-12 changes representation, never status or precedence. |
@@ -222,7 +224,7 @@ The house path is therefore graceful only while the authoritative coordinator ca
 | Generation and specialist candidate — primary | `@cf/meta/llama-3.3-70b-instruct-fp8-fast`; generation and each of coherence/fit/quality qualify and select independently |
 | Generation and specialist candidate — fallback | `@cf/meta/llama-3.1-8b-instruct-fast`; generation and each specialist qualify and select independently |
 | Evidence-provider candidate pair | Unset until Story 2.3 freezes it and Justin separately approves the exact run plan |
-| Production judge pipeline | Disabled until all three specialist structural roles, combined semantic authority, and full-waterfall evidence are current |
+| Production judge pipeline | Disabled until the judge structural role and local full-request evidence are current |
 | Workers KV | `SPARKS` namespace (existing id) |
 | Durable Objects (SQLite) | `NeuronMeter` (v1), `SparkCoordinator` (v2) |
 | wrangler | 4.123.0 (reviewed runtime baseline; must be re-frozen before the new qualification cycle) |
@@ -254,7 +256,7 @@ src/pipeline/
 | --- | --- | --- |
 | CAP-1 Coherent Local Mode | Evidence (local priors) + Generate | AD-1, AD-3, AD-6 |
 | CAP-2 Website-Grounded Mode | Evidence (scan bundle) + independently qualified EvidenceProvider + Generate | AD-4, AD-6, AD-11 |
-| CAP-3 Coherence gating | Gate + independently qualified coherence/fit/quality specialists + deterministic aggregator + orchestrator + house Briefs | AD-1, AD-2, AD-3, AD-9, AD-11 |
+| CAP-3 Coherence gating | Gate + one structurally qualified lightweight quality judge + orchestrator + house Briefs | AD-1, AD-2, AD-3, AD-9, AD-11 |
 | CAP-4 Result card + CTA | Brief schema + Renderers + `/api/cheer` | AD-5, AD-7, AD-8, AD-10, AD-12 |
 | Progressive enhancement / representation parity | `/api/spark` negotiation + server page renderer + eligible local `/s/:id` | AD-6, AD-7, AD-12; governing UX D1, D1a, D2, D2a, D3–D24 |
 | Receipt / verifiability (FR-11) | Commit stage + COORD receipt + KV projections | AD-7 |
@@ -262,7 +264,7 @@ src/pipeline/
 
 ## Deferred
 
-- **Specialist prompts and semantic calibration** — Story 1.5's rubric/corpus remain frozen. Stories 1.18 and 1.18.1 are retained failed broad-judge history and cannot authorize runtime. Story 1.18.2 owns the three specialist contracts, independent structural qualification, exhaustive zero-mismatch semantic matrix, and composite pipeline authority.
+- **Specialist prompts and semantic calibration** — Story 1.5's rubric/corpus remain frozen. Stories 1.18 and 1.18.1 are retained failed broad-judge history and cannot authorize runtime. Story 1.18.2 owns only the direct single-judge contract; no semantic qualification authority is required (2026-08-24 override).
 - **Workers AI post-review qualification** — the gpt-oss generation and judge results remain `NO-GO`. The completed 2026-08-19 owner MVP review selected the AD-11 Llama primary/fallback pair because current Workers AI documentation lists both for JSON Mode while warning that schema compliance is not guaranteed. The runtime configuration still names the prior gpt-oss candidates until a separately reviewed offline adapter/config change binds the selected Llama IDs; architecture selection alone does not mutate configuration. Fresh generation and judge plans, cost caps, and execution approvals remain deferred to their governed story workflows. Any required-role `NO-GO` returns here for an explicit provider decision; it does not open another Workers AI model bakeoff.
 - **Launch readiness gate** — the voice rubric + ≥3 golden Briefs per mode (PRD FR-5) must exist before the pipeline ships; judge calibration depends on them.
 - **House Brief catalog** — content authored with the golden Briefs; spine fixes only that it exists, is versioned, and is gate-passing by construction.

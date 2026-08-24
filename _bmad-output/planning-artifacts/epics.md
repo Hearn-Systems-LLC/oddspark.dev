@@ -64,8 +64,8 @@ From the architecture spine (AD-1..AD-13), solution design, governing UX Decisio
 - Atomic aggregate `briefs_served`, `house_briefs_served`, and `invitation_acted` events through COORD plus `POST /api/cheer`; served events occur only after authoritative receipt resolution/commit, so 400/502 responses enter neither denominator. SM-1 is an explicitly approximate, non-deduplicated event rate that may be skewed by repeat actions—not a person/render percentage. No per-visitor analytics keys beyond the abuse carve-out. SM-2 and SM-3 retain manual measurement authorities.
 - Robots.txt check added to the scanner.
 - Twelve-call four-slot reservation state machine and route-entry deadline through authoritative commit; only uninvoked downstream reservations release, invoked calls remain consumed, and specialist fallback selection occurs only before invocation.
-- Closed hash-bound qualification manifests plus one atomic production activation manifest for generation/specialist-pipeline structural identity, combined semantic identity, and full-waterfall evidence; runtime mismatch disables the affected mode or shared model pipeline.
-- Four current verification tiers: deterministic ownership/pointer/aggregator fixtures; independent coherence/fit/quality structural qualification; Story 1.18.2 exhaustive combined semantic calibration; Story 1.19 full-waterfall latency/cost/selection/ledger/deadline evidence. Live metered runs require fresh approval and never run in CI.
+- Closed hash-bound qualification manifests plus one atomic production activation manifest (v2) for generation and single-judge structural identity, house catalog, and per-mode full-request evidence; runtime mismatch disables the affected mode or shared model pipeline. (2026-08-24 override: no semantic ref.)
+- Three current verification tiers: deterministic Gate fixtures; independent structural qualification for generation and the single quality judge; Story 1.19 direct-path full-request latency/cost/attempt/commit evidence. Live metered runs require fresh approval and never run in CI.
 - Model-assisted domain Evidence uses a separately qualified `EvidenceProvider`; primary/fallback configurations qualify independently in Story 2.3 and consume `E=1`. Evidence qualification never borrows generation or judge evidence.
 - Preserve the legacy Story 1.2 v1 `NO-GO` through new Story 1.3; permit at most one separately approved evidence-v2 recovery matrix in Story 1.4. A second `NO-GO` triggers MVP review, not another provider bakeoff.
 - Offline development has no callable AI binding; approval-bound live spikes use isolated nonproduction configuration and never production KV/DO/routes/assets/persistent Worker names.
@@ -90,7 +90,7 @@ The governing UX Decision Record (`ux-decision-record-oddspark.md`, 2026-08-17) 
 - FR1: Epic 1 — coherent local generation
 - FR2: Epic 2 — website-grounded generation
 - FR3: Epic 1 — composite local/semantic Gate, structural qualification, and calibrated semantic judge
-- FR4: Epic 1 — twelve-call complete-attempt orchestration, independently qualified specialist fallbacks, deadline, and house Brief
+- FR4: Epic 1 — bounded-attempt orchestration with one quality judge per attempt, route ceiling, and house Brief
 - FR5: Epic 1 — contract-complete rendering
 - FR6: Epic 1 — local structural claim discipline plus semantic judgment
 - FR7: Epic 1 — spark-specific invitation rendering; Epic 4 — measured, reference-bearing Hearn handoff
@@ -804,24 +804,24 @@ So that weak Candidates are filtered without turning every Spark into a costly m
 ### Story 1.19: Local Full-Request Qualification
 
 As an operator,
-I want end-to-end local full-waterfall latency, cost, selection, ledger, deadline, and commit evidence,
+I want end-to-end local latency, cost, attempt, and commit evidence for the direct pipeline,
 So that the qualified pieces are proven together through authoritative commit.
 
 **Requirements:** FR1; FR3–FR7; FR11; NFR2; NFR4; NFR5
 
-**Dependency:** Stories 1.11–1.18 and Story 1.18.2; exact live authority is additionally required.
+**Dependency:** Stories 1.11–1.17, 1.18.2, 1.23; current generation and judge structural refs; exact live authority is additionally required. (Rescoped by sprint-change-proposal-2026-08-24-4.)
 
 **Acceptance Criteria:**
 
-**Given** matching generation, three-specialist pipeline, combined semantic, and authoritative commit refs plus an owner-approved finite route ceiling
+**Given** current generation and judge structural refs, the house catalog ref, and an owner-approved finite route ceiling
 **When** a frozen live plan is approved and run
-**Then** the full local request exercises Evidence through render
-**And** all three pre-call selections, slot reservations/transitions/releases, no same-Candidate switch, per-stage latency/timeouts, commit reserve, route ceiling, attempts, candidate binding, receipt identity, usage, cost, and hashes are retained
-**And** no retry, replacement, CI call, or deployment occurs.
+**Then** the full local request exercises Evidence through render on the direct path (one generation call, deterministic checks, at most one judge call per attempt, bounded attempts, house fallback on exhaustion)
+**And** per-stage latency/timeouts, attempt count, judge-call count, candidate binding, commit reserve, route ceiling, receipt identity, usage, cost, and hashes are retained
+**And** no retry outside the bounded orchestrator, replacement, CI call, or deployment occurs.
 
 **Given** verified results
-**When** FULL-WATERFALL is derived
-**Then** every frozen correctness, selection, twelve-call ledger, deadline/commit-reserve, cost, provenance, specialist/composite-integrity, and authoritative-commit predicate passes
+**When** LOCAL-FULL-REQUEST is derived
+**Then** every frozen correctness, attempt/judge-call accounting, deadline/commit-reserve, cost, provenance, and authoritative-commit predicate passes
 **And** failure preserves evidence and blocks activation.
 
 ### Story 1.20: Atomic Activation Contract and Release Decision View
@@ -832,13 +832,13 @@ So that partial configuration cannot activate an unproven pipeline.
 
 **Requirements:** FR11; AD-11
 
-**Dependency:** Stories 1.14, 1.17–1.19, and Story 1.18.2.
+**Dependency:** Stories 1.14, 1.17, 1.18.2, and 1.19.
 
 **Acceptance Criteria:**
 
-**Given** qualification, full-request, catalog, receiver, and claim refs
+**Given** generation structural, judge structural, full-request, catalog, receiver, and claim refs
 **When** ProductionActivationManifest validation runs
-**Then** shared generation/judge/semantic refs appear once
+**Then** shared generation and judge refs appear once
 **And** local/domain contain only enablement and mode-specific refs
 **And** unknown fields, invalid nullability, stale evidence, parallel refs, and partial updates reject
 **And** activation_ref is derived from the sole canonical value.
@@ -1002,7 +1002,7 @@ So that production can verify the deployable artifact before any new write path 
 
 **Acceptance Criteria:**
 
-**Given** the deployed reader and current judge-pipeline, STRUCT-GENERATION, combined SEMANTIC, local FULL-WATERFALL, and house-catalog refs
+**Given** the deployed reader and current STRUCT-GENERATION, judge structural, local LOCAL-FULL-REQUEST, and house-catalog refs
 **When** deployment preflight runs
 **Then** every applicable gate in the Story 1.20 release-decision view is pass
 **And** the candidate Worker bundle contains exactly the Story 1.23 canonical module graph with no duplicate writer or drifted runtime module
@@ -1035,7 +1035,7 @@ So that visitors receive committed gate-passed local Briefs without coupling act
 
 **Acceptance Criteria:**
 
-**Given** Story 1.25's inactive writer and current judge-pipeline, STRUCT-GENERATION, combined SEMANTIC, local FULL-WATERFALL, and house-catalog refs
+**Given** Story 1.25's inactive writer and current STRUCT-GENERATION, judge structural, local LOCAL-FULL-REQUEST, and house-catalog refs
 **When** activation preflight runs
 **Then** every applicable local gate in the Story 1.20 release-decision view is pass
 **And** the exact replacement value is frozen without changing deployment state.
@@ -1044,7 +1044,7 @@ So that visitors receive committed gate-passed local Briefs without coupling act
 **When** the whole ProductionActivationManifest is replaced atomically
 **Then** `local.enabled=true` and `domain.enabled=false`
 **And** domain refs, `receiver_ref`, and `receipt_claim_ref` are null
-**And** shared generation, judge, and semantic refs appear exactly once.
+**And** shared generation and judge refs appear exactly once.
 
 **Given** a domain request in this phase
 **When** it runs
