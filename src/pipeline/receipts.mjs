@@ -1,4 +1,5 @@
 import { ARTIFACT_VERSION, buildCommittedBrief } from "./contracts.mjs";
+import { localArtifactExpiresAt } from "./retention.mjs";
 
 // The one shared legacy-kind set (Story 1.24): the classification seam, the
 // legacy presentation module, and the Worker's read-path routing all source
@@ -131,14 +132,23 @@ export function validateCommitPayload(input) {
 }
 
 export function parseReceipt(input, expectedScope) {
-  if (!keysAre(input, ["status", "scope", "artifact", "artifact_kind", "committed_at"]) || input.status !== "committed") return null;
+  if (!plain(input) || input.status !== "committed") return null;
   const scope = parseRequestScope(input.scope);
+  if (!scope) return null;
+  const required = ["status", "scope", "artifact", "artifact_kind", "committed_at"];
+  if (!keysAre(input, required, scope.kind === "local" ? ["expires_at"] : [])) return null;
   const expected = expectedScope === undefined ? scope : parseRequestScope(expectedScope);
   const artifact = classifyCompatibleArtifact(input.artifact);
-  if (!scope || !expected || canonicalScopeKey(scope) !== canonicalScopeKey(expected) || artifact.status !== "supported"
+  if (!expected || canonicalScopeKey(scope) !== canonicalScopeKey(expected) || artifact.status !== "supported"
       || artifact.kind !== input.artifact_kind || !nonnegativeSafeInteger(input.committed_at)) return null;
+  let expiresAt;
+  if (scope.kind === "local") {
+    try { expiresAt = localArtifactExpiresAt(input.committed_at); } catch { return null; }
+    if (input.expires_at !== undefined && (!nonnegativeSafeInteger(input.expires_at) || input.expires_at !== expiresAt)) return null;
+  }
   if (!artifactMatchesScope(artifact.value, artifact.kind, scope)) return null;
-  return defensiveFreeze({ status: "committed", scope, artifact: artifact.value, artifact_kind: artifact.kind, committed_at: input.committed_at });
+  return defensiveFreeze({ status: "committed", scope, artifact: artifact.value, artifact_kind: artifact.kind,
+    committed_at: input.committed_at, ...(scope.kind === "local" ? { expires_at: expiresAt } : {}) });
 }
 
 export const parseCommittedReceipt = parseReceipt;

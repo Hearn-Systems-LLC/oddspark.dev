@@ -28,7 +28,16 @@ import {
   JUDGE_RESPONSE_FORMAT,
   productionPipelineEnv,
 } from "./src/pipeline/production-ports.mjs";
-import { DOMAIN_RESULT_TTL_MS, LOCAL_RETENTION_MS, domainArtifactReadable, localArtifactLive } from "./src/pipeline/retention.mjs";
+import {
+  ABUSE_SLOT_RETENTION_MS,
+  DOMAIN_RESULT_TTL_MS,
+  LOCAL_RETENTION_MS,
+  NEURON_RECEIPT_RETENTION_MS,
+  PROFILE_RETENTION_MS,
+  absoluteKvExpiration,
+  domainArtifactReadable,
+  localArtifactLive,
+} from "./src/pipeline/retention.mjs";
 import { computeAssemblyIdentity } from "./src/pipeline/identity.mjs";
 import { classifyCompatibleArtifact } from "./src/pipeline/receipts.mjs";
 import {
@@ -123,7 +132,9 @@ function createNetwork(options = {}) {
 
 function createStorage(initial = []) {
   const map = new Map(initial);
-  const api = {
+  let alarm = null;
+  const alarmCalls = [];
+  const transactionApi = {
     async get(key) {
       return map.get(key);
     },
@@ -133,13 +144,25 @@ function createStorage(initial = []) {
     async delete(key) {
       map.delete(key);
     },
+    async list({ prefix } = {}) {
+      return new Map([...map].filter(([key]) => !prefix || key.startsWith(prefix)));
+    },
+  };
+  const storageApi = {
+    ...transactionApi,
+    async getAlarm() { alarmCalls.push(["get"]); return alarm; },
+    async setAlarm(value) { alarmCalls.push(["set", value]); alarm = value; },
+    async deleteAlarm() { alarmCalls.push(["delete"]); alarm = null; },
   };
   let queue = Promise.resolve();
   return {
     map,
-    ...api,
+    alarmCalls,
+    get alarm() { return alarm; },
+    consumeAlarm() { alarm = null; },
+    ...storageApi,
     transaction(fn) {
-      const running = queue.then(() => fn(api));
+      const running = queue.then(() => fn(transactionApi));
       queue = running.catch(() => {});
       return running;
     },
@@ -148,6 +171,7 @@ function createStorage(initial = []) {
 
 function createEnvironment(options = {}) {
   const kv = new Map();
+  const kvExpirations = new Map();
   const kvPuts = [];
   const meterPosts = [];
   const meterPostAttempts = [];
@@ -160,6 +184,8 @@ function createEnvironment(options = {}) {
   const env = {
     SPARKS: {
       async get(key, readOptions) {
+        const expiry = kvExpirations.get(key);
+        if (expiry !== undefined && Date.now() >= expiry) { kv.delete(key); kvExpirations.delete(key); }
         const value = kv.get(key);
         if (value === undefined) return null;
         return readOptions && readOptions.type === "json" ? JSON.parse(value) : value;
@@ -170,9 +196,16 @@ function createEnvironment(options = {}) {
           if (options.neuronReceiptDown) throw new Error("neuron receipt unavailable");
         }
         kv.set(key, String(value));
+        if (putOptions?.expiration !== undefined) kvExpirations.set(key, putOptions.expiration * 1000);
+        else if (putOptions?.expirationTtl !== undefined) kvExpirations.set(key, Date.now() + putOptions.expirationTtl * 1000);
+        else kvExpirations.delete(key);
         kvPuts.push({ key, value: String(value), options: putOptions || null });
       },
       async list({ prefix }) {
+        for (const key of [...kv.keys()]) {
+          const expiry = kvExpirations.get(key);
+          if (expiry !== undefined && Date.now() >= expiry) { kv.delete(key); kvExpirations.delete(key); }
+        }
         return { keys: [...kv.keys()].filter((key) => key.startsWith(prefix)).map((name) => ({ name })), cursor: "", list_complete: true };
       },
     },
@@ -285,7 +318,7 @@ function createEnvironment(options = {}) {
     env.PIPELINE_JUDGE_PROVIDER = options.pipeline.judge ?? fixture.judgeProvider;
   }
 
-  return { env, kv, kvPuts, meterPosts, meterPostAttempts, neuronReceiptAttempts, meterState, aiCalls, coordStorage };
+  return { env, kv, kvExpirations, kvPuts, meterPosts, meterPostAttempts, neuronReceiptAttempts, meterState, aiCalls, coordStorage, coordinator };
 }
 
 /* ------------------------------------------------------------------ *
@@ -1097,7 +1130,7 @@ await test("personalization is grounded, deterministic, metered, permanent, and 
   ].join("|");
   assert.equal(spark.id, "p-" + (await sha256(personalizedPreimage)).slice(0, 16));
   const profilePut = h.kvPuts.find((put) => put.key === "profile:acmebakery.com");
-  assert.equal(profilePut.options.expirationTtl, 86400);
+  assert.equal(profilePut.options.expiration, Math.floor(h.coordStorage.map.get("profile:acmebakery.com").expires_at / 1000));
   assert.equal(h.kv.get("pw:" + spark.window.round + ":acmebakery.com"), spark.id);
   assert.equal(JSON.parse(h.kv.get(spark.id)).id, spark.id);
   assert.deepEqual(h.aiCalls.map((call) => call.kind), ["inference", "personalized"]);
@@ -1759,7 +1792,7 @@ await test("1.24 committed house and legacy normal serves split the served metri
     brief_schema_version: 1, policy_identity: "e".repeat(64), rubric_identity: "e".repeat(64),
     provenance: { attempt_id: "attempt-124", candidate_ref: deriveCandidateRef(CANDIDATE_SCHEMA_VERSION, houseBrief), evidence_ref: "e".repeat(64), grounding_report_version: 1, effective_mode: "local" },
   });
-  h.kv.set("committed-house-124", JSON.stringify(house));
+  await seedArtifact(h, { kind: "local", round: ROUND + 1 }, house);
 
   assert.equal((await worker.fetch(new Request("https://oddspark.dev/s/0a1b2c3d", { headers: { accept: "text/html" } }), h.env)).status, 200);
   const housePage = await worker.fetch(new Request("https://oddspark.dev/s/committed-house-124", { headers: { accept: "text/html" } }), h.env);
@@ -2187,6 +2220,353 @@ await test("retention expiry predicates pin the 30-day local and one-hour domain
   assert.equal(domainArtifactReadable(t0, t0 + DOMAIN_RESULT_TTL_MS), false);
   assert.throws(() => localArtifactLive(t0, Number.NaN), TypeError);
   assert.throws(() => domainArtifactReadable(-1, t0), TypeError);
+  assert.equal(absoluteKvExpiration(t0 + 60_123, t0), Math.floor((t0 + 60_123) / 1000));
+  assert.equal(absoluteKvExpiration(t0 + 60_123, t0 + 123), null, "provider minimum and whole-second expiry never extend authority");
+});
+
+await test("1.21 both public reads independently honor the exact receipt boundary without repair or metrics", async () => {
+  createNetwork();
+  const h = createEnvironment();
+  const originalNow = Date.now;
+  const t0 = 1_800_000_000_123;
+  try {
+    Date.now = () => t0;
+    const committed = await strike(h.env, undefined);
+    const id = committed.body.id;
+    const receipt = h.coordStorage.map.get("receipt:local:" + committed.body.window.round);
+    assert.equal(receipt.expires_at - receipt.committed_at, LOCAL_RETENTION_MS);
+    const expiration = Math.floor(receipt.expires_at / 1000);
+    assert.equal(h.kvPuts.findLast((put) => put.key === id).options.expiration, expiration);
+    assert.equal(h.kvPuts.findLast((put) => put.key === "w:" + committed.body.window.round).options.expiration, expiration);
+    const idempotent = await h.coordinator.fetch(new Request("https://coord/commit", {
+      method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ scope: receipt.scope, owner: "different-owner", artifact: receipt.artifact }),
+    }));
+    const repeatedReceipt = await idempotent.json();
+    assert.equal(repeatedReceipt.committed_at, receipt.committed_at);
+    assert.equal(repeatedReceipt.expires_at, receipt.expires_at);
+
+    for (const elapsed of [24 * 60 * 60 * 1000, 2 * 24 * 60 * 60 * 1000]) {
+      Date.now = () => t0 + elapsed;
+      h.kv.delete(id); h.kv.delete("w:" + committed.body.window.round);
+      assert.equal((await worker.fetch(new Request("https://oddspark.dev/api/spark/" + id), h.env)).status, 200);
+      assert.equal(h.kvPuts.findLast((put) => put.key === id).options.expiration, expiration);
+      assert.equal(h.kvPuts.findLast((put) => put.key === "w:" + committed.body.window.round).options.expiration, expiration);
+    }
+
+    Date.now = () => receipt.expires_at - 1;
+    h.kv.delete(id); h.kv.delete("w:" + committed.body.window.round);
+    const putsBefore = h.kvPuts.length;
+    assert.equal((await worker.fetch(new Request("https://oddspark.dev/api/spark/" + id), h.env)).status, 200);
+    assert.equal((await worker.fetch(new Request("https://oddspark.dev/s/" + id, { headers: { accept: "text/html" } }), h.env)).status, 200);
+    assert.equal(h.kvPuts.length, putsBefore, "sub-second authority remains live without extending KV");
+    const metrics = h.coordStorage.map.get("metric:briefs_served");
+
+    Date.now = () => receipt.expires_at;
+    const api = await worker.fetch(new Request("https://oddspark.dev/api/spark/" + id), h.env);
+    assert.equal(api.status, 404); assert.deepEqual(await api.json(), { error: "no spark with that id" });
+    const permalink = await worker.fetch(new Request("https://oddspark.dev/s/" + id, { headers: { accept: "text/html" } }), h.env);
+    assert.equal(permalink.status, 404); assert.match(await permalink.text(), /no longer available/);
+    assert.equal(h.coordStorage.map.get("metric:briefs_served"), metrics);
+    assert.equal(h.kvPuts.length, putsBefore);
+  } finally { Date.now = originalNow; }
+});
+
+await test("1.21 API and permalink boundaries each use independently seeded authority", async () => {
+  const originalNow = Date.now;
+  const t0 = 1_800_050_000_000;
+  try {
+    for (const surface of ["api", "permalink"]) {
+      createNetwork();
+      const h = createEnvironment();
+      Date.now = () => t0;
+      await seedArtifact(h, { kind: "local", round: ROUND }, LEGACY_LOCAL_FIXTURE);
+      h.kv.set(LEGACY_LOCAL_FIXTURE.id, JSON.stringify(LEGACY_LOCAL_FIXTURE));
+      const authority = h.coordStorage.map.get("receipt:local:" + ROUND);
+      Date.now = () => authority.expires_at - 1;
+      const url = surface === "api" ? `https://oddspark.dev/api/spark/${LEGACY_LOCAL_FIXTURE.id}` : `https://oddspark.dev/s/${LEGACY_LOCAL_FIXTURE.id}`;
+      const init = surface === "api" ? undefined : { headers: { accept: "text/html" } };
+      assert.equal((await worker.fetch(new Request(url, init), h.env)).status, 200, `${surface} is live immediately before its own boundary`);
+      const metrics = h.coordStorage.map.get("metric:briefs_served");
+      Date.now = () => authority.expires_at;
+      assert.equal((await worker.fetch(new Request(url, init), h.env)).status, 404, `${surface} expires at its own exact boundary`);
+      assert.equal(h.coordStorage.map.get("metric:briefs_served"), metrics);
+    }
+  } finally { Date.now = originalNow; }
+});
+
+await test("1.21 alarms physically clean abandoned local, profile, abuse, and scoped-claim records and reschedule", async () => {
+  createNetwork();
+  const h = createEnvironment();
+  const originalNow = Date.now;
+  const t0 = 1_800_100_000_000;
+  const post = (path, body) => h.coordinator.fetch(new Request("https://coord" + path, {
+    method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body),
+  }));
+  try {
+    Date.now = () => t0;
+    const local = await strike(h.env, undefined);
+    const localKey = "receipt:local:" + local.body.window.round;
+    await post("/profile", { domain: "profile.example", profile: {
+      version: 1, domain: "profile.example", scanned_urls: ["https://profile.example/"], vertical: "test",
+      clarity: "clear", observation: { url: "https://profile.example/", text: "Profile observation." },
+      scan_time: "2026-08-24T00:00:00.000Z", profile_hash: "a".repeat(64),
+    } });
+    await post("/slot", { visitorKey: "visitor", domain: "slot.example" });
+    const claimScope = { kind: "local", round: local.body.window.round + 1 };
+    await post("/claim", { scope: claimScope, owner: "claim-owner" });
+    assert.equal(h.coordStorage.alarm, t0 + 20_000);
+
+    Date.now = () => t0 + 20_000;
+    h.coordStorage.consumeAlarm(); await h.coordinator.alarm();
+    assert.equal(h.coordStorage.map.has("receipt:local:" + claimScope.round), false);
+    assert.equal(h.coordStorage.map.has(localKey), true);
+    assert.equal(h.coordStorage.alarm, t0 + ABUSE_SLOT_RETENTION_MS);
+
+    Date.now = () => t0 + ABUSE_SLOT_RETENTION_MS;
+    h.coordStorage.consumeAlarm(); await h.coordinator.alarm();
+    assert.equal(h.coordStorage.map.has("vis:visitor"), false);
+    assert.equal(h.coordStorage.alarm, t0 + PROFILE_RETENTION_MS);
+
+    Date.now = () => t0 + PROFILE_RETENTION_MS;
+    h.coordStorage.consumeAlarm(); await h.coordinator.alarm();
+    assert.equal(h.coordStorage.map.has("profile:profile.example"), false);
+    assert.equal(h.coordStorage.alarm, t0 + LOCAL_RETENTION_MS);
+
+    Date.now = () => t0 + LOCAL_RETENTION_MS;
+    h.coordStorage.consumeAlarm(); await h.coordinator.alarm();
+    assert.equal(h.coordStorage.map.has(localKey), false);
+    assert.equal(h.coordStorage.map.has("artifact:" + local.body.id), false);
+    assert.equal(h.coordStorage.alarm, null);
+  } finally { Date.now = originalNow; }
+});
+
+await test("1.21 alarm scheduling uses storage only and cannot move an earlier wakeup later", async () => {
+  const h = createEnvironment();
+  const originalNow = Date.now;
+  const t0 = 1_800_150_000_000;
+  const post = (path, body) => h.coordinator.fetch(new Request("https://coord" + path, {
+    method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body),
+  }));
+  try {
+    Date.now = () => t0;
+    await h.coordStorage.setAlarm(t0 + LOCAL_RETENTION_MS);
+    assert.equal((await post("/slot", { visitorKey: "alarm-visitor", domain: "alarm.example" })).status, 200);
+    assert.equal(h.coordStorage.alarm, t0 + ABUSE_SLOT_RETENTION_MS, "a newly indexed earlier boundary advances the wakeup");
+    const sets = h.coordStorage.alarmCalls.filter(([method]) => method === "set").length;
+    assert.equal((await post("/claim", { scope: { kind: "local", round: 999_999 }, owner: "alarm-owner" })).status, 200);
+    assert.equal(h.coordStorage.alarm, t0 + 20_000, "the claim's earlier boundary advances the wakeup again");
+    const earliest = h.coordStorage.alarm;
+    assert.equal((await post("/slot", { visitorKey: "later-visitor", domain: "later.example" })).status, 200);
+    assert.equal(h.coordStorage.alarm, earliest, "later indexing cannot postpone an earlier alarm");
+    assert.ok(h.coordStorage.alarmCalls.filter(([method]) => method === "set").length > sets);
+  } finally { Date.now = originalNow; }
+});
+
+await test("1.21 alarm cleanup contains overflowing abuse history and continues to later valid work", async () => {
+  const h = createEnvironment();
+  const originalNow = Date.now;
+  const t0 = 1_800_175_000_000;
+  const visitorKey = "overflow-visitor";
+  const validAt = t0 - ABUSE_SLOT_RETENTION_MS + 45_000;
+  try {
+    Date.now = () => t0;
+    h.coordStorage.map.set("vis:" + visitorKey, [
+      { domain: "overflow.example", at: Number.MAX_SAFE_INTEGER },
+      { domain: "bad domain", at: t0 },
+      { domain: "valid.example", at: validAt },
+    ]);
+    h.coordStorage.map.set(`expiry:${String(t0).padStart(16, "0")}:abuse:${encodeURIComponent(visitorKey)}`, {
+      family: "abuse", expires_at: t0, visitor_key: visitorKey,
+    });
+    const claimScope = { kind: "local", round: 888_888 };
+    h.coordStorage.map.set("receipt:local:" + claimScope.round, { status: "claimed", scope: claimScope, owner: "expired", lease_until: t0 });
+    h.coordStorage.map.set(`expiry:${String(t0).padStart(16, "0")}:claim:${encodeURIComponent(`local:${claimScope.round}|expired|${t0}`)}`, {
+      family: "claim", expires_at: t0, scope_key: "local:" + claimScope.round, owner: "expired", lease_until: t0,
+    });
+    h.coordStorage.consumeAlarm(); await h.coordinator.alarm();
+    assert.deepEqual(h.coordStorage.map.get("vis:" + visitorKey), [{ domain: "valid.example", at: validAt }]);
+    assert.equal(h.coordStorage.map.has("receipt:local:" + claimScope.round), false, "later cleanup continues after contained overflow");
+    assert.equal(h.coordStorage.alarm, validAt + ABUSE_SLOT_RETENTION_MS);
+  } finally { Date.now = originalNow; }
+});
+
+await test("1.21 alarm cleanup contains stale indexes, malformed receipts, and local/domain ID collisions", async () => {
+  createNetwork();
+  const h = createEnvironment();
+  const originalNow = Date.now;
+  const t0 = 1_800_200_000_000;
+  const post = (path, body) => h.coordinator.fetch(new Request("https://coord" + path, {
+    method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body),
+  }));
+  try {
+    Date.now = () => t0;
+    const local = await strike(h.env, undefined);
+    const localScope = { kind: "local", round: local.body.window.round };
+    const domainScope = { kind: "domain", round: local.body.window.round, domain: "collision.example" };
+    const domainArtifact = { ...comparableSpark(local.body), personalization: { version: 1, status: "unavailable", domain: domainScope.domain, warning: "Unavailable." } };
+    await post("/claim", { scope: domainScope, owner: "domain-owner" });
+    await post("/commit", { scope: domainScope, owner: "domain-owner", artifact: domainArtifact });
+    assert.equal(h.coordStorage.map.get("artifact:" + local.body.id).status, "ambiguous");
+
+    const expiryKey = [...h.coordStorage.map.keys()].find((key) => key.includes(":local:") && key.startsWith("expiry:"));
+    const originalIndex = h.coordStorage.map.get(expiryKey);
+    h.coordStorage.map.set(expiryKey, { ...originalIndex, artifact_id: "wrong-id" });
+    Date.now = () => t0 + LOCAL_RETENTION_MS;
+    h.coordStorage.consumeAlarm(); await h.coordinator.alarm();
+    assert.equal(h.coordStorage.map.has("receipt:local:" + localScope.round), true, "stale index cannot delete authority");
+    assert.equal(h.coordStorage.map.has("receipt:domain:" + domainScope.round + ":" + domainScope.domain), true);
+    assert.equal(h.coordStorage.map.get("artifact:" + local.body.id).status, "ambiguous");
+
+    h.coordStorage.map.set(expiryKey, originalIndex);
+    await h.coordStorage.setAlarm(originalIndex.expires_at);
+    h.coordStorage.consumeAlarm(); await h.coordinator.alarm();
+    assert.equal(h.coordStorage.map.has("receipt:local:" + localScope.round), false);
+    assert.equal(h.coordStorage.map.has("receipt:domain:" + domainScope.round + ":" + domainScope.domain), true);
+    assert.equal(h.coordStorage.map.get("artifact:" + local.body.id).status, "ambiguous",
+      "local expiry cannot delete a cross-scope ambiguous ID index");
+    assert.equal((await worker.fetch(new Request("https://oddspark.dev/api/spark/" + local.body.id), h.env)).status, 502,
+      "the surviving cross-scope ambiguity cannot be converted into a local 404");
+    assert.equal((await worker.fetch(new Request("https://oddspark.dev/s/" + local.body.id), h.env)).status, 502);
+
+    const malformedScope = { kind: "local", round: localScope.round + 2 };
+    const cyclic = { status: "committed", scope: malformedScope }; cyclic.artifact = cyclic;
+    h.coordStorage.map.set("receipt:local:" + malformedScope.round, cyclic);
+    h.coordStorage.map.set("expiry:0001802792000000:local:malformed", {
+      family: "local", expires_at: t0 + LOCAL_RETENTION_MS, scope_key: "local:" + malformedScope.round,
+      artifact_id: "malformed", committed_at: t0,
+    });
+    h.coordStorage.consumeAlarm(); await h.coordinator.alarm();
+    assert.equal(h.coordStorage.map.get("receipt:local:" + malformedScope.round), cyclic);
+  } finally { Date.now = originalNow; }
+});
+
+await test("1.21 supported legacy local receipts migrate from committed time only and expire without KV revival", async () => {
+  createNetwork();
+  const h = createEnvironment();
+  const originalNow = Date.now;
+  const committedAt = 1_800_300_000_000;
+  const scope = { kind: "local", round: LEGACY_LOCAL_FIXTURE.window.round };
+  const legacyReceipt = { status: "committed", scope, artifact: LEGACY_LOCAL_FIXTURE, artifact_kind: "legacy_local", committed_at: committedAt };
+  h.coordStorage.map.set("receipt:local:" + scope.round, structuredClone(legacyReceipt));
+  h.coordStorage.map.set("artifact:" + LEGACY_LOCAL_FIXTURE.id, structuredClone(legacyReceipt));
+  h.kv.set(LEGACY_LOCAL_FIXTURE.id, JSON.stringify(LEGACY_LOCAL_FIXTURE));
+  try {
+    Date.now = () => committedAt + LOCAL_RETENTION_MS - 1;
+    assert.equal((await worker.fetch(new Request("https://oddspark.dev/api/spark/" + LEGACY_LOCAL_FIXTURE.id), h.env)).status, 200);
+    const migrated = h.coordStorage.map.get("receipt:local:" + scope.round);
+    assert.equal(migrated.expires_at, committedAt + LOCAL_RETENTION_MS);
+    assert.equal(h.coordStorage.map.get("artifact:" + LEGACY_LOCAL_FIXTURE.id).expires_at, migrated.expires_at);
+
+    Date.now = () => migrated.expires_at;
+    assert.equal((await worker.fetch(new Request("https://oddspark.dev/api/spark/" + LEGACY_LOCAL_FIXTURE.id), h.env)).status, 404);
+    assert.equal((await worker.fetch(new Request("https://oddspark.dev/s/" + LEGACY_LOCAL_FIXTURE.id), h.env)).status, 404);
+    h.kv.set(LEGACY_LOCAL_FIXTURE.id, JSON.stringify(LEGACY_LOCAL_FIXTURE));
+    h.kvExpirations.delete(LEGACY_LOCAL_FIXTURE.id);
+    assert.equal((await worker.fetch(new Request("https://oddspark.dev/api/spark/" + LEGACY_LOCAL_FIXTURE.id), h.env)).status, 404,
+      "reintroduced stale KV cannot restore authority");
+    h.coordStorage.consumeAlarm(); await h.coordinator.alarm();
+    assert.equal(h.coordStorage.map.has("receipt:local:" + scope.round), false);
+  } finally { Date.now = originalNow; }
+});
+
+await test("1.21 profile cache repairs stay COORD-bound near expiry and neuron receipts use provider cleanup", async () => {
+  const network = createNetwork({ defaultSite: true });
+  const h = createEnvironment();
+  const originalNow = Date.now;
+  const t0 = 1_800_400_000_123;
+  try {
+    Date.now = () => t0;
+    const first = await strike(h.env, "profile.example.com");
+    assert.equal(first.response.status, 200);
+    const authority = h.coordStorage.map.get("profile:profile.example.com");
+    const absolute = Math.floor(authority.expires_at / 1000);
+    assert.equal(h.kvPuts.findLast((put) => put.key === "profile:profile.example.com").options.expiration, absolute);
+    const siteCalls = network.siteCalls.length;
+
+    Date.now = () => authority.expires_at - 61_001;
+    h.kv.delete("profile:profile.example.com"); network.round += 100;
+    const repairPutsBefore = h.kvPuts.filter((put) => put.key === "profile:profile.example.com").length;
+    assert.equal((await strike(h.env, "profile.example.com")).response.status, 200);
+    assert.equal(network.siteCalls.length, siteCalls);
+    const repairPuts = h.kvPuts.filter((put) => put.key === "profile:profile.example.com");
+    assert.equal(repairPuts.length, repairPutsBefore + 1, "a missing near-expiry projection is actually repaired");
+    assert.equal(repairPuts.at(-1).options.expiration, absolute, "repair preserves the creation-derived authority boundary");
+
+    const profilePuts = h.kvPuts.filter((put) => put.key === "profile:profile.example.com").length;
+    Date.now = () => authority.expires_at - 1;
+    h.kv.delete("profile:profile.example.com"); network.round += 100;
+    assert.equal((await strike(h.env, "profile.example.com")).response.status, 200);
+    assert.equal(h.kvPuts.filter((put) => put.key === "profile:profile.example.com").length, profilePuts);
+
+    const neuronKey = [...h.kv.keys()].find((key) => key.startsWith("n:"));
+    assert.ok(neuronKey);
+    const neuronPut = h.kvPuts.find((put) => put.key === neuronKey);
+    assert.equal(neuronPut.options.expirationTtl * 1000, NEURON_RECEIPT_RETENTION_MS);
+    Date.now = () => t0 + NEURON_RECEIPT_RETENTION_MS;
+    assert.equal(await h.env.SPARKS.get(neuronKey), null);
+  } finally { Date.now = originalNow; }
+});
+
+await test("1.21 coordinator family inputs reject malformed keys without persistence", async () => {
+  const h = createEnvironment();
+  const post = (path, body) => h.coordinator.fetch(new Request("https://coord" + path, {
+    method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body),
+  }));
+  for (const [path, body] of [
+    ["/slot", { visitorKey: "bad/key", domain: "example.com" }],
+    ["/slot", { visitorKey: "visitor", domain: "bad domain" }],
+    ["/profile", { domain: "bad domain", profile: {} }],
+    ["/profile/read", { domain: "bad domain" }],
+    ["/profile/read", { domain: "localhost" }],
+    ["/profile/read", { domain: "-bad.example" }],
+    ["/profile/read", { domain: "bad-.example" }],
+    ["/profile/read", { domain: `${"a".repeat(64)}.example` }],
+  ]) assert.equal((await post(path, body)).status, 400);
+  assert.deepEqual([...h.coordStorage.map.keys()], []);
+
+  const originalNow = Date.now;
+  try {
+    Date.now = () => Number.MAX_SAFE_INTEGER;
+    const scope = { kind: "local", round: LEGACY_LOCAL_FIXTURE.window.round };
+    assert.equal((await post("/claim", { scope, owner: "owner" })).status, 400);
+    assert.deepEqual(await (await post("/commit", { scope, owner: "owner", artifact: LEGACY_LOCAL_FIXTURE })).json(), { status: "missing" });
+    assert.equal((await post("/profile", { domain: "example.com", profile: {} })).status, 400);
+  } finally { Date.now = originalNow; }
+});
+
+await test("1.21 profile authority rejects open, cross-domain, and non-derived stored records", async () => {
+  const h = createEnvironment();
+  const domain = "authority.example";
+  const profile = {
+    version: 1, domain, scanned_urls: [`https://${domain}/`], vertical: "test", clarity: "clear",
+    observation: { url: `https://${domain}/`, text: "Authority observation." }, scan_time: "2026-08-24T00:00:00.000Z",
+    profile_hash: "c".repeat(64),
+  };
+  const post = (path, body) => h.coordinator.fetch(new Request("https://coord" + path, {
+    method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body),
+  }));
+  const createdAt = 1_800_500_000_000;
+  h.coordStorage.map.set("profile:" + domain, { profile, created_at: createdAt, expires_at: createdAt + PROFILE_RETENTION_MS + 1 });
+  assert.deepEqual(await (await post("/profile/read", { domain })).json(), { status: "missing" });
+  assert.equal((await post("/profile", { domain, profile: { ...profile, domain: "other.example" } })).status, 400);
+  assert.equal((await post("/profile", { domain, profile: { ...profile, extra: true } })).status, 400);
+});
+
+await test("1.21 by-ID authority requires the indexed key to equal the receipt artifact ID", async () => {
+  const h = createEnvironment();
+  const committedAt = Date.now();
+  const receipt = {
+    status: "committed", scope: { kind: "local", round: LEGACY_LOCAL_FIXTURE.window.round },
+    artifact: LEGACY_LOCAL_FIXTURE, artifact_kind: "legacy_local", committed_at: committedAt,
+    expires_at: committedAt + LOCAL_RETENTION_MS,
+  };
+  h.coordStorage.map.set("artifact:wrong-id", receipt);
+  h.kv.set("wrong-id", JSON.stringify(LEGACY_LOCAL_FIXTURE));
+  const response = await worker.fetch(new Request("https://oddspark.dev/api/spark/wrong-id"), h.env);
+  assert.equal(response.status, 502);
+  assert.match((await response.json()).error, /identity mismatch/);
+  assert.equal(h.coordStorage.map.get("artifact:wrong-id"), receipt);
 });
 
 await test("assembly identity is deterministic over sorted module paths and source hashes", async () => {
