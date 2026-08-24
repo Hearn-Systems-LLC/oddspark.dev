@@ -588,7 +588,12 @@ async function main(argv = process.argv.slice(2)) {
         const value = await response.json();
         if (!response.ok || value?.ok !== true)
           throw new Error("adapter call failed");
-        return value.result;
+        if (
+          !value.provider_envelope ||
+          typeof value.provider_envelope !== "object"
+        )
+          throw new Error("adapter omitted the provider envelope");
+        return value.provider_envelope;
       },
     });
     console.log(

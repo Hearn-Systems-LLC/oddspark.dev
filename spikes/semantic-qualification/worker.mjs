@@ -71,7 +71,9 @@ export default {
         max_tokens: body.max_tokens,
         response_format: body.response_format,
       });
-      return json({ ok: true, result });
+      // Preserve the provider envelope losslessly. Canonical extraction is an
+      // offline evidence operation and never mutates these retained bytes.
+      return json({ ok: true, provider_envelope: result });
     } catch {
       return json({ ok: false, error: { code: "ai_run_failed" } }, 502);
     }

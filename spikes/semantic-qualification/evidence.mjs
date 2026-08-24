@@ -7,47 +7,54 @@ import {
 import { loadCorpus } from "../../scripts/semantic-corpus.mjs";
 import {
   PREDICATE_ORACLE,
+  parseJudgeContent,
   stableStringify,
+  validateJudgeResult,
 } from "../judge-fidelity/contract.mjs";
 import { REPORT_VERSION, canonicalBytes, sha256 } from "./qualification.mjs";
 const ROOT = fileURLToPath(new URL("../../", import.meta.url));
 const same = (a, b) => stableStringify(a) === stableStringify(b);
-function wire(record) {
-  if (record?.state !== "completed") throw new Error("record is not completed");
-  const value = record.response,
-    keys =
-      value && typeof value === "object" && !Array.isArray(value)
-        ? Object.keys(value).sort()
-        : [];
-  const verdict = value?.verdict,
-    verdictKeys =
-      verdict && typeof verdict === "object" && !Array.isArray(verdict)
-        ? Object.keys(verdict).sort()
-        : [];
-  const expected = ["candidate_ref", "verdict"],
-    checks = [
-      "claims",
-      ...Array.from({ length: 9 }, (_, i) => `gate_${i + 1}`),
-      "pass",
-      "tone",
-    ].sort();
+export function canonicalizeRetainedEnvelope(envelope, expectedCandidateRef) {
+  const direct =
+    envelope &&
+    typeof envelope === "object" &&
+    !Array.isArray(envelope) &&
+    Object.keys(envelope).length === 2 &&
+    Object.hasOwn(envelope, "candidate_ref") &&
+    Object.hasOwn(envelope, "verdict");
+  const candidates = [
+    ...(direct ? [envelope] : []),
+    envelope?.response,
+    envelope?.result,
+    envelope?.choices?.[0]?.message?.content,
+  ].filter((value) => value !== undefined && value !== null);
+  const valid = [];
+  for (const candidate of candidates) {
+    const canonical = validateJudgeResult(candidate, expectedCandidateRef);
+    if (canonical.valid) {
+      valid.push(candidate);
+      continue;
+    }
+    const parsed = parseJudgeContent(candidate, expectedCandidateRef);
+    if (
+      ["direct_valid", "repaired_valid"].includes(parsed.classification) &&
+      parsed.result
+    )
+      valid.push(parsed.result);
+  }
+  if (valid.length === 0)
+    throw new Error(
+      "retained provider envelope has no valid canonical judge result",
+    );
   if (
-    stableStringify(keys) !== stableStringify(expected) ||
-    stableStringify(verdictKeys) !== stableStringify(checks)
+    valid.some((value) => stableStringify(value) !== stableStringify(valid[0]))
   )
-    throw new Error("retained judge output is not one closed result");
-  return {
-    candidate_ref: value.candidate_ref,
-    verdict: {
-      pass: verdict.pass,
-      gates: Array.from({ length: 9 }, (_, index) => ({
-        gate: index + 1,
-        ...verdict[`gate_${index + 1}`],
-      })),
-      tone: verdict.tone,
-      claims: verdict.claims,
-    },
-  };
+    throw new Error("retained provider envelope is ambiguous");
+  return valid[0];
+}
+function wire(record, expectedCandidateRef) {
+  if (record?.state !== "completed") throw new Error("record is not completed");
+  return canonicalizeRetainedEnvelope(record.response, expectedCandidateRef);
 }
 export async function deriveReports(plan, evidence) {
   if (
@@ -89,7 +96,7 @@ export async function deriveReports(plan, evidence) {
       },
       judge_provider: (value) =>
         slot === leg
-          ? wire(byFixture.get(value.fixture_id))
+          ? wire(byFixture.get(value.fixture_id), value.request.candidate_ref)
           : value.declared_result,
     }));
     const regression = await runSemanticRegression({

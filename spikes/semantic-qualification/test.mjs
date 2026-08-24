@@ -19,7 +19,8 @@ import {
   writePlan,
 } from "./run.mjs";
 import worker from "./worker.mjs";
-import { verifyBundle } from "./verify.mjs";
+import { deriveReanalysis, verifyBundle, verifyReanalysis } from "./verify.mjs";
+import { canonicalizeRetainedEnvelope } from "./evidence.mjs";
 import { loadSemanticRegressionCatalog } from "../../scripts/semantic-regression.mjs";
 
 const mutate = (value) => structuredClone(value);
@@ -49,6 +50,64 @@ const retainedResponse = (catalog, request) => {
     verdict,
   };
 };
+test("retained provider envelopes canonicalize by validated precedence and reject ambiguity", async () => {
+  const plan = await buildCurrentPlan({
+      run_id: "envelopes",
+      created_at: "2026-08-24T00:00:00.000Z",
+    }),
+    catalog = await loadSemanticRegressionCatalog(),
+    request = plan.requests[0],
+    wire = retainedResponse(catalog, request),
+    canonical = {
+      candidate_ref: wire.candidate_ref,
+      verdict: {
+        pass: wire.verdict.pass,
+        gates: Array.from({ length: 9 }, (_, index) => ({
+          gate: index + 1,
+          ...wire.verdict[`gate_${index + 1}`],
+        })),
+        tone: wire.verdict.tone,
+        claims: wire.verdict.claims,
+      },
+    };
+  assert.deepEqual(
+    canonicalizeRetainedEnvelope({ response: wire }, request.candidate_ref),
+    canonical,
+  );
+  assert.deepEqual(
+    canonicalizeRetainedEnvelope(
+      { response: { invalid: true }, result: wire },
+      request.candidate_ref,
+    ),
+    canonical,
+  );
+  assert.deepEqual(
+    canonicalizeRetainedEnvelope(
+      { choices: [{ message: { content: JSON.stringify(wire) } }] },
+      request.candidate_ref,
+    ),
+    canonical,
+  );
+  assert.deepEqual(
+    canonicalizeRetainedEnvelope(canonical, request.candidate_ref),
+    canonical,
+  );
+  const mismatch = structuredClone(wire);
+  mismatch.candidate_ref = "f".repeat(64);
+  assert.throws(() =>
+    canonicalizeRetainedEnvelope({ response: mismatch }, request.candidate_ref),
+  );
+  const different = structuredClone(wire);
+  different.verdict.gate_1.reason = "different";
+  assert.throws(
+    () =>
+      canonicalizeRetainedEnvelope(
+        { response: wire, result: different },
+        request.candidate_ref,
+      ),
+    /ambiguous/,
+  );
+});
 test("plan freezes exact 24/19/38 identities, ordering, cost, and zero generation", async () => {
   const plan = await buildCurrentPlan({
     run_id: "test-plan",
@@ -374,7 +433,7 @@ test("public verifier contains arbitrary malformed bundles and emits no ref", as
     assert.equal(result.semantic_ref, null);
   }
 });
-test("38 retained outputs derive two real 24-outcome reports and a verified SEMANTIC ref", async () => {
+test("candidate-bound replay fails closed on synthetic contract-forgery outputs", async () => {
   const now = new Date(),
     plan = await buildCurrentPlan({
       run_id: "e2e-complete",
@@ -397,18 +456,14 @@ test("38 retained outputs derive two real 24-outcome reports and a verified SEMA
     outputDirectory: directory,
     invoke: async (request) => retainedResponse(catalog, request),
   });
-  assert.equal(result.ok, true);
-  assert.equal(result.bundle.reports.length, 2);
+  assert.equal(result.ok, false);
+  assert.equal(result.bundle, null);
+  assert.equal(result.reports.length, 2);
   assert.deepEqual(
-    result.bundle.reports.map((x) => x.regression_report.fixtures.length),
+    result.reports.map((x) => x.regression_report.fixtures.length),
     [24, 24],
   );
-  const verified = await verifyBundle(result.bundle);
-  assert.equal(verified.valid, true);
-  assert.equal(verified.semantic_ref, result.bundle.semantic_ref);
-  const forged = mutate(result.bundle);
-  forged.evidence.records[0].response.verdict.pass = false;
-  assert.equal((await verifyBundle(forged)).valid, false);
+  assert.equal(result.terminal.semantic_ref, null);
 });
 test("semantic NO-GO after 38 completions retains evidence and both reports without a ref", async () => {
   const now = new Date(),
@@ -459,6 +514,20 @@ test("semantic NO-GO after 38 completions retains evidence and both reports with
   );
   await assert.rejects(
     readFile(path.join(directory, `${plan.run_id}.bundle.json`)),
+  );
+  const evidenceBytes = await readFile(
+      path.join(directory, `${plan.run_id}.evidence.json`),
+    ),
+    reanalysis = await deriveReanalysis(plan, evidenceBytes),
+    verified = await verifyReanalysis(plan, evidenceBytes, reanalysis);
+  assert.equal(reanalysis.outcome, "NO-GO");
+  assert.equal(reanalysis.semantic_ref, null);
+  assert.equal(verified.valid, true);
+  const forged = mutate(reanalysis);
+  forged.original_evidence_sha256 = "f".repeat(64);
+  assert.equal(
+    (await verifyReanalysis(plan, evidenceBytes, forged)).valid,
+    false,
   );
 });
 test("consumed-run attestation is append-only and records no invented results or retry", async () => {

@@ -123,7 +123,9 @@ The immutable catalog has 24 ordered projections: 19 require a judge and five ar
 Status: done; the approved live qualification terminated NO-GO with no SEMANTIC ref and no retry authority.
 Owner decision: use the immutable Story 1.17 projections; execute the 19 judge-required entries independently through each qualified judge leg, primary leg first and catalog order within each leg; make no generation calls, retries, replacements, substitutions, or additional diagnostics. Justin separately approved the exact generated plan identity, request identities, expiry, and conservative maximum cost before execution.
 
-Live terminal NO-GO: run ID `semantic-8e5c4baf-9b77-4b7d-b2db-4251027ffc30`, plan ref `863a1acd48a72df7955a2cf94193c55c86413f149acea36296e2f592edbf80ef`, request-set ref `6bc8377184c464861cf9e39d2ca97810f5a9ddf0830f257db51920e4f3b9934c`, and approved conservative maximum `$0.38664392`. The operator observed exactly 38 authorized HTTP 200 completions. Terminal code is `semantic_not_qualified`; the pre-fix publication-order defect left raw responses unavailable, so no fixture-level or leg-level claims are made. No SEMANTIC ref exists and no retry is authorized.
+The first consumed cycle remains a terminal evidence gap exactly as recorded above. A separately approved second cycle retained all 38 responses: run ID `semantic-e2680787-efb5-4f18-81ff-bc3fd95f31eb`, plan ref `5dfd3b7a7915db3554c9f7f234a528edfd1ec3292487d1ec059a9a516859b89e`, request-set ref `6bc8377184c464861cf9e39d2ca97810f5a9ddf0830f257db51920e4f3b9934c`, and approved conservative maximum `$0.38664392`. Offline reanalysis fixed the envelope/Gate seam without provider activity and retained a new append-only `reanalysis-v1` artifact. Original evidence SHA-256 is `d28f0da7b1a1ffa72dc08b3c75b80653c3cb783873c0915db86bed06b72c83ba`; reanalysis code identity is `e3b44158e3df2f9ee2efa78fbbf92d5bc4614a2b59bba3f1b2f313424f9b82a8`.
+
+Second-cycle terminal outcome remains `semantic_not_qualified`: primary mismatched 13 fixtures (`anti-consultant-speak`, `anti-unsupported-claims`, `anti-weak-preservation`, `anti-capability-duplication`, `anti-poor-scope`, `anti-invitation-pressure`, five contradiction fixtures, and both contract fixtures); fallback mismatched 13 fixtures (`golden-local-after-hours-callback-card`, five anti-goldens other than capability duplication, gate-2/gate-4/gate-9/tone contradictions, and both contract fixtures). The append-only artifact retains each exact code and gate/tone/claims decision. Fallback `anti-invitation-pressure` had no valid candidate-bound nested result and remained `judge_provider_failed`; all other retained provider envelopes replayed through the canonical Gate. No SEMANTIC ref exists and no retry is authorized.
 
 Implemented files:
 - `spikes/semantic-qualification/qualification.mjs` — total closed authority, report, manifest, and SEMANTIC derivation.
@@ -136,7 +138,7 @@ Implemented files:
 Review outcome: 12 accepted findings were patched (high 10, medium 2, low 0); no item was deferred. Follow-up review is recommended because high-severity authority and verifier repairs were required; weighted score 56.
 
 Verification:
-- `node --test spikes/semantic-qualification/test.mjs` — PASS, 12/12.
+- `node --test spikes/semantic-qualification/test.mjs` — PASS; includes envelope precedence/ambiguity, candidate binding, immutable terminal publication, and reanalysis checks.
 - `node --test scripts/semantic-regression.test.mjs` — PASS, 10/10.
 - `npm run semantic:voice:verify` — PASS; approved identity unchanged.
 - `CI=1 node .github/check-ci.mjs` — PASS, including the controlled Chrome matrix.
