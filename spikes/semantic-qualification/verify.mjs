@@ -1,16 +1,107 @@
-import { readFile } from "node:fs/promises";
+import { link, mkdir, readFile, unlink, writeFile } from "node:fs/promises";
+import { randomUUID } from "node:crypto";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import {
   canonicalBytes,
+  buildManifest,
   deriveSemanticRef,
   sha256,
   validateApproval,
   validateManifest,
+  validatePlan,
 } from "./qualification.mjs";
 import { stableStringify } from "../judge-fidelity/contract.mjs";
 import { buildCurrentPlan } from "./run.mjs";
 import { deriveReports, reportsEqual } from "./evidence.mjs";
+async function reanalysisCodeIdentity() {
+  const files = [
+      new URL("./evidence.mjs", import.meta.url),
+      new URL("./verify.mjs", import.meta.url),
+    ],
+    entries = [];
+  for (const file of files) {
+    const bytes = await readFile(file);
+    entries.push({
+      name: path.basename(file.pathname),
+      bytes: bytes.length,
+      sha256: sha256(bytes),
+    });
+  }
+  return { entries, sha256: sha256(stableStringify(entries)) };
+}
+export async function deriveReanalysis(plan, evidenceBytes) {
+  if (!validatePlan(plan).valid) throw new Error("historical plan is invalid");
+  const evidence = JSON.parse(Buffer.from(evidenceBytes).toString("utf8"));
+  if (!Buffer.from(evidenceBytes).equals(canonicalBytes(evidence)))
+    throw new Error("original evidence bytes are not canonical");
+  const reports = await deriveReports(plan, evidence),
+    qualified = reports.every((report) => report.outcome === "pass"),
+    code_identity = await reanalysisCodeIdentity(),
+    mismatches = reports.map((report) => ({
+      leg: report.leg,
+      fixtures: report.regression_report.fixtures
+        .filter((fixture) => !fixture.matched)
+        .map(({ fixture_id, code, decision }) => ({
+          fixture_id,
+          code,
+          decision,
+        })),
+    }));
+  const manifest = qualified
+    ? buildManifest({ plan, reports, evidence })
+    : null;
+  const core = {
+    schema_version: "oddspark.semantic-qualification-reanalysis/v1",
+    run_id: plan.run_id,
+    plan_ref: plan.plan_ref,
+    original_evidence_sha256: sha256(evidenceBytes),
+    reanalysis_code_identity: code_identity,
+    reports,
+    outcome: qualified ? "GO" : "NO-GO",
+    terminal_code: qualified ? "semantic_qualified" : "semantic_not_qualified",
+    mismatches,
+    manifest,
+  };
+  const semantic_ref = qualified
+    ? sha256(`ODDSPARK:SEMANTIC-REANALYSIS:v1\n${stableStringify(core)}`)
+    : null;
+  return { ...core, semantic_ref };
+}
+export async function verifyReanalysis(plan, evidenceBytes, artifact) {
+  try {
+    const derived = await deriveReanalysis(plan, evidenceBytes);
+    if (stableStringify(derived) !== stableStringify(artifact))
+      return {
+        valid: false,
+        errors: ["reanalysis differs from independent derivation"],
+        semantic_ref: null,
+      };
+    return {
+      valid: true,
+      errors: [],
+      semantic_ref: derived.semantic_ref,
+      outcome: derived.outcome,
+      mismatches: derived.mismatches,
+    };
+  } catch {
+    return {
+      valid: false,
+      errors: ["reanalysis failed closed"],
+      semantic_ref: null,
+    };
+  }
+}
+async function writeNew(file, bytes) {
+  await mkdir(path.dirname(file), { recursive: true });
+  const temporary = `${file}.${randomUUID()}.tmp`;
+  await writeFile(temporary, bytes, { flag: "wx", mode: 0o600 });
+  try {
+    await link(temporary, file);
+  } finally {
+    await unlink(temporary).catch(() => {});
+  }
+}
 export async function verifyBundle(bundle) {
   try {
     if (
@@ -90,9 +181,24 @@ export async function verifyBundle(bundle) {
   }
 }
 async function main(argv = process.argv.slice(2)) {
+  if (argv[0] === "reanalyze" && argv.length === 4) {
+    const plan = JSON.parse(await readFile(path.resolve(argv[1]), "utf8")),
+      evidenceBytes = await readFile(path.resolve(argv[2])),
+      artifact = await deriveReanalysis(plan, evidenceBytes),
+      check = await verifyReanalysis(plan, evidenceBytes, artifact);
+    if (!check.valid)
+      throw new Error("independent reanalysis verification failed");
+    await writeNew(path.resolve(argv[3]), canonicalBytes(artifact));
+    console.log(
+      artifact.outcome === "GO"
+        ? `SEMANTIC ${artifact.semantic_ref}`
+        : `NO-GO ${JSON.stringify(artifact.mismatches)}`,
+    );
+    return artifact.outcome === "GO" ? 0 : 1;
+  }
   if (argv.length !== 1)
     throw new Error(
-      "Usage: node spikes/semantic-qualification/verify.mjs <bundle.json>",
+      "Usage: node spikes/semantic-qualification/verify.mjs <bundle.json> | reanalyze <plan.json> <evidence.json> <new-reanalysis.json>",
     );
   const file = path.resolve(argv[0]);
   const bundle = JSON.parse(await readFile(file, "utf8"));
