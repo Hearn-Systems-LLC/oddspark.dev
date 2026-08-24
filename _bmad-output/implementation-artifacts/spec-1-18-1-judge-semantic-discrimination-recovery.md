@@ -185,12 +185,12 @@ Per the approved stop rule, this result authorizes no retry, corpus or threshold
 
 ## Structural Re-qualification Addendum — 2026-08-24 (direct single-judge design)
 
-Trigger: commit  edited identity-bound  after the  run, so neither retained judge structural evidence verified against any committed tree and CI's  pin was red from . Under sprint-change-proposal-2026-08-24-4 the single quality judge needs only current structural authority.
+Trigger: commit `252eb5f` edited identity-bound `spikes/judge-fidelity/recovery-finder.mjs` after the `3f980f8c` run, so neither retained judge structural evidence verified against any committed tree and CI's `a0ed5363` pin was red from `ab6f12c`. Under sprint-change-proposal-2026-08-24-4 the single quality judge needs only current structural authority.
 
-Justin approved the exact plan (ref , approval run , 42-call cap, maximum , one-hour window from ). Run  executed  sequential calls from  to , zero retries/replacements: **GO**, both legs  direct-valid.
+Justin approved the exact plan (ref `f60cd95a2f5c52b832665bb21d9631612cd5c1eed14e2613909b9b37d75ede1f`, approval run `ba52ec91-fe85-4987-954d-71054a0acc3d`, 42-call cap, maximum `$0.3054702`, one-hour window from `2026-08-24T17:48:21Z`). Run `f543d3d5-80d4-44f6-b7bf-41083197fcc9` executed `42/42` sequential calls from `2026-08-24T17:49:42Z` to `17:56:51Z`, zero retries/replacements: **GO**, both legs `20/20` direct-valid.
 
-- STRUCT-JUDGE role ref: 
-- Primary config ref (): 
-- Fallback config ref (): 
-- Evidence basename: ; both public verifiers PASS (18 predicates, 79 fixtures; GO, 2 refs). CI pin moved to this evidence.
-- Prior refs  /  remain immutable superseded history. No identity-bound file may be edited after this run without re-qualification.
+- STRUCT-JUDGE role ref: `7dc1ec98a625a1dd16f1166067b496e4209a415e7f10854ff781f46d0d0062d0`
+- Primary config ref (`@cf/meta/llama-3.3-70b-instruct-fp8-fast`): `f2077fc4a0819d14cdbb88879f5f70aa869e3b364acf4420b66e98ff702b1874`
+- Fallback config ref (`@cf/meta/llama-3.1-8b-instruct-fast`): `02e02cb6d51cef83c7e6dda57f1dd1b778233c6f30057d1dcee39ecd54f66177`
+- Evidence basename: `2026-08-24-ba52ec91-051d5c7072d99a31-f543d3d5-80d4-44f6-b7bf-41083197fcc9`; both public verifiers PASS (18 predicates, 79 fixtures; GO, 2 refs). CI pin moved to this evidence.
+- Prior refs `f13c31e0…` / `a0ed5363…` remain immutable superseded history. No identity-bound file may be edited after this run without re-qualification.
