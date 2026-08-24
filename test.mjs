@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { readFileSync } from "node:fs";
+import { pathToFileURL } from "node:url";
 import worker, { NeuronMeter, SparkCoordinator, deriveInactiveDomainDispatch, runInactiveDomainWriter, INACTIVE_DOMAIN_WRITER_DEADLINE_MS, PRE_ACTIVATION_NOTICE } from "./src/worker.js";
 import { story15Cases } from "./scripts/brief-rendering.outer.mjs";
 import { buildCommittedBrief, CANDIDATE_SCHEMA_VERSION, deriveCandidateRef } from "./scripts/brief-contracts.mjs";
@@ -429,6 +430,10 @@ function addSimpleSite(network, domain = "acmebakery.com", observation = OBSERVA
     htmlResponse(`<html><body><p>${observation}</p><script>RAW_HTML_SECRET</script></body></html>`)
   );
 }
+
+export { ROUND, createNetwork, createEnvironment, sparkRequest, strike };
+
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
 
 await test("Wrangler declares the public-fetch boundary and COORD v2 migration", async () => {
   const config = await readFile(new URL("./wrangler.toml", import.meta.url), "utf8");
@@ -2912,3 +2917,4 @@ await test("a posture/logging fault can never fail the request", async () => {
 globalThis.fetch = ORIGINAL_FETCH;
 console.log("\n" + passed + "/" + (passed + failed) + " passed");
 process.exit(failed ? 1 : 0);
+}

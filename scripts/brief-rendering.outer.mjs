@@ -28,6 +28,61 @@ async function seed(h, scope, artifact) {
 
 const native = (website, headers = {}) => new Request("https://oddspark.dev/api/spark", { method: "POST", redirect: "manual", headers: { accept: "text/html", "content-type": "application/x-www-form-urlencoded", "cf-connecting-ip": "203.0.113.88", ...headers }, body: new URLSearchParams({ website }).toString() });
 
+export async function story15AxePages(harness) {
+  const { ROUND, createNetwork, createEnvironment } = harness;
+  const originalFetch = globalThis.fetch;
+  const html = async (request, env, expectedStatus = 200) => {
+    const response = await worker.fetch(request, env);
+    assert.equal(response.status, expectedStatus);
+    assert.match(response.headers.get("content-type") || "", /^text\/html/);
+    return response.text();
+  };
+  try {
+    createNetwork();
+    const idle = createEnvironment();
+    const pages = {
+      "home-idle": await html(new Request("https://oddspark.dev/", { headers: { accept: "text/html" } }), idle.env),
+    };
+
+    createNetwork();
+    const local = createEnvironment();
+    await seed(local, { kind: "local", round: ROUND }, fixture({ id: "axe-local" }));
+    pages["local-brief"] = await html(new Request("https://oddspark.dev/s/axe-local", { headers: { accept: "text/html" } }), local.env);
+    pages["permalink"] = pages["local-brief"];
+
+    for (const [name, domain, mode, notice] of [
+      ["domain-brief", "axe-domain.test.com", "domain", undefined],
+      ["downgrade", "axe-downgrade.test.com", "local", "No usable pages came back from your website, so this plan is built from local patterns only."],
+    ]) {
+      createNetwork();
+      const state = createEnvironment();
+      await seed(state, { kind: "domain", round: ROUND, domain }, fixture({ id: `axe-${name}`, mode, requestScope: "domain", notice }));
+      pages[name] = await html(native(domain), state.env);
+    }
+
+    createNetwork();
+    const house = createEnvironment();
+    await seed(house, { kind: "local", round: ROUND }, fixture({ id: "axe-house", notice: "This plan is one of ours, not built for you." }));
+    pages["house-brief"] = await html(new Request("https://oddspark.dev/s/axe-house", { headers: { accept: "text/html" } }), house.env);
+
+    createNetwork();
+    const bad = createEnvironment();
+    pages["http-400"] = await html(native("https://user:pass@example.com"), bad.env, 400);
+
+    createNetwork({ failDrand: true });
+    const failed = createEnvironment();
+    pages["http-502"] = await html(native(""), failed.env, 502);
+
+    createNetwork();
+    const missing = createEnvironment();
+    pages["not-found"] = await html(new Request("https://oddspark.dev/s/not-an-id", { headers: { accept: "text/html" } }), missing.env, 404);
+    pages.how = await html(new Request("https://oddspark.dev/how", { headers: { accept: "text/html" } }), missing.env);
+    return Object.freeze(pages);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+}
+
 export function story15Cases(harness) {
   const { ROUND, createNetwork, createEnvironment, sparkRequest, strike } = harness;
   return {
@@ -145,7 +200,7 @@ export function story15Cases(harness) {
     },
     async shell() {
       createNetwork(); const h = createEnvironment(); await seed(h, { kind: "local", round: ROUND }, fixture({ id: "committed-shell", empty: true })); const html = await (await worker.fetch(new Request("https://oddspark.dev/s/committed-shell", { headers: { accept: "text/html" } }), h.env)).text();
-      assert.equal((html.match(/<h1\b/g) || []).length, 1); assert.match(html, /<main>/); assert.match(html, /<canvas id="cv" aria-hidden="true">/); assert.match(html, /awaiting a seed/); assert.match(html, /drand round[\s\S]*signature[\s\S]*randomness[\s\S]*xray flux[\s\S]*flare class[\s\S]*observed[\s\S]*seed/); assert.match(html, /@media \(min-width:920px\)/); assert.match(html, /@media \(max-width:520px\)/); assert.match(html, /prefers-reduced-motion:reduce/); assert.match(html, /Nothing in the current routine is replaced/); assert.doesNotMatch(html, /Same window, same spark/);
+      assert.equal((html.match(/<h1\b/g) || []).length, 1); assert.match(html, /<main>/); assert.match(html, /<div class="stage" id="stage" role="region" tabindex="0" aria-label="Seed Geometry">/); assert.match(html, /<canvas id="cv" aria-hidden="true">/); assert.match(html, /awaiting a seed/); assert.match(html, /drand round[\s\S]*signature[\s\S]*randomness[\s\S]*xray flux[\s\S]*flare class[\s\S]*observed[\s\S]*seed/); assert.match(html, /@media \(min-width:920px\)/); assert.match(html, /@media \(max-width:520px\)/); assert.match(html, /prefers-reduced-motion:reduce/); assert.match(html, /Nothing in the current routine is replaced/); assert.doesNotMatch(html, /Same window, same spark/);
       assert.match(html, /<span id="live">----<\/span> &middot; SUN NOW/); assert.match(html, /grid-template-columns:minmax\(0,660px\) minmax\(322px,1fr\)/); assert.match(html, /white-space:normal/); assert.match(html, /<form class="strike-row"[\s\S]*<input[\s\S]*<button/); assert.match(html, /<span id="foot-links">[\s\S]*<span id="meter">/);
     },
   };
