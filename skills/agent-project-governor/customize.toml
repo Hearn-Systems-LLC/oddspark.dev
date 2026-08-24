@@ -1,0 +1,18 @@
+# DO NOT EDIT -- overwritten on every update.
+#
+# Agent customization surface for agent-project-governor.
+# Team overrides:     {project-root}/_bmad/custom/agent-project-governor.toml
+# Personal overrides: {project-root}/_bmad/custom/agent-project-governor.user.toml
+
+[agent]
+
+# --- Metadata (install-time roster contract) ---
+# Consumed by module.yaml:agents[] and `[agents.<code>]` in central config.
+
+code = "agent-project-governor"
+name = ""
+title = "Autonomous BMAD Governor"
+icon = "🧭"
+description = "Reconciles live project state and safely advances eligible BMAD work through bounded delegation and review."
+agent_type = "autonomous"   # stateless | memory | autonomous
+
