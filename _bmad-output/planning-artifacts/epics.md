@@ -28,8 +28,8 @@ This document provides the complete 48-story epic and story breakdown for oddspa
 
 - FR1: Coherent local generation — no domain → Candidate grounded in Port Huron / Blue Water Area context, current date/time, seasonality, Delivery-Envelope capability bundle; no legacy random-axis vocabulary in output.
 - FR2: Website-grounded generation — domain → Evidence Bundle from public site + vertical knowledge; Candidate traceable to bundle; exactly one Breadcrumb (specific, positive/neutral, no personal details); no duplication of detected capabilities; no business-specific facts absent from the bundle.
-- FR3: Composite Gate evaluation — deterministic schema, grounding, privacy-policy, and number-provenance checks run before one candidate-bound semantic judge evaluation of all 9 coherence gates, tone, and claims; malformed, incomplete, ambiguous, schema-invalid, candidate-unbound, repaired-semantic, or otherwise unqualified results fail closed; rejected Candidates leave no visible trace.
-- FR4: Bounded regeneration — one six-model-call strike ledger starts only complete generation-to-judge pairs. With `E` model-based Evidence calls, the Candidate ceiling is `min(3, floor((6 - E) / 2))` (`E=0` permits at most 3; `E=1` permits at most 2); invoked failures/timeouts/invalid outputs consume their call; exhaustion or insufficient deadline returns a gate-passing house Brief.
+- FR3: Composite Gate evaluation — deterministic schema, linkage, grounding, privacy, number-provenance, exact-reference, required-field, and banned-token checks run before an isolated coherence → fit → quality semantic-specialist waterfall of at most three calls; every specialist result is candidate-bound, check-scoped, pointer-supported, and fail-closed, while deterministic code alone computes the final conjunction; rejected Candidates leave no visible trace.
+- FR4: Bounded regeneration — one twelve-model-call strike ledger starts only complete generation-plus-three-specialist attempts. `E=0` permits at most 3 Candidates and `E=1` at most 2; deterministic or earlier-specialist rejection releases only uninvoked downstream reservations, invoked failures/timeouts/invalid outputs consume their call, the same Candidate is never re-judged, and exhaustion or insufficient deadline returns a gate-passing house Brief.
 - FR5: Contract-complete rendering — all 8 result-card elements in order; Change Level = preliminary time range + workflow-step impact; What Stays the Same names tools + authority + steps; confident-plan voice (voice rubric + ≥3 golden Briefs per mode as pre-launch deliverable).
 - FR6: Claim discipline — no numeric ROI/percentages in local mode; domain-mode numbers traceable to the site; qualitative effects name who/what physically changes; no pricing anywhere.
 - FR7: Spark-specific invitation — CTA references the exact Spark; no pricing/urgency/pitch register; explicitly allows "not worth changing."
@@ -43,7 +43,7 @@ This document provides the complete 48-story epic and story breakdown for oddspa
 - NFR1: Privacy — no PII/cookies/sessions/reviews/off-site research for personalization or generation; abuse-limit carve-out has no tracking role; robots.txt respected.
 - NFR2: Performance — strike completes within STRIKE_BUDGET_MS wall-clock or degrades to house Brief; existing 4s scan budget carries over.
 - NFR3: Security — domain input validated/size-limited per existing worker guards (body 4KB, URL 2048, redirect caps, public-host-only).
-- NFR4: Cost — ≤6 model calls per strike through independently qualified generation/judge role selectors and the shared ledger/deadline. Workers AI retains best-effort/fail-open `NeuronMeter` without creating extra capacity; another provider requires a separately approved cost-control convention.
+- NFR4: Cost — ≤12 model calls per strike through independently qualified generation and specialist selectors and the shared ledger/deadline. Workers AI retains best-effort/fail-open `NeuronMeter` without creating extra capacity; another provider requires a separately approved cost-control convention.
 - NFR5: Reliability — Candidate/model/qualification/budget failure degrades to an authoritative committed or house Brief while COORD is reachable; COORD read/claim/commit uncertainty returns 502 and never renders uncommitted output.
 
 ### Additional Requirements
@@ -53,8 +53,8 @@ From the architecture spine (AD-1..AD-13), solution design, governing UX Decisio
 - Pipes-and-filters stage separation with the strike orchestrator as sole owner of the retry loop; stages single-pass, no stage calls another.
 - One canonical runtime-neutral ES-module pipeline under `src/pipeline/`; `src/worker.js` and Node verification import the same production implementations. Runtime assembly, compatibility-reader deployment, inactive-writer deployment, and activation are separate authorities (AD-13).
 - Immutable staged ports: closed `EvidenceContext` → Generate adds Candidate/reference → Local Gate derives the closed `GroundingReport` → complete `AttemptContext` goes to the judge; no mutable/closure-fed Gate input.
-- Composite Gate with local AD-4/AD-5 checks, Story 1.5's pure tri-state personal-name policy, and exactly one structurally qualified `JudgeProvider` call for a surviving Candidate.
-- Candidate-bound outer `JudgeResult` plus closed canonical `{pass,gates[9],tone,claims}` verdict; exact IDs/reasons, lossless versioned adapter, fail-safe `pass:false`, and no semantic invention/coercion/omission/ambiguity.
+- Composite Gate with deterministic AD-4/AD-5 checks and at most three isolated, independently qualified specialist calls for a surviving Candidate.
+- Candidate-bound, check-scoped `SpecialistResult` values with existing JSON Pointer support; no model-authored overall verdict, and deterministic fail-closed conjunction with no repair/coercion/omission/ambiguity.
 - Typed Brief JSON schema (integer version, mode, 8 elements, notice, grounded_numbers) as the only renderer input; legacy personalization.status branching removed.
 - Closed tagged Evidence union and Candidate-derived grounding at Local Gate against canonicalized scan text; every business claim/Breadcrumb/number has one passing report entry; profile_hash preimage replaced with version bump.
 - Versioned closed `CommittedBrief` envelope; reader-first mixed-version rollout; rollback only to a compatibility reader that rejects or losslessly shims the new envelope.
@@ -63,9 +63,9 @@ From the architecture spine (AD-1..AD-13), solution design, governing UX Decisio
 - House Brief catalog (curated per season, integer-versioned, gate-passing by construction).
 - Atomic aggregate `briefs_served`, `house_briefs_served`, and `invitation_acted` events through COORD plus `POST /api/cheer`; served events occur only after authoritative receipt resolution/commit, so 400/502 responses enter neither denominator. SM-1 is an explicitly approximate, non-deduplicated event rate that may be skewed by repeat actions—not a person/render percentage. No per-visitor analytics keys beyond the abuse carve-out. SM-2 and SM-3 retain manual measurement authorities.
 - Robots.txt check added to the scanner.
-- Six-call pair-reservation state machine and route-entry deadline through authoritative commit; unused judge reservation releases after local rejection, invoked calls remain consumed, and fallback role selection occurs only on a subsequent complete pair.
-- Closed hash-bound qualification manifests plus one atomic production activation manifest for generation/judge structural identity, semantic identity, and full-pair evidence; runtime mismatch disables the role.
-- Four separate verification tiers: deterministic fixtures; manual structural/wire/canonical/binding qualification; Story 1.18 semantic calibration; Story 1.19 full-pair latency/cost. Live metered runs require fresh approval and never run in CI.
+- Twelve-call four-slot reservation state machine and route-entry deadline through authoritative commit; only uninvoked downstream reservations release, invoked calls remain consumed, and specialist fallback selection occurs only before invocation.
+- Closed hash-bound qualification manifests plus one atomic production activation manifest for generation/specialist-pipeline structural identity, combined semantic identity, and full-waterfall evidence; runtime mismatch disables the affected mode or shared model pipeline.
+- Four current verification tiers: deterministic ownership/pointer/aggregator fixtures; independent coherence/fit/quality structural qualification; Story 1.18.2 exhaustive combined semantic calibration; Story 1.19 full-waterfall latency/cost/selection/ledger/deadline evidence. Live metered runs require fresh approval and never run in CI.
 - Model-assisted domain Evidence uses a separately qualified `EvidenceProvider`; primary/fallback configurations qualify independently in Story 2.3 and consume `E=1`. Evidence qualification never borrows generation or judge evidence.
 - Preserve the legacy Story 1.2 v1 `NO-GO` through new Story 1.3; permit at most one separately approved evidence-v2 recovery matrix in Story 1.4. A second `NO-GO` triggers MVP review, not another provider bakeoff.
 - Offline development has no callable AI binding; approval-bound live spikes use isolated nonproduction configuration and never production KV/DO/routes/assets/persistent Worker names.
@@ -90,7 +90,7 @@ The governing UX Decision Record (`ux-decision-record-oddspark.md`, 2026-08-17) 
 - FR1: Epic 1 — coherent local generation
 - FR2: Epic 2 — website-grounded generation
 - FR3: Epic 1 — composite local/semantic Gate, structural qualification, and calibrated semantic judge
-- FR4: Epic 1 — six-call complete-pair orchestration, qualified fallback roles, deadline, and house Brief
+- FR4: Epic 1 — twelve-call complete-attempt orchestration, independently qualified specialist fallbacks, deadline, and house Brief
 - FR5: Epic 1 — contract-complete rendering
 - FR6: Epic 1 — local structural claim discipline plus semantic judgment
 - FR7: Epic 1 — spark-specific invitation rendering; Epic 4 — measured, reference-bearing Hearn handoff
@@ -285,7 +285,7 @@ So that the single allowed recovery run is auditable before spending begins.
 **Then** the 0/20 direct and post-repair results per gpt-oss model remain unchanged
 **And** v1 evidence is never overwritten or reclassified.
 
-**Given** the outer candidate-bound JudgeResult and inner CanonicalVerdict
+**Given** the historical outer candidate-bound JudgeResult and inner CanonicalVerdict
 **When** fixtures and verification run
 **Then** objects are closed and exact
 **And** nine gate IDs and reasons, tone, claims, pass safety, binding, envelope ambiguity, size, and allowlisted repair are covered
@@ -295,7 +295,7 @@ So that the single allowed recovery run is auditable before spending begins.
 
 As an operator,
 I want one frozen, approval-bound Llama judge qualification cycle,
-So that model-dependent work either gains trustworthy STRUCT-JUDGE evidence or stops cleanly.
+So that the historical broad-judge approach either gained trustworthy STRUCT-JUDGE evidence or stopped cleanly; its results cannot authorize Story 1.18.2 specialists.
 
 **Requirements:** FR3; NFR2; NFR4; AD-11
 
@@ -321,7 +321,7 @@ So that model-dependent work either gains trustworthy STRUCT-JUDGE evidence or s
 **When** the outcome is derived
 **Then** each configuration independently requires at least 95% direct-valid plus every predicate in the Story 1.3 verifier's closed predicate list for GO
 **And** only passing configurations produce exact configuration refs
-**And** a closed role set is GO when at least one configuration passes, carries null for failed members, and produces the exact role-level STRUCT-JUDGE ref later used by activation
+**And** its historical role set is retained byte-for-byte but is not a specialist or composite pipeline ref and cannot be used by activation after Story 1.18.2.
 **And** two failures complete the evidence story and trigger owner review, while called incomplete or ambiguous evidence emits no refs, records consumed-incomplete authority, and blocks another matrix.
 
 ### Story 1.5: Voice Rubric and Golden Briefs
@@ -506,7 +506,7 @@ So that malformed, ungrounded, unsafe, or incoherent Candidates fail closed.
 
 **Requirements:** FR3; FR6; AD-2
 
-**Dependency:** Stories 1.4, 1.5, and 1.7; STRUCT-JUDGE must be GO.
+**Dependency:** Stories 1.4, 1.5, and 1.7 historically; Story 1.18.2 replaces its active broad-judge seam with current specialist pipeline authority.
 
 **Acceptance Criteria:**
 
@@ -516,10 +516,11 @@ So that malformed, ungrounded, unsafe, or incoherent Candidates fail closed.
 **And** fail or unknown rejects before a judge call
 **And** the immutable AttemptContext is produced once.
 
-**Given** a locally valid AttemptContext and active STRUCT-JUDGE ref
+**Given** a locally valid AttemptContext and active specialist-pipeline judge ref
 **When** semantic evaluation runs
-**Then** exactly one JudgeProvider call receives Candidate, Evidence, GroundingReport, rubric, and candidate_ref
-**And** reference mismatch or noncanonical verdict rejects.
+**Then** deterministic prechecks run before at most three isolated specialist calls receive only their assigned rubric slices and the immutable Candidate/Evidence/GroundingReport/candidate_ref
+**And** the first non-pass stops later calls, while reference mismatch, invalid pointers, unassigned checks, unknown, or noncanonical results reject
+**And** deterministic code alone computes the final conjunction.
 
 **Given** deterministic fixtures
 **When** the composite Gate is tested
@@ -530,7 +531,7 @@ So that malformed, ungrounded, unsafe, or incoherent Candidates fail closed.
 ### Story 1.13: Strike Orchestrator and House Fallbacks
 
 As a developer,
-I want one owner for retries, deadlines, role selection, and the six-call ledger,
+I want one owner for retries, deadlines, role selection, and the twelve-call ledger,
 So that a press finishes with a committed candidate path or validated house fallback.
 
 **Requirements:** FR4; NFR2; NFR4; NFR5; AD-3; AD-9
@@ -541,13 +542,13 @@ So that a press finishes with a committed candidate path or validated house fall
 
 **Given** E is frozen
 **When** a strike starts
-**Then** only complete generation-judge pairs reserve
-**And** candidate ceiling is min(3,floor((6-E)/2))
-**And** invoked calls consume slots and unused judge reservations release only after local rejection.
+**Then** only complete generation-plus-three-specialist attempts reserve four slots
+**And** `E=0` permits at most three Candidates and `E=1` at most two
+**And** invoked calls consume slots while only never-invoked downstream reservations release after deterministic or earlier-specialist rejection.
 
 **Given** primary errors, invalid output, deadline pressure, or exhaustion
 **When** another attempt is considered
-**Then** fallback selection occurs only for a subsequent complete pair
+**Then** each specialist's qualified fallback may be selected only before its invocation, and another Candidate starts only with a complete four-slot/time reservation
 **And** the same Candidate is never re-judged
 **And** insufficient capacity selects the approved house Brief.
 
@@ -707,7 +708,7 @@ So that semantic qualification measures the approved rubric instead of prompt lu
 **Then** primary/fallback results remain separate
 **And** no live call, deployment, or result-driven threshold change occurs.
 
-### Story 1.18: Semantic Qualification
+### Story 1.18: Semantic Qualification (Retained Failed Broad-Judge History)
 
 As an operator,
 I want approved live semantic evidence for the exact structural pair,
@@ -730,27 +731,106 @@ So that production cannot confuse structural fidelity with product judgment.
 **Then** every required gate/tone/claims threshold and every predicate in the Story 1.3 verifier's closed predicate list passes
 **And** failure blocks activation without weakening deterministic or structural contracts.
 
+### Story 1.18.1: Judge Semantic Discrimination Recovery (Retained Failed Prompt-Only History)
+
+As a product owner and operator,
+I want a versioned, evidence-based judge instruction requalified against the frozen semantic oracle,
+So that a schema-valid judge cannot pass deliberate contradictions or unsupported negatives by agreeable default.
+
+**Requirements:** FR3; FR5–FR7; AD-2; AD-11
+
+**Dependency:** Stories 1.3–1.5, 1.17, and the retained Story 1.18 `NO-GO`; owner approval of Sprint Change Proposal 2026-08-24. Live stages additionally require fresh exact-run approval.
+
+**Acceptance Criteria:**
+
+**Given** the retained Story 1.18 evidence and frozen Story 1.17 corpus
+**When** the judge prompt contract is revised
+**Then** it requires independent evidence-based decisions, contradiction-first evaluation, fail-closed uncertainty, specific reasons, and strict top-level conjunction
+**And** response schema, candidate binding, model pair, request parameters, corpus outcomes, thresholds, repair prohibition, and call-budget policy remain unchanged
+**And** no fixture ID, expected label, or case-specific answer appears in the prompt.
+
+**Given** provider fakes and adversarial prompt-contract fixtures
+**When** offline verification runs
+**Then** missing, contradictory, ambiguous, compensating-strength, generic-reason, unsafe-top-level-pass, and case-label leakage mutations reject
+**And** complete affected repository verification passes without network activity.
+
+**Given** the final revised prompt identity and passing offline evidence
+**When** a fresh judge structural plan is separately approved and executed
+**Then** primary and fallback qualify independently under unchanged Story 1.4 structural thresholds
+**And** no old structural ref is reused for the revised prompt
+**And** a required-role `NO-GO` stops before semantic calls and returns to owner review.
+
+**Given** current structural `GO` refs and the unchanged frozen semantic corpus
+**When** a fresh semantic plan is separately approved and executed
+**Then** primary and fallback remain separate, all predeclared Story 1.18 thresholds apply unchanged, and immutable evidence is retained
+**And** only a verified `GO` emits new current `SEMANTIC` authority
+**And** `NO-GO`, incomplete, ambiguous, over-cap, or identity-mismatched evidence emits no ref and blocks Story 1.19.
+
+### Story 1.18.2: Specialist Judge Pipeline Recovery
+
+As a product owner and operator,
+I want deterministic prechecks and three independently qualified semantic specialists,
+So that weak ideas cannot pass through broad-model compensation while approved goldens remain usable.
+
+**Requirements:** FR3–FR7; NFR2; NFR4; AD-2; AD-3; AD-9; AD-11
+
+**Dependency:** retained Story 1.18 and Story 1.18.1 `NO-GO` evidence; owner-approved 2026-08-24 specialist architecture course correction. Every live stage additionally requires a fresh exact-run approval.
+
+**Acceptance Criteria:**
+
+**Given** a locally valid Candidate and immutable Evidence
+**When** the Gate evaluates it
+**Then** deterministic code owns schemas, linkage, grounding/privacy/number provenance, required preservation fields, exact declared references, banned phrases, SpecialistResult validation, and final conjunction
+**And** coherence owns Gates 1/2/8, fit owns Gates 3/4/5/6, and quality owns Gate 7/Gate 9/non-token tone/qualitative claims/invitation pressure
+**And** the first non-pass, unknown, contradiction, malformed pointer, provider failure, or timeout rejects without invoking later specialists.
+
+**Given** a specialist invocation
+**When** its closed result returns
+**Then** it contains exactly its assigned checks, exact `candidate_ref`, `pass|reject|unknown`, non-empty reasons, and at least one canonical allowed RFC 6901 pointer across Candidate/Evidence/GroundingReport per check
+**And** pointers use named immutable roots, canonical escaping/indexing, existing non-empty targets, uniqueness after decoded-token normalization, and check-specific prefix allowlists; absence-based passes cite every complete Candidate field assessed
+**And** it emits no overall Candidate verdict and detailed findings remain internal.
+
+**Given** qualified primary/fallback candidates for each specialist
+**When** runtime selects configurations
+**Then** selection is independent per specialist, freezes all three choices before coherence from one availability/circuit snapshot, and chooses only configurations with both current structural and exact-zero-mismatch semantic GO
+**And** an invoked failure never re-judges the same Candidate or creates a fourth semantic call.
+
+**Given** the twelve-call ledger and one hard route deadline
+**When** an attempt is admitted
+**Then** one generation and three specialist slots reserve atomically; only never-invoked downstream slots release
+**And** `E=0` permits at most three Candidates, `E=1` at most two, and insufficient capacity/time serves the approved house path.
+
+**Given** offline fixtures and separately approved live qualification plans
+**When** structural and semantic verification run
+**Then** each specialist/configuration qualifies independently, semantic qualification exhaustively runs all applicable specialists despite production short-circuiting, and every approved golden and deliberate negative/control matches exactly
+**And** only three current specialist role refs produce one `JudgePipelineQualificationSet`/`judge_ref`, and only exact zero-mismatch evidence produces its combined `semantic_ref`.
+
+**Given** architecture approval alone
+**When** Story 1.18.2 begins
+**Then** offline contract, pipeline, adversarial tests, and unapproved exact-plan disclosures may be prepared
+**And** no provider call, deployment, activation, model/provider substitution, or remote mutation is authorized.
+
 ### Story 1.19: Local Full-Request Qualification
 
 As an operator,
-I want end-to-end local latency, cost, ledger, and commit evidence,
+I want end-to-end local full-waterfall latency, cost, selection, ledger, deadline, and commit evidence,
 So that the qualified pieces are proven together through authoritative commit.
 
 **Requirements:** FR1; FR3–FR7; FR11; NFR2; NFR4; NFR5
 
-**Dependency:** Stories 1.11–1.18; exact live authority is additionally required.
+**Dependency:** Stories 1.11–1.18 and Story 1.18.2; exact live authority is additionally required.
 
 **Acceptance Criteria:**
 
-**Given** matching structural and semantic refs plus the authoritative commit path
+**Given** matching generation, three-specialist pipeline, combined semantic, and authoritative commit refs plus an owner-approved finite route ceiling
 **When** a frozen live plan is approved and run
 **Then** the full local request exercises Evidence through render
-**And** attempts, ledger, candidate binding, receipt identity, latency, usage, cost, and hashes are retained
+**And** all three pre-call selections, slot reservations/transitions/releases, no same-Candidate switch, per-stage latency/timeouts, commit reserve, route ceiling, attempts, candidate binding, receipt identity, usage, cost, and hashes are retained
 **And** no retry, replacement, CI call, or deployment occurs.
 
 **Given** verified results
-**When** FULL-PAIR is derived
-**Then** every frozen correctness, deadline, cost, provenance, and Story 1.3 closed-list integrity predicate passes
+**When** FULL-WATERFALL is derived
+**Then** every frozen correctness, selection, twelve-call ledger, deadline/commit-reserve, cost, provenance, specialist/composite-integrity, and authoritative-commit predicate passes
 **And** failure preserves evidence and blocks activation.
 
 ### Story 1.20: Atomic Activation Contract and Release Decision View
@@ -761,7 +841,7 @@ So that partial configuration cannot activate an unproven pipeline.
 
 **Requirements:** FR11; AD-11
 
-**Dependency:** Stories 1.14 and 1.17–1.19.
+**Dependency:** Stories 1.14, 1.17–1.19, and Story 1.18.2.
 
 **Acceptance Criteria:**
 
@@ -931,7 +1011,7 @@ So that production can verify the deployable artifact before any new write path 
 
 **Acceptance Criteria:**
 
-**Given** the deployed reader and current STRUCT-JUDGE, STRUCT-GENERATION, SEMANTIC, local FULL-PAIR, and house-catalog refs
+**Given** the deployed reader and current judge-pipeline, STRUCT-GENERATION, combined SEMANTIC, local FULL-WATERFALL, and house-catalog refs
 **When** deployment preflight runs
 **Then** every applicable gate in the Story 1.20 release-decision view is pass
 **And** the candidate Worker bundle contains exactly the Story 1.23 canonical module graph with no duplicate writer or drifted runtime module
@@ -964,7 +1044,7 @@ So that visitors receive committed gate-passed local Briefs without coupling act
 
 **Acceptance Criteria:**
 
-**Given** Story 1.25's inactive writer and current STRUCT-JUDGE, STRUCT-GENERATION, SEMANTIC, local FULL-PAIR, and house-catalog refs
+**Given** Story 1.25's inactive writer and current judge-pipeline, STRUCT-GENERATION, combined SEMANTIC, local FULL-WATERFALL, and house-catalog refs
 **When** activation preflight runs
 **Then** every applicable local gate in the Story 1.20 release-decision view is pass
 **And** the exact replacement value is frozen without changing deployment state.
@@ -1150,7 +1230,7 @@ So that domain specificity cannot create a second ungoverned generation path.
 
 **Given** a domain attempt
 **When** the orchestrator runs
-**Then** E=1 permits at most two complete pairs
+**Then** E=1 permits at most two complete four-slot Candidate attempts under the shared twelve-call ledger
 **And** grounding and semantic rejection remain domain retries
 **And** accepted output commits under domain request scope and never populates global w:.
 
@@ -1225,7 +1305,7 @@ So that website grounding goes live without partial state.
 **Then** generation, judge, semantic, prompt, schema, adapter, runtime, and policy hashes are byte-identical between local and domain
 **And** any mode-specific structural override rejects.
 
-**Given** current STRUCT-EVIDENCE and domain FULL-PAIR refs
+**Given** current STRUCT-EVIDENCE and domain FULL-WATERFALL refs
 **When** domain-activation preflight runs
 **Then** every domain gate in the Story 1.20 release-decision view is pass
 **And** domain expiry is fail closed
@@ -1370,7 +1450,7 @@ Stories 3.3 and 2.10 are independent prerequisites that may complete in either o
 **And** one winner commits for the domain scope
 **And** successful responses are byte-identical
 **And** waiters finish within limits
-**And** the winning request has one six-call ledger.
+**And** the winning request has one twelve-call ledger.
 
 **Given** verified domain evidence
 **When** DOMAIN PASS is derived
