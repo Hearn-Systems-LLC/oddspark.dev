@@ -77,6 +77,7 @@ baseline_revision: 'e0d21d26c43f842d15f5f5755d39b3f73e470d0a'
 
 - 2026-08-23 — Planning halted on unresolved spend and evidence authority: live schedule/cardinality, Candidate source, retry/cost policy, and SEMANTIC schema are not defined by authoritative artifacts; primary-only generation topology must be reconciled explicitly.
 - 2026-08-24 — Justin approved frozen Story 1.17 Candidate projections, independent qualified judge legs, no generation calls, and no retries or substitutions. The harness will generate the exact 38-call request/cost disclosure for separate live approval before execution.
+- 2026-08-24 — The separately approved exact live run consumed all 38 judge calls once and terminated `semantic_not_qualified`. A publication-order defect discarded the in-memory raw responses before retention; no fixture or leg result can be reconstructed, no SEMANTIC ref exists, and no retry is authorized. The harness now publishes raw evidence and both reports before any terminal GO/NO-GO decision and supports an append-only loss attestation containing only observed facts.
 
 ## Review Triage Log
 
@@ -119,10 +120,10 @@ The immutable catalog has 24 ordered projections: 19 require a judge and five ar
 
 ## Auto Run Result
 
-Status: done (offline implementation and exact plan); live qualification remains approval-gated.
-Owner decision: use the immutable Story 1.17 projections; execute the 19 judge-required entries independently through each qualified judge leg, primary leg first and catalog order within each leg; make no generation calls, retries, replacements, substitutions, or additional diagnostics. Implementation may prepare and verify the exact 38-call plan offline. Provider execution still requires Justin's separate approval of the generated plan identity, request identities, expiry, and conservative maximum cost.
+Status: done; the approved live qualification terminated NO-GO with no SEMANTIC ref and no retry authority.
+Owner decision: use the immutable Story 1.17 projections; execute the 19 judge-required entries independently through each qualified judge leg, primary leg first and catalog order within each leg; make no generation calls, retries, replacements, substitutions, or additional diagnostics. Justin separately approved the exact generated plan identity, request identities, expiry, and conservative maximum cost before execution.
 
-Offline plan generated 2026-08-24T05:00:30.505Z with run ID `semantic-8e5c4baf-9b77-4b7d-b2db-4251027ffc30`, plan ref `863a1acd48a72df7955a2cf94193c55c86413f149acea36296e2f592edbf80ef`, request-set ref `6bc8377184c464861cf9e39d2ca97810f5a9ddf0830f257db51920e4f3b9934c`, and conservative maximum `$0.38664392` for exactly 38 judge calls. The approval template remains unapproved. No provider call was made and no SEMANTIC ref exists.
+Live terminal NO-GO: run ID `semantic-8e5c4baf-9b77-4b7d-b2db-4251027ffc30`, plan ref `863a1acd48a72df7955a2cf94193c55c86413f149acea36296e2f592edbf80ef`, request-set ref `6bc8377184c464861cf9e39d2ca97810f5a9ddf0830f257db51920e4f3b9934c`, and approved conservative maximum `$0.38664392`. The operator observed exactly 38 authorized HTTP 200 completions. Terminal code is `semantic_not_qualified`; the pre-fix publication-order defect left raw responses unavailable, so no fixture-level or leg-level claims are made. No SEMANTIC ref exists and no retry is authorized.
 
 Implemented files:
 - `spikes/semantic-qualification/qualification.mjs` — total closed authority, report, manifest, and SEMANTIC derivation.

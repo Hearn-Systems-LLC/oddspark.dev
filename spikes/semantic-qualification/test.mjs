@@ -12,12 +12,43 @@ import {
   validateLegReport,
   validatePlan,
 } from "./qualification.mjs";
-import { buildCurrentPlan, executeAuthorized, writePlan } from "./run.mjs";
+import {
+  attestConsumedRun,
+  buildCurrentPlan,
+  executeAuthorized,
+  writePlan,
+} from "./run.mjs";
 import worker from "./worker.mjs";
 import { verifyBundle } from "./verify.mjs";
 import { loadSemanticRegressionCatalog } from "../../scripts/semantic-regression.mjs";
 
 const mutate = (value) => structuredClone(value);
+const retainedResponse = (catalog, request) => {
+  const fixture = catalog.fixtures.find((x) => x.id === request.fixture_id),
+    failed = new Set(fixture.verdict.failed_checks),
+    check = (name) => ({
+      pass: !failed.has(name),
+      reason: `retained ${request.fixture_id} ${name}`,
+    }),
+    verdict = { pass: false };
+  for (let i = 1; i <= 9; i++) verdict[`gate_${i}`] = check(`gate-${i}`);
+  verdict.tone = check("tone");
+  verdict.claims = check("claims");
+  const conjunction = Object.entries(verdict)
+    .filter(([key]) => key !== "pass")
+    .every(([, value]) => value.pass);
+  verdict.pass =
+    fixture.verdict.top_level_pass === "conjunction"
+      ? conjunction
+      : fixture.verdict.top_level_pass;
+  return {
+    candidate_ref:
+      fixture.verdict.candidate_ref === "bound"
+        ? request.candidate_ref
+        : "f".repeat(64),
+    verdict,
+  };
+};
 test("plan freezes exact 24/19/38 identities, ordering, cost, and zero generation", async () => {
   const plan = await buildCurrentPlan({
     run_id: "test-plan",
@@ -357,32 +388,6 @@ test("38 retained outputs derive two real 24-outcome reports and a verified SEMA
     approved_by: "Justin",
     decision: "approved",
   };
-  const responseFor = (request) => {
-    const fixture = catalog.fixtures.find((x) => x.id === request.fixture_id),
-      failed = new Set(fixture.verdict.failed_checks);
-    const check = (name) => ({
-        pass: !failed.has(name),
-        reason: `retained ${request.fixture_id} ${name}`,
-      }),
-      verdict = { pass: false };
-    for (let i = 1; i <= 9; i++) verdict[`gate_${i}`] = check(`gate-${i}`);
-    verdict.tone = check("tone");
-    verdict.claims = check("claims");
-    const conjunction = Object.entries(verdict)
-      .filter(([key]) => key !== "pass")
-      .every(([, value]) => value.pass);
-    verdict.pass =
-      fixture.verdict.top_level_pass === "conjunction"
-        ? conjunction
-        : fixture.verdict.top_level_pass;
-    return {
-      candidate_ref:
-        fixture.verdict.candidate_ref === "bound"
-          ? request.candidate_ref
-          : "f".repeat(64),
-      verdict,
-    };
-  };
   const directory = await mkdtemp(path.join(os.tmpdir(), "semantic-e2e-"));
   const result = await executeAuthorized({
     plan,
@@ -390,7 +395,7 @@ test("38 retained outputs derive two real 24-outcome reports and a verified SEMA
     now,
     clock: () => now,
     outputDirectory: directory,
-    invoke: async (request) => responseFor(request),
+    invoke: async (request) => retainedResponse(catalog, request),
   });
   assert.equal(result.ok, true);
   assert.equal(result.bundle.reports.length, 2);
@@ -404,4 +409,131 @@ test("38 retained outputs derive two real 24-outcome reports and a verified SEMA
   const forged = mutate(result.bundle);
   forged.evidence.records[0].response.verdict.pass = false;
   assert.equal((await verifyBundle(forged)).valid, false);
+});
+test("semantic NO-GO after 38 completions retains evidence and both reports without a ref", async () => {
+  const now = new Date(),
+    plan = await buildCurrentPlan({
+      run_id: "e2e-no-go",
+      created_at: now.toISOString(),
+    }),
+    catalog = await loadSemanticRegressionCatalog(),
+    approval = {
+      ...approvalTemplate(plan),
+      approved_at: now.toISOString(),
+      expires_at: new Date(now.getTime() + APPROVAL_WINDOW_MS).toISOString(),
+      approved_by: "Justin",
+      decision: "approved",
+    },
+    directory = await mkdtemp(path.join(os.tmpdir(), "semantic-no-go-"));
+  const result = await executeAuthorized({
+    plan,
+    approval,
+    now,
+    clock: () => now,
+    outputDirectory: directory,
+    invoke: async (request) => {
+      const value = retainedResponse(catalog, request);
+      if (request.sequence === 1) {
+        value.verdict.gate_1.pass = false;
+        value.verdict.pass = false;
+      }
+      return value;
+    },
+  });
+  assert.equal(result.ok, false);
+  assert.equal(result.calls_started, 38);
+  assert.equal(result.bundle, null);
+  assert.equal(result.terminal.code, "semantic_not_qualified");
+  assert.equal(result.terminal.semantic_ref, null);
+  assert.equal(result.reports.length, 2);
+  assert.equal(result.reports[0].records.length, 19);
+  assert.equal(result.reports[1].records.length, 19);
+  assert.equal(
+    JSON.parse(
+      await readFile(path.join(directory, `${plan.run_id}.evidence.json`)),
+    ).records.length,
+    38,
+  );
+  await assert.rejects(
+    readFile(path.join(directory, `${plan.run_id}.manifest.json`)),
+  );
+  await assert.rejects(
+    readFile(path.join(directory, `${plan.run_id}.bundle.json`)),
+  );
+});
+test("consumed-run attestation is append-only and records no invented results or retry", async () => {
+  const plan = await buildCurrentPlan({
+      run_id: "consumed-gap",
+      created_at: "2026-08-24T00:00:00.000Z",
+    }),
+    directory = await mkdtemp(path.join(os.tmpdir(), "semantic-attest-")),
+    output = path.join(directory, "attestation.json"),
+    record = await attestConsumedRun({
+      plan,
+      output,
+      attested_by: "Justin",
+      observed_http_200: 38,
+    });
+  assert.equal(record.raw_responses_available, false);
+  assert.equal(record.semantic_ref, null);
+  assert.equal(record.retry_authorized, false);
+  assert.equal(Object.hasOwn(record, "reports"), false);
+  await assert.rejects(
+    attestConsumedRun({
+      plan,
+      output,
+      attested_by: "Justin",
+      observed_http_200: 38,
+    }),
+    (error) => error?.code === "EEXIST",
+  );
+  await assert.rejects(
+    attestConsumedRun({
+      plan,
+      output: path.join(directory, "bad.json"),
+      attested_by: "Justin",
+      observed_http_200: 37,
+    }),
+  );
+});
+test("terminal publication collision leaves raw evidence crash-visible and never overwrites", async () => {
+  const now = new Date(),
+    plan = await buildCurrentPlan({
+      run_id: "terminal-collision",
+      created_at: now.toISOString(),
+    }),
+    catalog = await loadSemanticRegressionCatalog(),
+    approval = {
+      ...approvalTemplate(plan),
+      approved_at: now.toISOString(),
+      expires_at: new Date(now.getTime() + APPROVAL_WINDOW_MS).toISOString(),
+      approved_by: "Justin",
+      decision: "approved",
+    },
+    directory = await mkdtemp(
+      path.join(os.tmpdir(), "semantic-terminal-collision-"),
+    ),
+    occupied = path.join(directory, `${plan.run_id}.primary.report.json`);
+  await (await import("node:fs/promises")).writeFile(occupied, "occupied");
+  await assert.rejects(
+    executeAuthorized({
+      plan,
+      approval,
+      now,
+      clock: () => now,
+      outputDirectory: directory,
+      invoke: async (request) => retainedResponse(catalog, request),
+    }),
+    (error) => error?.code === "EEXIST",
+  );
+  assert.equal(
+    JSON.parse(
+      await readFile(path.join(directory, `${plan.run_id}.evidence.json`)),
+    ).records.length,
+    38,
+  );
+  assert.equal(await readFile(occupied, "utf8"), "occupied");
+  await assert.rejects(
+    readFile(path.join(directory, `${plan.run_id}.terminal.json`)),
+  );
 });
