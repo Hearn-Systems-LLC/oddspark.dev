@@ -322,7 +322,7 @@ async function invokeBounded(invoke, request) {
     ? { state: "failed", response: null }
     : { state: "completed", response: winner.value };
 }
-export async function publishSuccess(directory, plan, approval, records) {
+export async function publishTerminal(directory, plan, approval, records) {
   const evidence = {
     schema_version: "oddspark.semantic-qualification-evidence/v1",
     run_id: plan.run_id,
@@ -331,28 +331,44 @@ export async function publishSuccess(directory, plan, approval, records) {
     records,
   };
   const reports = await deriveReports(plan, evidence);
-  if (reports.some((x) => x.outcome !== "pass"))
-    throw new Error(
-      "retained evidence does not independently qualify both legs",
-    );
-  const manifest = buildManifest({ plan, reports, evidence }),
-    semantic_ref = deriveSemanticRef(manifest),
-    bundle = {
-      schema_version: "oddspark.semantic-qualification-bundle/v1",
-      plan,
-      approval,
-      evidence,
-      reports,
-      manifest,
-      semantic_ref,
-    };
+  const qualified = reports.every((x) => x.outcome === "pass");
+  const manifest = qualified
+      ? buildManifest({ plan, reports, evidence })
+      : null,
+    semantic_ref = qualified ? deriveSemanticRef(manifest) : null,
+    bundle = qualified
+      ? {
+          schema_version: "oddspark.semantic-qualification-bundle/v1",
+          plan,
+          approval,
+          evidence,
+          reports,
+          manifest,
+          semantic_ref,
+        }
+      : null;
+  const terminal = {
+    schema_version: "oddspark.semantic-qualification-terminal/v1",
+    run_id: plan.run_id,
+    plan_ref: plan.plan_ref,
+    outcome: qualified ? "GO" : "NO-GO",
+    code: qualified ? "semantic_qualified" : "semantic_not_qualified",
+    calls_started: records.length,
+    evidence_sha256: sha256(canonicalBytes(evidence)),
+    report_sha256: reports.map((report) => sha256(canonicalBytes(report))),
+    semantic_ref,
+  };
   const members = [
     [`${plan.run_id}.evidence.json`, evidence],
     [`${plan.run_id}.primary.report.json`, reports[0]],
     [`${plan.run_id}.fallback.report.json`, reports[1]],
-    [`${plan.run_id}.manifest.json`, manifest],
-    [`${plan.run_id}.bundle.json`, bundle],
+    [`${plan.run_id}.terminal.json`, terminal],
   ];
+  if (qualified)
+    members.push(
+      [`${plan.run_id}.manifest.json`, manifest],
+      [`${plan.run_id}.bundle.json`, bundle],
+    );
   for (const [name, value] of members)
     await atomicWrite(path.join(directory, name), canonicalBytes(value));
   const marker = {
@@ -368,7 +384,7 @@ export async function publishSuccess(directory, plan, approval, records) {
     path.join(directory, `${plan.run_id}.complete.json`),
     canonicalBytes(marker),
   );
-  return bundle;
+  return { qualified, bundle, terminal, reports, evidence };
 }
 export async function executeAuthorized({
   plan,
@@ -457,10 +473,51 @@ export async function executeAuthorized({
       return { ok: false, calls_started: records.length, records };
     }
   }
-  const bundle = outputDirectory
-    ? await publishSuccess(outputDirectory, plan, approval, records)
+  const publication = outputDirectory
+    ? await publishTerminal(outputDirectory, plan, approval, records)
     : null;
-  return { ok: true, calls_started: 38, records, bundle };
+  return {
+    ok: publication ? publication.qualified : true,
+    calls_started: 38,
+    records,
+    bundle: publication?.bundle ?? null,
+    terminal: publication?.terminal ?? null,
+    reports: publication?.reports ?? null,
+  };
+}
+
+export async function attestConsumedRun({
+  plan,
+  output,
+  attested_by,
+  observed_http_200,
+}) {
+  if (!validatePlan(plan).valid) throw new Error("attestation plan is invalid");
+  if (
+    observed_http_200 !== 38 ||
+    typeof attested_by !== "string" ||
+    !attested_by.trim()
+  )
+    throw new Error(
+      "attestation requires an identified observer and exactly 38 observed HTTP 200 completions",
+    );
+  const record = {
+    schema_version: "oddspark.semantic-qualification-loss-attestation/v1",
+    run_id: plan.run_id,
+    plan_ref: plan.plan_ref,
+    request_set_sha256: plan.identities.request_set_sha256,
+    attested_at: new Date().toISOString(),
+    attested_by,
+    observed_authorized_http_200_completions: 38,
+    terminal_code: "semantic_not_qualified",
+    raw_responses_available: false,
+    evidence_gap:
+      "raw responses unavailable because terminal publication preceded retention",
+    semantic_ref: null,
+    retry_authorized: false,
+  };
+  await atomicWrite(path.resolve(output), canonicalBytes(record));
+  return record;
 }
 
 async function main(argv = process.argv.slice(2)) {
@@ -537,9 +594,33 @@ async function main(argv = process.argv.slice(2)) {
     console.log(
       result.ok
         ? `SEMANTIC ${result.bundle.semantic_ref}`
-        : `INCOMPLETE ${result.calls_started}/38`,
+        : result.terminal
+          ? `NO-GO ${result.terminal.code} ${result.calls_started}/38; no SEMANTIC ref`
+          : `INCOMPLETE ${result.calls_started}/38`,
     );
     return result.ok ? 0 : 1;
+  }
+  if (argv[0] === "attest-consumed") {
+    if (process.env.CI || !process.stdin.isTTY || !process.stdout.isTTY)
+      throw new Error(
+        "consumed-run attestation requires an interactive terminal outside CI",
+      );
+    const [planFile, output, attestedBy, count] = argv.slice(1);
+    if (!planFile || !output)
+      throw new Error(
+        "Usage: node spikes/semantic-qualification/run.mjs attest-consumed <plan.json> <new-attestation.json> <attested-by> 38",
+      );
+    const plan = JSON.parse(await readFile(path.resolve(planFile), "utf8"));
+    const record = await attestConsumedRun({
+      plan,
+      output,
+      attested_by: attestedBy,
+      observed_http_200: Number(count),
+    });
+    console.log(
+      `ATTESTED ${record.run_id} ${record.terminal_code}; no retry authority`,
+    );
+    return 0;
   }
   throw new Error(
     "Usage: node spikes/semantic-qualification/run.mjs plan [directory]",
