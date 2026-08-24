@@ -2,7 +2,7 @@
 title: 'Story 1.21: Local Artifact Retention Lifecycle'
 type: 'feature'
 created: '2026-08-23'
-status: 'blocked'
+status: 'in-progress'
 review_loop_iteration: 0
 followup_review_recommended: false
 context:
@@ -17,13 +17,13 @@ deferred: []
 
 **Problem:** Local authoritative receipts and projections can remain eligible indefinitely, reads and repairs lack one non-sliding expiry authority, and the persisted-record inventory does not prove bounded lifecycle behavior at exact clock boundaries.
 
-**Approach:** Make immutable COORD receipt timestamps authoritative for a 30-day local lifecycle, propagate only the remaining absolute lifetime to KV projections, enforce expiry once across both public read surfaces, and test each declared record family with controlled time and scope-safe cleanup.
+**Approach:** Make immutable COORD receipt timestamps authoritative for a 30-day local lifecycle, propagate only the remaining absolute lifetime to KV projections, enforce expiry once across both public read surfaces, test each implemented record family with controlled time and scope-safe cleanup, and truthfully inventory the nonexistent aggregate-report family as absent/deferred.
 
 ## Boundaries & Constraints
 
-**Always:** Stamp `committed_at` and `expires_at` once with an exact 30-day delta; preserve them on idempotent commit and every read/repair; refuse at `now >= expires_at`; derive KV absolute expiration from the receipt; keep COORD authoritative; make cleanup collision-safe and scope-closed; inventory owner, authority, creation, read, expiry, and cleanup for every named family.
+**Always:** Stamp `committed_at` and `expires_at` once with an exact 30-day delta; preserve them on idempotent commit and every read/repair; refuse at `now >= expires_at`; derive KV absolute expiration from the receipt; keep COORD authoritative; make cleanup collision-safe and scope-closed; inventory owner, authority, creation, read, expiry, and cleanup for every implemented named family; record aggregate reports as absent/deferred.
 
-**Block If:** Aggregate reports must be implemented rather than inventoried as absent, because authoritative artifacts call 90-day `m:<day>:*` reports pre-existing while the repository has no report schema, snapshot schedule, writer, reader, or cleanup contract. Those choices require an explicit BMAD decision.
+**Block If:** Work would require inventing an aggregate-report schema, snapshot schedule, writer, reader, authority relationship, or cleanup contract; those remain deferred unless separately authorized through BMAD.
 
 **Never:** Extend or alter Story 2.6's domain one-hour lifecycle; make reads slide expiry; let stale KV restore eligibility; delete across `w:`/`pw:` or receipt scopes; turn KV into authority; silently grant legacy projections a new lifetime; modify activation, deployment, pinned evidence, deferred-work, or `sprint-status.yaml`.
 
@@ -35,7 +35,7 @@ deferred: []
 | Boundary reads | Same receipt at `expiry - 1ms` and `expiry` | Both public surfaces serve before and return shared 404 at/after boundary | No served metric or projection repair after expiry |
 | Repeated repair | Valid COORD receipt with missing/stale local KV | Repair uses remaining lifetime and never extends expiry | Refuse cross-scope keys and expired authority |
 | Scoped cleanup | Expired local receipt/index collides with unrelated scope | Delete only identity-bound local records | Ambiguity fails closed without deleting another scope |
-| Named family inventory | Profile, abuse, neuron receipt, aggregate report | Explicit lifecycle plus time-controlled proof for each | Missing implementation is disclosed, not invented |
+| Named family inventory | Profile, abuse, neuron receipt, absent aggregate report | Explicit lifecycle and time-controlled proof for implemented families; aggregate reports recorded absent/deferred | Missing implementation is disclosed, not invented |
 
 </intent-contract>
 
@@ -55,7 +55,7 @@ deferred: []
 ## Tasks & Acceptance
 
 **Execution:**
-- `_bmad-output/implementation-artifacts/spec-1-21-local-artifact-retention-lifecycle.md` — reconcile the aggregate-report contradiction before development.
+- `_bmad-output/implementation-artifacts/spec-1-21-local-artifact-retention-lifecycle.md` and `epics.md` — record the owner-approved absent/deferred aggregate-report decision without creating that family.
 - `src/pipeline/retention.mjs` — add exact immutable local expiry and scope-safe named-family lifecycle helpers.
 - `src/pipeline/receipts.mjs` — close local receipt parsing around `committed_at` plus exact `expires_at`.
 - `src/worker.js` — stamp authoritative expiry once, enforce it on read/claim/public lookup, and repair local projections with non-sliding absolute expiration.
@@ -65,11 +65,12 @@ deferred: []
 - Given a local commit, when the receipt and projections are created or repaired, then immutable timestamps remain exactly 30 days apart and all derived storage shares the same absolute boundary.
 - Given either public artifact route, when the authoritative clock reaches expiry, then the artifact is refused with the shared 404 behavior, no metric increments, and reads never extend eligibility.
 - Given cleanup or repair, when keys, ids, or scopes conflict, then no domain or unrelated record is deleted or restored and COORD remains authority.
-- Given every BMAD-declared record family, when lifecycle verification runs under a controlled clock, then owner, authority, creation, read, exact expiry, and cleanup are executable and explicit.
+- Given every implemented BMAD-declared record family, when lifecycle verification runs under a controlled clock, then owner, authority, creation, read, exact expiry, and cleanup are executable and explicit; the nonexistent aggregate-report family is explicitly absent/deferred.
 
 ## Spec Change Log
 
 - 2026-08-23 — Planning halted because authoritative BMAD names pre-existing 90-day aggregate reports but no executable report family or schema exists.
+- 2026-08-23 — Justin approved recording `m:<day>:*` aggregate reports as absent/deferred. Story 1.21 implements only the defined local receipt/projection lifecycle and inventories existing profile, abuse, and neuron families; it must not invent aggregate-report behavior.
 
 ## Review Triage Log
 
@@ -87,5 +88,5 @@ The receipt's absolute timestamp is the lifecycle fact. KV expiration is a proje
 
 ## Auto Run Result
 
-Status: blocked
-Blocking condition: intent gap. Justin must decide whether Story 1.21 now creates the architecture-declared `m:<day>:*` aggregate-report family or records it as absent/deferred. If it must exist, BMAD must define its closed snapshot schema, creation cadence/trigger, reader/consumer, authority relationship to COORD counters, and cleanup semantics so the required 90-day time-controlled tests have an executable contract.
+Status: resumed
+Owner decision: aggregate reports are absent/deferred and are not implemented by this story. Development may proceed on the defined 30-day local lifecycle and implemented-family inventory.

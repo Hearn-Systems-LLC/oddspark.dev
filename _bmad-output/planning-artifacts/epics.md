@@ -802,10 +802,11 @@ So that production inherits no unbounded storage.
 **And** /s/:id and /api/spark/:id refuse the artifact at or after expiry
 **And** reads never slide expiry.
 
-**Given** the pre-existing record families (profile 24h, abuse slots 1h, neuron receipts 2d, aggregate reports 90d)
+**Given** the implemented record families (profile 24h, abuse slots 1h, neuron receipts 2d) and the architecture-declared but nonexistent aggregate-report family
 **When** retention is inventoried
 **Then** owner, authority, creation, read, expiry, and cleanup are explicit
-**And** time-controlled tests cover each family.
+**And** time-controlled tests cover each implemented family
+**And** aggregate reports are recorded as absent and deferred without inventing a schema, writer, reader, cadence, authority, or cleanup mechanism in this story.
 
 **Given** cleanup and projection repair
 **When** they run
