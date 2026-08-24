@@ -1,0 +1,3061 @@
+{
+  "schema_version": "oddspark.semantic-qualification-leg-report/v1",
+  "run_id": "semantic-8baaad6c-95dc-4546-9a7b-1e4afd1f3f7e",
+  "plan_ref": "2f6d330b61c77dac3c9a358b3371b69275ace32cecfbaa1abdb3ac7878b8c9ae",
+  "leg": "fallback",
+  "model": "@cf/meta/llama-3.1-8b-instruct-fast",
+  "qualification_ref": "1c32d0c87e1b3c7b977c7f99c6b26ccdb8fbae3ecb2e6340f32dbebff2538cf4",
+  "started_at": "2026-08-24T12:26:16.451Z",
+  "ended_at": "2026-08-24T12:27:34.079Z",
+  "records": [
+    {
+      "sequence": 20,
+      "fixture_id": "golden-local-after-hours-callback-card",
+      "request_sha256": "d211d18474f46f441c10c9167085a776d563a749543e61cb860b9917ec55d79d",
+      "started_at": "2026-08-24T12:26:16.451Z",
+      "ended_at": "2026-08-24T12:26:21.165Z",
+      "state": "completed",
+      "response": {
+        "choices": [
+          {
+            "finish_reason": "stop",
+            "index": 0,
+            "logprobs": null,
+            "message": {
+              "annotations": null,
+              "audio": null,
+              "content": "{\n  \"candidate_ref\": \"7ff3301fe87749178d9ca2e3e7bd4c58cc1ae2a8c9f8f12c50efa4a05bbdd614\",\n  \"verdict\": {\n    \"claims\": {\n      \"pass\": false,\n      \"reason\": \"The claims are qualitative, but the Candidate does not follow the local mode's rule of using only qualitative claims.\"\n    },\n    \"gate_1\": {\n      \"pass\": false,\n      \"reason\": \"The routine starts from a credible routine, but the 'recurring annoyance' is not clearly defined.\"\n    },\n    \"gate_2\": {\n      \"pass\": false,\n      \"reason\": \"The intervention is not clearly defined, and it's not clear how it addresses the 'friction'.\"\n    },\n    \"gate_3\": {\n      \"pass\": true,\n      \"reason\": \"The capability does not duplicate an existing capability.\"\n    },\n    \"gate_4\": {\n      \"pass\": false,\n      \"reason\": \"The channel is not clearly defined, and it's not clear how it fits with the existing workflow.\"\n    },\n    \"gate_5\": {\n      \"pass\": false,\n      \"reason\": \"The scope of the intervention is not clearly defined, and it's not clear how it matches the likely scale and complexity of the business.\"\n    },\n    \"gate_6\": {\n      \"pass\": false,\n      \"reason\": \"The delivery fit is not clearly defined, and it's not clear how it fits with Hearn Systems' software, AI, automation, integration, or data-work delivery envelope.\"\n    },\n    \"gate_7\": {\n      \"pass\": false,\n      \"reason\": \"The preservation requirements are not clearly defined, and it's not clear how the intervention preserves the existing tools, decision authority, and workflow steps.\"\n    },\n    \"gate_8\": {\n      \"pass\": false,\n      \"reason\": \"The retelling of the situation, intervention, and payoff is not natural and would not survive a short spoken retelling.\"\n    },\n    \"gate_9\": {\n      \"pass\": false,\n      \"reason\": \"The idea is not novel but is an obvious extension of the existing workflow.\"\n    },\n    \"pass\": false,\n    \"tone\": {\n      \"pass\": false,\n      \"reason\": \"The tone is not plain and confident, and it's not clear how the owner could say this across a counter.\"\n    }\n  }\n}",
+              "function_call": null,
+              "reasoning": null,
+              "refusal": null,
+              "role": "assistant"
+            },
+            "routed_experts": null,
+            "stop_reason": null,
+            "token_ids": null
+          }
+        ],
+        "created": 1787574376,
+        "ec_transfer_params": null,
+        "id": "chatcmpl-5adbe2df-e4e4-4b42-9555-70c4c0493d50",
+        "kv_transfer_params": null,
+        "metrics": null,
+        "model": "@cf/meta/llama-3.1-8b-fast-v2",
+        "object": "chat.completion",
+        "prompt_logprobs": null,
+        "prompt_text": null,
+        "prompt_token_ids": null,
+        "response": {
+          "candidate_ref": "7ff3301fe87749178d9ca2e3e7bd4c58cc1ae2a8c9f8f12c50efa4a05bbdd614",
+          "verdict": {
+            "claims": {
+              "pass": false,
+              "reason": "The claims are qualitative, but the Candidate does not follow the local mode's rule of using only qualitative claims."
+            },
+            "gate_1": {
+              "pass": false,
+              "reason": "The routine starts from a credible routine, but the 'recurring annoyance' is not clearly defined."
+            },
+            "gate_2": {
+              "pass": false,
+              "reason": "The intervention is not clearly defined, and it's not clear how it addresses the 'friction'."
+            },
+            "gate_3": {
+              "pass": true,
+              "reason": "The capability does not duplicate an existing capability."
+            },
+            "gate_4": {
+              "pass": false,
+              "reason": "The channel is not clearly defined, and it's not clear how it fits with the existing workflow."
+            },
+            "gate_5": {
+              "pass": false,
+              "reason": "The scope of the intervention is not clearly defined, and it's not clear how it matches the likely scale and complexity of the business."
+            },
+            "gate_6": {
+              "pass": false,
+              "reason": "The delivery fit is not clearly defined, and it's not clear how it fits with Hearn Systems' software, AI, automation, integration, or data-work delivery envelope."
+            },
+            "gate_7": {
+              "pass": false,
+              "reason": "The preservation requirements are not clearly defined, and it's not clear how the intervention preserves the existing tools, decision authority, and workflow steps."
+            },
+            "gate_8": {
+              "pass": false,
+              "reason": "The retelling of the situation, intervention, and payoff is not natural and would not survive a short spoken retelling."
+            },
+            "gate_9": {
+              "pass": false,
+              "reason": "The idea is not novel but is an obvious extension of the existing workflow."
+            },
+            "pass": false,
+            "tone": {
+              "pass": false,
+              "reason": "The tone is not plain and confident, and it's not clear how the owner could say this across a counter."
+            }
+          }
+        },
+        "service_tier": null,
+        "tool_calls": [],
+        "usage": {
+          "prompt_tokens": 1632,
+          "completion_tokens": 527,
+          "total_tokens": 2159,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "neurons": 25.096839904785156
+        }
+      },
+      "response_sha256": "b5d469ec2b24fc44314370a91d5cde834a4defab5dce78e6131d64073b35093c"
+    },
+    {
+      "sequence": 21,
+      "fixture_id": "golden-local-lakeside-weather-handoff",
+      "request_sha256": "77eada7528f1f29474c3255370b1b73404450eebd075b32ab5a3fbb7119b7ded",
+      "started_at": "2026-08-24T12:26:21.171Z",
+      "ended_at": "2026-08-24T12:26:24.447Z",
+      "state": "completed",
+      "response": {
+        "choices": [
+          {
+            "finish_reason": "stop",
+            "index": 0,
+            "logprobs": null,
+            "message": {
+              "annotations": null,
+              "audio": null,
+              "content": "{\n  \"candidate_ref\": \"32d1126eefd753737d81deb4ae1839d49b6e204530a76de42a1862a6721e96d4\",\n  \"verdict\": {\n    \"claims\": {\n      \"pass\": false,\n      \"reason\": \"The claims are qualitative, but the plan involves sending a customer update, which implies a quantitative effect on customer satisfaction.\"\n    },\n    \"gate_1\": {\n      \"pass\": true,\n      \"reason\": \"The routine starts with a credible routine (weather change triggers schedule edits) and a recurring annoyance (separate customer messages).\"\n    },\n    \"gate_2\": {\n      \"pass\": true,\n      \"reason\": \"Every friction (weather change) leads to an imaginable solution (one weather-aware morning handoff).\"\n    },\n    \"gate_3\": {\n      \"pass\": true,\n      \"reason\": \"The plan does not duplicate an existing capability; it adds a new handoff to the existing schedule and customer update process.\"\n    },\n    \"gate_4\": {\n      \"pass\": true,\n      \"reason\": \"The plan uses an observed channel (customer text channel) and introduces a fitting one (weather-aware morning handoff).\"\n    },\n    \"gate_5\": {\n      \"pass\": true,\n      \"reason\": \"The plan matches likely scale, complexity, and maintenance capacity; it's a small, incremental change to the existing process.\"\n    },\n    \"gate_6\": {\n      \"pass\": true,\n      \"reason\": \"The plan can be implemented as software, AI automation, integration, data workflow, or adjacent digital system; it's a software-based solution.\"\n    },\n    \"gate_7\": {\n      \"pass\": true,\n      \"reason\": \"The plan retains helpful tools (existing schedule, current customer text channel), workflow steps (route planning, on-site work, final invoicing), and decision rights (the crew lead still decides whether work moves).\"\n    },\n    \"gate_8\": {\n      \"pass\": true,\n      \"reason\": \"A person could naturally explain the situation (weather change triggers schedule edits), capability (weather-aware morning handoff), and payoff (crew lead facing a weather shift moves a job card and sends the same clear update).\"\n    },\n    \"gate_9\": {\n      \"pass\": true,\n      \"reason\": \"The plan goes beyond the obvious while remaining concrete; it's a novel but imaginable solution.\"\n    },\n    \"pass\": false,\n    \"tone\": {\n      \"pass\": false,\n      \"reason\": \"The tone is confident, but it uses a pitch-like invitation ('We can sketch the smallest lake-wind shuffle...') and a consultant-like register ('The lake-wind shuffle').\"\n    }\n  }\n}",
+              "function_call": null,
+              "reasoning": null,
+              "refusal": null,
+              "role": "assistant"
+            },
+            "routed_experts": null,
+            "stop_reason": null,
+            "token_ids": null
+          }
+        ],
+        "created": 1787574381,
+        "ec_transfer_params": null,
+        "id": "chatcmpl-be5df1d6-8b33-4a1f-b82b-7eeeeddbd411",
+        "kv_transfer_params": null,
+        "metrics": null,
+        "model": "@cf/meta/llama-3.1-8b-fast-v2",
+        "object": "chat.completion",
+        "prompt_logprobs": null,
+        "prompt_text": null,
+        "prompt_token_ids": null,
+        "response": {
+          "candidate_ref": "32d1126eefd753737d81deb4ae1839d49b6e204530a76de42a1862a6721e96d4",
+          "verdict": {
+            "claims": {
+              "pass": false,
+              "reason": "The claims are qualitative, but the plan involves sending a customer update, which implies a quantitative effect on customer satisfaction."
+            },
+            "gate_1": {
+              "pass": true,
+              "reason": "The routine starts with a credible routine (weather change triggers schedule edits) and a recurring annoyance (separate customer messages)."
+            },
+            "gate_2": {
+              "pass": true,
+              "reason": "Every friction (weather change) leads to an imaginable solution (one weather-aware morning handoff)."
+            },
+            "gate_3": {
+              "pass": true,
+              "reason": "The plan does not duplicate an existing capability; it adds a new handoff to the existing schedule and customer update process."
+            },
+            "gate_4": {
+              "pass": true,
+              "reason": "The plan uses an observed channel (customer text channel) and introduces a fitting one (weather-aware morning handoff)."
+            },
+            "gate_5": {
+              "pass": true,
+              "reason": "The plan matches likely scale, complexity, and maintenance capacity; it's a small, incremental change to the existing process."
+            },
+            "gate_6": {
+              "pass": true,
+              "reason": "The plan can be implemented as software, AI automation, integration, data workflow, or adjacent digital system; it's a software-based solution."
+            },
+            "gate_7": {
+              "pass": true,
+              "reason": "The plan retains helpful tools (existing schedule, current customer text channel), workflow steps (route planning, on-site work, final invoicing), and decision rights (the crew lead still decides whether work moves)."
+            },
+            "gate_8": {
+              "pass": true,
+              "reason": "A person could naturally explain the situation (weather change triggers schedule edits), capability (weather-aware morning handoff), and payoff (crew lead facing a weather shift moves a job card and sends the same clear update)."
+            },
+            "gate_9": {
+              "pass": true,
+              "reason": "The plan goes beyond the obvious while remaining concrete; it's a novel but imaginable solution."
+            },
+            "pass": false,
+            "tone": {
+              "pass": false,
+              "reason": "The tone is confident, but it uses a pitch-like invitation ('We can sketch the smallest lake-wind shuffle...') and a consultant-like register ('The lake-wind shuffle')."
+            }
+          }
+        },
+        "service_tier": null,
+        "tool_calls": [],
+        "usage": {
+          "prompt_tokens": 1616,
+          "completion_tokens": 586,
+          "total_tokens": 2202,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "neurons": 27.08814239501953
+        }
+      },
+      "response_sha256": "ce9d7fab0377b94ce626536382557a30eeff082d4fb1c379100fe0006a41612d"
+    },
+    {
+      "sequence": 22,
+      "fixture_id": "golden-local-counter-special-tally",
+      "request_sha256": "b5ceee4973a051c886f639b7b6f18f309522cf0a64efbad4ff36296b0626c107",
+      "started_at": "2026-08-24T12:26:24.462Z",
+      "ended_at": "2026-08-24T12:26:29.050Z",
+      "state": "completed",
+      "response": {
+        "choices": [
+          {
+            "finish_reason": "stop",
+            "index": 0,
+            "logprobs": null,
+            "message": {
+              "annotations": null,
+              "audio": null,
+              "content": "{\n  \"candidate_ref\": \"5fa3cdb140069464ec9f9b1f3454a9ea860eb1b7b9d34865731647f31418b800\",\n  \"verdict\": {\n    \"claims\": {\n      \"pass\": false,\n      \"reason\": \"The claims are qualitative, but the Candidate does not follow the local mode's rule of using no business-specific assertions.\"\n    },\n    \"gate_1\": {\n      \"pass\": false,\n      \"reason\": \"The routine starts from a credible routine, but the recurring annoyance is not clearly stated.\"\n    },\n    \"gate_2\": {\n      \"pass\": true,\n      \"reason\": \"Every friction leads to an imaginable solution, as the Candidate proposes a concrete restock note.\"\n    },\n    \"gate_3\": {\n      \"pass\": true,\n      \"reason\": \"The Candidate does not duplicate an existing capability, as it introduces a new way to capture the final counter tally.\"\n    },\n    \"gate_4\": {\n      \"pass\": true,\n      \"reason\": \"The Candidate uses an observed channel, as it proposes a one-tap version of yesterday's last crumb.\"\n    },\n    \"gate_5\": {\n      \"pass\": true,\n      \"reason\": \"The scope matches the likely scale, complexity, and maintenance capacity, as it proposes a small handoff to the staff's current routine.\"\n    },\n    \"gate_6\": {\n      \"pass\": true,\n      \"reason\": \"The Candidate fits within Hearn Systems' delivery fit, as it proposes a software-based solution.\"\n    },\n    \"gate_7\": {\n      \"pass\": true,\n      \"reason\": \"The Candidate retains helpful tools, workflow steps, and decision rights, as it proposes to keep the current register and paper production sheet.\"\n    },\n    \"gate_8\": {\n      \"pass\": true,\n      \"reason\": \"A person could naturally explain the situation, capability, and payoff, as the Candidate proposes a concrete restock note.\"\n    },\n    \"gate_9\": {\n      \"pass\": true,\n      \"reason\": \"The Candidate goes beyond the obvious while remaining concrete, as it proposes a new way to capture the final counter tally.\"\n    },\n    \"pass\": false,\n    \"tone\": {\n      \"pass\": false,\n      \"reason\": \"The tone is not plain and confident, as it uses phrases like 'We can test the one-tap version of yesterday's last crumb together' that sound like an invitation rather than a concrete plan.\"\n    }\n  }\n}",
+              "function_call": null,
+              "reasoning": null,
+              "refusal": null,
+              "role": "assistant"
+            },
+            "routed_experts": null,
+            "stop_reason": null,
+            "token_ids": null
+          }
+        ],
+        "created": 1787574384,
+        "ec_transfer_params": null,
+        "id": "chatcmpl-03e4b57a-2dc6-48c6-9f01-e3ac8d75e441",
+        "kv_transfer_params": null,
+        "metrics": null,
+        "model": "@cf/meta/llama-3.1-8b-fast-v2",
+        "object": "chat.completion",
+        "prompt_logprobs": null,
+        "prompt_text": null,
+        "prompt_token_ids": null,
+        "response": {
+          "candidate_ref": "5fa3cdb140069464ec9f9b1f3454a9ea860eb1b7b9d34865731647f31418b800",
+          "verdict": {
+            "claims": {
+              "pass": false,
+              "reason": "The claims are qualitative, but the Candidate does not follow the local mode's rule of using no business-specific assertions."
+            },
+            "gate_1": {
+              "pass": false,
+              "reason": "The routine starts from a credible routine, but the recurring annoyance is not clearly stated."
+            },
+            "gate_2": {
+              "pass": true,
+              "reason": "Every friction leads to an imaginable solution, as the Candidate proposes a concrete restock note."
+            },
+            "gate_3": {
+              "pass": true,
+              "reason": "The Candidate does not duplicate an existing capability, as it introduces a new way to capture the final counter tally."
+            },
+            "gate_4": {
+              "pass": true,
+              "reason": "The Candidate uses an observed channel, as it proposes a one-tap version of yesterday's last crumb."
+            },
+            "gate_5": {
+              "pass": true,
+              "reason": "The scope matches the likely scale, complexity, and maintenance capacity, as it proposes a small handoff to the staff's current routine."
+            },
+            "gate_6": {
+              "pass": true,
+              "reason": "The Candidate fits within Hearn Systems' delivery fit, as it proposes a software-based solution."
+            },
+            "gate_7": {
+              "pass": true,
+              "reason": "The Candidate retains helpful tools, workflow steps, and decision rights, as it proposes to keep the current register and paper production sheet."
+            },
+            "gate_8": {
+              "pass": true,
+              "reason": "A person could naturally explain the situation, capability, and payoff, as the Candidate proposes a concrete restock note."
+            },
+            "gate_9": {
+              "pass": true,
+              "reason": "The Candidate goes beyond the obvious while remaining concrete, as it proposes a new way to capture the final counter tally."
+            },
+            "pass": false,
+            "tone": {
+              "pass": false,
+              "reason": "The tone is not plain and confident, as it uses phrases like 'We can test the one-tap version of yesterday's last crumb together' that sound like an invitation rather than a concrete plan."
+            }
+          }
+        },
+        "service_tier": null,
+        "tool_calls": [],
+        "usage": {
+          "prompt_tokens": 1610,
+          "completion_tokens": 539,
+          "total_tokens": 2149,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "neurons": 25.424644470214844
+        }
+      },
+      "response_sha256": "ca2d2cfbeece55e787161b074368515f44fdcfd0752eaad6742e61c1738213a8"
+    },
+    {
+      "sequence": 23,
+      "fixture_id": "golden-website-menu-sold-out-bridge",
+      "request_sha256": "0d7a0343100199fd5f5029dea010527529759c56fd1e16619632448be1d57bb6",
+      "started_at": "2026-08-24T12:26:29.056Z",
+      "ended_at": "2026-08-24T12:26:32.220Z",
+      "state": "completed",
+      "response": {
+        "choices": [
+          {
+            "finish_reason": "stop",
+            "index": 0,
+            "logprobs": null,
+            "message": {
+              "annotations": null,
+              "audio": null,
+              "content": "{\n  \"candidate_ref\": \"ba061c5b2a150a1bb788817e812d7190e9d01b7d496fea1b6b2a58a669e6d993\",\n  \"verdict\": {\n    \"claims\": {\n      \"pass\": true,\n      \"reason\": \"All claims are supported by the supplied public-site evidence.\"\n    },\n    \"gate_1\": {\n      \"pass\": true,\n      \"reason\": \"The routine starts from a credible routine and recurring annoyance: the tray empties before the menu catches up.\"\n    },\n    \"gate_2\": {\n      \"pass\": true,\n      \"reason\": \"Every friction leads to an imaginable solution: the counter worker selling the last one taps once, so the next caller sees what is actually available instead of asking about an empty tray.\"\n    },\n    \"gate_3\": {\n      \"pass\": true,\n      \"reason\": \"The capability does not duplicate an existing capability: the bakery keeps its existing online order form while a small handoff adds a same-day sold-out update to the staff's current routine.\"\n    },\n    \"gate_4\": {\n      \"pass\": true,\n      \"reason\": \"The plan uses an observed channel or clearly introduces a fitting one: phone ordering is already the path.\"\n    },\n    \"gate_5\": {\n      \"pass\": true,\n      \"reason\": \"The plan matches likely scale, complexity, and maintenance capacity: it's a small handoff to the staff's current routine.\"\n    },\n    \"gate_6\": {\n      \"pass\": true,\n      \"reason\": \"The plan can be implemented as software, AI automation, integration, data workflow, or adjacent digital system: it's a small update to the existing online order form.\"\n    },\n    \"gate_7\": {\n      \"pass\": true,\n      \"reason\": \"The plan retains helpful tools, workflow steps, and decision rights it need not change: the bakery keeps its existing online order form and the staff's current routine.\"\n    },\n    \"gate_8\": {\n      \"pass\": true,\n      \"reason\": \"A person could naturally explain the situation, capability, and payoff: the counter worker selling the last one taps once, so the next caller sees what is actually available instead of asking about an empty tray.\"\n    },\n    \"gate_9\": {\n      \"pass\": true,\n      \"reason\": \"The plan goes beyond the obvious while remaining concrete: it's a small handoff to the staff's current routine that adds a same-day sold-out update.\"\n    },\n    \"pass\": true,\n    \"tone\": {\n      \"pass\": true,\n      \"reason\": \"The language is plain, confident, and easy to understand: a busy owner could say this across a counter.\"\n    }\n  }\n}",
+              "function_call": null,
+              "reasoning": null,
+              "refusal": null,
+              "role": "assistant"
+            },
+            "routed_experts": null,
+            "stop_reason": null,
+            "token_ids": null
+          }
+        ],
+        "created": 1787574389,
+        "ec_transfer_params": null,
+        "id": "chatcmpl-b8c63f93-7dc1-4e84-a4a6-1d4661285b45",
+        "kv_transfer_params": null,
+        "metrics": null,
+        "model": "@cf/meta/llama-3.1-8b-fast-v2",
+        "object": "chat.completion",
+        "prompt_logprobs": null,
+        "prompt_text": null,
+        "prompt_token_ids": null,
+        "response": {
+          "candidate_ref": "ba061c5b2a150a1bb788817e812d7190e9d01b7d496fea1b6b2a58a669e6d993",
+          "verdict": {
+            "claims": {
+              "pass": true,
+              "reason": "All claims are supported by the supplied public-site evidence."
+            },
+            "gate_1": {
+              "pass": true,
+              "reason": "The routine starts from a credible routine and recurring annoyance: the tray empties before the menu catches up."
+            },
+            "gate_2": {
+              "pass": true,
+              "reason": "Every friction leads to an imaginable solution: the counter worker selling the last one taps once, so the next caller sees what is actually available instead of asking about an empty tray."
+            },
+            "gate_3": {
+              "pass": true,
+              "reason": "The capability does not duplicate an existing capability: the bakery keeps its existing online order form while a small handoff adds a same-day sold-out update to the staff's current routine."
+            },
+            "gate_4": {
+              "pass": true,
+              "reason": "The plan uses an observed channel or clearly introduces a fitting one: phone ordering is already the path."
+            },
+            "gate_5": {
+              "pass": true,
+              "reason": "The plan matches likely scale, complexity, and maintenance capacity: it's a small handoff to the staff's current routine."
+            },
+            "gate_6": {
+              "pass": true,
+              "reason": "The plan can be implemented as software, AI automation, integration, data workflow, or adjacent digital system: it's a small update to the existing online order form."
+            },
+            "gate_7": {
+              "pass": true,
+              "reason": "The plan retains helpful tools, workflow steps, and decision rights it need not change: the bakery keeps its existing online order form and the staff's current routine."
+            },
+            "gate_8": {
+              "pass": true,
+              "reason": "A person could naturally explain the situation, capability, and payoff: the counter worker selling the last one taps once, so the next caller sees what is actually available instead of asking about an empty tray."
+            },
+            "gate_9": {
+              "pass": true,
+              "reason": "The plan goes beyond the obvious while remaining concrete: it's a small handoff to the staff's current routine that adds a same-day sold-out update."
+            },
+            "pass": true,
+            "tone": {
+              "pass": true,
+              "reason": "The language is plain, confident, and easy to understand: a busy owner could say this across a counter."
+            }
+          }
+        },
+        "service_tier": null,
+        "tool_calls": [],
+        "usage": {
+          "prompt_tokens": 2810,
+          "completion_tokens": 588,
+          "total_tokens": 3398,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "neurons": 32.075443267822266
+        }
+      },
+      "response_sha256": "1d85cf9c28fbe52fb951181f4d0143559b0a62abad3b5b3fef8eb92a06eadeda"
+    },
+    {
+      "sequence": 24,
+      "fixture_id": "golden-website-trail-status-note",
+      "request_sha256": "2f11a230b7dacbdd90701412b62b16a67a40770a4df88433fdbaa05d3704c170",
+      "started_at": "2026-08-24T12:26:32.233Z",
+      "ended_at": "2026-08-24T12:26:37.223Z",
+      "state": "completed",
+      "response": {
+        "choices": [
+          {
+            "finish_reason": "stop",
+            "index": 0,
+            "logprobs": null,
+            "message": {
+              "annotations": null,
+              "audio": null,
+              "content": "{\n  \"candidate_ref\": \"c1c78d597e7734c1824e0db639b6c859a12d4c73bd5bb99614f07116b16a2f74\",\n  \"verdict\": {\n    \"claims\": {\n      \"pass\": true,\n      \"reason\": \"All claims are supported by exact canonical observation matches in the grounding report.\"\n    },\n    \"gate_1\": {\n      \"pass\": true,\n      \"reason\": \"The routine starts from a credible routine (morning trip planning) and recurring annoyance (repeated explanations).\"\n    },\n    \"gate_2\": {\n      \"pass\": true,\n      \"reason\": \"Every friction (repeated explanations) leads to an imaginable solution (one condition note to each morning trip).\"\n    },\n    \"gate_3\": {\n      \"pass\": true,\n      \"reason\": \"The capability does not duplicate an existing capability, as it introduces a new way to handle morning trip changes.\"\n    },\n    \"gate_4\": {\n      \"pass\": true,\n      \"reason\": \"The plan uses the observed channel (current email link) and introduces a fitting one (one condition note to each morning trip).\"\n    },\n    \"gate_5\": {\n      \"pass\": true,\n      \"reason\": \"The plan matches likely scale, complexity, and maintenance capacity, as it is a small intervention within the existing trip planning process.\"\n    },\n    \"gate_6\": {\n      \"pass\": true,\n      \"reason\": \"The plan can be implemented as software, AI automation, integration, data workflow, or adjacent digital system, as it involves attaching a condition note to each morning trip and sending a prepared update through the current email link.\"\n    },\n    \"gate_7\": {\n      \"pass\": true,\n      \"reason\": \"The plan retains helpful tools (existing trips page, current email channel), workflow steps (guest check-in, safety briefing, guiding the outing), and decision rights (the trip lead still decides whether an outing changes).\"\n    },\n    \"gate_8\": {\n      \"pass\": true,\n      \"reason\": \"A person could naturally explain the situation, capability, and payoff, as the plan is described in plain language and is easy to understand.\"\n    },\n    \"gate_9\": {\n      \"pass\": true,\n      \"reason\": \"The plan goes beyond the obvious while remaining concrete, as it introduces a new way to handle morning trip changes and provides a clear benefit to the trip lead.\"\n    },\n    \"pass\": true,\n    \"tone\": {\n      \"pass\": true,\n      \"reason\": \"The tone is confident, plain language, and free of pitch, consultant-speak, and bare-mush effects.\"\n    }\n  }\n}",
+              "function_call": null,
+              "reasoning": null,
+              "refusal": null,
+              "role": "assistant"
+            },
+            "routed_experts": null,
+            "stop_reason": null,
+            "token_ids": null
+          }
+        ],
+        "created": 1787574392,
+        "ec_transfer_params": null,
+        "id": "chatcmpl-1007cca6-dac0-43ee-9bd8-0f42c196a95c",
+        "kv_transfer_params": null,
+        "metrics": null,
+        "model": "@cf/meta/llama-3.1-8b-fast-v2",
+        "object": "chat.completion",
+        "prompt_logprobs": null,
+        "prompt_text": null,
+        "prompt_token_ids": null,
+        "response": {
+          "candidate_ref": "c1c78d597e7734c1824e0db639b6c859a12d4c73bd5bb99614f07116b16a2f74",
+          "verdict": {
+            "claims": {
+              "pass": true,
+              "reason": "All claims are supported by exact canonical observation matches in the grounding report."
+            },
+            "gate_1": {
+              "pass": true,
+              "reason": "The routine starts from a credible routine (morning trip planning) and recurring annoyance (repeated explanations)."
+            },
+            "gate_2": {
+              "pass": true,
+              "reason": "Every friction (repeated explanations) leads to an imaginable solution (one condition note to each morning trip)."
+            },
+            "gate_3": {
+              "pass": true,
+              "reason": "The capability does not duplicate an existing capability, as it introduces a new way to handle morning trip changes."
+            },
+            "gate_4": {
+              "pass": true,
+              "reason": "The plan uses the observed channel (current email link) and introduces a fitting one (one condition note to each morning trip)."
+            },
+            "gate_5": {
+              "pass": true,
+              "reason": "The plan matches likely scale, complexity, and maintenance capacity, as it is a small intervention within the existing trip planning process."
+            },
+            "gate_6": {
+              "pass": true,
+              "reason": "The plan can be implemented as software, AI automation, integration, data workflow, or adjacent digital system, as it involves attaching a condition note to each morning trip and sending a prepared update through the current email link."
+            },
+            "gate_7": {
+              "pass": true,
+              "reason": "The plan retains helpful tools (existing trips page, current email channel), workflow steps (guest check-in, safety briefing, guiding the outing), and decision rights (the trip lead still decides whether an outing changes)."
+            },
+            "gate_8": {
+              "pass": true,
+              "reason": "A person could naturally explain the situation, capability, and payoff, as the plan is described in plain language and is easy to understand."
+            },
+            "gate_9": {
+              "pass": true,
+              "reason": "The plan goes beyond the obvious while remaining concrete, as it introduces a new way to handle morning trip changes and provides a clear benefit to the trip lead."
+            },
+            "pass": true,
+            "tone": {
+              "pass": true,
+              "reason": "The tone is confident, plain language, and free of pitch, consultant-speak, and bare-mush effects."
+            }
+          }
+        },
+        "service_tier": null,
+        "tool_calls": [],
+        "usage": {
+          "prompt_tokens": 2816,
+          "completion_tokens": 579,
+          "total_tokens": 3395,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "neurons": 31.78634262084961
+        }
+      },
+      "response_sha256": "bb8232ca8a868584cf0d83ec246c1d0abe3625e244a71d2983c29ffb557fdff8"
+    },
+    {
+      "sequence": 25,
+      "fixture_id": "golden-website-donation-thank-you-handoff",
+      "request_sha256": "1c634a9cfaa44e8de373c94788e52d2a774c17f6a62e2bed716eb54403e767ec",
+      "started_at": "2026-08-24T12:26:37.231Z",
+      "ended_at": "2026-08-24T12:26:40.533Z",
+      "state": "completed",
+      "response": {
+        "choices": [
+          {
+            "finish_reason": "stop",
+            "index": 0,
+            "logprobs": null,
+            "message": {
+              "annotations": null,
+              "audio": null,
+              "content": "{\n  \"candidate_ref\": \"083e851389798af4224a8546b3f4fd5f30c3b7939682b11d36e35b2e047e1669\",\n  \"verdict\": {\n    \"claims\": {\n      \"pass\": true,\n      \"reason\": \"All claims are supported by the grounding report.\"\n    },\n    \"gate_1\": {\n      \"pass\": true,\n      \"reason\": \"The routine starts from a credible situation (every thoughtful reply starts from nothing) and introduces a recurring annoyance (beginning every thank-you on a blank screen).\"\n    },\n    \"gate_2\": {\n      \"pass\": true,\n      \"reason\": \"Every friction (beginning every thank-you on a blank screen) leads to an imaginable solution (the exhibit and the message arrive together on one editable card).\"\n    },\n    \"gate_3\": {\n      \"pass\": true,\n      \"reason\": \"The capability does not duplicate an existing capability (the public support page offers named exhibit sponsorship, but the exhibit reply card is a new feature).\"\n    },\n    \"gate_4\": {\n      \"pass\": true,\n      \"reason\": \"The channel fit uses an observed channel (the public contact form) and introduces a fitting one (the exhibit reply card).\"\n    },\n    \"gate_5\": {\n      \"pass\": true,\n      \"reason\": \"The intervention matches likely scale, complexity, and maintenance capacity (it's a small handoff to the staff's current routine).\"\n    },\n    \"gate_6\": {\n      \"pass\": true,\n      \"reason\": \"The delivery fit matches Hearn Systems' software, AI, automation, integration, or data-work delivery envelope (it's a new feature that can be implemented as software).\"\n    },\n    \"gate_7\": {\n      \"pass\": true,\n      \"reason\": \"The intervention retains helpful tools (existing support page, current contact form), workflow steps (reviewing inquiries, speaking with supporters, recording accepted gifts), and decision rights (staff still decide the appropriate reply and sponsorship fit).\"\n    },\n    \"gate_8\": {\n      \"pass\": true,\n      \"reason\": \"A person could naturally explain the situation (every thoughtful reply starts from nothing), capability (the exhibit reply card), and payoff (the staff member opening a new inquiry sees an exhibit-specific starting point beside it instead of beginning every thank-you on a blank screen).\"\n    },\n    \"gate_9\": {\n      \"pass\": true,\n      \"reason\": \"The intervention goes beyond the obvious while remaining concrete (it's a new feature that adds value to the staff's current routine).\"\n    },\n    \"pass\": true,\n    \"tone\": {\n      \"pass\": true,\n      \"reason\": \"The tone is plain, confident language a busy owner could say across a counter.\"\n    }\n  }\n}",
+              "function_call": null,
+              "reasoning": null,
+              "refusal": null,
+              "role": "assistant"
+            },
+            "routed_experts": null,
+            "stop_reason": null,
+            "token_ids": null
+          }
+        ],
+        "created": 1787574397,
+        "ec_transfer_params": null,
+        "id": "chatcmpl-abe49b3c-5d82-4529-ad99-e1e8749cef9b",
+        "kv_transfer_params": null,
+        "metrics": null,
+        "model": "@cf/meta/llama-3.1-8b-fast-v2",
+        "object": "chat.completion",
+        "prompt_logprobs": null,
+        "prompt_text": null,
+        "prompt_token_ids": null,
+        "response": {
+          "candidate_ref": "083e851389798af4224a8546b3f4fd5f30c3b7939682b11d36e35b2e047e1669",
+          "verdict": {
+            "claims": {
+              "pass": true,
+              "reason": "All claims are supported by the grounding report."
+            },
+            "gate_1": {
+              "pass": true,
+              "reason": "The routine starts from a credible situation (every thoughtful reply starts from nothing) and introduces a recurring annoyance (beginning every thank-you on a blank screen)."
+            },
+            "gate_2": {
+              "pass": true,
+              "reason": "Every friction (beginning every thank-you on a blank screen) leads to an imaginable solution (the exhibit and the message arrive together on one editable card)."
+            },
+            "gate_3": {
+              "pass": true,
+              "reason": "The capability does not duplicate an existing capability (the public support page offers named exhibit sponsorship, but the exhibit reply card is a new feature)."
+            },
+            "gate_4": {
+              "pass": true,
+              "reason": "The channel fit uses an observed channel (the public contact form) and introduces a fitting one (the exhibit reply card)."
+            },
+            "gate_5": {
+              "pass": true,
+              "reason": "The intervention matches likely scale, complexity, and maintenance capacity (it's a small handoff to the staff's current routine)."
+            },
+            "gate_6": {
+              "pass": true,
+              "reason": "The delivery fit matches Hearn Systems' software, AI, automation, integration, or data-work delivery envelope (it's a new feature that can be implemented as software)."
+            },
+            "gate_7": {
+              "pass": true,
+              "reason": "The intervention retains helpful tools (existing support page, current contact form), workflow steps (reviewing inquiries, speaking with supporters, recording accepted gifts), and decision rights (staff still decide the appropriate reply and sponsorship fit)."
+            },
+            "gate_8": {
+              "pass": true,
+              "reason": "A person could naturally explain the situation (every thoughtful reply starts from nothing), capability (the exhibit reply card), and payoff (the staff member opening a new inquiry sees an exhibit-specific starting point beside it instead of beginning every thank-you on a blank screen)."
+            },
+            "gate_9": {
+              "pass": true,
+              "reason": "The intervention goes beyond the obvious while remaining concrete (it's a new feature that adds value to the staff's current routine)."
+            },
+            "pass": true,
+            "tone": {
+              "pass": true,
+              "reason": "The tone is plain, confident language a busy owner could say across a counter."
+            }
+          }
+        },
+        "service_tier": null,
+        "tool_calls": [],
+        "usage": {
+          "prompt_tokens": 2791,
+          "completion_tokens": 606,
+          "total_tokens": 3397,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "neurons": 32.62480926513672
+        }
+      },
+      "response_sha256": "f39fc2e4f44dbb26efed90011fa75d8066e2cf76cbfc9570622a363ea5941626"
+    },
+    {
+      "sequence": 26,
+      "fixture_id": "anti-consultant-speak",
+      "request_sha256": "368f60c198acf210b249c2ca4dcdd8e2d647af2f7f73d3176f12e561d1de9232",
+      "started_at": "2026-08-24T12:26:40.561Z",
+      "ended_at": "2026-08-24T12:26:44.724Z",
+      "state": "completed",
+      "response": {
+        "choices": [
+          {
+            "finish_reason": "stop",
+            "index": 0,
+            "logprobs": null,
+            "message": {
+              "annotations": null,
+              "audio": null,
+              "content": "{\n  \"candidate_ref\": \"76c1dc583c2877433fb218589f4202fcc2ba3d075cd2e09c5aab050fbd19ccc7\",\n  \"verdict\": {\n    \"claims\": {\n      \"pass\": false,\n      \"reason\": \"The plan contains unsupported claims. The 'why_fits' section states 'Local seasonal work benefits from a smaller first pass' without providing evidence or grounds for this claim.\"\n    },\n    \"gate_1\": {\n      \"pass\": false,\n      \"reason\": \"The routine is not recognizable. The 'before_after' section shows the team rebuilding the same reply, but it's not clear what the recurring annoyance is.\"\n    },\n    \"gate_2\": {\n      \"pass\": false,\n      \"reason\": \"The intervention is not constructive. The 'change_level' section shows only one step changed, but it's not clear how this change addresses the recurring annoyance.\"\n    },\n    \"gate_3\": {\n      \"pass\": true,\n      \"reason\": \"The capability inventory does not duplicate an existing capability. The plan introduces a new intake queue, which is not mentioned in the 'stays_same' section.\"\n    },\n    \"gate_4\": {\n      \"pass\": false,\n      \"reason\": \"The channel fit is not observed. The plan mentions a 'transformative intake queue', but it's not clear how this fits with the existing workflow or tools.\"\n    },\n    \"gate_5\": {\n      \"pass\": false,\n      \"reason\": \"The proportionality is not matched. The plan introduces a new intake queue, but it's not clear how this will be implemented or maintained within Hearn Systems' delivery envelope.\"\n    },\n    \"gate_6\": {\n      \"pass\": false,\n      \"reason\": \"The delivery fit is not clear. The plan mentions a 'transformative intake queue', but it's not clear how this will be implemented as software, AI automation, integration, data workflow, or adjacent digital system.\"\n    },\n    \"gate_7\": {\n      \"pass\": false,\n      \"reason\": \"The preservation is not retained. The plan mentions 'current notebook' as a preserved tool, but it's not clear how the existing workflow steps and decision authority will be preserved.\"\n    },\n    \"gate_8\": {\n      \"pass\": false,\n      \"reason\": \"The natural retelling is not possible. The plan is not easy to explain in a short spoken retelling, and the situation, intervention, and payoff are not clear.\"\n    },\n    \"gate_9\": {\n      \"pass\": false,\n      \"reason\": \"The idea is not novel but imaginable. The plan introduces a new intake queue, but it's not clear how this is a surprising or easy-to-picture intervention.\"\n    },\n    \"pass\": false,\n    \"tone\": {\n      \"pass\": false,\n      \"reason\": \"The tone is not plain and confident. The plan uses rhetorical questions and hypothetical hedging, and the language is not easy to understand.\"\n    }\n  }\n}",
+              "function_call": null,
+              "reasoning": null,
+              "refusal": null,
+              "role": "assistant"
+            },
+            "routed_experts": null,
+            "stop_reason": null,
+            "token_ids": null
+          }
+        ],
+        "created": 1787574400,
+        "ec_transfer_params": null,
+        "id": "chatcmpl-dcbd79ce-3a2f-4aba-bf47-3d9a90da736d",
+        "kv_transfer_params": null,
+        "metrics": null,
+        "model": "@cf/meta/llama-3.1-8b-fast-v2",
+        "object": "chat.completion",
+        "prompt_logprobs": null,
+        "prompt_text": null,
+        "prompt_token_ids": null,
+        "response": {
+          "candidate_ref": "76c1dc583c2877433fb218589f4202fcc2ba3d075cd2e09c5aab050fbd19ccc7",
+          "verdict": {
+            "claims": {
+              "pass": false,
+              "reason": "The plan contains unsupported claims. The 'why_fits' section states 'Local seasonal work benefits from a smaller first pass' without providing evidence or grounds for this claim."
+            },
+            "gate_1": {
+              "pass": false,
+              "reason": "The routine is not recognizable. The 'before_after' section shows the team rebuilding the same reply, but it's not clear what the recurring annoyance is."
+            },
+            "gate_2": {
+              "pass": false,
+              "reason": "The intervention is not constructive. The 'change_level' section shows only one step changed, but it's not clear how this change addresses the recurring annoyance."
+            },
+            "gate_3": {
+              "pass": true,
+              "reason": "The capability inventory does not duplicate an existing capability. The plan introduces a new intake queue, which is not mentioned in the 'stays_same' section."
+            },
+            "gate_4": {
+              "pass": false,
+              "reason": "The channel fit is not observed. The plan mentions a 'transformative intake queue', but it's not clear how this fits with the existing workflow or tools."
+            },
+            "gate_5": {
+              "pass": false,
+              "reason": "The proportionality is not matched. The plan introduces a new intake queue, but it's not clear how this will be implemented or maintained within Hearn Systems' delivery envelope."
+            },
+            "gate_6": {
+              "pass": false,
+              "reason": "The delivery fit is not clear. The plan mentions a 'transformative intake queue', but it's not clear how this will be implemented as software, AI automation, integration, data workflow, or adjacent digital system."
+            },
+            "gate_7": {
+              "pass": false,
+              "reason": "The preservation is not retained. The plan mentions 'current notebook' as a preserved tool, but it's not clear how the existing workflow steps and decision authority will be preserved."
+            },
+            "gate_8": {
+              "pass": false,
+              "reason": "The natural retelling is not possible. The plan is not easy to explain in a short spoken retelling, and the situation, intervention, and payoff are not clear."
+            },
+            "gate_9": {
+              "pass": false,
+              "reason": "The idea is not novel but imaginable. The plan introduces a new intake queue, but it's not clear how this is a surprising or easy-to-picture intervention."
+            },
+            "pass": false,
+            "tone": {
+              "pass": false,
+              "reason": "The tone is not plain and confident. The plan uses rhetorical questions and hypothetical hedging, and the language is not easy to understand."
+            }
+          }
+        },
+        "service_tier": null,
+        "tool_calls": [],
+        "usage": {
+          "prompt_tokens": 1531,
+          "completion_tokens": 641,
+          "total_tokens": 2172,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "neurons": 28.65579605102539
+        }
+      },
+      "response_sha256": "bb82ba856530f012b174e15c34af57ec9bebca68b6afdd7fa91576832ee5216f"
+    },
+    {
+      "sequence": 27,
+      "fixture_id": "anti-unsupported-claims",
+      "request_sha256": "7a57536a5340b5f4e3cf7d6448107a82631928002a0fd655e51cb6e234730d45",
+      "started_at": "2026-08-24T12:26:44.741Z",
+      "ended_at": "2026-08-24T12:26:48.372Z",
+      "state": "completed",
+      "response": {
+        "choices": [
+          {
+            "finish_reason": "stop",
+            "index": 0,
+            "logprobs": null,
+            "message": {
+              "annotations": null,
+              "audio": null,
+              "content": "{\n  \"candidate_ref\": \"631df90c5dffbb49d3b953041c83457d6c7b65f557670987c370040662d273ba\",\n  \"verdict\": {\n    \"claims\": {\n      \"pass\": true,\n      \"reason\": \"All claims are supported by the grounding report.\"\n    },\n    \"gate_1\": {\n      \"pass\": true,\n      \"reason\": \"The routine starts from a credible routine and the team rebuilds the same reply, which is a recurring annoyance.\"\n    },\n    \"gate_2\": {\n      \"pass\": true,\n      \"reason\": \"Every friction (the team rebuilds the same reply) leads to an imaginable solution (the team reviews one prepared reply).\"\n    },\n    \"gate_3\": {\n      \"pass\": true,\n      \"reason\": \"The capability (reviewing one prepared reply) does not duplicate an existing capability.\"\n    },\n    \"gate_4\": {\n      \"pass\": true,\n      \"reason\": \"The channel (public site) is observed and used to introduce a fitting one (current notebook).\"\n    },\n    \"gate_5\": {\n      \"pass\": true,\n      \"reason\": \"The intervention matches the likely scale, complexity, and maintenance capacity of Hearn Systems' software.\"\n    },\n    \"gate_6\": {\n      \"pass\": true,\n      \"reason\": \"The delivery fit is within Hearn Systems' software, AI, automation, integration, or data-work delivery envelope.\"\n    },\n    \"gate_7\": {\n      \"pass\": true,\n      \"reason\": \"The preserved tools (current notebook), workflow steps (doing the work), and decision authority (the owner still chooses the next job) are retained.\"\n    },\n    \"gate_8\": {\n      \"pass\": true,\n      \"reason\": \"A person could naturally explain the situation, capability, and payoff.\"\n    },\n    \"gate_9\": {\n      \"pass\": true,\n      \"reason\": \"The idea (reviewing one prepared reply) goes beyond the obvious while remaining concrete.\"\n    },\n    \"pass\": true,\n    \"tone\": {\n      \"pass\": true,\n      \"reason\": \"The language is plain, confident, and a busy owner could say it across a counter.\"\n    }\n  }\n}",
+              "function_call": null,
+              "reasoning": null,
+              "refusal": null,
+              "role": "assistant"
+            },
+            "routed_experts": null,
+            "stop_reason": null,
+            "token_ids": null
+          }
+        ],
+        "created": 1787574405,
+        "ec_transfer_params": null,
+        "id": "chatcmpl-fceeefa2-a2ed-41d2-8150-53f0a292fcd9",
+        "kv_transfer_params": null,
+        "metrics": null,
+        "model": "@cf/meta/llama-3.1-8b-fast-v2",
+        "object": "chat.completion",
+        "prompt_logprobs": null,
+        "prompt_text": null,
+        "prompt_token_ids": null,
+        "response": {
+          "candidate_ref": "631df90c5dffbb49d3b953041c83457d6c7b65f557670987c370040662d273ba",
+          "verdict": {
+            "claims": {
+              "pass": true,
+              "reason": "All claims are supported by the grounding report."
+            },
+            "gate_1": {
+              "pass": true,
+              "reason": "The routine starts from a credible routine and the team rebuilds the same reply, which is a recurring annoyance."
+            },
+            "gate_2": {
+              "pass": true,
+              "reason": "Every friction (the team rebuilds the same reply) leads to an imaginable solution (the team reviews one prepared reply)."
+            },
+            "gate_3": {
+              "pass": true,
+              "reason": "The capability (reviewing one prepared reply) does not duplicate an existing capability."
+            },
+            "gate_4": {
+              "pass": true,
+              "reason": "The channel (public site) is observed and used to introduce a fitting one (current notebook)."
+            },
+            "gate_5": {
+              "pass": true,
+              "reason": "The intervention matches the likely scale, complexity, and maintenance capacity of Hearn Systems' software."
+            },
+            "gate_6": {
+              "pass": true,
+              "reason": "The delivery fit is within Hearn Systems' software, AI, automation, integration, or data-work delivery envelope."
+            },
+            "gate_7": {
+              "pass": true,
+              "reason": "The preserved tools (current notebook), workflow steps (doing the work), and decision authority (the owner still chooses the next job) are retained."
+            },
+            "gate_8": {
+              "pass": true,
+              "reason": "A person could naturally explain the situation, capability, and payoff."
+            },
+            "gate_9": {
+              "pass": true,
+              "reason": "The idea (reviewing one prepared reply) goes beyond the obvious while remaining concrete."
+            },
+            "pass": true,
+            "tone": {
+              "pass": true,
+              "reason": "The language is plain, confident, and a busy owner could say it across a counter."
+            }
+          }
+        },
+        "service_tier": null,
+        "tool_calls": [],
+        "usage": {
+          "prompt_tokens": 2446,
+          "completion_tokens": 486,
+          "total_tokens": 2932,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "neurons": 27.01976776123047
+        }
+      },
+      "response_sha256": "e19d76a67d272b4709cd9ddf8358877794894a4f24846c0580e009b7f95555b7"
+    },
+    {
+      "sequence": 28,
+      "fixture_id": "anti-weak-preservation",
+      "request_sha256": "1a31977a4f3bd7d4be8647f16d16e837ee009b1501a5bb17475feec45f16b4ef",
+      "started_at": "2026-08-24T12:26:48.378Z",
+      "ended_at": "2026-08-24T12:26:53.081Z",
+      "state": "completed",
+      "response": {
+        "choices": [
+          {
+            "finish_reason": "stop",
+            "index": 0,
+            "logprobs": null,
+            "message": {
+              "annotations": null,
+              "audio": null,
+              "content": "{\n  \"candidate_ref\": \"8c59ea82feb8463ddd757cfe4998e7db90751409fce101a572cca8ea10b517a4\",\n  \"verdict\": {\n    \"claims\": {\n      \"pass\": false,\n      \"reason\": \"The Candidate contains unsupported claims. The 'why_fits' section states 'Local seasonal work benefits from a smaller first pass' without providing any evidence or grounds for this claim.\"\n    },\n    \"gate_1\": {\n      \"pass\": false,\n      \"reason\": \"The Candidate does not start from a credible routine and recurring annoyance. The 'before_after' section shows the team rebuilding the same reply, but it does not establish a clear routine or annoyance.\"\n    },\n    \"gate_2\": {\n      \"pass\": false,\n      \"reason\": \"The Candidate does not show every friction leading to an imaginable solution. The 'change_level' section states that only one step was changed, but it does not provide a clear solution to the problem.\"\n    },\n    \"gate_3\": {\n      \"pass\": true,\n      \"reason\": \"The Candidate does not duplicate an existing capability. The 'plan' section suggests installing a new system, which is a new capability.\"\n    },\n    \"gate_4\": {\n      \"pass\": false,\n      \"reason\": \"The Candidate does not use an observed channel or clearly introduce a fitting one. The 'mode' section states 'local', but it does not provide a clear channel for the intervention.\"\n    },\n    \"gate_5\": {\n      \"pass\": false,\n      \"reason\": \"The Candidate does not match likely scale, complexity, and maintenance capacity. The 'change_level' section states that only one step was changed, but it does not provide a clear assessment of the scale and complexity of the intervention.\"\n    },\n    \"gate_6\": {\n      \"pass\": false,\n      \"reason\": \"The Candidate does not match Hearn Systems' delivery fit. The 'plan' section suggests installing a new system, which is outside Hearn Systems' delivery envelope.\"\n    },\n    \"gate_7\": {\n      \"pass\": true,\n      \"reason\": \"The Candidate retains helpful tools, workflow steps, and decision rights it need not change. The 'stays_same' section lists the preserved tools, steps, and authority.\"\n    },\n    \"gate_8\": {\n      \"pass\": false,\n      \"reason\": \"A person could not naturally explain the situation, capability, and payoff. The 'title' section is not a sayable title, and the 'why_fits' section contains unsupported claims.\"\n    },\n    \"gate_9\": {\n      \"pass\": false,\n      \"reason\": \"The Candidate does not go beyond the obvious while remaining concrete. The 'plan' section suggests installing a new system, which is a common solution, but it does not provide a clear and concrete next step.\"\n    },\n    \"pass\": false,\n    \"tone\": {\n      \"pass\": false,\n      \"reason\": \"The Candidate uses a tone that is not plain and confident. The 'why_fits' section contains unsupported claims, and the 'plan' section suggests installing a new system without providing a clear and concrete next step.\"\n    }\n  }\n}",
+              "function_call": null,
+              "reasoning": null,
+              "refusal": null,
+              "role": "assistant"
+            },
+            "routed_experts": null,
+            "stop_reason": null,
+            "token_ids": null
+          }
+        ],
+        "created": 1787574408,
+        "ec_transfer_params": null,
+        "id": "chatcmpl-4a9a0026-4105-4216-a0e5-6c8de3da36f9",
+        "kv_transfer_params": null,
+        "metrics": null,
+        "model": "@cf/meta/llama-3.1-8b-fast-v2",
+        "object": "chat.completion",
+        "prompt_logprobs": null,
+        "prompt_text": null,
+        "prompt_token_ids": null,
+        "response": {
+          "candidate_ref": "8c59ea82feb8463ddd757cfe4998e7db90751409fce101a572cca8ea10b517a4",
+          "verdict": {
+            "claims": {
+              "pass": false,
+              "reason": "The Candidate contains unsupported claims. The 'why_fits' section states 'Local seasonal work benefits from a smaller first pass' without providing any evidence or grounds for this claim."
+            },
+            "gate_1": {
+              "pass": false,
+              "reason": "The Candidate does not start from a credible routine and recurring annoyance. The 'before_after' section shows the team rebuilding the same reply, but it does not establish a clear routine or annoyance."
+            },
+            "gate_2": {
+              "pass": false,
+              "reason": "The Candidate does not show every friction leading to an imaginable solution. The 'change_level' section states that only one step was changed, but it does not provide a clear solution to the problem."
+            },
+            "gate_3": {
+              "pass": true,
+              "reason": "The Candidate does not duplicate an existing capability. The 'plan' section suggests installing a new system, which is a new capability."
+            },
+            "gate_4": {
+              "pass": false,
+              "reason": "The Candidate does not use an observed channel or clearly introduce a fitting one. The 'mode' section states 'local', but it does not provide a clear channel for the intervention."
+            },
+            "gate_5": {
+              "pass": false,
+              "reason": "The Candidate does not match likely scale, complexity, and maintenance capacity. The 'change_level' section states that only one step was changed, but it does not provide a clear assessment of the scale and complexity of the intervention."
+            },
+            "gate_6": {
+              "pass": false,
+              "reason": "The Candidate does not match Hearn Systems' delivery fit. The 'plan' section suggests installing a new system, which is outside Hearn Systems' delivery envelope."
+            },
+            "gate_7": {
+              "pass": true,
+              "reason": "The Candidate retains helpful tools, workflow steps, and decision rights it need not change. The 'stays_same' section lists the preserved tools, steps, and authority."
+            },
+            "gate_8": {
+              "pass": false,
+              "reason": "A person could not naturally explain the situation, capability, and payoff. The 'title' section is not a sayable title, and the 'why_fits' section contains unsupported claims."
+            },
+            "gate_9": {
+              "pass": false,
+              "reason": "The Candidate does not go beyond the obvious while remaining concrete. The 'plan' section suggests installing a new system, which is a common solution, but it does not provide a clear and concrete next step."
+            },
+            "pass": false,
+            "tone": {
+              "pass": false,
+              "reason": "The Candidate uses a tone that is not plain and confident. The 'why_fits' section contains unsupported claims, and the 'plan' section suggests installing a new system without providing a clear and concrete next step."
+            }
+          }
+        },
+        "service_tier": null,
+        "tool_calls": [],
+        "usage": {
+          "prompt_tokens": 1528,
+          "completion_tokens": 682,
+          "total_tokens": 2210,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "neurons": 30.073020935058594
+        }
+      },
+      "response_sha256": "0dcef5c095bd165bbf02fa3bf7c96e2f6af59c43e5ded4bba14f251fc924351a"
+    },
+    {
+      "sequence": 29,
+      "fixture_id": "anti-capability-duplication",
+      "request_sha256": "606f0d65b01a10fdd111a45c3416416a7cd1660b736a6db781028bf07e8c56fa",
+      "started_at": "2026-08-24T12:26:53.095Z",
+      "ended_at": "2026-08-24T12:26:57.794Z",
+      "state": "completed",
+      "response": {
+        "choices": [
+          {
+            "finish_reason": "stop",
+            "index": 0,
+            "logprobs": null,
+            "message": {
+              "annotations": null,
+              "audio": null,
+              "content": "{\n  \"candidate_ref\": \"ce26167f6a303246b040b06a6e9cd312a136a2acd54b9e9127b258e3191f9030\",\n  \"verdict\": {\n    \"claims\": {\n      \"pass\": true,\n      \"reason\": \"All claims are supported by exact canonical observation support.\"\n    },\n    \"gate_1\": {\n      \"pass\": false,\n      \"reason\": \"The routine is not recognizable as it starts from a credible routine but lacks a recurring annoyance.\"\n    },\n    \"gate_2\": {\n      \"pass\": false,\n      \"reason\": \"The intervention is not constructive as it does not lead to an imaginable solution.\"\n    },\n    \"gate_3\": {\n      \"pass\": false,\n      \"reason\": \"The capability inventory is not sufficient as it does not introduce a new capability.\"\n    },\n    \"gate_4\": {\n      \"pass\": false,\n      \"reason\": \"The channel fit is not observed or clearly introduced.\"\n    },\n    \"gate_5\": {\n      \"pass\": false,\n      \"reason\": \"The proportionality is not matched as the scope is too narrow.\"\n    },\n    \"gate_6\": {\n      \"pass\": false,\n      \"reason\": \"The delivery fit is not matched as the intervention is outside Hearn Systems' software, AI, automation, integration, or data-work delivery envelope.\"\n    },\n    \"gate_7\": {\n      \"pass\": false,\n      \"reason\": \"The preservation is not sufficient as it does not retain helpful tools, workflow steps, and decision rights.\"\n    },\n    \"gate_8\": {\n      \"pass\": false,\n      \"reason\": \"The natural retelling is not possible as the situation, intervention, and payoff do not survive a short spoken retelling.\"\n    },\n    \"gate_9\": {\n      \"pass\": false,\n      \"reason\": \"The idea is not novel but obvious as it does not go beyond the obvious.\"\n    },\n    \"pass\": false,\n    \"tone\": {\n      \"pass\": true,\n      \"reason\": \"The tone is plain and confident, a busy owner could say it across a counter.\"\n    }\n  }\n}",
+              "function_call": null,
+              "reasoning": null,
+              "refusal": null,
+              "role": "assistant"
+            },
+            "routed_experts": null,
+            "stop_reason": null,
+            "token_ids": null
+          }
+        ],
+        "created": 1787574413,
+        "ec_transfer_params": null,
+        "id": "chatcmpl-d412f0ad-c94d-4fbf-b4bf-5f0d481166dd",
+        "kv_transfer_params": null,
+        "metrics": null,
+        "model": "@cf/meta/llama-3.1-8b-fast-v2",
+        "object": "chat.completion",
+        "prompt_logprobs": null,
+        "prompt_text": null,
+        "prompt_token_ids": null,
+        "response": {
+          "candidate_ref": "ce26167f6a303246b040b06a6e9cd312a136a2acd54b9e9127b258e3191f9030",
+          "verdict": {
+            "claims": {
+              "pass": true,
+              "reason": "All claims are supported by exact canonical observation support."
+            },
+            "gate_1": {
+              "pass": false,
+              "reason": "The routine is not recognizable as it starts from a credible routine but lacks a recurring annoyance."
+            },
+            "gate_2": {
+              "pass": false,
+              "reason": "The intervention is not constructive as it does not lead to an imaginable solution."
+            },
+            "gate_3": {
+              "pass": false,
+              "reason": "The capability inventory is not sufficient as it does not introduce a new capability."
+            },
+            "gate_4": {
+              "pass": false,
+              "reason": "The channel fit is not observed or clearly introduced."
+            },
+            "gate_5": {
+              "pass": false,
+              "reason": "The proportionality is not matched as the scope is too narrow."
+            },
+            "gate_6": {
+              "pass": false,
+              "reason": "The delivery fit is not matched as the intervention is outside Hearn Systems' software, AI, automation, integration, or data-work delivery envelope."
+            },
+            "gate_7": {
+              "pass": false,
+              "reason": "The preservation is not sufficient as it does not retain helpful tools, workflow steps, and decision rights."
+            },
+            "gate_8": {
+              "pass": false,
+              "reason": "The natural retelling is not possible as the situation, intervention, and payoff do not survive a short spoken retelling."
+            },
+            "gate_9": {
+              "pass": false,
+              "reason": "The idea is not novel but obvious as it does not go beyond the obvious."
+            },
+            "pass": false,
+            "tone": {
+              "pass": true,
+              "reason": "The tone is plain and confident, a busy owner could say it across a counter."
+            }
+          }
+        },
+        "service_tier": null,
+        "tool_calls": [],
+        "usage": {
+          "prompt_tokens": 2369,
+          "completion_tokens": 466,
+          "total_tokens": 2835,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "neurons": 26.005281448364258
+        }
+      },
+      "response_sha256": "f422c087e178b904c7fde24bdf54eed5626e4e36ae873f6c151074f11d508a71"
+    },
+    {
+      "sequence": 30,
+      "fixture_id": "anti-poor-scope",
+      "request_sha256": "5798113750eb00ee361316c67fb99abb0c447b2bdc5398ef571db6fb98f8a7c9",
+      "started_at": "2026-08-24T12:26:57.800Z",
+      "ended_at": "2026-08-24T12:27:01.467Z",
+      "state": "completed",
+      "response": {
+        "choices": [
+          {
+            "finish_reason": "stop",
+            "index": 0,
+            "logprobs": null,
+            "message": {
+              "annotations": null,
+              "audio": null,
+              "content": "{\n  \"candidate_ref\": \"a98d408a4db53c6a1b688a0c6443ef004afb40c68d693e778b52852c7a953058\",\n  \"verdict\": {\n    \"claims\": {\n      \"pass\": false,\n      \"reason\": \"The Candidate contains unsupported claims. The plan to 'Build a statewide marketplace, hire a dispatch center, and replace every shop system before winter' is not grounded in any evidence and seems overly ambitious for a short setup window.\"\n    },\n    \"gate_1\": {\n      \"pass\": false,\n      \"reason\": \"The Candidate does not start from a credible routine and recurring annoyance. The situation described is not a recognizable routine.\"\n    },\n    \"gate_2\": {\n      \"pass\": false,\n      \"reason\": \"The Candidate does not lead to an imaginable solution. The plan to replace every shop system before winter seems unrealistic and lacks a clear intervention.\"\n    },\n    \"gate_3\": {\n      \"pass\": false,\n      \"reason\": \"The Candidate duplicates an existing capability. The plan to replace every shop system before winter does not introduce a new capability, but rather replaces an existing one.\"\n    },\n    \"gate_4\": {\n      \"pass\": false,\n      \"reason\": \"The Candidate does not use an observed channel or clearly introduce a fitting one. The plan to replace every shop system before winter does not specify a clear channel for implementation.\"\n    },\n    \"gate_5\": {\n      \"pass\": false,\n      \"reason\": \"The Candidate does not match likely scale, complexity, and maintenance capacity. The plan to replace every shop system before winter seems overly ambitious for a short setup window.\"\n    },\n    \"gate_6\": {\n      \"pass\": false,\n      \"reason\": \"The Candidate does not match Hearn Systems' delivery fit. The plan to replace every shop system before winter does not specify a clear implementation within Hearn Systems' software, AI, automation, integration, or data-work delivery envelope.\"\n    },\n    \"gate_7\": {\n      \"pass\": false,\n      \"reason\": \"The Candidate does not retain helpful tools, workflow steps, and decision rights it need not change. The plan to replace every shop system before winter does not specify what tools, steps, or decision rights will be preserved.\"\n    },\n    \"gate_8\": {\n      \"pass\": false,\n      \"reason\": \"A person could not naturally explain the situation, capability, and payoff. The plan to replace every shop system before winter is not easily explainable in a short spoken retelling.\"\n    },\n    \"gate_9\": {\n      \"pass\": false,\n      \"reason\": \"The Candidate does not go beyond the obvious while remaining concrete. The plan to replace every shop system before winter seems overly ambitious and lacks a clear, concrete intervention.\"\n    },\n    \"pass\": false,\n    \"tone\": {\n      \"pass\": false,\n      \"reason\": \"The Candidate uses a tone that is overly ambitious and lacks confidence. The plan to replace every shop system before winter is not presented in a clear, concise manner.\"\n    }\n  }\n}",
+              "function_call": null,
+              "reasoning": null,
+              "refusal": null,
+              "role": "assistant"
+            },
+            "routed_experts": null,
+            "stop_reason": null,
+            "token_ids": null
+          }
+        ],
+        "created": 1787574418,
+        "ec_transfer_params": null,
+        "id": "chatcmpl-44f44557-8ff3-4cc4-a24f-ebe1d10690d9",
+        "kv_transfer_params": null,
+        "metrics": null,
+        "model": "@cf/meta/llama-3.1-8b-fast-v2",
+        "object": "chat.completion",
+        "prompt_logprobs": null,
+        "prompt_text": null,
+        "prompt_token_ids": null,
+        "response": {
+          "candidate_ref": "a98d408a4db53c6a1b688a0c6443ef004afb40c68d693e778b52852c7a953058",
+          "verdict": {
+            "claims": {
+              "pass": false,
+              "reason": "The Candidate contains unsupported claims. The plan to 'Build a statewide marketplace, hire a dispatch center, and replace every shop system before winter' is not grounded in any evidence and seems overly ambitious for a short setup window."
+            },
+            "gate_1": {
+              "pass": false,
+              "reason": "The Candidate does not start from a credible routine and recurring annoyance. The situation described is not a recognizable routine."
+            },
+            "gate_2": {
+              "pass": false,
+              "reason": "The Candidate does not lead to an imaginable solution. The plan to replace every shop system before winter seems unrealistic and lacks a clear intervention."
+            },
+            "gate_3": {
+              "pass": false,
+              "reason": "The Candidate duplicates an existing capability. The plan to replace every shop system before winter does not introduce a new capability, but rather replaces an existing one."
+            },
+            "gate_4": {
+              "pass": false,
+              "reason": "The Candidate does not use an observed channel or clearly introduce a fitting one. The plan to replace every shop system before winter does not specify a clear channel for implementation."
+            },
+            "gate_5": {
+              "pass": false,
+              "reason": "The Candidate does not match likely scale, complexity, and maintenance capacity. The plan to replace every shop system before winter seems overly ambitious for a short setup window."
+            },
+            "gate_6": {
+              "pass": false,
+              "reason": "The Candidate does not match Hearn Systems' delivery fit. The plan to replace every shop system before winter does not specify a clear implementation within Hearn Systems' software, AI, automation, integration, or data-work delivery envelope."
+            },
+            "gate_7": {
+              "pass": false,
+              "reason": "The Candidate does not retain helpful tools, workflow steps, and decision rights it need not change. The plan to replace every shop system before winter does not specify what tools, steps, or decision rights will be preserved."
+            },
+            "gate_8": {
+              "pass": false,
+              "reason": "A person could not naturally explain the situation, capability, and payoff. The plan to replace every shop system before winter is not easily explainable in a short spoken retelling."
+            },
+            "gate_9": {
+              "pass": false,
+              "reason": "The Candidate does not go beyond the obvious while remaining concrete. The plan to replace every shop system before winter seems overly ambitious and lacks a clear, concrete intervention."
+            },
+            "pass": false,
+            "tone": {
+              "pass": false,
+              "reason": "The Candidate uses a tone that is overly ambitious and lacks confidence. The plan to replace every shop system before winter is not presented in a clear, concise manner."
+            }
+          }
+        },
+        "service_tier": null,
+        "tool_calls": [],
+        "usage": {
+          "prompt_tokens": 1537,
+          "completion_tokens": 655,
+          "total_tokens": 2192,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "neurons": 29.168657302856445
+        }
+      },
+      "response_sha256": "10457e36fe9e8c3f93525d579f777797c0b0bf506803e4f98bf61321e2b6d4d1"
+    },
+    {
+      "sequence": 31,
+      "fixture_id": "anti-invitation-pressure",
+      "request_sha256": "6b27542b598e42c372b01baaf69b71759681851bab0f30108631d4f52fb39caf",
+      "started_at": "2026-08-24T12:27:01.472Z",
+      "ended_at": "2026-08-24T12:27:06.243Z",
+      "state": "completed",
+      "response": {
+        "choices": [
+          {
+            "finish_reason": "stop",
+            "index": 0,
+            "logprobs": null,
+            "message": {
+              "annotations": null,
+              "audio": null,
+              "content": "{\n  \"candidate_ref\": \"32e9b9d92951d0616d2c3b79f597295a9dedaf974dc1ca8fab9a5e8c9297dfc8\",\n  \"verdict\": {\n    \"claims\": {\n      \"pass\": true,\n      \"reason\": \"All claims are supported by exact canonical observation support from the supplied public-site evidence.\"\n    },\n    \"gate_1\": {\n      \"pass\": false,\n      \"reason\": \"The routine starts from a credible routine, but the recurring annoyance is not explicitly stated.\"\n    },\n    \"gate_2\": {\n      \"pass\": true,\n      \"reason\": \"Every friction leads to an imaginable solution, as the team reviews one prepared reply after rebuilding the same reply.\"\n    },\n    \"gate_3\": {\n      \"pass\": false,\n      \"reason\": \"The capability inventory does not clearly state that it does not duplicate an existing capability.\"\n    },\n    \"gate_4\": {\n      \"pass\": true,\n      \"reason\": \"The channel fit uses an observed channel, the public site, which is clearly introduced.\"\n    },\n    \"gate_5\": {\n      \"pass\": false,\n      \"reason\": \"The proportionality of the intervention is not clearly stated, as it is not explicitly mentioned that it matches the likely scale, complexity, and maintenance capacity.\"\n    },\n    \"gate_6\": {\n      \"pass\": true,\n      \"reason\": \"The delivery fit is within Hearn Systems' software, AI, automation, integration, or data-work delivery envelope, as it involves the public site and the team's workflow.\"\n    },\n    \"gate_7\": {\n      \"pass\": true,\n      \"reason\": \"The preservation retains helpful tools, workflow steps, and decision rights, as the team still uses the current notebook and the owner still chooses the next job.\"\n    },\n    \"gate_8\": {\n      \"pass\": true,\n      \"reason\": \"A person could naturally explain the situation, capability, and payoff, as the plan is stated in plain language.\"\n    },\n    \"gate_9\": {\n      \"pass\": false,\n      \"reason\": \"The idea is not novel but is still concrete, as it involves a familiar missed-call routine with a small handoff.\"\n    },\n    \"pass\": false,\n    \"tone\": {\n      \"pass\": true,\n      \"reason\": \"The tone is plain and confident, as the language is easy to understand and the plan is stated without rhetorical questions or hypothetical hedging.\"\n    }\n  }\n}",
+              "function_call": null,
+              "reasoning": null,
+              "refusal": null,
+              "role": "assistant"
+            },
+            "routed_experts": null,
+            "stop_reason": null,
+            "token_ids": null
+          }
+        ],
+        "created": 1787574421,
+        "ec_transfer_params": null,
+        "id": "chatcmpl-b853da4e-19e7-4de5-8778-bb8f5421d7d0",
+        "kv_transfer_params": null,
+        "metrics": null,
+        "model": "@cf/meta/llama-3.1-8b-fast-v2",
+        "object": "chat.completion",
+        "prompt_logprobs": null,
+        "prompt_text": null,
+        "prompt_token_ids": null,
+        "response": {
+          "candidate_ref": "32e9b9d92951d0616d2c3b79f597295a9dedaf974dc1ca8fab9a5e8c9297dfc8",
+          "verdict": {
+            "claims": {
+              "pass": true,
+              "reason": "All claims are supported by exact canonical observation support from the supplied public-site evidence."
+            },
+            "gate_1": {
+              "pass": false,
+              "reason": "The routine starts from a credible routine, but the recurring annoyance is not explicitly stated."
+            },
+            "gate_2": {
+              "pass": true,
+              "reason": "Every friction leads to an imaginable solution, as the team reviews one prepared reply after rebuilding the same reply."
+            },
+            "gate_3": {
+              "pass": false,
+              "reason": "The capability inventory does not clearly state that it does not duplicate an existing capability."
+            },
+            "gate_4": {
+              "pass": true,
+              "reason": "The channel fit uses an observed channel, the public site, which is clearly introduced."
+            },
+            "gate_5": {
+              "pass": false,
+              "reason": "The proportionality of the intervention is not clearly stated, as it is not explicitly mentioned that it matches the likely scale, complexity, and maintenance capacity."
+            },
+            "gate_6": {
+              "pass": true,
+              "reason": "The delivery fit is within Hearn Systems' software, AI, automation, integration, or data-work delivery envelope, as it involves the public site and the team's workflow."
+            },
+            "gate_7": {
+              "pass": true,
+              "reason": "The preservation retains helpful tools, workflow steps, and decision rights, as the team still uses the current notebook and the owner still chooses the next job."
+            },
+            "gate_8": {
+              "pass": true,
+              "reason": "A person could naturally explain the situation, capability, and payoff, as the plan is stated in plain language."
+            },
+            "gate_9": {
+              "pass": false,
+              "reason": "The idea is not novel but is still concrete, as it involves a familiar missed-call routine with a small handoff."
+            },
+            "pass": false,
+            "tone": {
+              "pass": true,
+              "reason": "The tone is plain and confident, as the language is easy to understand and the plan is stated without rhetorical questions or hypothetical hedging."
+            }
+          }
+        },
+        "service_tier": null,
+        "tool_calls": [],
+        "usage": {
+          "prompt_tokens": 2371,
+          "completion_tokens": 538,
+          "total_tokens": 2909,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "neurons": 28.524002075195312
+        }
+      },
+      "response_sha256": "e898390bcdb03146ecf8da054ce64fb38632cc254e2b9b4e10c60834fca0ebd1"
+    },
+    {
+      "sequence": 32,
+      "fixture_id": "contradiction-gate-2",
+      "request_sha256": "428221bbc66119b9cfd24ebe2bdc45b9bf70c08665f9de763439c8fc3a401cd2",
+      "started_at": "2026-08-24T12:27:06.257Z",
+      "ended_at": "2026-08-24T12:27:09.128Z",
+      "state": "completed",
+      "response": {
+        "choices": [
+          {
+            "finish_reason": "stop",
+            "index": 0,
+            "logprobs": null,
+            "message": {
+              "annotations": null,
+              "audio": null,
+              "content": "{\"candidate_ref\":\"df9b67563faaa066f70628dbf7bb2be2736399e5a7bdcb5cf958f687c42f533b\",\"verdict\":{\"claims\": {\"pass\": true, \"reason\": \"No unsupported claims found.\"}, \"gate_1\": {\"pass\": false, \"reason\": \"The routine starts with a credible routine, but the recurring annoyance is not clearly stated.\"}, \"gate_2\": {\"pass\": true, \"reason\": \"Every friction leads to an imaginable solution, as the team reviews one prepared reply.\"}, \"gate_3\": {\"pass\": true, \"reason\": \"The capability does not duplicate an existing capability.\"}, \"gate_4\": {\"pass\": true, \"reason\": \"The plan uses an observed channel, as it routes repeated questions into one reviewed response.\"}, \"gate_5\": {\"pass\": true, \"reason\": \"The plan matches likely scale, complexity, and maintenance capacity.\"}, \"gate_6\": {\"pass\": true, \"reason\": \"The plan can be implemented as software, AI automation, integration, data workflow, or adjacent digital system.\"}, \"gate_7\": {\"pass\": true, \"reason\": \"The plan retains helpful tools, workflow steps, and decision rights it need not change.\"}, \"gate_8\": {\"pass\": true, \"reason\": \"A person could naturally explain the situation, capability, and payoff.\"}, \"gate_9\": {\"pass\": true, \"reason\": \"The plan goes beyond the obvious while remaining concrete.\"}, \"pass\": false, \"tone\": {\"pass\": true, \"reason\": \"The tone is plain, confident language a busy owner could say across a counter.\"}} }",
+              "function_call": null,
+              "reasoning": null,
+              "refusal": null,
+              "role": "assistant"
+            },
+            "routed_experts": null,
+            "stop_reason": null,
+            "token_ids": null
+          }
+        ],
+        "created": 1787574426,
+        "ec_transfer_params": null,
+        "id": "chatcmpl-8e48fc40-548b-4762-b827-5d8b0c00c0df",
+        "kv_transfer_params": null,
+        "metrics": null,
+        "model": "@cf/meta/llama-3.1-8b-fast-v2",
+        "object": "chat.completion",
+        "prompt_logprobs": null,
+        "prompt_text": null,
+        "prompt_token_ids": null,
+        "response": {
+          "candidate_ref": "df9b67563faaa066f70628dbf7bb2be2736399e5a7bdcb5cf958f687c42f533b",
+          "verdict": {
+            "claims": {
+              "pass": true,
+              "reason": "No unsupported claims found."
+            },
+            "gate_1": {
+              "pass": false,
+              "reason": "The routine starts with a credible routine, but the recurring annoyance is not clearly stated."
+            },
+            "gate_2": {
+              "pass": true,
+              "reason": "Every friction leads to an imaginable solution, as the team reviews one prepared reply."
+            },
+            "gate_3": {
+              "pass": true,
+              "reason": "The capability does not duplicate an existing capability."
+            },
+            "gate_4": {
+              "pass": true,
+              "reason": "The plan uses an observed channel, as it routes repeated questions into one reviewed response."
+            },
+            "gate_5": {
+              "pass": true,
+              "reason": "The plan matches likely scale, complexity, and maintenance capacity."
+            },
+            "gate_6": {
+              "pass": true,
+              "reason": "The plan can be implemented as software, AI automation, integration, data workflow, or adjacent digital system."
+            },
+            "gate_7": {
+              "pass": true,
+              "reason": "The plan retains helpful tools, workflow steps, and decision rights it need not change."
+            },
+            "gate_8": {
+              "pass": true,
+              "reason": "A person could naturally explain the situation, capability, and payoff."
+            },
+            "gate_9": {
+              "pass": true,
+              "reason": "The plan goes beyond the obvious while remaining concrete."
+            },
+            "pass": false,
+            "tone": {
+              "pass": true,
+              "reason": "The tone is plain, confident language a busy owner could say across a counter."
+            }
+          }
+        },
+        "service_tier": null,
+        "tool_calls": [],
+        "usage": {
+          "prompt_tokens": 1526,
+          "completion_tokens": 366,
+          "total_tokens": 1892,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "neurons": 19.046550750732422
+        }
+      },
+      "response_sha256": "091c2604eb7e9465eed981e3850476241cc47f43837bc98f02f7d567f7fad4b9"
+    },
+    {
+      "sequence": 33,
+      "fixture_id": "contradiction-gate-4",
+      "request_sha256": "5cdfa86625bc5c14a5ae57be2301f911314e1b6a93ca4a1ef6176f645f5584e6",
+      "started_at": "2026-08-24T12:27:09.136Z",
+      "ended_at": "2026-08-24T12:27:14.057Z",
+      "state": "completed",
+      "response": {
+        "choices": [
+          {
+            "finish_reason": "stop",
+            "index": 0,
+            "logprobs": null,
+            "message": {
+              "annotations": null,
+              "audio": null,
+              "content": "{\n  \"candidate_ref\": \"df9b67563faaa066f70628dbf7bb2be2736399e5a7bdcb5cf958f687c42f533b\",\n  \"verdict\": {\n    \"claims\": {\n      \"pass\": false,\n      \"reason\": \"The claims are qualitative, but the Candidate does not follow the local mode's rule of using no business-specific assertions.\"\n    },\n    \"gate_1\": {\n      \"pass\": true,\n      \"reason\": \"The routine starts from a credible routine and recurring annoyance: the team rewrites similar replies.\"\n    },\n    \"gate_2\": {\n      \"pass\": true,\n      \"reason\": \"Every friction leads to an imaginable solution: the team reviews one prepared reply.\"\n    },\n    \"gate_3\": {\n      \"pass\": true,\n      \"reason\": \"The capability does not duplicate an existing capability: the team does not replace an existing scheduler or order form.\"\n    },\n    \"gate_4\": {\n      \"pass\": true,\n      \"reason\": \"The Candidate uses an observed channel or clearly introduces a fitting one: the team reviews one prepared reply.\"\n    },\n    \"gate_5\": {\n      \"pass\": true,\n      \"reason\": \"The intervention matches likely scale, complexity, and maintenance capacity: the team reviews one prepared reply.\"\n    },\n    \"gate_6\": {\n      \"pass\": true,\n      \"reason\": \"The Candidate uses a fitting channel: the team reviews one prepared reply.\"\n    },\n    \"gate_7\": {\n      \"pass\": true,\n      \"reason\": \"The intervention retains helpful tools, workflow steps, and decision rights it need not change: the team reviews one prepared reply.\"\n    },\n    \"gate_8\": {\n      \"pass\": true,\n      \"reason\": \"A person could naturally explain the situation, capability, and payoff: the team reviews one prepared reply.\"\n    },\n    \"gate_9\": {\n      \"pass\": true,\n      \"reason\": \"The intervention goes beyond the obvious while remaining concrete: the team reviews one prepared reply.\"\n    },\n    \"pass\": false,\n    \"tone\": {\n      \"pass\": false,\n      \"reason\": \"The tone is not plain and confident language a busy owner could say across a counter.\"\n    }\n  }\n}",
+              "function_call": null,
+              "reasoning": null,
+              "refusal": null,
+              "role": "assistant"
+            },
+            "routed_experts": null,
+            "stop_reason": null,
+            "token_ids": null
+          }
+        ],
+        "created": 1787574429,
+        "ec_transfer_params": null,
+        "id": "chatcmpl-534a3051-9293-4d82-a00d-05a1e54d9f2f",
+        "kv_transfer_params": null,
+        "metrics": null,
+        "model": "@cf/meta/llama-3.1-8b-fast-v2",
+        "object": "chat.completion",
+        "prompt_logprobs": null,
+        "prompt_text": null,
+        "prompt_token_ids": null,
+        "response": {
+          "candidate_ref": "df9b67563faaa066f70628dbf7bb2be2736399e5a7bdcb5cf958f687c42f533b",
+          "verdict": {
+            "claims": {
+              "pass": false,
+              "reason": "The claims are qualitative, but the Candidate does not follow the local mode's rule of using no business-specific assertions."
+            },
+            "gate_1": {
+              "pass": true,
+              "reason": "The routine starts from a credible routine and recurring annoyance: the team rewrites similar replies."
+            },
+            "gate_2": {
+              "pass": true,
+              "reason": "Every friction leads to an imaginable solution: the team reviews one prepared reply."
+            },
+            "gate_3": {
+              "pass": true,
+              "reason": "The capability does not duplicate an existing capability: the team does not replace an existing scheduler or order form."
+            },
+            "gate_4": {
+              "pass": true,
+              "reason": "The Candidate uses an observed channel or clearly introduces a fitting one: the team reviews one prepared reply."
+            },
+            "gate_5": {
+              "pass": true,
+              "reason": "The intervention matches likely scale, complexity, and maintenance capacity: the team reviews one prepared reply."
+            },
+            "gate_6": {
+              "pass": true,
+              "reason": "The Candidate uses a fitting channel: the team reviews one prepared reply."
+            },
+            "gate_7": {
+              "pass": true,
+              "reason": "The intervention retains helpful tools, workflow steps, and decision rights it need not change: the team reviews one prepared reply."
+            },
+            "gate_8": {
+              "pass": true,
+              "reason": "A person could naturally explain the situation, capability, and payoff: the team reviews one prepared reply."
+            },
+            "gate_9": {
+              "pass": true,
+              "reason": "The intervention goes beyond the obvious while remaining concrete: the team reviews one prepared reply."
+            },
+            "pass": false,
+            "tone": {
+              "pass": false,
+              "reason": "The tone is not plain and confident language a busy owner could say across a counter."
+            }
+          }
+        },
+        "service_tier": null,
+        "tool_calls": [],
+        "usage": {
+          "prompt_tokens": 1526,
+          "completion_tokens": 486,
+          "total_tokens": 2012,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "neurons": 23.230690002441406
+        }
+      },
+      "response_sha256": "8c5ff35424f353b8808bcdab51487b537d6a54a866ef2b924cce64b448fa0002"
+    },
+    {
+      "sequence": 34,
+      "fixture_id": "contradiction-gate-9",
+      "request_sha256": "305dd32aab2862d049113deb2eec6e89db144dcd002c95f3765db86ca28f7da1",
+      "started_at": "2026-08-24T12:27:14.068Z",
+      "ended_at": "2026-08-24T12:27:17.210Z",
+      "state": "completed",
+      "response": {
+        "choices": [
+          {
+            "finish_reason": "stop",
+            "index": 0,
+            "logprobs": null,
+            "message": {
+              "annotations": null,
+              "audio": null,
+              "content": "{\n  \"candidate_ref\": \"df9b67563faaa066f70628dbf7bb2be2736399e5a7bdcb5cf958f687c42f533b\",\n  \"verdict\": {\n    \"claims\": {\n      \"pass\": false,\n      \"reason\": \"Qualitative claims are not allowed in local mode.\"\n    },\n    \"gate_1\": {\n      \"pass\": true,\n      \"reason\": \"The routine starts from a credible routine and recurring annoyance.\"\n    },\n    \"gate_2\": {\n      \"pass\": true,\n      \"reason\": \"Every friction leads to an imaginable solution.\"\n    },\n    \"gate_3\": {\n      \"pass\": true,\n      \"reason\": \"The capability does not duplicate an existing capability.\"\n    },\n    \"gate_4\": {\n      \"pass\": true,\n      \"reason\": \"The plan uses an observed channel or clearly introduces a fitting one.\"\n    },\n    \"gate_5\": {\n      \"pass\": true,\n      \"reason\": \"The plan matches likely scale, complexity, and maintenance capacity.\"\n    },\n    \"gate_6\": {\n      \"pass\": true,\n      \"reason\": \"The plan can be implemented as software, AI automation, integration, data workflow, or adjacent digital system.\"\n    },\n    \"gate_7\": {\n      \"pass\": true,\n      \"reason\": \"The plan retains helpful tools, workflow steps, and decision rights it need not change.\"\n    },\n    \"gate_8\": {\n      \"pass\": true,\n      \"reason\": \"A person could naturally explain the situation, capability, and payoff.\"\n    },\n    \"gate_9\": {\n      \"pass\": true,\n      \"reason\": \"The plan goes beyond the obvious while remaining concrete.\"\n    },\n    \"pass\": false,\n    \"tone\": {\n      \"pass\": false,\n      \"reason\": \"The tone is not plain and confident, and it may be inviting pressure.\"\n    }\n  }\n}",
+              "function_call": null,
+              "reasoning": null,
+              "refusal": null,
+              "role": "assistant"
+            },
+            "routed_experts": null,
+            "stop_reason": null,
+            "token_ids": null
+          }
+        ],
+        "created": 1787574434,
+        "ec_transfer_params": null,
+        "id": "chatcmpl-9d94fcf1-a298-4acb-9694-20ac68046e74",
+        "kv_transfer_params": null,
+        "metrics": null,
+        "model": "@cf/meta/llama-3.1-8b-fast-v2",
+        "object": "chat.completion",
+        "prompt_logprobs": null,
+        "prompt_text": null,
+        "prompt_token_ids": null,
+        "response": {
+          "candidate_ref": "df9b67563faaa066f70628dbf7bb2be2736399e5a7bdcb5cf958f687c42f533b",
+          "verdict": {
+            "claims": {
+              "pass": false,
+              "reason": "Qualitative claims are not allowed in local mode."
+            },
+            "gate_1": {
+              "pass": true,
+              "reason": "The routine starts from a credible routine and recurring annoyance."
+            },
+            "gate_2": {
+              "pass": true,
+              "reason": "Every friction leads to an imaginable solution."
+            },
+            "gate_3": {
+              "pass": true,
+              "reason": "The capability does not duplicate an existing capability."
+            },
+            "gate_4": {
+              "pass": true,
+              "reason": "The plan uses an observed channel or clearly introduces a fitting one."
+            },
+            "gate_5": {
+              "pass": true,
+              "reason": "The plan matches likely scale, complexity, and maintenance capacity."
+            },
+            "gate_6": {
+              "pass": true,
+              "reason": "The plan can be implemented as software, AI automation, integration, data workflow, or adjacent digital system."
+            },
+            "gate_7": {
+              "pass": true,
+              "reason": "The plan retains helpful tools, workflow steps, and decision rights it need not change."
+            },
+            "gate_8": {
+              "pass": true,
+              "reason": "A person could naturally explain the situation, capability, and payoff."
+            },
+            "gate_9": {
+              "pass": true,
+              "reason": "The plan goes beyond the obvious while remaining concrete."
+            },
+            "pass": false,
+            "tone": {
+              "pass": false,
+              "reason": "The tone is not plain and confident, and it may be inviting pressure."
+            }
+          }
+        },
+        "service_tier": null,
+        "tool_calls": [],
+        "usage": {
+          "prompt_tokens": 1526,
+          "completion_tokens": 417,
+          "total_tokens": 1943,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "neurons": 20.824810028076172
+        }
+      },
+      "response_sha256": "b7b3dfdba35585ad1d359f8def4eadeb7feffa71a9b8e511016c2492707af15e"
+    },
+    {
+      "sequence": 35,
+      "fixture_id": "contradiction-tone",
+      "request_sha256": "a648854e9efef254bd02b228315485f40d959b18afb9c861ee70126559701b6b",
+      "started_at": "2026-08-24T12:27:17.215Z",
+      "ended_at": "2026-08-24T12:27:20.425Z",
+      "state": "completed",
+      "response": {
+        "choices": [
+          {
+            "finish_reason": "stop",
+            "index": 0,
+            "logprobs": null,
+            "message": {
+              "annotations": null,
+              "audio": null,
+              "content": "{\n  \"candidate_ref\": \"df9b67563faaa066f70628dbf7bb2be2736399e5a7bdcb5cf958f687c42f533b\",\n  \"verdict\": {\n    \"claims\": {\n      \"pass\": true,\n      \"reason\": \"No unsupported claims found in the Candidate Brief.\"\n    },\n    \"gate_1\": {\n      \"pass\": true,\n      \"reason\": \"The routine starts from a credible routine (rewriting similar replies) and recurring annoyance (repeated inquiries).\"\n    },\n    \"gate_2\": {\n      \"pass\": true,\n      \"reason\": \"Every friction (rewriting similar replies) leads to an imaginable solution (one reviewed response).\"\n    },\n    \"gate_3\": {\n      \"pass\": true,\n      \"reason\": \"The capability does not duplicate an existing capability, as there is no existing capability for a team to review one prepared reply.\"\n    },\n    \"gate_4\": {\n      \"pass\": true,\n      \"reason\": \"The plan uses an observed channel (the team's current routine) and introduces a fitting one (reviewing one prepared reply).\"\n    },\n    \"gate_5\": {\n      \"pass\": true,\n      \"reason\": \"The plan matches likely scale, complexity, and maintenance capacity, as it involves a small handoff to the team's current routine.\"\n    },\n    \"gate_6\": {\n      \"pass\": true,\n      \"reason\": \"The plan can be implemented as software, AI automation, integration, data workflow, or adjacent digital system, as it involves a small change to the team's current routine.\"\n    },\n    \"gate_7\": {\n      \"pass\": true,\n      \"reason\": \"The plan retains helpful tools (current inbox), workflow steps (staff handle exceptions), and decision rights (the team approves every reply).\"\n    },\n    \"gate_8\": {\n      \"pass\": true,\n      \"reason\": \"A person could naturally explain the situation (repeated inquiries), capability (reviewing one prepared reply), and payoff (a useful draft instead of an empty page).\"\n    },\n    \"gate_9\": {\n      \"pass\": true,\n      \"reason\": \"The plan goes beyond the obvious while remaining concrete, as it introduces a new step (reviewing one prepared reply) to the team's current routine.\"\n    },\n    \"pass\": true,\n    \"tone\": {\n      \"pass\": true,\n      \"reason\": \"The tone is confident, using plain language and avoiding consultant-speak, pitch, and bare-mush effects.\"\n    }\n  }\n}",
+              "function_call": null,
+              "reasoning": null,
+              "refusal": null,
+              "role": "assistant"
+            },
+            "routed_experts": null,
+            "stop_reason": null,
+            "token_ids": null
+          }
+        ],
+        "created": 1787574437,
+        "ec_transfer_params": null,
+        "id": "chatcmpl-3ba651bb-0beb-4ef5-9a79-4f473d041015",
+        "kv_transfer_params": null,
+        "metrics": null,
+        "model": "@cf/meta/llama-3.1-8b-fast-v2",
+        "object": "chat.completion",
+        "prompt_logprobs": null,
+        "prompt_text": null,
+        "prompt_token_ids": null,
+        "response": {
+          "candidate_ref": "df9b67563faaa066f70628dbf7bb2be2736399e5a7bdcb5cf958f687c42f533b",
+          "verdict": {
+            "claims": {
+              "pass": true,
+              "reason": "No unsupported claims found in the Candidate Brief."
+            },
+            "gate_1": {
+              "pass": true,
+              "reason": "The routine starts from a credible routine (rewriting similar replies) and recurring annoyance (repeated inquiries)."
+            },
+            "gate_2": {
+              "pass": true,
+              "reason": "Every friction (rewriting similar replies) leads to an imaginable solution (one reviewed response)."
+            },
+            "gate_3": {
+              "pass": true,
+              "reason": "The capability does not duplicate an existing capability, as there is no existing capability for a team to review one prepared reply."
+            },
+            "gate_4": {
+              "pass": true,
+              "reason": "The plan uses an observed channel (the team's current routine) and introduces a fitting one (reviewing one prepared reply)."
+            },
+            "gate_5": {
+              "pass": true,
+              "reason": "The plan matches likely scale, complexity, and maintenance capacity, as it involves a small handoff to the team's current routine."
+            },
+            "gate_6": {
+              "pass": true,
+              "reason": "The plan can be implemented as software, AI automation, integration, data workflow, or adjacent digital system, as it involves a small change to the team's current routine."
+            },
+            "gate_7": {
+              "pass": true,
+              "reason": "The plan retains helpful tools (current inbox), workflow steps (staff handle exceptions), and decision rights (the team approves every reply)."
+            },
+            "gate_8": {
+              "pass": true,
+              "reason": "A person could naturally explain the situation (repeated inquiries), capability (reviewing one prepared reply), and payoff (a useful draft instead of an empty page)."
+            },
+            "gate_9": {
+              "pass": true,
+              "reason": "The plan goes beyond the obvious while remaining concrete, as it introduces a new step (reviewing one prepared reply) to the team's current routine."
+            },
+            "pass": true,
+            "tone": {
+              "pass": true,
+              "reason": "The tone is confident, using plain language and avoiding consultant-speak, pitch, and bare-mush effects."
+            }
+          }
+        },
+        "service_tier": null,
+        "tool_calls": [],
+        "usage": {
+          "prompt_tokens": 1526,
+          "completion_tokens": 550,
+          "total_tokens": 2076,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "neurons": 25.462230682373047
+        }
+      },
+      "response_sha256": "3d5c47372922bf7b3a9f0ca879eb1667060b5400e9825d6220df58d524d15e56"
+    },
+    {
+      "sequence": 36,
+      "fixture_id": "contradiction-claims",
+      "request_sha256": "c090e96194b6137570bd894b76b2a86ccaf6fdb277b969c4751f728c4df01aa5",
+      "started_at": "2026-08-24T12:27:20.431Z",
+      "ended_at": "2026-08-24T12:27:23.148Z",
+      "state": "completed",
+      "response": {
+        "choices": [
+          {
+            "finish_reason": "stop",
+            "index": 0,
+            "logprobs": null,
+            "message": {
+              "annotations": null,
+              "audio": null,
+              "content": "{\n  \"candidate_ref\": \"df9b67563faaa066f70628dbf7bb2be2736399e5a7bdcb5cf958f687c42f533b\",\n  \"verdict\": {\n    \"claims\": {\n      \"pass\": false,\n      \"reason\": \"Qualitative claims are not allowed in local mode.\"\n    },\n    \"gate_1\": {\n      \"pass\": true,\n      \"reason\": \"The routine starts from a credible routine and recurring annoyance.\"\n    },\n    \"gate_2\": {\n      \"pass\": true,\n      \"reason\": \"Every friction leads to an imaginable solution.\"\n    },\n    \"gate_3\": {\n      \"pass\": true,\n      \"reason\": \"The capability does not duplicate an existing capability.\"\n    },\n    \"gate_4\": {\n      \"pass\": true,\n      \"reason\": \"The plan uses an observed channel or clearly introduces a fitting one.\"\n    },\n    \"gate_5\": {\n      \"pass\": true,\n      \"reason\": \"The plan matches likely scale, complexity, and maintenance capacity.\"\n    },\n    \"gate_6\": {\n      \"pass\": true,\n      \"reason\": \"The plan can be implemented as software, AI automation, integration, data workflow, or adjacent digital system.\"\n    },\n    \"gate_7\": {\n      \"pass\": true,\n      \"reason\": \"The plan retains helpful tools, workflow steps, and decision rights it need not change.\"\n    },\n    \"gate_8\": {\n      \"pass\": true,\n      \"reason\": \"A person could naturally explain the situation, capability, and payoff.\"\n    },\n    \"gate_9\": {\n      \"pass\": true,\n      \"reason\": \"The plan goes beyond the obvious while remaining concrete.\"\n    },\n    \"pass\": false,\n    \"tone\": {\n      \"pass\": false,\n      \"reason\": \"The tone is not plain and confident, and it uses a pitch-like invitation.\"\n    }\n  }\n}",
+              "function_call": null,
+              "reasoning": null,
+              "refusal": null,
+              "role": "assistant"
+            },
+            "routed_experts": null,
+            "stop_reason": null,
+            "token_ids": null
+          }
+        ],
+        "created": 1787574440,
+        "ec_transfer_params": null,
+        "id": "chatcmpl-96afa252-2b21-44ed-a92e-d02314e70f37",
+        "kv_transfer_params": null,
+        "metrics": null,
+        "model": "@cf/meta/llama-3.1-8b-fast-v2",
+        "object": "chat.completion",
+        "prompt_logprobs": null,
+        "prompt_text": null,
+        "prompt_token_ids": null,
+        "response": {
+          "candidate_ref": "df9b67563faaa066f70628dbf7bb2be2736399e5a7bdcb5cf958f687c42f533b",
+          "verdict": {
+            "claims": {
+              "pass": false,
+              "reason": "Qualitative claims are not allowed in local mode."
+            },
+            "gate_1": {
+              "pass": true,
+              "reason": "The routine starts from a credible routine and recurring annoyance."
+            },
+            "gate_2": {
+              "pass": true,
+              "reason": "Every friction leads to an imaginable solution."
+            },
+            "gate_3": {
+              "pass": true,
+              "reason": "The capability does not duplicate an existing capability."
+            },
+            "gate_4": {
+              "pass": true,
+              "reason": "The plan uses an observed channel or clearly introduces a fitting one."
+            },
+            "gate_5": {
+              "pass": true,
+              "reason": "The plan matches likely scale, complexity, and maintenance capacity."
+            },
+            "gate_6": {
+              "pass": true,
+              "reason": "The plan can be implemented as software, AI automation, integration, data workflow, or adjacent digital system."
+            },
+            "gate_7": {
+              "pass": true,
+              "reason": "The plan retains helpful tools, workflow steps, and decision rights it need not change."
+            },
+            "gate_8": {
+              "pass": true,
+              "reason": "A person could naturally explain the situation, capability, and payoff."
+            },
+            "gate_9": {
+              "pass": true,
+              "reason": "The plan goes beyond the obvious while remaining concrete."
+            },
+            "pass": false,
+            "tone": {
+              "pass": false,
+              "reason": "The tone is not plain and confident, and it uses a pitch-like invitation."
+            }
+          }
+        },
+        "service_tier": null,
+        "tool_calls": [],
+        "usage": {
+          "prompt_tokens": 1526,
+          "completion_tokens": 418,
+          "total_tokens": 1944,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "neurons": 20.859678268432617
+        }
+      },
+      "response_sha256": "93c2409e99f36a4e09c43b1fbd533ccfc5923a7ea8dc60d573f2f2d03105a1b1"
+    },
+    {
+      "sequence": 37,
+      "fixture_id": "contract-candidate-binding",
+      "request_sha256": "159735f1fb29599bdf72a67c71e403d3ddf18e9ea18d6242b3cb826986695954",
+      "started_at": "2026-08-24T12:27:23.153Z",
+      "ended_at": "2026-08-24T12:27:29.532Z",
+      "state": "completed",
+      "response": {
+        "choices": [
+          {
+            "finish_reason": "stop",
+            "index": 0,
+            "logprobs": null,
+            "message": {
+              "annotations": null,
+              "audio": null,
+              "content": "{\n  \"candidate_ref\": \"df9b67563faaa066f70628dbf7bb2be2736399e5a7bdcb5cf958f687c42f533b\",\n  \"verdict\": {\n    \"claims\": {\n      \"pass\": false,\n      \"reason\": \"The Candidate contains unsupported claims. The 'why_fits' section states that 'Seasonal inquiry bursts benefit from a consistent first pass' but there is no evidence to support this claim.\"\n    },\n    \"gate_1\": {\n      \"pass\": false,\n      \"reason\": \"The Candidate does not start from a credible routine and recurring annoyance. The 'before' section states that 'The team rewrites similar replies' but it does not specify what is annoying about this process.\"\n    },\n    \"gate_2\": {\n      \"pass\": false,\n      \"reason\": \"The Candidate does not describe a constructive intervention. The 'after' section states that 'The team reviews one prepared reply' but it does not explain how this intervention addresses the problem.\"\n    },\n    \"gate_3\": {\n      \"pass\": true,\n      \"reason\": \"The Candidate does not duplicate an existing capability. The 'plan' section states that 'Route repeated questions into one reviewed response' which is a new capability.\"\n    },\n    \"gate_4\": {\n      \"pass\": true,\n      \"reason\": \"The Candidate uses an observed channel or clearly introduces a fitting one. The 'plan' section states that 'Route repeated questions into one reviewed response' which is a fitting channel for this capability.\"\n    },\n    \"gate_5\": {\n      \"pass\": true,\n      \"reason\": \"The Candidate matches likely scale, complexity, and maintenance capacity. The 'change_level' section states that 'steps_changed': 2 and 'steps_removed': 1 which suggests a moderate level of complexity.\"\n    },\n    \"gate_6\": {\n      \"pass\": true,\n      \"reason\": \"The Candidate can be implemented as software, AI automation, integration, data workflow, or adjacent digital system. The 'plan' section states that 'Route repeated questions into one reviewed response' which can be implemented as software.\"\n    },\n    \"gate_7\": {\n      \"pass\": true,\n      \"reason\": \"The Candidate retains helpful tools, workflow steps, and decision rights it need not change. The 'stays_same' section states that 'authority': ['The team approves every reply'], 'steps': ['Staff handle exceptions'], and 'tools': ['Current inbox'] which are preserved.\"\n    },\n    \"gate_8\": {\n      \"pass\": true,\n      \"reason\": \"A person could naturally explain the situation, capability, and payoff. The 'title' section states that 'A calmer inquiry handoff' which is a sayable title.\"\n    },\n    \"gate_9\": {\n      \"pass\": false,\n      \"reason\": \"The Candidate does not go beyond the obvious while remaining concrete. The 'plan' section states that 'Route repeated questions into one reviewed response' which is a common solution to this problem.\"\n    },\n    \"pass\": false,\n    \"tone\": {\n      \"pass\": false,\n      \"reason\": \"The Candidate uses a tone that is not plain and confident. The 'invitation' section states that 'We can inspect this Spark together and map a clear first step' which is not a plain and confident invitation.\"\n    }\n  }\n}",
+              "function_call": null,
+              "reasoning": null,
+              "refusal": null,
+              "role": "assistant"
+            },
+            "routed_experts": null,
+            "stop_reason": null,
+            "token_ids": null
+          }
+        ],
+        "created": 1787574443,
+        "ec_transfer_params": null,
+        "id": "chatcmpl-9808480a-7f26-4ff3-a640-b9a377039978",
+        "kv_transfer_params": null,
+        "metrics": null,
+        "model": "@cf/meta/llama-3.1-8b-fast-v2",
+        "object": "chat.completion",
+        "prompt_logprobs": null,
+        "prompt_text": null,
+        "prompt_token_ids": null,
+        "response": {
+          "candidate_ref": "df9b67563faaa066f70628dbf7bb2be2736399e5a7bdcb5cf958f687c42f533b",
+          "verdict": {
+            "claims": {
+              "pass": false,
+              "reason": "The Candidate contains unsupported claims. The 'why_fits' section states that 'Seasonal inquiry bursts benefit from a consistent first pass' but there is no evidence to support this claim."
+            },
+            "gate_1": {
+              "pass": false,
+              "reason": "The Candidate does not start from a credible routine and recurring annoyance. The 'before' section states that 'The team rewrites similar replies' but it does not specify what is annoying about this process."
+            },
+            "gate_2": {
+              "pass": false,
+              "reason": "The Candidate does not describe a constructive intervention. The 'after' section states that 'The team reviews one prepared reply' but it does not explain how this intervention addresses the problem."
+            },
+            "gate_3": {
+              "pass": true,
+              "reason": "The Candidate does not duplicate an existing capability. The 'plan' section states that 'Route repeated questions into one reviewed response' which is a new capability."
+            },
+            "gate_4": {
+              "pass": true,
+              "reason": "The Candidate uses an observed channel or clearly introduces a fitting one. The 'plan' section states that 'Route repeated questions into one reviewed response' which is a fitting channel for this capability."
+            },
+            "gate_5": {
+              "pass": true,
+              "reason": "The Candidate matches likely scale, complexity, and maintenance capacity. The 'change_level' section states that 'steps_changed': 2 and 'steps_removed': 1 which suggests a moderate level of complexity."
+            },
+            "gate_6": {
+              "pass": true,
+              "reason": "The Candidate can be implemented as software, AI automation, integration, data workflow, or adjacent digital system. The 'plan' section states that 'Route repeated questions into one reviewed response' which can be implemented as software."
+            },
+            "gate_7": {
+              "pass": true,
+              "reason": "The Candidate retains helpful tools, workflow steps, and decision rights it need not change. The 'stays_same' section states that 'authority': ['The team approves every reply'], 'steps': ['Staff handle exceptions'], and 'tools': ['Current inbox'] which are preserved."
+            },
+            "gate_8": {
+              "pass": true,
+              "reason": "A person could naturally explain the situation, capability, and payoff. The 'title' section states that 'A calmer inquiry handoff' which is a sayable title."
+            },
+            "gate_9": {
+              "pass": false,
+              "reason": "The Candidate does not go beyond the obvious while remaining concrete. The 'plan' section states that 'Route repeated questions into one reviewed response' which is a common solution to this problem."
+            },
+            "pass": false,
+            "tone": {
+              "pass": false,
+              "reason": "The Candidate uses a tone that is not plain and confident. The 'invitation' section states that 'We can inspect this Spark together and map a clear first step' which is not a plain and confident invitation."
+            }
+          }
+        },
+        "service_tier": null,
+        "tool_calls": [],
+        "usage": {
+          "prompt_tokens": 1526,
+          "completion_tokens": 715,
+          "total_tokens": 2241,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "neurons": 31.215421676635742
+        }
+      },
+      "response_sha256": "df1639c1376cc81b8d671e826ebe4ade8ea4ae398e3e411734483504c797621e"
+    },
+    {
+      "sequence": 38,
+      "fixture_id": "contract-pass-conjunction",
+      "request_sha256": "6848fcb6606e32f8336950a154eb68ed5933fe113198b5e5d686ac29ca55ef33",
+      "started_at": "2026-08-24T12:27:29.544Z",
+      "ended_at": "2026-08-24T12:27:34.079Z",
+      "state": "completed",
+      "response": {
+        "choices": [
+          {
+            "finish_reason": "stop",
+            "index": 0,
+            "logprobs": null,
+            "message": {
+              "annotations": null,
+              "audio": null,
+              "content": "{\n  \"candidate_ref\": \"df9b67563faaa066f70628dbf7bb2be2736399e5a7bdcb5cf958f687c42f533b\",\n  \"verdict\": {\n    \"claims\": {\n      \"pass\": false,\n      \"reason\": \"The plan makes a qualitative claim that 'Seasonal inquiry bursts benefit from a consistent first pass.' without providing evidence to support this claim.\"\n    },\n    \"gate_1\": {\n      \"pass\": true,\n      \"reason\": \"The plan starts with a credible routine 'The team rewrites similar replies' and identifies a recurring annoyance 'repeated inquiries'.\"\n    },\n    \"gate_2\": {\n      \"pass\": true,\n      \"reason\": \"The plan identifies a friction point 'repeated inquiries' and proposes a constructive intervention 'Route repeated questions into one reviewed response'.\"\n    },\n    \"gate_3\": {\n      \"pass\": true,\n      \"reason\": \"The plan does not duplicate an existing capability, as it proposes a new way to handle repeated inquiries.\"\n    },\n    \"gate_4\": {\n      \"pass\": true,\n      \"reason\": \"The plan uses an observed channel 'The team reviews one prepared reply' and introduces a fitting one 'Route repeated questions into one reviewed response'.\"\n    },\n    \"gate_5\": {\n      \"pass\": true,\n      \"reason\": \"The plan matches the likely scale, complexity, and maintenance capacity of Hearn Systems' software, AI, automation, integration, or data-work delivery envelope.\"\n    },\n    \"gate_6\": {\n      \"pass\": true,\n      \"reason\": \"The plan can be implemented as software, AI automation, integration, data workflow, or adjacent digital system.\"\n    },\n    \"gate_7\": {\n      \"pass\": true,\n      \"reason\": \"The plan retains helpful tools 'Current inbox', workflow steps 'Staff handle exceptions', and decision authority 'The team approves every reply'.\"\n    },\n    \"gate_8\": {\n      \"pass\": true,\n      \"reason\": \"A person could naturally explain the situation, capability, and payoff of the plan.\"\n    },\n    \"gate_9\": {\n      \"pass\": false,\n      \"reason\": \"The plan proposes a familiar missed-call routine with a concrete after-hours capture step, but it is not surprising or easy to picture.\"\n    },\n    \"pass\": false,\n    \"tone\": {\n      \"pass\": false,\n      \"reason\": \"The plan uses plain language, but it lacks confidence and has a pitch-like tone, inviting pressure to implement the plan.\"\n    }\n  }\n}",
+              "function_call": null,
+              "reasoning": null,
+              "refusal": null,
+              "role": "assistant"
+            },
+            "routed_experts": null,
+            "stop_reason": null,
+            "token_ids": null
+          }
+        ],
+        "created": 1787574449,
+        "ec_transfer_params": null,
+        "id": "chatcmpl-f70429a3-de8c-4afb-8d8b-f07883f65104",
+        "kv_transfer_params": null,
+        "metrics": null,
+        "model": "@cf/meta/llama-3.1-8b-fast-v2",
+        "object": "chat.completion",
+        "prompt_logprobs": null,
+        "prompt_text": null,
+        "prompt_token_ids": null,
+        "response": {
+          "candidate_ref": "df9b67563faaa066f70628dbf7bb2be2736399e5a7bdcb5cf958f687c42f533b",
+          "verdict": {
+            "claims": {
+              "pass": false,
+              "reason": "The plan makes a qualitative claim that 'Seasonal inquiry bursts benefit from a consistent first pass.' without providing evidence to support this claim."
+            },
+            "gate_1": {
+              "pass": true,
+              "reason": "The plan starts with a credible routine 'The team rewrites similar replies' and identifies a recurring annoyance 'repeated inquiries'."
+            },
+            "gate_2": {
+              "pass": true,
+              "reason": "The plan identifies a friction point 'repeated inquiries' and proposes a constructive intervention 'Route repeated questions into one reviewed response'."
+            },
+            "gate_3": {
+              "pass": true,
+              "reason": "The plan does not duplicate an existing capability, as it proposes a new way to handle repeated inquiries."
+            },
+            "gate_4": {
+              "pass": true,
+              "reason": "The plan uses an observed channel 'The team reviews one prepared reply' and introduces a fitting one 'Route repeated questions into one reviewed response'."
+            },
+            "gate_5": {
+              "pass": true,
+              "reason": "The plan matches the likely scale, complexity, and maintenance capacity of Hearn Systems' software, AI, automation, integration, or data-work delivery envelope."
+            },
+            "gate_6": {
+              "pass": true,
+              "reason": "The plan can be implemented as software, AI automation, integration, data workflow, or adjacent digital system."
+            },
+            "gate_7": {
+              "pass": true,
+              "reason": "The plan retains helpful tools 'Current inbox', workflow steps 'Staff handle exceptions', and decision authority 'The team approves every reply'."
+            },
+            "gate_8": {
+              "pass": true,
+              "reason": "A person could naturally explain the situation, capability, and payoff of the plan."
+            },
+            "gate_9": {
+              "pass": false,
+              "reason": "The plan proposes a familiar missed-call routine with a concrete after-hours capture step, but it is not surprising or easy to picture."
+            },
+            "pass": false,
+            "tone": {
+              "pass": false,
+              "reason": "The plan uses plain language, but it lacks confidence and has a pitch-like tone, inviting pressure to implement the plan."
+            }
+          }
+        },
+        "service_tier": null,
+        "tool_calls": [],
+        "usage": {
+          "prompt_tokens": 1526,
+          "completion_tokens": 551,
+          "total_tokens": 2077,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "neurons": 25.497098922729492
+        }
+      },
+      "response_sha256": "8ad0d4d2e7a9a1665546e44270f1ce23c38863e9c93eb8fe0ce7f5f60d618d9a"
+    }
+  ],
+  "regression_sha256": "d35ff6eb27f11c188722d766ac5bd830da1d49843371969cab68deaf092078e2",
+  "regression_report": {
+    "slot": "fallback",
+    "fixtures": [
+      {
+        "fixture_id": "golden-local-after-hours-callback-card",
+        "code": "semantic_rejected",
+        "judge_calls": 1,
+        "decision": {
+          "pass": false,
+          "gates": [
+            {
+              "gate": 1,
+              "pass": false
+            },
+            {
+              "gate": 2,
+              "pass": false
+            },
+            {
+              "gate": 3,
+              "pass": true
+            },
+            {
+              "gate": 4,
+              "pass": false
+            },
+            {
+              "gate": 5,
+              "pass": false
+            },
+            {
+              "gate": 6,
+              "pass": false
+            },
+            {
+              "gate": 7,
+              "pass": false
+            },
+            {
+              "gate": 8,
+              "pass": false
+            },
+            {
+              "gate": 9,
+              "pass": false
+            }
+          ],
+          "tone": {
+            "pass": false
+          },
+          "claims": {
+            "pass": false
+          }
+        },
+        "matched": false
+      },
+      {
+        "fixture_id": "golden-local-lakeside-weather-handoff",
+        "code": "semantic_rejected",
+        "judge_calls": 1,
+        "decision": {
+          "pass": false,
+          "gates": [
+            {
+              "gate": 1,
+              "pass": true
+            },
+            {
+              "gate": 2,
+              "pass": true
+            },
+            {
+              "gate": 3,
+              "pass": true
+            },
+            {
+              "gate": 4,
+              "pass": true
+            },
+            {
+              "gate": 5,
+              "pass": true
+            },
+            {
+              "gate": 6,
+              "pass": true
+            },
+            {
+              "gate": 7,
+              "pass": true
+            },
+            {
+              "gate": 8,
+              "pass": true
+            },
+            {
+              "gate": 9,
+              "pass": true
+            }
+          ],
+          "tone": {
+            "pass": false
+          },
+          "claims": {
+            "pass": false
+          }
+        },
+        "matched": false
+      },
+      {
+        "fixture_id": "golden-local-counter-special-tally",
+        "code": "semantic_rejected",
+        "judge_calls": 1,
+        "decision": {
+          "pass": false,
+          "gates": [
+            {
+              "gate": 1,
+              "pass": false
+            },
+            {
+              "gate": 2,
+              "pass": true
+            },
+            {
+              "gate": 3,
+              "pass": true
+            },
+            {
+              "gate": 4,
+              "pass": true
+            },
+            {
+              "gate": 5,
+              "pass": true
+            },
+            {
+              "gate": 6,
+              "pass": true
+            },
+            {
+              "gate": 7,
+              "pass": true
+            },
+            {
+              "gate": 8,
+              "pass": true
+            },
+            {
+              "gate": 9,
+              "pass": true
+            }
+          ],
+          "tone": {
+            "pass": false
+          },
+          "claims": {
+            "pass": false
+          }
+        },
+        "matched": false
+      },
+      {
+        "fixture_id": "golden-website-menu-sold-out-bridge",
+        "code": "passed",
+        "judge_calls": 1,
+        "decision": {
+          "pass": true,
+          "gates": [
+            {
+              "gate": 1,
+              "pass": true
+            },
+            {
+              "gate": 2,
+              "pass": true
+            },
+            {
+              "gate": 3,
+              "pass": true
+            },
+            {
+              "gate": 4,
+              "pass": true
+            },
+            {
+              "gate": 5,
+              "pass": true
+            },
+            {
+              "gate": 6,
+              "pass": true
+            },
+            {
+              "gate": 7,
+              "pass": true
+            },
+            {
+              "gate": 8,
+              "pass": true
+            },
+            {
+              "gate": 9,
+              "pass": true
+            }
+          ],
+          "tone": {
+            "pass": true
+          },
+          "claims": {
+            "pass": true
+          }
+        },
+        "matched": true
+      },
+      {
+        "fixture_id": "golden-website-trail-status-note",
+        "code": "passed",
+        "judge_calls": 1,
+        "decision": {
+          "pass": true,
+          "gates": [
+            {
+              "gate": 1,
+              "pass": true
+            },
+            {
+              "gate": 2,
+              "pass": true
+            },
+            {
+              "gate": 3,
+              "pass": true
+            },
+            {
+              "gate": 4,
+              "pass": true
+            },
+            {
+              "gate": 5,
+              "pass": true
+            },
+            {
+              "gate": 6,
+              "pass": true
+            },
+            {
+              "gate": 7,
+              "pass": true
+            },
+            {
+              "gate": 8,
+              "pass": true
+            },
+            {
+              "gate": 9,
+              "pass": true
+            }
+          ],
+          "tone": {
+            "pass": true
+          },
+          "claims": {
+            "pass": true
+          }
+        },
+        "matched": true
+      },
+      {
+        "fixture_id": "golden-website-donation-thank-you-handoff",
+        "code": "passed",
+        "judge_calls": 1,
+        "decision": {
+          "pass": true,
+          "gates": [
+            {
+              "gate": 1,
+              "pass": true
+            },
+            {
+              "gate": 2,
+              "pass": true
+            },
+            {
+              "gate": 3,
+              "pass": true
+            },
+            {
+              "gate": 4,
+              "pass": true
+            },
+            {
+              "gate": 5,
+              "pass": true
+            },
+            {
+              "gate": 6,
+              "pass": true
+            },
+            {
+              "gate": 7,
+              "pass": true
+            },
+            {
+              "gate": 8,
+              "pass": true
+            },
+            {
+              "gate": 9,
+              "pass": true
+            }
+          ],
+          "tone": {
+            "pass": true
+          },
+          "claims": {
+            "pass": true
+          }
+        },
+        "matched": true
+      },
+      {
+        "fixture_id": "anti-consultant-speak",
+        "code": "semantic_rejected",
+        "judge_calls": 1,
+        "decision": {
+          "pass": false,
+          "gates": [
+            {
+              "gate": 1,
+              "pass": false
+            },
+            {
+              "gate": 2,
+              "pass": false
+            },
+            {
+              "gate": 3,
+              "pass": true
+            },
+            {
+              "gate": 4,
+              "pass": false
+            },
+            {
+              "gate": 5,
+              "pass": false
+            },
+            {
+              "gate": 6,
+              "pass": false
+            },
+            {
+              "gate": 7,
+              "pass": false
+            },
+            {
+              "gate": 8,
+              "pass": false
+            },
+            {
+              "gate": 9,
+              "pass": false
+            }
+          ],
+          "tone": {
+            "pass": false
+          },
+          "claims": {
+            "pass": false
+          }
+        },
+        "matched": false
+      },
+      {
+        "fixture_id": "anti-unsupported-claims",
+        "code": "passed",
+        "judge_calls": 1,
+        "decision": {
+          "pass": true,
+          "gates": [
+            {
+              "gate": 1,
+              "pass": true
+            },
+            {
+              "gate": 2,
+              "pass": true
+            },
+            {
+              "gate": 3,
+              "pass": true
+            },
+            {
+              "gate": 4,
+              "pass": true
+            },
+            {
+              "gate": 5,
+              "pass": true
+            },
+            {
+              "gate": 6,
+              "pass": true
+            },
+            {
+              "gate": 7,
+              "pass": true
+            },
+            {
+              "gate": 8,
+              "pass": true
+            },
+            {
+              "gate": 9,
+              "pass": true
+            }
+          ],
+          "tone": {
+            "pass": true
+          },
+          "claims": {
+            "pass": true
+          }
+        },
+        "matched": false
+      },
+      {
+        "fixture_id": "anti-weak-preservation",
+        "code": "semantic_rejected",
+        "judge_calls": 1,
+        "decision": {
+          "pass": false,
+          "gates": [
+            {
+              "gate": 1,
+              "pass": false
+            },
+            {
+              "gate": 2,
+              "pass": false
+            },
+            {
+              "gate": 3,
+              "pass": true
+            },
+            {
+              "gate": 4,
+              "pass": false
+            },
+            {
+              "gate": 5,
+              "pass": false
+            },
+            {
+              "gate": 6,
+              "pass": false
+            },
+            {
+              "gate": 7,
+              "pass": true
+            },
+            {
+              "gate": 8,
+              "pass": false
+            },
+            {
+              "gate": 9,
+              "pass": false
+            }
+          ],
+          "tone": {
+            "pass": false
+          },
+          "claims": {
+            "pass": false
+          }
+        },
+        "matched": false
+      },
+      {
+        "fixture_id": "anti-capability-duplication",
+        "code": "semantic_rejected",
+        "judge_calls": 1,
+        "decision": {
+          "pass": false,
+          "gates": [
+            {
+              "gate": 1,
+              "pass": false
+            },
+            {
+              "gate": 2,
+              "pass": false
+            },
+            {
+              "gate": 3,
+              "pass": false
+            },
+            {
+              "gate": 4,
+              "pass": false
+            },
+            {
+              "gate": 5,
+              "pass": false
+            },
+            {
+              "gate": 6,
+              "pass": false
+            },
+            {
+              "gate": 7,
+              "pass": false
+            },
+            {
+              "gate": 8,
+              "pass": false
+            },
+            {
+              "gate": 9,
+              "pass": false
+            }
+          ],
+          "tone": {
+            "pass": true
+          },
+          "claims": {
+            "pass": true
+          }
+        },
+        "matched": false
+      },
+      {
+        "fixture_id": "anti-poor-scope",
+        "code": "semantic_rejected",
+        "judge_calls": 1,
+        "decision": {
+          "pass": false,
+          "gates": [
+            {
+              "gate": 1,
+              "pass": false
+            },
+            {
+              "gate": 2,
+              "pass": false
+            },
+            {
+              "gate": 3,
+              "pass": false
+            },
+            {
+              "gate": 4,
+              "pass": false
+            },
+            {
+              "gate": 5,
+              "pass": false
+            },
+            {
+              "gate": 6,
+              "pass": false
+            },
+            {
+              "gate": 7,
+              "pass": false
+            },
+            {
+              "gate": 8,
+              "pass": false
+            },
+            {
+              "gate": 9,
+              "pass": false
+            }
+          ],
+          "tone": {
+            "pass": false
+          },
+          "claims": {
+            "pass": false
+          }
+        },
+        "matched": false
+      },
+      {
+        "fixture_id": "anti-invitation-pressure",
+        "code": "semantic_rejected",
+        "judge_calls": 1,
+        "decision": {
+          "pass": false,
+          "gates": [
+            {
+              "gate": 1,
+              "pass": false
+            },
+            {
+              "gate": 2,
+              "pass": true
+            },
+            {
+              "gate": 3,
+              "pass": false
+            },
+            {
+              "gate": 4,
+              "pass": true
+            },
+            {
+              "gate": 5,
+              "pass": false
+            },
+            {
+              "gate": 6,
+              "pass": true
+            },
+            {
+              "gate": 7,
+              "pass": true
+            },
+            {
+              "gate": 8,
+              "pass": true
+            },
+            {
+              "gate": 9,
+              "pass": false
+            }
+          ],
+          "tone": {
+            "pass": true
+          },
+          "claims": {
+            "pass": true
+          }
+        },
+        "matched": false
+      },
+      {
+        "fixture_id": "contradiction-gate-2",
+        "code": "semantic_rejected",
+        "judge_calls": 1,
+        "decision": {
+          "pass": false,
+          "gates": [
+            {
+              "gate": 1,
+              "pass": false
+            },
+            {
+              "gate": 2,
+              "pass": true
+            },
+            {
+              "gate": 3,
+              "pass": true
+            },
+            {
+              "gate": 4,
+              "pass": true
+            },
+            {
+              "gate": 5,
+              "pass": true
+            },
+            {
+              "gate": 6,
+              "pass": true
+            },
+            {
+              "gate": 7,
+              "pass": true
+            },
+            {
+              "gate": 8,
+              "pass": true
+            },
+            {
+              "gate": 9,
+              "pass": true
+            }
+          ],
+          "tone": {
+            "pass": true
+          },
+          "claims": {
+            "pass": true
+          }
+        },
+        "matched": false
+      },
+      {
+        "fixture_id": "contradiction-gate-4",
+        "code": "semantic_rejected",
+        "judge_calls": 1,
+        "decision": {
+          "pass": false,
+          "gates": [
+            {
+              "gate": 1,
+              "pass": true
+            },
+            {
+              "gate": 2,
+              "pass": true
+            },
+            {
+              "gate": 3,
+              "pass": true
+            },
+            {
+              "gate": 4,
+              "pass": true
+            },
+            {
+              "gate": 5,
+              "pass": true
+            },
+            {
+              "gate": 6,
+              "pass": true
+            },
+            {
+              "gate": 7,
+              "pass": true
+            },
+            {
+              "gate": 8,
+              "pass": true
+            },
+            {
+              "gate": 9,
+              "pass": true
+            }
+          ],
+          "tone": {
+            "pass": false
+          },
+          "claims": {
+            "pass": false
+          }
+        },
+        "matched": false
+      },
+      {
+        "fixture_id": "contradiction-gate-9",
+        "code": "semantic_rejected",
+        "judge_calls": 1,
+        "decision": {
+          "pass": false,
+          "gates": [
+            {
+              "gate": 1,
+              "pass": true
+            },
+            {
+              "gate": 2,
+              "pass": true
+            },
+            {
+              "gate": 3,
+              "pass": true
+            },
+            {
+              "gate": 4,
+              "pass": true
+            },
+            {
+              "gate": 5,
+              "pass": true
+            },
+            {
+              "gate": 6,
+              "pass": true
+            },
+            {
+              "gate": 7,
+              "pass": true
+            },
+            {
+              "gate": 8,
+              "pass": true
+            },
+            {
+              "gate": 9,
+              "pass": true
+            }
+          ],
+          "tone": {
+            "pass": false
+          },
+          "claims": {
+            "pass": false
+          }
+        },
+        "matched": false
+      },
+      {
+        "fixture_id": "contradiction-tone",
+        "code": "passed",
+        "judge_calls": 1,
+        "decision": {
+          "pass": true,
+          "gates": [
+            {
+              "gate": 1,
+              "pass": true
+            },
+            {
+              "gate": 2,
+              "pass": true
+            },
+            {
+              "gate": 3,
+              "pass": true
+            },
+            {
+              "gate": 4,
+              "pass": true
+            },
+            {
+              "gate": 5,
+              "pass": true
+            },
+            {
+              "gate": 6,
+              "pass": true
+            },
+            {
+              "gate": 7,
+              "pass": true
+            },
+            {
+              "gate": 8,
+              "pass": true
+            },
+            {
+              "gate": 9,
+              "pass": true
+            }
+          ],
+          "tone": {
+            "pass": true
+          },
+          "claims": {
+            "pass": true
+          }
+        },
+        "matched": false
+      },
+      {
+        "fixture_id": "contradiction-claims",
+        "code": "semantic_rejected",
+        "judge_calls": 1,
+        "decision": {
+          "pass": false,
+          "gates": [
+            {
+              "gate": 1,
+              "pass": true
+            },
+            {
+              "gate": 2,
+              "pass": true
+            },
+            {
+              "gate": 3,
+              "pass": true
+            },
+            {
+              "gate": 4,
+              "pass": true
+            },
+            {
+              "gate": 5,
+              "pass": true
+            },
+            {
+              "gate": 6,
+              "pass": true
+            },
+            {
+              "gate": 7,
+              "pass": true
+            },
+            {
+              "gate": 8,
+              "pass": true
+            },
+            {
+              "gate": 9,
+              "pass": true
+            }
+          ],
+          "tone": {
+            "pass": false
+          },
+          "claims": {
+            "pass": false
+          }
+        },
+        "matched": false
+      },
+      {
+        "fixture_id": "contract-candidate-binding",
+        "code": "semantic_rejected",
+        "judge_calls": 1,
+        "decision": {
+          "pass": false,
+          "gates": [
+            {
+              "gate": 1,
+              "pass": false
+            },
+            {
+              "gate": 2,
+              "pass": false
+            },
+            {
+              "gate": 3,
+              "pass": true
+            },
+            {
+              "gate": 4,
+              "pass": true
+            },
+            {
+              "gate": 5,
+              "pass": true
+            },
+            {
+              "gate": 6,
+              "pass": true
+            },
+            {
+              "gate": 7,
+              "pass": true
+            },
+            {
+              "gate": 8,
+              "pass": true
+            },
+            {
+              "gate": 9,
+              "pass": false
+            }
+          ],
+          "tone": {
+            "pass": false
+          },
+          "claims": {
+            "pass": false
+          }
+        },
+        "matched": false
+      },
+      {
+        "fixture_id": "contract-pass-conjunction",
+        "code": "semantic_rejected",
+        "judge_calls": 1,
+        "decision": {
+          "pass": false,
+          "gates": [
+            {
+              "gate": 1,
+              "pass": true
+            },
+            {
+              "gate": 2,
+              "pass": true
+            },
+            {
+              "gate": 3,
+              "pass": true
+            },
+            {
+              "gate": 4,
+              "pass": true
+            },
+            {
+              "gate": 5,
+              "pass": true
+            },
+            {
+              "gate": 6,
+              "pass": true
+            },
+            {
+              "gate": 7,
+              "pass": true
+            },
+            {
+              "gate": 8,
+              "pass": true
+            },
+            {
+              "gate": 9,
+              "pass": false
+            }
+          ],
+          "tone": {
+            "pass": false
+          },
+          "claims": {
+            "pass": false
+          }
+        },
+        "matched": false
+      },
+      {
+        "fixture_id": "local-invalid-schema",
+        "code": "local_rejected",
+        "judge_calls": 0,
+        "decision": null,
+        "matched": true
+      },
+      {
+        "fixture_id": "local-mode-linkage",
+        "code": "local_rejected",
+        "judge_calls": 0,
+        "decision": null,
+        "matched": true
+      },
+      {
+        "fixture_id": "local-personal-name",
+        "code": "local_rejected",
+        "judge_calls": 0,
+        "decision": null,
+        "matched": true
+      },
+      {
+        "fixture_id": "local-number",
+        "code": "local_rejected",
+        "judge_calls": 0,
+        "decision": null,
+        "matched": true
+      },
+      {
+        "fixture_id": "local-grounding",
+        "code": "local_rejected",
+        "judge_calls": 0,
+        "decision": null,
+        "matched": true
+      }
+    ],
+    "summary": {
+      "total": 24,
+      "matched": 8,
+      "mismatched": 16,
+      "judge_calls": 19,
+      "provider_calls": 19
+    }
+  },
+  "predicate_results": [
+    {
+      "id": "evidence.shape",
+      "pass": false
+    },
+    {
+      "id": "oracle.identity",
+      "pass": false
+    },
+    {
+      "id": "legacy.immutable",
+      "pass": false
+    },
+    {
+      "id": "runtime.identity",
+      "pass": false
+    },
+    {
+      "id": "source.identity",
+      "pass": false
+    },
+    {
+      "id": "adapter.identity",
+      "pass": false
+    },
+    {
+      "id": "candidate.binding",
+      "pass": false
+    },
+    {
+      "id": "fixtures.executed",
+      "pass": false
+    },
+    {
+      "id": "records.classified",
+      "pass": false
+    },
+    {
+      "id": "records.closed",
+      "pass": false
+    },
+    {
+      "id": "run.authorization",
+      "pass": false
+    },
+    {
+      "id": "run.cardinality",
+      "pass": false
+    },
+    {
+      "id": "run.ordering",
+      "pass": false
+    },
+    {
+      "id": "run.common_request",
+      "pass": false
+    },
+    {
+      "id": "summary.rates",
+      "pass": false
+    },
+    {
+      "id": "outcome.deterministic",
+      "pass": false
+    },
+    {
+      "id": "predicates.retained",
+      "pass": false
+    },
+    {
+      "id": "report.deterministic",
+      "pass": false
+    }
+  ],
+  "outcome": "fail"
+}

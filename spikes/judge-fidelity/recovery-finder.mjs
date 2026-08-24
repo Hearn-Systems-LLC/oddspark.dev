@@ -39,12 +39,25 @@ const OWNER_REVIEWED_PREFIXES = Object.freeze([
   "2026-08-22-c0b94e4a-819dd1f7ed29e093-286bd0b2-4e62-4e1b-83c4-6b69653f2a31",
   "2026-08-22-c0b94e4a-d2a2402b331a4487-ee3dbc1c-50dc-48f4-9017-7790a0b6d29a",
   "2026-08-22-467ba931-9be44152aeb9a440-20d88746-a496-4b34-b0a5-8a694a4989d2",
+  "2026-08-23-a0ed5363-5808d7c90aa1d93f-fd8c9785-69d0-4548-b773-d679452dc6f9",
+  "2026-08-23-a0ed5363-c024fbc0a91b9098-4b10ebef-9df3-4043-a728-b508445aa67c",
+  "2026-08-23-a0ed5363-e7a552940fd217c6-c1cb098e-e33a-4341-b72e-87d02d2a185c",
+  "2026-08-23-a64f9601-bc745f5e28b4fd21-e2e70ad6-4b1f-4777-8f91-2d33c072ab70",
+]);
+// Sprint Change Proposal 2026-08-24 superseded this exact completed GO identity
+// after the independently retained Story 1.18 semantic NO-GO. Its refs remain
+// immutable history but cannot authorize Decision protocol v2.
+const OWNER_SUPERSEDED_GO_PREFIXES = Object.freeze([
+  "2026-08-23-a0ed5363-01e3976da21ab40e-620e2f14-8f42-47a2-8f83-854c41f017e6",
+  "2026-08-24-7c2c3860-cec14a30a3411043-3f980f8c-8e1d-45ba-bd87-ef961d1a808c",
 ]);
 // When a successor cycle is granted, the owner-reviewed completed-spend receipt is
 // archived (bytes preserved, renamed aside) so the single-file receipt slot is reusable.
 export const OWNER_REVIEWED_SPENDS = Object.freeze([
   Object.freeze({ attempt_id: "c43fb299-6891-4f10-aebe-e49cbf3f770c", approval_run_id: "e848e2bd-dc86-40e0-90da-45bee83fcc6d", calls_started: 42, archive: "2026-08-22-e848e2bd-c43fb299.spend-receipt.json" }),
   Object.freeze({ attempt_id: "20d88746-a496-4b34-b0a5-8a694a4989d2", approval_run_id: "467ba931-4e31-450a-93ce-f05f62e4db73", calls_started: 42, archive: "2026-08-22-467ba931-20d88746.spend-receipt.json" }),
+  Object.freeze({ attempt_id: "620e2f14-8f42-47a2-8f83-854c41f017e6", approval_run_id: "a0ed5363-a126-4b2e-bd63-4bd4974b1c8b", calls_started: 42, archive: "2026-08-23-a0ed5363-620e2f14.spend-receipt.json" }),
+  Object.freeze({ attempt_id: "3f980f8c-8e1d-45ba-bd87-ef961d1a808c", approval_run_id: "7c2c3860-77da-4b9b-aad1-3313f9704c6b", calls_started: 42, archive: "2026-08-24-7c2c3860-3f980f8c.spend-receipt.json" }),
 ]);
 export const OWNER_REVIEWED_RECEIPT_ARCHIVES = Object.freeze(OWNER_REVIEWED_SPENDS.map((spend) => spend.archive));
 async function classifyHistoricalArtifacts(resultsDir, entries) {
@@ -89,7 +102,13 @@ async function classifyHistoricalArtifacts(resultsDir, entries) {
         && bundle?.outcome?.decision === "NO-GO"
         && Array.isArray(bundle?.qualification_refs) && bundle.qualification_refs.length === 0
         && (bundle?.role_qualification_ref ?? null) === null;
-      if (!bindingOk || (!legacyOk && !reviewedOk)) continue;
+      const ownerSupersededGo = OWNER_SUPERSEDED_GO_PREFIXES.some((prefix) => expectedBase.startsWith(prefix));
+      const supersededGoOk = ownerSupersededGo && bundle?.schema_version === "oddspark.judge-qualification-bundle/v2"
+        && bundle?.outcome?.decision === "GO"
+        && Array.isArray(bundle?.qualification_refs) && bundle.qualification_refs.length === MODEL_IDS.length
+        && bundle.qualification_refs.every((item, index) => item?.model === MODEL_IDS[index] && hex(item?.qualification_ref))
+        && hex(bundle?.role_qualification_ref);
+      if (!bindingOk || (!legacyOk && !reviewedOk && !supersededGoOk)) continue;
       [markerName, ...expected].forEach((entry) => historical.add(entry));
     } catch { /* incomplete historical-looking set remains blocking unless evidence identity classified it */ }
   }
@@ -231,7 +250,7 @@ export async function findPriorOperationalRecovery(resultsDir, options = {}) {
       && OWNER_REVIEWED_SPENDS.some((spend) => receipt.attempt_id === spend.attempt_id
         && receipt.approval_run_id === spend.approval_run_id
         && receipt.calls_started === spend.calls_started
-        && OWNER_REVIEWED_PREFIXES.some((prefix) => entries.some((entry) => entry.startsWith(prefix) && entry.endsWith("-v2.complete.json"))));
+        && [...OWNER_REVIEWED_PREFIXES, ...OWNER_SUPERSEDED_GO_PREFIXES].some((prefix) => entries.some((entry) => entry.startsWith(prefix) && entry.endsWith("-v2.complete.json"))));
     if (ownerReviewedSpend) {
       historicalArtifacts.add(RECOVERY_RECEIPT_FILE);
     } else if (receipt.calls_started > 0 || receipt.state !== "reserved") {

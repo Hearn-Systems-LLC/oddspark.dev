@@ -1,0 +1,26 @@
+{
+  "schema_version": "oddspark.semantic-qualification-complete/v1",
+  "run_id": "semantic-8baaad6c-95dc-4546-9a7b-1e4afd1f3f7e",
+  "files": [
+    {
+      "name": "semantic-8baaad6c-95dc-4546-9a7b-1e4afd1f3f7e.evidence.json",
+      "sha256": "033c2c7d46fa920869caaa1a8e38f41ecac90f6423157756d6520cb066eb97c9",
+      "bytes": 253449
+    },
+    {
+      "name": "semantic-8baaad6c-95dc-4546-9a7b-1e4afd1f3f7e.primary.report.json",
+      "sha256": "fa59129f94161e3bc94dbc7cf48db0662f1dcf551a48d963e63d8986eca217e4",
+      "bytes": 150825
+    },
+    {
+      "name": "semantic-8baaad6c-95dc-4546-9a7b-1e4afd1f3f7e.fallback.report.json",
+      "sha256": "1f89042790c234220bf1887690af7721ac0eb42952f862803a72c8ce6b153c35",
+      "bytes": 149445
+    },
+    {
+      "name": "semantic-8baaad6c-95dc-4546-9a7b-1e4afd1f3f7e.terminal.json",
+      "sha256": "85ca6a4e91aa13bf03f9226081706a59da76c04e2825db7a7f92c02cc4f4bced",
+      "bytes": 576
+    }
+  ]
+}

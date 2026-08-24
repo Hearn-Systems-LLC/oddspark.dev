@@ -42,7 +42,7 @@ import { deriveReports } from "./evidence.mjs";
 
 const ROOT = fileURLToPath(new URL("../../", import.meta.url));
 const JUDGE_RESULT =
-  "spikes/judge-fidelity/results/2026-08-23-a0ed5363-01e3976da21ab40e-620e2f14-8f42-47a2-8f83-854c41f017e6-qualification.json";
+  "spikes/judge-fidelity/results/2026-08-24-7c2c3860-cec14a30a3411043-3f980f8c-8e1d-45ba-bd87-ef961d1a808c-qualification.json";
 const GENERATION_RESULT =
   "spikes/generation-qualification/results/story-1-11-2026-08-22-l9-406d10ea-8629-4a24-ab8f-8873b0332e96.qualification.json";
 const SOURCE_PATHS = [
@@ -229,7 +229,7 @@ export async function buildCurrentPlan({
       generation_role_ref:
         "5cf5a547b29d31304af686c610da9c4c5959299faf12d434db28493de92404b1",
       judge_role_ref:
-        "4c70414b247316618f0a219eeecf1aa408d029af931abc45c15a65fda15b5d6a",
+        "f13c31e02dbf9bce86df62e25775b768dd477a1ef5068c234c95f149e71b749c",
       judge_legs: legs.map((x, i) => ({
         leg: ["primary", "fallback"][i],
         model: x.resolved_model,

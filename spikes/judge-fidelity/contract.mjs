@@ -167,7 +167,43 @@ export const SYSTEM_PROMPT = `You are the independent Oddspark judge. Evaluate t
 
 Also evaluate tone (confident plan, plain language, no pitch, no consultant-speak, no bare-mush effects) and claims (qualitative unless supplied evidence grounds a number). Use the supplied grounding report; do not add a grounding field or a tenth gate.
 
+Decision protocol v2:
+- Evaluate every gate, tone, and claims independently from the exact Candidate, Evidence, and grounding report supplied. Strength in one check cannot compensate for failure or uncertainty in another.
+- For each check, look for both supporting facts and disqualifying facts. Treat the check as unproven and set its pass to false when required support is absent, ambiguous, internally inconsistent, or contradicted.
+- Before passing, specifically test for a routine without a recurring annoyance, friction without an imaginable intervention, capability duplication, channel mismatch, disproportionate scope or maintenance, work outside Hearn Systems' delivery fit, weak preservation, unnatural retelling, an obvious or implausible idea, consultant or pitch register, bare-mush effects, unsupported claims, and invitation pressure.
+- Every reason must identify the specific Candidate element and the supplied fact, contradiction, or missing fact that controls the decision. A generic restatement of the check is not a valid reason.
+- Use only the supplied input. Do not infer missing business facts or resolve ambiguity in the Candidate's favor.
+- Do not use corpus labels, fixture identifiers, expected outcomes, or case-specific answer keys.
+
 Return only one JSON value matching the supplied schema. Report gate 1 through gate 9 as the separate gate_1 through gate_9 properties, each an object with a boolean pass and a non-empty reason string; tone and claims use that same object shape. Set top-level pass to true only when all nine gates, tone, and claims pass.`;
+
+const PROMPT_PROTOCOL_REQUIREMENTS = Object.freeze([
+  /Decision protocol v2:/,
+  /Evaluate every gate, tone, and claims independently/,
+  /Strength in one check cannot compensate/,
+  /look for both supporting facts and disqualifying facts/,
+  /absent, ambiguous, internally inconsistent, or contradicted/,
+  /capability duplication, channel mismatch, disproportionate scope or maintenance/,
+  /consultant or pitch register, bare-mush effects, unsupported claims, and invitation pressure/,
+  /specific Candidate element and the supplied fact, contradiction, or missing fact/,
+  /generic restatement of the check is not a valid reason/,
+  /Do not infer missing business facts or resolve ambiguity in the Candidate's favor/,
+  /Do not use corpus labels, fixture identifiers, expected outcomes, or case-specific answer keys/,
+  /Set top-level pass to true only when all nine gates, tone, and claims pass/,
+]);
+
+const PROMPT_CASE_LEAKAGE = /(?:golden|anti-golden|contradiction-claims|contract-safety|anti-consultant-speak|anti-unsupported-claims|anti-weak-preservation|anti-capability-duplication|anti-poor-scope|anti-invitation-pressure)/i;
+
+export function validateJudgePromptContract(prompt) {
+  const errors = [];
+  if (typeof prompt !== "string" || !prompt.trim()) return { valid: false, errors: ["judge prompt must be a non-empty string"] };
+  for (const requirement of PROMPT_PROTOCOL_REQUIREMENTS) {
+    if (!requirement.test(prompt)) errors.push(`judge prompt is missing protocol requirement ${requirement.source}`);
+  }
+  if (PROMPT_CASE_LEAKAGE.test(prompt)) errors.push("judge prompt leaks a frozen corpus or fixture label");
+  if (prompt !== SYSTEM_PROMPT) errors.push("judge prompt differs from the frozen Decision protocol v2 text");
+  return { valid: errors.length === 0, errors };
+}
 
 function isObject(value) {
   return value !== null && typeof value === "object" && !Array.isArray(value);

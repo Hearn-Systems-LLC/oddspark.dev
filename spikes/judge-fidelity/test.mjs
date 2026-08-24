@@ -11,6 +11,7 @@ import {
   LEGACY_MODEL_IDS,
   MAX_EXTRACTED_BYTES,
   SYSTEM_PROMPT,
+  validateJudgePromptContract,
   VERDICT_RESPONSE_FORMAT,
   VERDICT_SCHEMA,
   PREDICATE_ORACLE,
@@ -268,6 +269,28 @@ test("the prompt contains all nine gates and the exact output instruction", () =
   assert.deepEqual(messages.map(({ role }) => role), ["system", "user"]);
   assert.equal(messages[0].content, SYSTEM_PROMPT);
   assert.deepEqual(JSON.parse(messages[1].content), fixtures.synthetic_input);
+});
+
+test("the frozen Decision protocol v2 rejects semantic-discipline and case-leakage mutations", () => {
+  assert.deepEqual(validateJudgePromptContract(SYSTEM_PROMPT), { valid: true, errors: [] });
+
+  const mutations = [
+    ["missing independent evaluation", "- Evaluate every gate, tone, and claims independently from the exact Candidate, Evidence, and grounding report supplied. Strength in one check cannot compensate for failure or uncertainty in another.\n"],
+    ["missing contradiction search", "- For each check, look for both supporting facts and disqualifying facts. Treat the check as unproven and set its pass to false when required support is absent, ambiguous, internally inconsistent, or contradicted.\n"],
+    ["missing generic-reason rejection", " A generic restatement of the check is not a valid reason."],
+    ["missing fail-closed ambiguity", "- Use only the supplied input. Do not infer missing business facts or resolve ambiguity in the Candidate's favor.\n"],
+    ["unsafe top-level pass", "Set top-level pass to true only when all nine gates, tone, and claims pass."],
+  ];
+  for (const [label, removed] of mutations) {
+    const result = validateJudgePromptContract(SYSTEM_PROMPT.replace(removed, ""));
+    assert.equal(result.valid, false, label);
+  }
+
+  const compensating = SYSTEM_PROMPT.replace("Strength in one check cannot compensate for failure or uncertainty in another.", "Strength in one check may compensate for uncertainty in another.");
+  assert.equal(validateJudgePromptContract(compensating).valid, false);
+
+  const leaked = SYSTEM_PROMPT.replace("case-specific answer keys.", "case-specific answer keys such as anti-consultant-speak.");
+  assert.match(validateJudgePromptContract(leaked).errors.join("\n"), /leaks a frozen corpus or fixture label/);
 });
 
 test("the strict validator agrees with every versioned contract fixture", () => {
@@ -1102,9 +1125,10 @@ test("approval templates require explicit timestamps and plan publication is ext
   assert.equal(await readFile(rollbackTemplate, "utf8"), "occupied");
 });
 
-test("owner-reviewed cycles are immutable history; unreviewed spend still blocks planning", async () => {
-  // Both completed 2026-08-22 called cycles (e848e2bd, 467ba931) are owner-reviewed and
-  // classified as immutable history, so the granted third matrix may be planned.
+test("owner-reviewed and prompt-superseded cycles are immutable history; unreviewed spend still blocks planning", async () => {
+  // Completed owner-reviewed NO-GO cycles and the exact structurally-GO cycle superseded
+  // by the approved Decision protocol v2 correction are immutable history, so the newly
+  // granted prompt-recovery matrix may be planned.
   const directory = await mkdtemp(path.join(tmpdir(), "oddspark-plan-history-"));
   const output = path.join(directory, "recovery-plan.json");
   await planCommand({ output, account_profile: "test-profile", plan: "paid", approval_run_id: "history-run" });
