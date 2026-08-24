@@ -2,7 +2,7 @@
   "schema_version": 1,
   "entrypoint": {
     "path": "src/worker.js",
-    "sha256": "436fcc316072bfd71d92be4116b327f764b46812dadef990c202e7ab3e25ebb4"
+    "sha256": "ae6533c900692d83b54dc00ae3faecf99f76e0a596f459197d71e58494b0715d"
   },
   "modules": [
     {
@@ -59,7 +59,7 @@
     },
     {
       "path": "src/pipeline/receipts.mjs",
-      "sha256": "a3b8c857afc17c406cec05e34e70da2ab67b611246c190f804892e63b41871ec"
+      "sha256": "d5ad8798e6af8d582f696d8c56a8fb741254364bf984fce50702c1af1ca94ad8"
     },
     {
       "path": "src/pipeline/rendering.mjs",
@@ -67,12 +67,12 @@
     },
     {
       "path": "src/pipeline/retention.mjs",
-      "sha256": "fc080805041e432f2534c4c0b62829e51e783b686439ca81f1ea3978ba041e56"
+      "sha256": "328ceef1bca5e9c4da0957ca442b8d60b09f2a6c69e2bb7237bc928200cbb8e3"
     },
     {
       "path": "src/pipeline/strike.mjs",
       "sha256": "a11d0b9313de346d9bff8edc11de1557dc767f24e49992c1ea252ee5b64bc7db"
     }
   ],
-  "assembly_identity_sha256": "752c7be5db7cb7da55e9edb3114472b043acfbacab1a1f21fce70c4d508ac353"
+  "assembly_identity_sha256": "865e455d6b3a1f3830d232499c4688340a48118c087f037e957d9d2a3f0b5d93"
 }

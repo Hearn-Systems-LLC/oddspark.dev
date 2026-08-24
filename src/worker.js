@@ -21,6 +21,16 @@ import {
 } from "./pipeline/legacy-rendering.mjs";
 import { activationPosture, createInactiveDomainWriter } from "./pipeline/assembly.mjs";
 import { productionPipelineEnv } from "./pipeline/production-ports.mjs";
+import {
+  ABUSE_SLOT_RETENTION_MS,
+  NEURON_RECEIPT_RETENTION_MS,
+  PROFILE_RETENTION_MS,
+  absoluteKvExpiration,
+  addRetentionBoundary,
+  abuseSlotExpiresAt,
+  localArtifactExpiresAt,
+  profileExpiresAt,
+} from "./pipeline/retention.mjs";
 
 /**
  * oddspark.dev
@@ -56,11 +66,12 @@ const SCAN_BUDGET_MS = 4000;
 const SCAN_BYTE_LIMIT = 512 * 1024;
 const SCAN_PAGE_LIMIT = 3;
 const REDIRECT_LIMIT = 3;
-const PROFILE_TTL = 86400;
 const CLAIM_LEASE_MS = 20000;
-const VISITOR_WINDOW_MS = 60 * 60 * 1000;
+const VISITOR_WINDOW_MS = ABUSE_SLOT_RETENTION_MS;
 const VISITOR_DOMAIN_LIMIT = 10;
 const SPARK_ID_RE = /^[A-Za-z0-9._-]{1,128}$/;
+const COORD_VISITOR_KEY_RE = /^[A-Za-z0-9._:-]{1,128}$/;
+const COORD_DOMAIN_RE = /^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/;
 
 const UNAVAILABLE_WARNING = "Site context was unavailable; showing the generic spark.";
 const LIMITED_WARNING = "Site scanning is limited; showing the generic spark.";
@@ -661,7 +672,7 @@ function stripFence(s) {
 
 const NEURON_FREE_DAILY = 10000;
 const NEURON_FALLBACK_FRACTION = 0.25;
-const NEURON_RECEIPT_TTL = 172800; // 2 days; only the UTC day is ever live
+const NEURON_RECEIPT_TTL = NEURON_RECEIPT_RETENTION_MS / 1000; // 2 days; only the UTC day is ever live
 
 function neuronDay() {
   return new Date().toISOString().slice(0, 10);
@@ -687,6 +698,146 @@ export class NeuronMeter {
   }
 }
 
+const EXPIRY_PREFIX = "expiry:";
+
+function expiryIndexKey(entry) {
+  const identity = entry.family === "local" ? `${entry.scope_key}|${entry.artifact_id}|${entry.committed_at}`
+    : entry.family === "profile" ? entry.domain
+    : entry.family === "abuse" ? entry.visitor_key
+    : `${entry.scope_key}|${entry.owner}|${entry.lease_until}`;
+  return `${EXPIRY_PREFIX}${String(entry.expires_at).padStart(16, "0")}:${entry.family}:${encodeURIComponent(identity)}`;
+}
+
+async function indexExpiry(storage, entry) {
+  await storage.put(expiryIndexKey(entry), entry);
+}
+
+async function scheduleEarliestIndexedExpiry(storage, clearWhenEmpty = false) {
+  const indexed = await storage.list({ prefix: EXPIRY_PREFIX });
+  let earliest = null;
+  for (const entry of indexed.values()) {
+    if (validExpiryEntry(entry) && (earliest === null || entry.expires_at < earliest)) earliest = entry.expires_at;
+  }
+  const scheduled = await storage.getAlarm();
+  if (earliest === null) {
+    if (clearWhenEmpty && scheduled !== null) await storage.deleteAlarm();
+    return;
+  }
+  const scheduledMs = scheduled instanceof Date ? scheduled.getTime() : scheduled;
+  if (scheduledMs === null || earliest < scheduledMs) await storage.setAlarm(earliest);
+}
+
+async function transactionWithExpiry(storage, closure) {
+  const result = await storage.transaction(closure);
+  await scheduleEarliestIndexedExpiry(storage);
+  return result;
+}
+
+function validStoredProfile(profile, domain) {
+  return closedInput(profile, ["version", "domain", "scanned_urls", "vertical", "clarity", "observation", "scan_time", "profile_hash"])
+    && profile.version === PERSONALIZATION_VERSION && profile.domain === domain && COORD_DOMAIN_RE.test(profile.domain)
+    && Array.isArray(profile.scanned_urls) && profile.scanned_urls.length > 0 && profile.scanned_urls.every((url) => typeof url === "string" && !!url)
+    && typeof profile.vertical === "string" && profile.vertical.trim() === profile.vertical && !!profile.vertical
+    && ["clear", "unclear"].includes(profile.clarity)
+    && closedInput(profile.observation, ["url", "text"]) && typeof profile.observation.url === "string" && !!profile.observation.url
+    && typeof profile.observation.text === "string" && !!profile.observation.text
+    && typeof profile.scan_time === "string" && Number.isFinite(Date.parse(profile.scan_time))
+    && /^[a-f0-9]{64}$/.test(profile.profile_hash || "");
+}
+
+function validStoredProfileRecord(value, domain) {
+  if (!closedInput(value, ["profile", "created_at", "expires_at"]) || !validStoredProfile(value.profile, domain)
+      || !Number.isSafeInteger(value.created_at) || !Number.isSafeInteger(value.expires_at)) return false;
+  try { return profileExpiresAt(value.created_at) === value.expires_at; } catch { return false; }
+}
+
+function safeAbuseEntry(entry) {
+  if (!closedInput(entry, ["domain", "at"]) || !COORD_DOMAIN_RE.test(entry.domain || "") || !Number.isSafeInteger(entry.at)) return null;
+  try { return { entry, expires_at: abuseSlotExpiresAt(entry.at) }; } catch { return null; }
+}
+
+function validExpiryEntry(entry) {
+  if (!entry || typeof entry !== "object" || Array.isArray(entry) || !Number.isSafeInteger(entry.expires_at) || entry.expires_at < 0) return false;
+  if (entry.family === "local") {
+    try { return closedInput(entry, ["family", "expires_at", "scope_key", "artifact_id", "committed_at"])
+      && typeof entry.scope_key === "string" && entry.scope_key.startsWith("local:") && SPARK_ID_RE.test(entry.artifact_id || "")
+      && Number.isSafeInteger(entry.committed_at) && entry.expires_at === localArtifactExpiresAt(entry.committed_at); }
+    catch { return false; }
+  }
+  if (entry.family === "profile") return closedInput(entry, ["family", "expires_at", "domain"]) && COORD_DOMAIN_RE.test(entry.domain || "");
+  if (entry.family === "abuse") return closedInput(entry, ["family", "expires_at", "visitor_key"]) && typeof entry.visitor_key === "string" && !!entry.visitor_key;
+  if (entry.family === "claim") return closedInput(entry, ["family", "expires_at", "scope_key", "owner", "lease_until"])
+    && typeof entry.scope_key === "string" && typeof entry.owner === "string" && entry.lease_until === entry.expires_at;
+  return false;
+}
+
+async function cleanupCoordinatorExpiry(storage, now) {
+  const listed = await storage.list({ prefix: EXPIRY_PREFIX });
+  for (const [indexKey, candidate] of listed) {
+    if (!validExpiryEntry(candidate)) { await storage.delete(indexKey); continue; }
+    if (candidate.expires_at > now) continue;
+    await storage.transaction(async (txn) => {
+      const entry = await txn.get(indexKey);
+      if (!validExpiryEntry(entry)) { await txn.delete(indexKey); return; }
+      if (JSON.stringify(entry) !== JSON.stringify(candidate)) {
+        await txn.delete(indexKey);
+        await indexExpiry(txn, entry);
+        return;
+      }
+      await txn.delete(indexKey);
+      if (entry.family === "local") {
+        const receiptKey = "receipt:" + entry.scope_key;
+        const stored = await txn.get(receiptKey);
+        const receipt = parseReceipt(stored, stored?.scope);
+        if (receipt && receipt.scope.kind === "local") {
+          const actual = { family: "local", expires_at: receipt.expires_at, scope_key: canonicalScopeKey(receipt.scope),
+            artifact_id: receipt.artifact.id, committed_at: receipt.committed_at };
+          const matches = actual.scope_key === entry.scope_key && actual.artifact_id === entry.artifact_id
+            && actual.committed_at === entry.committed_at && actual.expires_at === entry.expires_at;
+          if (matches && now >= receipt.expires_at) {
+            await txn.delete(receiptKey);
+            const idKey = "artifact:" + entry.artifact_id;
+            const indexed = await txn.get(idKey);
+            const indexedReceipt = parseReceipt(indexed, indexed?.scope);
+            if (indexedReceipt && canonicalScopeKey(indexedReceipt.scope) === entry.scope_key
+                && indexedReceipt.artifact.id === entry.artifact_id && indexedReceipt.committed_at === entry.committed_at
+                && indexedReceipt.expires_at === entry.expires_at) await txn.delete(idKey);
+          } else await indexExpiry(txn, actual);
+        }
+      } else if (entry.family === "profile") {
+        const key = "profile:" + entry.domain;
+        const stored = await txn.get(key);
+        if (validStoredProfileRecord(stored, entry.domain)) {
+          if (stored.expires_at === entry.expires_at && now >= stored.expires_at) await txn.delete(key);
+          else await indexExpiry(txn, { family: "profile", expires_at: stored.expires_at, domain: entry.domain });
+        }
+      } else if (entry.family === "abuse") {
+        const key = "vis:" + entry.visitor_key;
+        const history = await txn.get(key);
+        if (Array.isArray(history)) {
+          const retained = history.map(safeAbuseEntry).filter((item) => item && item.expires_at > now);
+          if (retained.length) {
+            await txn.put(key, retained.map((item) => item.entry));
+            const next = Math.min(...retained.map((item) => item.expires_at));
+            await indexExpiry(txn, { family: "abuse", expires_at: next, visitor_key: entry.visitor_key });
+          } else await txn.delete(key);
+        } else await txn.delete(key);
+      } else if (entry.family === "claim") {
+        const key = "receipt:" + entry.scope_key;
+        const stored = await txn.get(key);
+        if (stored?.status === "claimed" && stored.owner === entry.owner && stored.lease_until === entry.lease_until
+            && canonicalScopeKey(stored.scope) === entry.scope_key && now >= stored.lease_until) await txn.delete(key);
+        else if (stored?.status === "claimed" && typeof stored.owner === "string" && Number.isSafeInteger(stored.lease_until)
+            && canonicalScopeKey(stored.scope) === entry.scope_key) {
+          await indexExpiry(txn, { family: "claim", expires_at: stored.lease_until, scope_key: entry.scope_key,
+            owner: stored.owner, lease_until: stored.lease_until });
+        }
+      }
+    });
+  }
+  await scheduleEarliestIndexedExpiry(storage, true);
+}
+
 // One global instance serializes the parts KV cannot make atomic: rolling
 // visitor slots, domain/window ownership, and the first accepted profile.
 export class SparkCoordinator {
@@ -694,26 +845,35 @@ export class SparkCoordinator {
     this.state = state;
   }
 
+  async alarm() {
+    await cleanupCoordinatorExpiry(this.state.storage, Date.now());
+  }
+
   async fetch(request) {
     const url = new URL(request.url);
     const input = request.method === "POST" ? await request.json() : {};
 
     if (url.pathname === "/slot") {
+      if (!closedInput(input, ["visitorKey", "domain"]) || !COORD_VISITOR_KEY_RE.test(input.visitorKey || "")
+          || !COORD_DOMAIN_RE.test(input.domain || "")) return Response.json({ error: "invalid coordinator slot" }, { status: 400 });
       const key = "vis:" + input.visitorKey;
       return Response.json(
-        await this.state.storage.transaction(async (txn) => {
+        await transactionWithExpiry(this.state.storage, async (txn) => {
           const now = Date.now();
           const history = ((await txn.get(key)) || []).filter((entry) => entry.at > now - VISITOR_WINDOW_MS);
           if (history.some((entry) => entry.domain === input.domain)) {
             await txn.put(key, history);
+            if (history.length) await indexExpiry(txn, { family: "abuse", expires_at: Math.min(...history.map((entry) => abuseSlotExpiresAt(entry.at))), visitor_key: input.visitorKey });
             return { allowed: true, consumed: false };
           }
           if (history.length >= VISITOR_DOMAIN_LIMIT) {
             await txn.put(key, history);
+            await indexExpiry(txn, { family: "abuse", expires_at: Math.min(...history.map((entry) => abuseSlotExpiresAt(entry.at))), visitor_key: input.visitorKey });
             return { allowed: false, consumed: false };
           }
           history.push({ domain: input.domain, at: now });
           await txn.put(key, history);
+          await indexExpiry(txn, { family: "abuse", expires_at: Math.min(...history.map((entry) => abuseSlotExpiresAt(entry.at))), visitor_key: input.visitorKey });
           return { allowed: true, consumed: true };
         })
       );
@@ -725,7 +885,25 @@ export class SparkCoordinator {
       const scope = byScope ? parseRequestScope(input.scope) : null;
       if ((!scope && !byId) || (byId && !SPARK_ID_RE.test(input.id || ""))) return Response.json({ error: "invalid coordinator read" }, { status: 400 });
       const key = scope ? "receipt:" + canonicalScopeKey(scope) : "artifact:" + input.id;
-      const receipt = await this.state.storage.get(key);
+      const receipt = await transactionWithExpiry(this.state.storage, async (txn) => {
+        const stored = await txn.get(key);
+        if (!stored || stored.status !== "committed" || stored.scope?.kind !== "local") return stored;
+        const parsed = parseReceipt(stored, stored.scope);
+        if (!parsed) return stored;
+        const scopeKey = canonicalScopeKey(parsed.scope);
+        const migrated = !Object.hasOwn(stored, "expires_at");
+        if (migrated) {
+          await txn.put(key, parsed);
+          const counterpartKey = key === "receipt:" + scopeKey ? "artifact:" + parsed.artifact.id : "receipt:" + scopeKey;
+          const counterpart = await txn.get(counterpartKey);
+          if (counterpart?.status === "committed" && !Object.hasOwn(counterpart, "expires_at")
+              && canonicalScopeKey(counterpart.scope) === scopeKey && counterpart.artifact?.id === parsed.artifact.id
+              && counterpart.committed_at === parsed.committed_at) await txn.put(counterpartKey, parsed);
+        }
+        await indexExpiry(txn, { family: "local", expires_at: parsed.expires_at, scope_key: scopeKey,
+          artifact_id: parsed.artifact.id, committed_at: parsed.committed_at });
+        return Date.now() < parsed.expires_at ? parsed : null;
+      });
       if (!receipt || receipt.status === "claimed") return Response.json({ status: "missing" });
       if (receipt.status === "ambiguous") return Response.json({ error: "ambiguous coordinator artifact" }, { status: 409 });
       const parsed = parseReceipt(receipt, scope || receipt.scope);
@@ -738,15 +916,49 @@ export class SparkCoordinator {
         return Response.json({ error: "invalid coordinator claim" }, { status: 400 });
       }
       const key = "receipt:" + canonicalScopeKey(scope);
-      return Response.json(await this.state.storage.transaction(async (txn) => {
-        const existing = await txn.get(key);
+      const result = await transactionWithExpiry(this.state.storage, async (txn) => {
+        let existing = await txn.get(key);
+        if (existing?.status === "committed" && scope.kind === "local") {
+          const parsed = parseReceipt(existing, scope);
+          if (!parsed) return existing;
+          const scopeKey = canonicalScopeKey(scope);
+          if (!Object.hasOwn(existing, "expires_at")) {
+            await txn.put(key, parsed);
+            const indexed = await txn.get("artifact:" + parsed.artifact.id);
+            if (indexed?.status === "committed" && !Object.hasOwn(indexed, "expires_at")
+                && canonicalScopeKey(indexed.scope) === scopeKey && indexed.artifact?.id === parsed.artifact.id
+                && indexed.committed_at === parsed.committed_at) await txn.put("artifact:" + parsed.artifact.id, parsed);
+          }
+          await indexExpiry(txn, { family: "local", expires_at: parsed.expires_at, scope_key: scopeKey,
+            artifact_id: parsed.artifact.id, committed_at: parsed.committed_at });
+          if (Date.now() < parsed.expires_at) return parsed;
+          const indexed = await txn.get("artifact:" + parsed.artifact.id);
+          const indexedReceipt = parseReceipt(indexed, indexed?.scope);
+          if (indexedReceipt && canonicalScopeKey(indexedReceipt.scope) === scopeKey
+              && indexedReceipt.artifact.id === parsed.artifact.id && indexedReceipt.committed_at === parsed.committed_at
+              && indexedReceipt.expires_at === parsed.expires_at) await txn.delete("artifact:" + parsed.artifact.id);
+          await txn.delete(key);
+          existing = null;
+        }
         if (existing?.status === "committed") return existing;
         const now = Date.now();
-        if (existing?.status === "claimed" && existing.owner !== input.owner && existing.lease_until > now) return existing;
-        const claimed = { status: "claimed", scope, owner: input.owner, lease_until: now + CLAIM_LEASE_MS };
+        if (existing?.status === "claimed" && typeof existing.owner === "string" && Number.isSafeInteger(existing.lease_until)
+            && canonicalScopeKey(existing.scope) === canonicalScopeKey(scope)) {
+          await indexExpiry(txn, { family: "claim", expires_at: existing.lease_until, scope_key: canonicalScopeKey(scope),
+            owner: existing.owner, lease_until: existing.lease_until });
+          if (existing.owner === input.owner) return existing;
+          if (existing.owner !== input.owner && existing.lease_until > now) return existing;
+        }
+        let claimLeaseUntil;
+        try { claimLeaseUntil = addRetentionBoundary(now, CLAIM_LEASE_MS, "claimNowMs"); }
+        catch { return { error: "invalid coordinator timestamp", __status: 400 }; }
+        const claimed = { status: "claimed", scope, owner: input.owner, lease_until: claimLeaseUntil };
         await txn.put(key, claimed);
+        await indexExpiry(txn, { family: "claim", expires_at: claimed.lease_until, scope_key: canonicalScopeKey(scope), owner: input.owner, lease_until: claimed.lease_until });
         return claimed;
-      }));
+      });
+      if (result?.__status) return Response.json({ error: result.error }, { status: result.__status });
+      return Response.json(result);
     }
 
     if (url.pathname === "/claim") {
@@ -769,11 +981,33 @@ export class SparkCoordinator {
       const commit = validateCommitPayload(input);
       if (!commit) return Response.json({ error: "invalid coordinator commit" }, { status: 400 });
       const key = "receipt:" + canonicalScopeKey(commit.scope);
-      return Response.json(await this.state.storage.transaction(async (txn) => {
-        const existing = await txn.get(key);
+      const result = await transactionWithExpiry(this.state.storage, async (txn) => {
+        let existing = await txn.get(key);
+        if (existing?.status === "committed" && commit.scope.kind === "local") {
+          const parsed = parseReceipt(existing, commit.scope);
+          if (!parsed) return existing;
+          if (Date.now() < parsed.expires_at) {
+            if (!Object.hasOwn(existing, "expires_at")) await txn.put(key, parsed);
+            await indexExpiry(txn, { family: "local", expires_at: parsed.expires_at, scope_key: canonicalScopeKey(parsed.scope),
+              artifact_id: parsed.artifact.id, committed_at: parsed.committed_at });
+            return parsed;
+          }
+          const indexed = await txn.get("artifact:" + parsed.artifact.id);
+          const indexedReceipt = parseReceipt(indexed, indexed?.scope);
+          if (indexedReceipt && canonicalScopeKey(indexedReceipt.scope) === canonicalScopeKey(parsed.scope)
+              && indexedReceipt.artifact.id === parsed.artifact.id && indexedReceipt.committed_at === parsed.committed_at
+              && indexedReceipt.expires_at === parsed.expires_at) await txn.delete("artifact:" + parsed.artifact.id);
+          await txn.delete(key);
+          existing = null;
+        }
         if (existing?.status === "committed") return existing;
         if (!existing || existing.status !== "claimed" || existing.owner !== commit.owner) return existing || { status: "missing" };
-        const receipt = { status: "committed", scope: commit.scope, artifact: commit.artifact, artifact_kind: commit.artifact_kind, committed_at: Date.now() };
+        const commitNow = Date.now();
+        let localExpiresAt;
+        try { if (commit.scope.kind === "local") localExpiresAt = localArtifactExpiresAt(commitNow); }
+        catch { return { error: "invalid coordinator timestamp", __status: 400 }; }
+        const receipt = { status: "committed", scope: commit.scope, artifact: commit.artifact, artifact_kind: commit.artifact_kind, committed_at: commitNow,
+          ...(localExpiresAt === undefined ? {} : { expires_at: localExpiresAt }) };
         await txn.put(key, receipt);
         if (commit.artifact.id) {
           const idKey = "artifact:" + commit.artifact.id;
@@ -783,8 +1017,12 @@ export class SparkCoordinator {
             await txn.put(idKey, { status: "ambiguous" });
           }
         }
+        if (commit.scope.kind === "local") await indexExpiry(txn, { family: "local", expires_at: receipt.expires_at,
+          scope_key: canonicalScopeKey(receipt.scope), artifact_id: receipt.artifact.id, committed_at: receipt.committed_at });
         return receipt;
-      }));
+      });
+      if (result?.__status) return Response.json({ error: result.error }, { status: result.__status });
+      return Response.json(result);
     }
 
     if (url.pathname === "/commit") {
@@ -855,20 +1093,44 @@ export class SparkCoordinator {
       return result ? Response.json(result) : Response.json({ error: "invalid coordinator metric state" }, { status: 500 });
     }
 
+    if (url.pathname === "/profile/read") {
+      if (!closedInput(input, ["domain"]) || !COORD_DOMAIN_RE.test(input.domain || "")) {
+        return Response.json({ error: "invalid coordinator profile read" }, { status: 400 });
+      }
+      const stored = await transactionWithExpiry(this.state.storage, async (txn) => {
+        const value = await txn.get("profile:" + input.domain);
+        if (validStoredProfileRecord(value, input.domain)) {
+          await indexExpiry(txn, { family: "profile", expires_at: value.expires_at, domain: input.domain });
+        }
+        return value;
+      });
+      if (!validStoredProfileRecord(stored, input.domain) || Date.now() >= stored.expires_at) return Response.json({ status: "missing" });
+      return Response.json({ status: "live", profile: stored.profile, expires_at: stored.expires_at });
+    }
+
     if (url.pathname === "/profile") {
+      if (!closedInput(input, ["domain", "profile"]) || !COORD_DOMAIN_RE.test(input.domain || "")
+          || !validStoredProfile(input.profile, input.domain)) {
+        return Response.json({ error: "invalid coordinator profile" }, { status: 400 });
+      }
       const key = "profile:" + input.domain;
-      return Response.json(
-        await this.state.storage.transaction(async (txn) => {
-          const now = Date.now();
+      const result = await transactionWithExpiry(this.state.storage, async (txn) => {
           const existing = await txn.get(key);
-          if (existing && existing.expires_at > now) {
+          if (validStoredProfileRecord(existing, input.domain) && existing.expires_at > Date.now()) {
+            await indexExpiry(txn, { family: "profile", expires_at: existing.expires_at, domain: input.domain });
             return { accepted: false, profile: existing.profile, expires_at: existing.expires_at };
           }
-          const value = { profile: input.profile, expires_at: now + PROFILE_TTL * 1000 };
+          const createdAt = Date.now();
+          let expiresAt;
+          try { expiresAt = profileExpiresAt(createdAt); }
+          catch { return { error: "invalid coordinator timestamp", __status: 400 }; }
+          const value = { profile: input.profile, created_at: createdAt, expires_at: expiresAt };
           await txn.put(key, value);
-          return { accepted: true, ...value };
-        })
-      );
+          await indexExpiry(txn, { family: "profile", expires_at: value.expires_at, domain: input.domain });
+          return { accepted: true, profile: value.profile, expires_at: value.expires_at };
+        });
+      if (result?.__status) return Response.json({ error: result.error }, { status: result.__status });
+      return Response.json(result);
     }
 
     return Response.json({ error: "unknown coordinator operation" }, { status: 404 });
@@ -1165,12 +1427,25 @@ function fallbackWithContext(spark, status, domain, warning) {
 }
 
 async function validCachedProfile(env, domain) {
-  const profile = await env.SPARKS.get("profile:" + domain, { type: "json" });
-  if (!profile || profile.domain !== domain || profile.version !== PERSONALIZATION_VERSION) return null;
+  const authority = await coordPost(env, "/profile/read", { domain });
+  if (authority.status === "missing") return null;
+  if (!closedInput(authority, ["status", "profile", "expires_at"]) || authority.status !== "live"
+      || !Number.isSafeInteger(authority.expires_at) || Date.now() >= authority.expires_at) throw new Error("invalid coordinator profile");
+  const profile = authority.profile;
+  if (!profile || profile.domain !== domain || profile.version !== PERSONALIZATION_VERSION) throw new Error("invalid coordinator profile");
   try {
     const { profile_hash } = await hashProfile(profile);
-    return profile_hash === profile.profile_hash ? profile : null;
+    if (profile_hash !== profile.profile_hash) throw new Error("invalid coordinator profile");
+    try {
+      const cached = await env.SPARKS.get("profile:" + domain, { type: "json" });
+      if (JSON.stringify(cached) !== JSON.stringify(profile)) {
+        const expiration = absoluteKvExpiration(authority.expires_at, Date.now());
+        if (expiration !== null) await env.SPARKS.put("profile:" + domain, JSON.stringify(profile), { expiration });
+      }
+    } catch { /* COORD remains authoritative when profile cache access fails. */ }
+    return profile;
   } catch (err) {
+    if (/invalid coordinator profile/.test(String(err?.message))) throw err;
     return null;
   }
 }
@@ -1246,7 +1521,7 @@ async function resolveCommit(env, commit, round, domain) {
   if (commit.artifact) {
     const receipt = parseReceipt(commit, { kind: "domain", round, domain });
     if (!receipt) throw new Error("invalid coordinator receipt");
-    await repairProjection(env, receipt.scope, receipt.artifact);
+    await repairProjection(env, receipt);
     return { ...receipt.artifact, cached: true };
   }
   if (commit.result === "personalized" && /^p-[0-9a-f]{16}$/.test(commit.id || "")) {
@@ -1339,8 +1614,8 @@ async function buildDomainSpark(request, env, website, round, visitorKey) {
       const candidate = await inferWebsiteProfile(env, website, await scanWebsite(website));
       const committed = await coordPost(env, "/profile", { domain: website.domain, profile: candidate });
       profile = committed.profile;
-      const ttl = Math.max(1, Math.min(PROFILE_TTL, Math.ceil((committed.expires_at - Date.now()) / 1000)));
-      await env.SPARKS.put("profile:" + website.domain, JSON.stringify(profile), { expirationTtl: ttl });
+      const expiration = absoluteKvExpiration(committed.expires_at, Date.now());
+      if (expiration !== null) await env.SPARKS.put("profile:" + website.domain, JSON.stringify(profile), { expiration });
     } catch (err) {
       if (err instanceof WebsiteInputError) {
         try {
@@ -1475,11 +1750,15 @@ async function buildSparkCandidate(env, requestedRound, project = true) {
   return { ...spark, cached: false };
 }
 
-async function repairProjection(env, scope, artifact) {
+async function repairProjection(env, receipt) {
+  const { scope, artifact } = receipt;
+  const expiration = scope.kind === "local" ? absoluteKvExpiration(receipt.expires_at, Date.now()) : undefined;
+  if (scope.kind === "local" && expiration === null) return;
+  const options = expiration === undefined ? undefined : { expiration };
   try {
-    await env.SPARKS.put(artifact.id, JSON.stringify(artifact));
+    await env.SPARKS.put(artifact.id, JSON.stringify(artifact), options);
     const pointer = scope.kind === "local" ? "w:" + scope.round : "pw:" + scope.round + ":" + scope.domain;
-    await env.SPARKS.put(pointer, artifact.id);
+    await env.SPARKS.put(pointer, artifact.id, options);
   } catch { /* Authority is already durable; projection repair is best effort. */ }
 }
 
@@ -1488,7 +1767,7 @@ async function buildSpark(env, requestedRound) {
   const scope = { kind: "local", round };
   const current = await readAuthoritative(env, scope);
   if (current) {
-    await repairProjection(env, scope, current.artifact);
+    await repairProjection(env, current);
     return { ...current.artifact, cached: true };
   }
   const owner = claimOwner();
@@ -1496,13 +1775,13 @@ async function buildSpark(env, requestedRound) {
   if (claim.status === "committed") {
     const receipt = parseReceipt(claim, scope);
     if (!receipt) throw new Error("invalid coordinator receipt");
-    await repairProjection(env, scope, receipt.artifact);
+    await repairProjection(env, receipt);
     return { ...receipt.artifact, cached: true };
   }
   const candidate = await buildSparkCandidate(env, round, false);
   const { cached: candidateCached, ...committable } = candidate;
   const receipt = await commitScope(env, scope, owner, committable);
-  await repairProjection(env, scope, receipt.artifact);
+  await repairProjection(env, receipt);
   return { ...receipt.artifact, cached: receipt.artifact.id !== candidate.id };
 }
 
@@ -1511,9 +1790,9 @@ async function compatibleArtifactById(env, id) {
   try { projected = await env.SPARKS.get(id, { type: "json" }); } catch { /* consult authority */ }
   const classification = classifyCompatibleArtifact(projected);
   const receipt = await readAuthoritative(env, id);
-  if (!receipt) return ["supported", "unsupported"].includes(classification.status) ? classification : { status: "miss" };
+  if (!receipt) return classification.status === "unsupported" ? classification : { status: "miss" };
   if (receipt.artifact.id !== id) throw new Error("coordinator artifact identity mismatch");
-  try { await env.SPARKS.put(id, JSON.stringify(receipt.artifact)); } catch { /* best effort */ }
+  await repairProjection(env, receipt);
   return classifyCompatibleArtifact(receipt.artifact);
 }
 

@@ -802,10 +802,22 @@ So that production inherits no unbounded storage.
 **And** /s/:id and /api/spark/:id refuse the artifact at or after expiry
 **And** reads never slide expiry.
 
-**Given** the pre-existing record families (profile 24h, abuse slots 1h, neuron receipts 2d, aggregate reports 90d)
+**Given** the implemented record families (profile 24h, abuse slots 1h, neuron receipts 2d) and the architecture-declared but nonexistent aggregate-report family
 **When** retention is inventoried
 **Then** owner, authority, creation, read, expiry, and cleanup are explicit
-**And** time-controlled tests cover each family.
+**And** time-controlled tests cover each implemented family
+**And** aggregate reports are recorded as absent and deferred without inventing a schema, writer, reader, cadence, authority, or cleanup mechanism in this story.
+
+**Owner-approved lifecycle inventory (2026-08-23):**
+
+| Family | Owner and authority | Creation and read | Expiry and cleanup |
+| --- | --- | --- | --- |
+| Local receipt and `w:`/id projections | `SparkCoordinator` COORD receipt; KV is projection-only | COORD commit/read; both public artifact routes consult COORD | Immutable `committed_at + 30d`; indexed COORD alarm identity-cleans receipt/index; KV gets only a conservative absolute expiration |
+| Profile | `SparkCoordinator`; KV is a subordinate cache | COORD `/profile` and `/profile/read`; personalization verifies COORD before cache use/repair | Original 24-hour boundary; indexed COORD alarm plus conservative absolute KV expiration |
+| Abuse slot | `SparkCoordinator` visitor-scoped history | Validated COORD `/slot` transaction | Each entry expires at one hour; earliest indexed alarm filters only the matching visitor history |
+| Scoped claim | `SparkCoordinator` scope/owner lease | Validated COORD claim/release/commit | Existing lease boundary; indexed alarm deletes only matching scope, owner, and timestamp |
+| Neuron receipt | Worker-created KV audit receipt | `n:<day>:<neurons>:<artifact-id>` creation; audit reads by prefix | Existing two-day provider TTL; provider-managed physical cleanup |
+| Aggregate report (`m:<day>:*`) | Absent; no authority exists | No schema, writer, reader, or cadence exists | Deferred; Story 1.21 invents no cleanup contract |
 
 **Given** cleanup and projection repair
 **When** they run
