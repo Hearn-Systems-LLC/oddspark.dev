@@ -32,6 +32,7 @@ IDENTITY_FILES = [
     "BOND.md",
     "MEMORY.md",
     "CAPABILITIES.md",
+    "HARNESS.md",
 ]
 
 def emit(path: Path) -> None:

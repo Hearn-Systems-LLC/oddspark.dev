@@ -5,10 +5,11 @@
 | Code | Name | Description | Source |
 |------|------|-------------|--------|
 | GOV | Govern Project | Reconcile live state, select one eligible workflow, delegate bounded work, verify convergence, and continue or halt honestly. | `references/govern-project.md` |
+| HAR | Dispatch Harness Job | Launch development or review in a separate resumable harness session and expose safe observation and resume commands. | `references/dispatch-harness-job.md` |
 | RES | Resolve Halt | Resolve an explicit internal workflow halt without silently widening product intent. | installed skill: `bmad-loop-resolve` |
 | PLAN | Plan Eligible Work | Run the matching planning skill only after live authority and prerequisite reconciliation. | installed BMAD planning skills |
-| DEV | Develop Eligible Work | Run an eligible story and await synchronous implementation and review gates. | installed skill: `bmad-dev-auto` |
-| REVIEW | Independent Review | Inspect the actual changed surface with the narrow adversarial lens matching its risk. | installed BMAD review skills |
+| DEV | Develop Eligible Work | Dispatch an eligible story to the configured development harness and verify its terminal artifacts. | installed skill: `bmad-dev-auto` |
+| REVIEW | Independent Review | Dispatch a fresh external reviewer to inspect the actual changed surface with the matching adversarial lens. | installed BMAD review skills |
 
 ## Tools
 

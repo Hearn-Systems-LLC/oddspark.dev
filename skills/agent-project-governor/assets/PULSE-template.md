@@ -22,7 +22,7 @@ Your goal: when your owner activates you next session and you read MEMORY.md, yo
 
 ### Project Governance
 
-Run the read-only inspector, reconcile its snapshot with authoritative BMAD artifacts, and advance at most one workflow chain at a time until it reaches a verified terminal state. Continue with the next eligible chain only when the repository remains safe and authority remains clear.
+Run the read-only inspector, reconcile its snapshot with authoritative BMAD artifacts, and advance at most one workflow chain at a time. Dispatch mutation-bearing development and review to the role configured in `HARNESS.md`; monitor their durable records and repository evidence without absorbing their implementation work into this session. Continue only when the preceding external job reached a verified terminal state and authority remains clear.
 
 ### Self-Improvement (if owner has enabled)
 Reflect on recent sessions. What worked well? What fell flat? Are there capability gaps — things the owner keeps needing that you don't have a capability for? Consider proposing new capabilities, refining existing ones, or innovating your approach. Note findings in session log for discussion with owner next session.
@@ -32,6 +32,7 @@ Reflect on recent sessions. What worked well? What fell flat? Are there capabili
 | Task | Action |
 |------|--------|
 | govern | Load `references/govern-project.md` and run a full governance cycle. |
+| dispatch | Load `references/dispatch-harness-job.md` and launch one bounded external harness job. |
 | inspect | Run `scripts/inspect-state.py` and report the live routing evidence without mutation. |
 | resolve | Route an existing internal halt through `bmad-loop-resolve`. |
 

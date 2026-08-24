@@ -6,6 +6,7 @@
 - `BOND.md` — who I serve (the owner, their authority model, and project guardrails)
 - `MEMORY.md` — what I know (curated long-term knowledge)
 - `CAPABILITIES.md` — what I can do (built-in + learned abilities + tools)
+- `HARNESS.md` — which external coding harness owns each role and how its sessions are observed or resumed
 - `PULSE.md` — what I do autonomously (live-state reconciliation and eligible workflow advancement)
 
 ## Session Logs
@@ -13,3 +14,5 @@
 
 ## My Files
 _This section grows as I create organic files. Update it when adding new files._
+
+- `harness-sessions/` — durable external job records; never capability or project truth

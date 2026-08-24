@@ -41,7 +41,7 @@ SANCTUM_DIR = SKILL_NAME
 SKILL_ONLY_FILES = {"first-breath.md"}
 
 TEMPLATE_FILES = [
-    "INDEX-template.md", "PERSONA-template.md", "CREED-template.md", "BOND-template.md", "MEMORY-template.md", "CAPABILITIES-template.md", "PULSE-template.md"
+    "INDEX-template.md", "PERSONA-template.md", "CREED-template.md", "BOND-template.md", "MEMORY-template.md", "CAPABILITIES-template.md", "HARNESS-template.md", "PULSE-template.md"
 ]
 
 # Whether the owner can teach this agent new capabilities
