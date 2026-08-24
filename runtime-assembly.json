@@ -7,7 +7,7 @@
   "modules": [
     {
       "path": "src/pipeline/activation.mjs",
-      "sha256": "4bfb9b8df684efc84fb5b2956e067b46ca726a73837976777cc75bd0178eb806"
+      "sha256": "06671e3742a3ac23d0b7ab290148e6ecadaab197184cc7c52f0d1fa2d715a968"
     },
     {
       "path": "src/pipeline/assembly.mjs",
@@ -74,5 +74,5 @@
       "sha256": "a11d0b9313de346d9bff8edc11de1557dc767f24e49992c1ea252ee5b64bc7db"
     }
   ],
-  "assembly_identity_sha256": "865e455d6b3a1f3830d232499c4688340a48118c087f037e957d9d2a3f0b5d93"
+  "assembly_identity_sha256": "446628799d96f044ea9f5bdb48d01477559b97c96ec15b58b676cf06f99307a5"
 }

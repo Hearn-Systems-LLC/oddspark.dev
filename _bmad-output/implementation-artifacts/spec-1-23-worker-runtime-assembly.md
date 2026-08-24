@@ -117,6 +117,11 @@ context:
 
 ## Verification
 
+### 2026-08-24 — Activation Manifest v2 assembly refreeze
+
+- `npm run assembly:freeze` passed offline after the approved 2026-08-24 Direct-Path Activation Authority override changed `src/pipeline/activation.mjs` to the closed v2 manifest and v2 hash domain.
+- Frozen runtime assembly identity: `446628799d96f044ea9f5bdb48d01477559b97c96ec15b58b676cf06f99307a5` over 17 modules.
+
 **Commands:**
 - `npm test` -- expected: all outer route fixtures pass, including the new cold-domain/concurrency/disabled-posture matrix.
 - `npm run check` -- expected: full offline gate passes, including assembly-identity verification exactly once.

@@ -18,6 +18,7 @@ import {
 } from "./scripts/house-briefs.mjs";
 import { deriveIdentity as corpusIdentity, validateCorpus } from "./scripts/semantic-corpus.mjs";
 import { ACTIVATION_REASON_CODES, deriveActivationRef, evaluateProductionActivation } from "./src/pipeline/activation.mjs";
+import { canonicalJson, sha256Hex } from "./src/pipeline/contracts.mjs";
 import { activationPosture, createInactiveDomainWriter } from "./src/pipeline/assembly.mjs";
 import {
   GENERATION_PARAMETERS,
@@ -375,11 +376,10 @@ function pipelineFixture() {
   assert.match(corpusReadiness.approved_semantic_identity, /^[a-f0-9]{64}$/);
 
   const manifest = {
-    version: 1,
+    version: 2,
     deployed_source_identity: "offline-assembly-fixture",
     generation_ref: "a".repeat(64),
     judge_ref: "b".repeat(64),
-    semantic_ref: "c".repeat(64),
     local: { enabled: true, full_request_ref: "d".repeat(64) },
     domain: { enabled: false, evidence_ref: null, full_request_ref: null },
     house_catalog_ref: "e".repeat(64),
@@ -2187,6 +2187,11 @@ await test("activation manifest validation is closed, nullability-exact, and red
   assert.equal(valid.enabled, true);
   assert.equal(valid.reason, null);
   assert.equal(valid.activation_ref, deriveActivationRef(fixture.manifest));
+  assert.equal(
+    valid.activation_ref,
+    sha256Hex(`oddspark-production-activation/v2\n${canonicalJson(fixture.manifest)}`),
+    "v2 refs must derive under the v2 hash domain",
+  );
   assert.ok(Object.isFrozen(valid.manifest));
 
   // The production binding form: the manifest as a JSON string.
@@ -2198,7 +2203,12 @@ await test("activation manifest validation is closed, nullability-exact, and red
   assert.equal(evaluateProductionActivation(null).enabled, false);
   assert.equal(evaluateProductionActivation("not json").reason, ACTIVATION_REASON_CODES.NOT_CLOSED);
   assert.equal(evaluateProductionActivation({ ...fixture.manifest, extra: true }).reason, ACTIVATION_REASON_CODES.NOT_CLOSED);
-  assert.equal(evaluateProductionActivation({ ...fixture.manifest, version: 2 }).reason, ACTIVATION_REASON_CODES.VERSION);
+  assert.equal(evaluateProductionActivation({ ...fixture.manifest, version: 1 }).reason, ACTIVATION_REASON_CODES.VERSION);
+  assert.equal(evaluateProductionActivation({
+    ...fixture.manifest,
+    version: 1,
+    semantic_ref: "c".repeat(64),
+  }).reason, ACTIVATION_REASON_CODES.NOT_CLOSED);
   assert.equal(evaluateProductionActivation({ ...fixture.manifest, outcome: "draft" }).reason, ACTIVATION_REASON_CODES.OUTCOME);
   assert.equal(evaluateProductionActivation({ ...fixture.manifest, generation_ref: "nope" }).reason, ACTIVATION_REASON_CODES.REF_MALFORMED);
   assert.equal(evaluateProductionActivation({ ...fixture.manifest, local: { enabled: true, full_request_ref: null } }).reason, ACTIVATION_REASON_CODES.REF_NULLABILITY);
@@ -3222,7 +3232,7 @@ await test("activation posture is logged once per seam resolution, redacted to t
   // the redaction assertions below have teeth.
   const secretRef = "deadbeef".repeat(8);
   const malformed = createEnvironment({
-    pipeline: { manifest: { ...pipelineFixture().manifest, version: 2, generation_ref: secretRef } },
+    pipeline: { manifest: { ...pipelineFixture().manifest, version: 1, generation_ref: secretRef } },
   });
   const malformedCapture = await captureLogLines(async () => {
     addSimpleSite(createNetwork());

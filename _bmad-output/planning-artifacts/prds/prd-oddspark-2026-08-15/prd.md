@@ -75,7 +75,7 @@ Given no Domain, the system generates a Candidate grounded in Port Huron / Blue 
 **Consequences (testable):**
 - The Candidate references season-appropriate context consistent with the generation date.
 - The Candidate's proposed capability falls inside the Delivery Envelope.
-- Before production use, local grounding and retellability pass the versioned local-mode golden/anti-golden corpus and predeclared semantic threshold owned by Story 1.18.
+- Before production use, local grounding and retellability pass the versioned local-mode golden/anti-golden corpus and predeclared semantic threshold owned by Story 1.18. *(2026-08-24 override, sprint-change-proposal-2026-08-24-4: under the direct single-judge design no semantic qualification threshold gates production; Stories 1.18/1.18.1 remain retained NO-GO history. Owner review (Story 3.3) and the quiet-production checkpoint (Story 3.5) are the post-activation quality controls.)*
 - No random-axis vocabulary from the legacy generator (who/lens/form/friction lists) appears in output.
 
 #### FR-2: Website-grounded generation
