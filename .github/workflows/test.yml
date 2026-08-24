@@ -12,14 +12,14 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          # The retained a0ed5363 STRUCT-JUDGE evidence binds the exact
+          # The retained ba52ec91 STRUCT-JUDGE evidence binds the exact
           # executing Node identity. Keep CI on that recorded runtime so the
           # independent verifier checks the evidence rather than failing on
           # runner drift before it reaches the qualified predicates.
           node-version: 24.18.0
           cache: npm
       # `npm run check` minus `spike:judge:self-test` (DW-6): that self-test is
-      # hashed into the a0ed5363 STRUCT-JUDGE identity, and its success branch
+      # hashed into the ba52ec91 STRUCT-JUDGE identity, and its success branch
       # is stale against the spent GO cycle. package.json cannot be edited
       # without drifting the identity. Independent review of 1.12/1.13 is the
       # two identity verifiers below, not the plan-governance assertion.
@@ -28,7 +28,7 @@ jobs:
       - run: node .github/check-ci.mjs
         env:
           WRANGLER_SEND_METRICS: "false"
-      - name: STRUCT-JUDGE identity (a0ed5363)
+      - name: STRUCT-JUDGE identity (ba52ec91)
         run: |
-          npm run spike:judge:verify -- spikes/judge-fidelity/results/2026-08-23-a0ed5363-01e3976da21ab40e-620e2f14-8f42-47a2-8f83-854c41f017e6-v2.json
-          npm run spike:judge:qualification:verify -- --file spikes/judge-fidelity/results/2026-08-23-a0ed5363-01e3976da21ab40e-620e2f14-8f42-47a2-8f83-854c41f017e6-qualification.json
+          npm run spike:judge:verify -- spikes/judge-fidelity/results/2026-08-24-ba52ec91-051d5c7072d99a31-f543d3d5-80d4-44f6-b7bf-41083197fcc9-v2.json
+          npm run spike:judge:qualification:verify -- --file spikes/judge-fidelity/results/2026-08-24-ba52ec91-051d5c7072d99a31-f543d3d5-80d4-44f6-b7bf-41083197fcc9-qualification.json

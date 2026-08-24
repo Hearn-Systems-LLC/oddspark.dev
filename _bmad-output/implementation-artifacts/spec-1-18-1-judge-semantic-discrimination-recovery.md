@@ -182,3 +182,15 @@ Justin approved the refreshed equivalent semantic plan after the first disclosed
 - Retained directory: `spikes/semantic-qualification/results/semantic-8baaad6c-95dc-4546-9a7b-1e4afd1f3f7e/`.
 
 Per the approved stop rule, this result authorizes no retry, corpus or threshold change, model substitution, deployment, or activation. Story 1.18.1 is blocked at owner architecture review: the next decision must determine whether to pursue a materially different judge architecture or revise product intent through another explicit course correction. Downstream semantic authority remains unavailable.
+
+## Structural Re-qualification Addendum — 2026-08-24 (direct single-judge design)
+
+Trigger: commit  edited identity-bound  after the  run, so neither retained judge structural evidence verified against any committed tree and CI's  pin was red from . Under sprint-change-proposal-2026-08-24-4 the single quality judge needs only current structural authority.
+
+Justin approved the exact plan (ref , approval run , 42-call cap, maximum , one-hour window from ). Run  executed  sequential calls from  to , zero retries/replacements: **GO**, both legs  direct-valid.
+
+- STRUCT-JUDGE role ref: 
+- Primary config ref (): 
+- Fallback config ref (): 
+- Evidence basename: ; both public verifiers PASS (18 predicates, 79 fixtures; GO, 2 refs). CI pin moved to this evidence.
+- Prior refs  /  remain immutable superseded history. No identity-bound file may be edited after this run without re-qualification.
