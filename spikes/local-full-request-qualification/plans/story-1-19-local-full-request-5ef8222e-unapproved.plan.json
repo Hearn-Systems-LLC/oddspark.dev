@@ -1,0 +1,40 @@
+{
+  "schema_version": "oddspark.local-full-request-plan/v1",
+  "run_id": "5ef8222e-27e2-4d48-95f9-761991155e19",
+  "status": "unapproved",
+  "approval": null,
+  "execution": null,
+  "allowance_consumed": false,
+  "request": {
+    "strike_timestamp": "2026-08-25T16:00:00.000Z",
+    "dispatch": {
+      "contract": "inactive-domain-dispatch/v1",
+      "request_scope": { "kind": "domain", "round": 1190001, "domain": "qualification.invalid" },
+      "effective_mode": "local",
+      "claim_key": "domain:1190001:qualification.invalid",
+      "notice_identity": "pre-activation",
+      "notice": "Website reading is not switched on yet, so this plan is built from local patterns only.",
+      "scan_allowed": false,
+      "evidence_provider_allowed": false,
+      "permalink_allowed": false
+    }
+  },
+  "authorities": {
+    "assembly_identity": "7971844c5779fe1a435970eef522cd2c23f9b7c121708f6675299e58aff96ed6",
+    "generation_ref": "34731e26b1c1ef79acd444ba8e775143d9a616c3ab915f52481bd81475796bfc",
+    "generation_role_ref": "5cf5a547b29d31304af686c610da9c4c5959299faf12d434db28493de92404b1",
+    "judge_ref": "7dc1ec98a625a1dd16f1166067b496e4209a415e7f10854ff781f46d0d0062d0",
+    "house_catalog_ref": "9334910e17f7fa610ee2a18d54b1485bf19d00b866f8e7cd8f5258a0d17e9ad8",
+    "priors_ref": "2163f355be2e24e1a730938adcb81f70e72208619d34248116d6350c6d925ded",
+    "activation_version": 2
+  },
+  "limits": { "route_ceiling_ms": 120000, "commit_reserve_ms": 1000, "provider_timeout_ms": 19833, "call_cap": 6, "attempt_cap": 3, "maximum_cost_usd": 0.06 },
+  "pricing": { "model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast", "source": "Cloudflare Workers AI model catalog accessed 2026-08-24", "input_usd_per_token": 0.00000029, "output_usd_per_token": 0.00000225 },
+  "retention": ["plan_bytes", "approval_bytes", "activation_manifest_bytes", "content_hashes", "request_hashes", "response_hashes", "provider_error_class", "provider_error_message", "provider_error_http_status", "provider_error_code", "strike_terminal_code", "strike_ledger", "stage_started_at", "stage_finished_at", "stage_latency_ms", "stage_timeout_ms", "attempt_sequence", "attempt_terminal", "candidate_ref", "judge_candidate_ref", "ledger_events", "usage_tokens", "cost_usd", "route_ceiling_ms", "commit_reserve_ms", "receipt_bytes", "receipt_identity", "render_bytes", "render_hash"],
+  "schedule": [
+    { "attempt": 1, "role": "primary", "generation_slots": [1], "judge_slots": [2] },
+    { "attempt": 2, "role": "fallback", "generation_slots": [3], "judge_slots": [4] },
+    { "attempt": 3, "role": "fallback", "generation_slots": [5], "judge_slots": [6] }
+  ],
+  "predicates": ["plan.approval_binding", "authority.assembly", "authority.structural_refs", "accounting.call_cap", "accounting.attempt_cap", "accounting.judge_binding", "accounting.deterministic_release", "accounting.house_never_judged", "deadline.route_ceiling", "deadline.commit_reserve", "chronology.complete", "commit.authoritative", "render.complete", "telemetry.retained", "cost.recomputed", "retry.orchestrator_only", "evidence.content_hashes"]
+}
