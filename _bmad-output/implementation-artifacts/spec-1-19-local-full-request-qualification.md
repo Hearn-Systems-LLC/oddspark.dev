@@ -2,7 +2,7 @@
 title: 'Story 1.19: Local Full-Request Qualification'
 type: 'feature'
 created: '2026-08-24'
-status: 'in-progress'
+status: 'done'
 baseline_commit: 'ba42945f0ab95593859737126d4f88d171d111bf'
 review_loop_iteration: 0
 followup_review_recommended: false
@@ -76,6 +76,10 @@ deferred: []
 - **Finding 2 — stale normative assembly identity/spec history:** resolved. The normative identity now names `7971844c…`, the `39f24a83…` retained run is explicitly historical and non-promotable, and this change log records the repair and fresh plan posture.
 
 ## Spec Change Log
+
+- 2026-08-25 — Independent terminal-evidence review returned `approve` for run `5ef8222e-27e2-4d48-95f9-761991155e19`, plan SHA-256 `a77bfb8a3a933fd279ddff03d722fd1daee12ef4704d36e7a2beb49ba7dcba7d`, and derived `LOCAL-FULL-REQUEST` ref `a0b656c04ccc89ae3bdb35fea583b6937bb2f43dd8ec26825a72a38fc696cec4`. Story status closed as `done` for the verified evidence commit.
+
+- 2026-08-25 — Justin approved exact plan SHA-256 `a77bfb8a3a933fd279ddff03d722fd1daee12ef4704d36e7a2beb49ba7dcba7d`, run `5ef8222e-27e2-4d48-95f9-761991155e19`, for `2026-08-25T20:18:08.000Z` through `2026-08-25T21:18:08.000Z`. Assembly verification and the focused offline matrix passed before allowance consumption. The isolated adapter reported the remote AI binding and zero inference calls; the runner was invoked exactly once and made one generation plus one candidate-bound judge call. Retained evidence SHA-256 `622cb5503295f7729be1932e0177a3805225f8b135bf8deb25c67f97d02f7f8b` independently passes all 17 predicates and derives `LOCAL-FULL-REQUEST` ref `a0b656c04ccc89ae3bdb35fea583b6937bb2f43dd8ec26825a72a38fc696cec4`. The adapter and remote connection were stopped and ephemeral configuration removed. No external retry, deployment, activation, commit, push, merge, or unrelated remote mutation occurred. Status is `in-review` pending independent terminal-evidence review and commit decision.
 
 - 2026-08-25 — Resolved both accepted final-surface review findings. The Title-Case allowance in `personalNamePolicy` now applies only when every lexical word is Title Case or a recognized lowercase headline connector, so ordinary prose such as `Ask Taylor Morgan to review each answer.` and nearby mutations remain ambiguous/fail-closed while the approved headline fixtures continue to pass. Re-froze assembly `39f24a833694d50007ea5be41602b56ed492410bb458406ac6bd817167054743` → `7971844c5779fe1a435970eef522cd2c23f9b7c121708f6675299e58aff96ed6`; the old retained live evidence remains immutable and non-promotable. Prepared fresh unapproved plan `story-1-19-local-full-request-5ef8222e-unapproved.plan.json` (run `5ef8222e-27e2-4d48-95f9-761991155e19`, SHA-256 `a77bfb8a3a933fd279ddff03d722fd1daee12ef4704d36e7a2beb49ba7dcba7d`) with approval/execution null and allowance unconsumed. Status remains `in-progress` pending fresh exact-plan approval, live qualification, and final independent review.
 
