@@ -15,7 +15,7 @@
     },
     {
       "path": "src/pipeline/contracts.mjs",
-      "sha256": "fccb4b5585de747cc7bf16dbabf4d8d1a787287aa0f1e5e80b99cdc60be4ba84"
+      "sha256": "788c7c6b7165171c8b4deaa3361145aa9898537a759b2dd4c2ce748c0d614826"
     },
     {
       "path": "src/pipeline/corpus.mjs",
@@ -74,5 +74,5 @@
       "sha256": "a11d0b9313de346d9bff8edc11de1557dc767f24e49992c1ea252ee5b64bc7db"
     }
   ],
-  "assembly_identity_sha256": "39f24a833694d50007ea5be41602b56ed492410bb458406ac6bd817167054743"
+  "assembly_identity_sha256": "7971844c5779fe1a435970eef522cd2c23f9b7c121708f6675299e58aff96ed6"
 }

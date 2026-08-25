@@ -16,7 +16,7 @@ import { ARTIFACT_VERSION, buildCommittedBrief, CANDIDATE_SCHEMA_VERSION, derive
 import { parseReceipt } from "../../src/pipeline/receipts.mjs";
 import adapterWorker from "./worker.mjs";
 
-const planBytes = await readFile(new URL("./plans/story-1-19-local-full-request-2385cc23-unapproved.plan.json", import.meta.url));
+const planBytes = await readFile(new URL("./plans/story-1-19-local-full-request-5ef8222e-unapproved.plan.json", import.meta.url));
 const plan = JSON.parse(planBytes);
 const diagnosticPlan = {
   ...structuredClone(plan), schema_version: "oddspark.local-full-request-diagnostic-plan/v1",
@@ -177,7 +177,7 @@ test("adapter failure preserves a consumed-incomplete receipt and never fabricat
     assert.equal(verification.valid, false); assert.equal(verification.predicate_results.length, PREDICATES.length); assert.equal(verification.predicate_results.every(({ pass }) => pass === false), true); assert.match(verification.errors.join(";"), /incomplete|not qualification evidence/); assert.doesNotMatch(verification.errors.join(";"), /full_request_ref mismatch/);
   }
   const receiptPath = new URL("./results/c2d9142a-bf7a-4a20-9f13-6ed403bd0e91.spend-receipt.json", import.meta.url);
-  const cli = spawnSync(process.execPath, ["./verify.mjs", fileURLToPath(receiptPath), "./plans/story-1-19-local-full-request-2385cc23-unapproved.plan.json", fileURLToPath(receiptPath)], { cwd: fileURLToPath(new URL(".", import.meta.url)), encoding: "utf8" });
+  const cli = spawnSync(process.execPath, ["./verify.mjs", fileURLToPath(receiptPath), "./plans/story-1-19-local-full-request-5ef8222e-unapproved.plan.json", fileURLToPath(receiptPath)], { cwd: fileURLToPath(new URL(".", import.meta.url)), encoding: "utf8" });
   assert.equal(cli.status, 1); assert.match(cli.stderr, /spend receipt state consumed_incomplete.*not qualification evidence/s); assert.doesNotMatch(cli.stderr, /\n\s+at /);
 });
 test("independent arbitrary-byte verifier accepts one complete synthetic happy path", () => { const result = verify(closeEvidence()); assert.equal(result.valid, true, result.errors.join("\n")); });

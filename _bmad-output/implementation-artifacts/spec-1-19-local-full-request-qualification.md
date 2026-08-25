@@ -2,8 +2,8 @@
 title: 'Story 1.19: Local Full-Request Qualification'
 type: 'feature'
 created: '2026-08-24'
-status: 'in-review'
-baseline_commit: '3ed01d95b462fd38c0036fb6ac727d7604fd6c3a'
+status: 'in-progress'
+baseline_commit: 'ba42945f0ab95593859737126d4f88d171d111bf'
 review_loop_iteration: 0
 followup_review_recommended: false
 baseline_revision: '3ed01d95b462fd38c0036fb6ac727d7604fd6c3a'
@@ -24,7 +24,7 @@ deferred: []
 
 ## Boundaries & Constraints
 
-**Always:** Exercise the real assembled pipeline bytes — the current runtime assembly identity `02fb91201bcdde62f9f1386b4011d0f0d4440ad3a559a4d6503f2207455e1ea2` (governor-verified 2026-08-24 after the authorized PIPELINE_JUDGE wiring) — with no modification, shim, or re-implementation of `src/pipeline/*`. Bind the run to the current authority refs: STRUCT-GENERATION `34731e26…` (role `5cf5a547…`, Story 1.11 run l9), STRUCT-JUDGE `7dc1ec98a625a1dd16f1166067b496e4209a415e7f10854ff781f46d0d0062d0` (re-qualified run ba52ec91/f543d3d5, GO 20/20), the Story 1.8 house catalog ref, and the current `ProductionActivationManifest` v2 contract. Retain per-stage latency and timeout configuration, attempt count, judge-call count, candidate binding (`candidate_ref` per attempt), commit-reserve observance, route-ceiling observance, receipt identity, token usage, cost, and content/request/response hashes. Consume the run allowance at the first durable call-start; verified zero-call preflights are retained without consuming it. Derive the ref only from independently re-verifiable retained bytes; a NO-GO, incomplete, ambiguous, over-cap, or identity-mismatched run emits no ref and blocks activation. Mirror the hardened spike governance: exclusive stale-safe cycle lock, canonical plan/approval bytes, fsynced accounting, append-only attempt history, and an independent arbitrary-byte verifier.
+**Always:** Exercise the real assembled pipeline bytes — the current runtime assembly identity `7971844c5779fe1a435970eef522cd2c23f9b7c121708f6675299e58aff96ed6` (re-frozen after the final-review personal-name repair) — with no shim or re-implementation of `src/pipeline/*`; any later source change invalidates this identity and requires another freeze and fresh exact plan. Bind the run to the current authority refs: STRUCT-GENERATION `34731e26…` (role `5cf5a547…`, Story 1.11 run l9), STRUCT-JUDGE `7dc1ec98a625a1dd16f1166067b496e4209a415e7f10854ff781f46d0d0062d0` (re-qualified run ba52ec91/f543d3d5, GO 20/20), the Story 1.8 house catalog ref, and the current `ProductionActivationManifest` v2 contract. Retain per-stage latency and timeout configuration, attempt count, judge-call count, candidate binding (`candidate_ref` per attempt), commit-reserve observance, route-ceiling observance, receipt identity, token usage, cost, and content/request/response hashes. Consume the run allowance at the first durable call-start; verified zero-call preflights are retained without consuming it. Derive the ref only from independently re-verifiable retained bytes; a NO-GO, incomplete, ambiguous, over-cap, or identity-mismatched run emits no ref and blocks activation. Mirror the hardened spike governance: exclusive stale-safe cycle lock, canonical plan/approval bytes, fsynced accounting, append-only attempt history, and an independent arbitrary-byte verifier. Retained live evidence bound to assembly `39f24a833694d50007ea5be41602b56ed492410bb458406ac6bd817167054743` remains immutable historical evidence for that flawed assembly and is not promotable.
 
 **Ask First:** Any adapter start or provider call; approval of exact plan bytes, run ID, route ceiling, call/cost cap, or retention; changing the frozen pipeline, prompts, schemas, refs, or predicate set; any retry outside the bounded orchestrator; any deployment, activation, or CI invocation.
 
@@ -70,7 +70,14 @@ deferred: []
 - Given verified results, when `LOCAL-FULL-REQUEST` is derived, then every frozen correctness, attempt/judge-call accounting, deadline/commit-reserve, cost, provenance, and authoritative-commit predicate passes; failure preserves evidence and blocks activation.
 - Given the offline harness, when self-tests and the independent verifier run, then plan tampering, over-cap accounting, unbound judge calls, missing commit reserve, and identity mismatches all fail closed, and no live call is possible without an exactly matching fresh approval.
 
+## Accepted Final-Surface Review Findings
+
+- **Finding 1 — personal-name Title-Case bypass:** resolved in code and adversarial offline coverage. Ordinary prose containing unfamiliar capitalized personal-name shapes no longer passes merely because its first word is capitalized; approved headline-shaped phrases remain accepted.
+- **Finding 2 — stale normative assembly identity/spec history:** resolved. The normative identity now names `7971844c…`, the `39f24a83…` retained run is explicitly historical and non-promotable, and this change log records the repair and fresh plan posture.
+
 ## Spec Change Log
+
+- 2026-08-25 — Resolved both accepted final-surface review findings. The Title-Case allowance in `personalNamePolicy` now applies only when every lexical word is Title Case or a recognized lowercase headline connector, so ordinary prose such as `Ask Taylor Morgan to review each answer.` and nearby mutations remain ambiguous/fail-closed while the approved headline fixtures continue to pass. Re-froze assembly `39f24a833694d50007ea5be41602b56ed492410bb458406ac6bd817167054743` → `7971844c5779fe1a435970eef522cd2c23f9b7c121708f6675299e58aff96ed6`; the old retained live evidence remains immutable and non-promotable. Prepared fresh unapproved plan `story-1-19-local-full-request-5ef8222e-unapproved.plan.json` (run `5ef8222e-27e2-4d48-95f9-761991155e19`, SHA-256 `a77bfb8a3a933fd279ddff03d722fd1daee12ef4704d36e7a2beb49ba7dcba7d`) with approval/execution null and allowance unconsumed. Status remains `in-progress` pending fresh exact-plan approval, live qualification, and final independent review.
 
 - 2026-08-24 — Implemented the offline governed harness, independent arbitrary-byte verifier, isolated assembled-pipeline adapter/publication path, and 19-case adversarial self-test matrix. Regenerated the exact unapproved plan against assembly `02fb912…` and approved priors `2163f355…`; approval/execution remain null and allowance remains unconsumed. No provider call, live adapter start, deployment, or activation occurred. Story moved to `in-review` after all packet gates passed, with only the explicitly excepted unchanged DW-6 judge residual in `npm run check`.
 

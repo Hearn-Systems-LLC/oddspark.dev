@@ -5,7 +5,7 @@ import { HOUSE_NOTICE, committedBriefPresentation } from "../../src/pipeline/ren
 import { boundedProviderCall, providerErrorDetail } from "./provider-call.mjs";
 import { attemptsFrom, failureOutcome, qualificationCoordinator } from "./adapter-evidence.mjs";
 
-const ASSEMBLY_IDENTITY = "39f24a833694d50007ea5be41602b56ed492410bb458406ac6bd817167054743";
+const ASSEMBLY_IDENTITY = "7971844c5779fe1a435970eef522cd2c23f9b7c121708f6675299e58aff96ed6";
 
 const json = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
 const hex = (bytes) => [...new Uint8Array(bytes)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
