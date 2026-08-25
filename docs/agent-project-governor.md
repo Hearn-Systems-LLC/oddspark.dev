@@ -66,7 +66,8 @@ The governor will:
 3. Select one eligible workflow chain.
 4. Keep read-only planning and governance in the invoking conversation.
 5. Dispatch development or review to an external harness session.
-6. Verify the terminal handoff and live repository evidence before continuing.
+6. Continuously monitor the external session with bounded heartbeat runs until terminal handoff or governing stop.
+7. Verify the terminal handoff, actual diff, scope boundaries, and live repository evidence before continuing.
 
 It stops for unresolved product intent, authority conflicts, destructive actions, or genuine external operator requirements. A harness exit or worker claim is never completion proof by itself.
 
@@ -107,6 +108,19 @@ _bmad/memory/agent-project-governor/harness-sessions/<job-name>.json
 ```
 
 The record contains the role, harness, worktree, prompt file, timestamps, exit status, native session identifier when known, and connection commands.
+
+Launching and returning is insufficient. Immediately start bounded observation and repeat it until a terminal handoff or governing stop:
+
+```sh
+uv run _bmad/memory/agent-project-governor/scripts/harness-monitor.py observe \
+  --record _bmad/memory/agent-project-governor/harness-sessions/story-1-22-dev.json \
+  --interval 30 \
+  --samples 20 \
+  --stall-threshold 4 \
+  --handoff-path /absolute/path/to/terminal-handoff.md
+```
+
+The command emits one JSON Lines heartbeat per sample. It reports terminal existence/activity, a pane-output digest, changed or unchanged output, unchanged count, conservative and explained prompt/stall signals, declared handoff presence, and terminal death or disappearance. Run another bounded observation when the job is still live. A prompt signal is an attention cue, not permission to answer it.
 
 ## Watch, attach, or resume
 
@@ -192,6 +206,22 @@ uv run _bmad/memory/agent-project-governor/scripts/harness-session.py status \
 ```
 
 `terminal_active: false` means the harness process is no longer running. It does not mean the BMAD assignment succeeded; inspect the declared handoff and repository evidence.
+
+### Submit explicit control input
+
+Only when the owner or governing workflow explicitly authorizes literal input, submit it separately:
+
+```sh
+uv run _bmad/memory/agent-project-governor/scripts/harness-monitor.py submit \
+  --record _bmad/memory/agent-project-governor/harness-sessions/story-1-22-dev.json \
+  --text 'continue'
+```
+
+The helper audits tmux clients using each client's session and flags. If the target session has read-only viewers, it refuses control unless `--detach-target-read-only` is explicitly supplied. That option detaches only read-only clients attached to the target session and reports their identities plus the read-only watch command for reattachment; clients on other sessions are never detached.
+
+Input is loaded into a tmux buffer and pasted literally, then Enter is sent separately. The JSON result says only whether pane output changed afterward; it always leaves `worker_acceptance_confirmed` false. Output movement is not proof that the worker understood or accepted the instruction.
+
+Terminal exit and handoff-file presence are likewise only state signals. Before accepting work, independently read the handoff, inspect the actual diff, confirm allowed and forbidden path boundaries, and rerun the required validation.
 
 ## Update an existing installation
 
