@@ -50,7 +50,10 @@
     "spike:generation:verify": "node spikes/generation-qualification/verify-v2.mjs",
     "spike:generation:dev": "node spikes/generation-qualification/start-adapter.mjs",
     "spike:generation:plan": "node spikes/generation-qualification/run.mjs plan",
-    "spike:generation:live": "node spikes/generation-qualification/run.mjs live"
+    "spike:generation:live": "node spikes/generation-qualification/run.mjs live",
+    "spike:full-request:plan": "node spikes/local-full-request-qualification/run.mjs plan",
+    "spike:full-request:self-test": "node --test spikes/local-full-request-qualification/test.mjs",
+    "spike:full-request:verify": "node spikes/local-full-request-qualification/verify.mjs"
   },
   "devDependencies": {
     "wrangler": "4.123.0"

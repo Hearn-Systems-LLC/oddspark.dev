@@ -19,7 +19,7 @@ import {
 import { deriveIdentity as corpusIdentity, validateCorpus } from "./scripts/semantic-corpus.mjs";
 import { ACTIVATION_REASON_CODES, deriveActivationRef, evaluateProductionActivation } from "./src/pipeline/activation.mjs";
 import { canonicalJson, sha256Hex } from "./src/pipeline/contracts.mjs";
-import { activationPosture, createInactiveDomainWriter } from "./src/pipeline/assembly.mjs";
+import { activationPosture, createInactiveDomainWriter, DEFAULT_STRIKE_DEADLINE_BUDGET_MS, MAX_STRIKE_DEADLINE_BUDGET_MS } from "./src/pipeline/assembly.mjs";
 import {
   GENERATION_PARAMETERS,
   GENERATION_PROMPT,
@@ -2594,18 +2594,26 @@ await test("assembly identity is deterministic over sorted module paths and sour
   assert.throws(() => computeAssemblyIdentity([{ path: "src/pipeline/a.mjs", sha256: "bad" }]), TypeError);
 });
 
+// Story 1.23 fixtures exercise explicitly injected pipeline ports. Keep those
+// ports isolated from the separately tested bundled production constructor by
+// removing its presence-only fallback-model prerequisite.
+function isolateInjectedPipeline(harness) {
+  delete harness.env.AI_MODEL_FALLBACK;
+  return harness;
+}
+
 await test("assembled writer: cold domain request runs evidence, strike, gate, commit, render offline", async () => {
   const network = createNetwork();
   const fixture = pipelineFixture();
   const judged = [];
-  const h = createEnvironment({
+  const h = isolateInjectedPipeline(createEnvironment({
     pipeline: {
       judge: async (request) => {
         judged.push(structuredClone(request.candidate));
         return fixture.pipelineVerdict(request.candidate_ref);
       },
     },
-  });
+  }));
 
   const result = await strike(h.env, "acmebakery.com");
   assert.equal(result.response.status, 200);
@@ -2650,10 +2658,25 @@ await test("assembled writer: cold domain request runs evidence, strike, gate, c
   assert.equal(permalink.status, 404);
 });
 
+await test("assembled writer: strike deadline override is bounded and the production default remains 15 seconds", async () => {
+  assert.equal(DEFAULT_STRIKE_DEADLINE_BUDGET_MS, 15000);
+  assert.equal(MAX_STRIKE_DEADLINE_BUDGET_MS, 120000);
+  createNetwork();
+  const valid = isolateInjectedPipeline(createEnvironment({ pipeline: {} }));
+  valid.env.PIPELINE_STRIKE_DEADLINE_BUDGET_MS = 119000;
+  assert.equal((await strike(valid.env, "deadline-valid.com")).response.status, 200);
+  for (const value of [0, -1, 1.5, 120001, "119000"]) {
+    createNetwork();
+    const invalid = isolateInjectedPipeline(createEnvironment({ pipeline: {} }));
+    invalid.env.PIPELINE_STRIKE_DEADLINE_BUDGET_MS = value;
+    assert.equal((await strike(invalid.env, "deadline-invalid.com")).response.status, 502);
+  }
+});
+
 await test("assembled writer: a valid manifest as a JSON string (the production binding form) activates", async () => {
   createNetwork();
   const fixture = pipelineFixture();
-  const h = createEnvironment({ pipeline: { manifest: JSON.stringify(fixture.manifest) } });
+  const h = isolateInjectedPipeline(createEnvironment({ pipeline: { manifest: JSON.stringify(fixture.manifest) } }));
   const result = await strike(h.env, "acmebakery.com");
   assert.equal(result.response.status, 200);
   assert.equal(result.body.request_scope, "domain");
@@ -2664,7 +2687,7 @@ await test("assembled writer: concurrent cold requests converge under realistic 
   const network = createNetwork();
   const fixture = pipelineFixture();
   let generations = 0;
-  const h = createEnvironment({
+  const h = isolateInjectedPipeline(createEnvironment({
     pipeline: {
       // Multi-second generation: the competitor's lease is live the whole
       // time, and the loser must wait it out rather than spuriously 502.
@@ -2674,7 +2697,7 @@ await test("assembled writer: concurrent cold requests converge under realistic 
         return fixture.pipelineCandidate(generations === 1 ? "" : ` ${generations}`);
       },
     },
-  });
+  }));
   const [one, two] = await Promise.all([strike(h.env, "acmebakery.com"), strike(h.env, "acmebakery.com")]);
   assert.equal(one.response.status, 200);
   assert.equal(two.response.status, 200);
@@ -2691,9 +2714,9 @@ await test("assembled writer: resubmission reads the authority without regenerat
   createNetwork();
   let generations = 0;
   const fixture = pipelineFixture();
-  const h = createEnvironment({
+  const h = isolateInjectedPipeline(createEnvironment({
     pipeline: { generate: async () => { generations += 1; return fixture.pipelineCandidate(); } },
-  });
+  }));
   const first = await strike(h.env, "acmebakery.com");
   const second = await strike(h.env, "acmebakery.com");
   assert.equal(first.response.status, 200);
@@ -2706,12 +2729,12 @@ await test("assembled writer: strike exhaustion commits a house Brief verbatim p
   createNetwork();
   const fixture = pipelineFixture();
   let generations = 0;
-  const h = createEnvironment({
+  const h = isolateInjectedPipeline(createEnvironment({
     pipeline: {
       generate: async () => { generations += 1; return fixture.pipelineCandidate(` ${generations}`); },
       judge: async (request) => fixture.pipelineVerdict(request.candidate_ref, false),
     },
-  });
+  }));
   const result = await strike(h.env, "acmebakery.com");
   assert.equal(result.response.status, 200);
   assert.equal(generations, 3);
@@ -2738,9 +2761,9 @@ await test("assembled writer: strike exhaustion commits a house Brief verbatim p
 await test("assembled writer: a mid-claim writer failure finalizes the claim and counts nothing", async () => {
   createNetwork();
   const fixture = pipelineFixture();
-  const h = createEnvironment({
+  const h = isolateInjectedPipeline(createEnvironment({
     pipeline: { generate: async () => { throw new Error("provider exploded"); } },
-  });
+  }));
   // Generation faults are contained by the orchestrator; with no approved
   // house authority to fall back to, the writer fails closed mid-claim.
   h.env.PIPELINE_HOUSE = { catalog: {}, approval: {}, authorities: {} };
@@ -2765,7 +2788,7 @@ await test("a valid manifest with a missing or unverified pipeline port fails cl
   {
     const network = createNetwork();
     addSimpleSite(network);
-    const h = createEnvironment({ pipeline: {} });
+    const h = isolateInjectedPipeline(createEnvironment({ pipeline: {} }));
     delete h.env.PIPELINE_CORPUS;
     const result = await strike(h.env, "acmebakery.com");
     assert.equal(result.response.status, 502);
@@ -2778,7 +2801,7 @@ await test("a valid manifest with a missing or unverified pipeline port fails cl
   {
     const network = createNetwork();
     addSimpleSite(network);
-    const h = createEnvironment({ pipeline: {} });
+    const h = isolateInjectedPipeline(createEnvironment({ pipeline: {} }));
     const drifted = structuredClone(fixture.corpus);
     drifted.approval = { schema_version: 1, status: "pending_owner_approval", owner: null, corpus_version: "voice-v1", hashes: null, semantic_identity: null, approved_at: null };
     h.env.PIPELINE_CORPUS = drifted;
@@ -2792,7 +2815,7 @@ await test("a valid manifest with a missing or unverified pipeline port fails cl
   {
     const network = createNetwork();
     addSimpleSite(network);
-    const h = createEnvironment({ pipeline: {} });
+    const h = isolateInjectedPipeline(createEnvironment({ pipeline: {} }));
     h.env.PIPELINE_PRIORS = {
       priors: fixture.priors.priors,
       approval: { ...fixture.priors.approval, content_hash: "f".repeat(64) },
@@ -2806,7 +2829,7 @@ await test("a valid manifest with a missing or unverified pipeline port fails cl
 
 await test("assembled writer: a perpetually expired competitor lease hits the claim deadline and fails closed", async () => {
   createNetwork();
-  const h = createEnvironment({ pipeline: {} });
+  const h = isolateInjectedPipeline(createEnvironment({ pipeline: {} }));
   // The injected clock drives all lease/deadline math; advancing it outruns
   // the claim-wait budget in a few polls without real waiting.
   let now = Date.now();
@@ -2832,14 +2855,14 @@ await test("assembled writer: a perpetually expired competitor lease hits the cl
 await test("a valid but out-of-phase manifest (domain enabled) fails closed — never legacy", async () => {
   const network = createNetwork();
   addSimpleSite(network);
-  const h = createEnvironment({
+  const h = isolateInjectedPipeline(createEnvironment({
     pipeline: {
       manifest: {
         ...pipelineFixture().manifest,
         domain: { enabled: true, evidence_ref: "f".repeat(64), full_request_ref: "0".repeat(64) },
       },
     },
-  });
+  }));
   // The manifest itself is valid; it just does not authorize this local-only
   // writer. The seam fails closed with the writer error and no scan.
   assert.equal(activationPosture(h.env).enabled, true);
@@ -2957,10 +2980,17 @@ await test("production pipeline env constructs from verified content and stays i
   const wired = productionPipelineEnv(h.env, content);
   assert.ok(wired, "verified content must construct the pipeline env");
   assert.deepEqual(Object.keys(wired).sort(), [
-    "PIPELINE_CORPUS", "PIPELINE_GENERATE_PROVIDER", "PIPELINE_HOUSE", "PIPELINE_JUDGE_PROVIDER", "PIPELINE_PRIORS",
+    "PIPELINE_CORPUS", "PIPELINE_GENERATE_PROVIDER", "PIPELINE_HOUSE", "PIPELINE_JUDGE", "PIPELINE_JUDGE_PROVIDER", "PIPELINE_PRIORS",
   ]);
-  // PIPELINE_JUDGE stays absent — qualification refs are never fabricated.
-  assert.equal("PIPELINE_JUDGE" in wired, false);
+  assert.deepEqual(wired.PIPELINE_JUDGE, {
+    role: "STRUCT-JUDGE",
+    provider: "cloudflare-workers-ai",
+    resolved_model: h.env.AI_MODEL,
+    qualification_ref: "7dc1ec98a625a1dd16f1166067b496e4209a415e7f10854ff781f46d0d0062d0",
+    status: "active",
+    outcome: "GO",
+  });
+  assert.ok(Object.isFrozen(wired.PIPELINE_JUDGE));
   assert.equal(typeof wired.PIPELINE_GENERATE_PROVIDER, "function");
   assert.equal(typeof wired.PIPELINE_JUDGE_PROVIDER, "function");
 
@@ -3003,13 +3033,23 @@ await test("production pipeline env constructs from verified content and stays i
   assert.equal(networkB.siteCalls.length, 1);
 });
 
-await test("the bundled content currently fails closed: priors approval is still pending owner approval", async () => {
-  // content/local-priors/v1/approval.json is pending_owner_approval, so the
-  // REAL verifiers refuse the bundled bundle and construction returns null.
-  // This test is a deliberate tripwire: when exact owner approval lands, the
-  // bundled default constructs and this test must be revisited.
+await test("the approved bundled content constructs the complete qualified env and stays inert without a manifest", async () => {
   const h = createEnvironment();
-  assert.equal(productionPipelineEnv(h.env), null);
+  const wired = productionPipelineEnv(h.env);
+  assert.ok(wired);
+  assert.deepEqual(Object.keys(wired).sort(), [
+    "PIPELINE_CORPUS", "PIPELINE_GENERATE_PROVIDER", "PIPELINE_HOUSE", "PIPELINE_JUDGE", "PIPELINE_JUDGE_PROVIDER", "PIPELINE_PRIORS",
+  ]);
+  assert.equal(wired.PIPELINE_PRIORS.approval.identity, "2163f355be2e24e1a730938adcb81f70e72208619d34248116d6350c6d925ded");
+  assert.deepEqual(wired.PIPELINE_JUDGE, {
+    role: "STRUCT-JUDGE",
+    provider: "cloudflare-workers-ai",
+    resolved_model: h.env.AI_MODEL,
+    qualification_ref: "7dc1ec98a625a1dd16f1166067b496e4209a415e7f10854ff781f46d0d0062d0",
+    status: "active",
+    outcome: "GO",
+  });
+  assert.equal(createInactiveDomainWriter({ ...h.env, ...wired }), null);
 });
 
 await test("bundled content hashes are pinned against byte drift (the writer:preflight constants)", async () => {

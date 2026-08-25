@@ -14,8 +14,9 @@
 // per Justin's 2026-08-22 topology decision (Story 1.11 spec change log) the
 // generation role is qualified primary-only and the fallback model leg stays
 // permanently unwired — generation exhaustion or failure serves the Story 1.13
-// approved house Brief. PIPELINE_JUDGE carries qualification refs that do not
-// exist yet, so it is deliberately NOT constructed — never fabricated.
+// approved house Brief. PIPELINE_JUDGE carries the independently re-qualified
+// Story 1.18.1 structural authority; its closed descriptor is constructed from
+// the same resolved model/provider binding used by the frozen judge adapter.
 //
 // With ACTIVATION_MANIFEST absent none of this is consumed: the assembly
 // evaluates the manifest first and returns null before any port validation.
@@ -46,6 +47,7 @@ const BUNDLED_CONTENT = deepFreeze({
 });
 
 const nonblank = (value) => typeof value === "string" && value.trim() !== "";
+const JUDGE_QUALIFICATION_REF = "7dc1ec98a625a1dd16f1166067b496e4209a415e7f10854ff781f46d0d0062d0";
 
 /* ------------------------------------------------------------------ *
  * Frozen adapter wire shape (the governed generation/judge qualification
@@ -235,6 +237,14 @@ export function productionPipelineEnv(env, content = BUNDLED_CONTENT) {
         authorities: deepFreeze({ priors: content.priors.priors, rubric: content.corpus.rubric }),
       }),
       PIPELINE_CORPUS: content.corpus,
+      PIPELINE_JUDGE: deepFreeze({
+        role: "STRUCT-JUDGE",
+        provider: "cloudflare-workers-ai",
+        resolved_model: env.AI_MODEL,
+        qualification_ref: JUDGE_QUALIFICATION_REF,
+        status: "active",
+        outcome: "GO",
+      }),
       PIPELINE_GENERATE_PROVIDER: generationProvider(env),
       PIPELINE_JUDGE_PROVIDER: judgeProvider(env),
     });

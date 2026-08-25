@@ -37,7 +37,8 @@ import { STRIKE_CODES, runStrikeOrchestrator } from "./strike.mjs";
 import { evaluateProductionActivation } from "./activation.mjs";
 
 const WRITER_ERROR = "inactive domain writer unavailable";
-const STRIKE_DEADLINE_BUDGET_MS = 15000;
+export const DEFAULT_STRIKE_DEADLINE_BUDGET_MS = 15000;
+export const MAX_STRIKE_DEADLINE_BUDGET_MS = 120000;
 const MINIMUM_CALL_TIME_MS = 1000;
 // One full coordinator lease horizon plus takeover margin: a competitor's live
 // lease is waited out against its real lease_until (with jitter), never
@@ -91,6 +92,12 @@ export function createInactiveDomainWriter(env, deps) {
   if (manifest.local.enabled !== true || manifest.domain.enabled !== false) return failClosed;
 
   const coordPost = deps?.coordPost;
+  const strikeObserver = deps?.onStrikeResult;
+  if (strikeObserver !== undefined && typeof strikeObserver !== "function") return failClosed;
+  const configuredStrikeBudget = env?.PIPELINE_STRIKE_DEADLINE_BUDGET_MS;
+  const strikeDeadlineBudgetMs = configuredStrikeBudget === undefined ? DEFAULT_STRIKE_DEADLINE_BUDGET_MS : configuredStrikeBudget;
+  if (!Number.isSafeInteger(strikeDeadlineBudgetMs) || strikeDeadlineBudgetMs <= 0
+      || strikeDeadlineBudgetMs > MAX_STRIKE_DEADLINE_BUDGET_MS) return failClosed;
   const priorsInput = env.PIPELINE_PRIORS;
   const house = env.PIPELINE_HOUSE;
   const corpus = env.PIPELINE_CORPUS;
@@ -244,7 +251,7 @@ export function createInactiveDomainWriter(env, deps) {
         seed,
         season_id: seasonId,
         selection_key: dispatch.claim_key,
-        deadline_ms: startedMs + STRIKE_DEADLINE_BUDGET_MS,
+        deadline_ms: startedMs + strikeDeadlineBudgetMs,
         minimum_call_time_ms: MINIMUM_CALL_TIME_MS,
       }, {
         // Adjudication ordering: the fixed pre-activation notice is bound into
@@ -263,6 +270,11 @@ export function createInactiveDomainWriter(env, deps) {
         coordinator: () => coordinatorStatus(scope),
         now: clock,
       });
+      if (strikeObserver) {
+        try {
+          strikeObserver(deepFreeze({ code: strike.code, model_calls: strike.model_calls, ledger: structuredClone(strike.ledger) }));
+        } catch { /* qualification observability can never change writer behavior */ }
+      }
       if (strike.code !== STRIKE_CODES.ACCEPTED && strike.code !== STRIKE_CODES.HOUSE_ACCEPTED) {
         throw new Error(WRITER_ERROR);
       }

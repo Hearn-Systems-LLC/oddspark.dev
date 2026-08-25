@@ -18,7 +18,15 @@ import {
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const priors = JSON.parse(await readFile(path.join(ROOT, "content/local-priors/v1/priors.json"), "utf8"));
-const pendingApproval = JSON.parse(await readFile(path.join(ROOT, "content/local-priors/v1/approval.json"), "utf8"));
+const pendingApproval = {
+  schema_version: 1,
+  catalog_version: priors.catalog_version,
+  status: "pending_owner_approval",
+  approver: null,
+  content_hash: null,
+  identity: null,
+  approved_at: null,
+};
 
 function approvedRecord(catalog = priors, approved_at = "2024-01-01T00:00:00.000Z") {
   const approval = { schema_version: 1, catalog_version: catalog.catalog_version, status: "approved", approver: "Justin", content_hash: contentIdentity(catalog), identity: null, approved_at };
