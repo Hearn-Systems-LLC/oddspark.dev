@@ -19,8 +19,17 @@ import {
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const priors = JSON.parse(await readFile(path.join(ROOT, "content/local-priors/v1/priors.json"), "utf8"));
-const pendingApproval = JSON.parse(await readFile(path.join(ROOT, "content/local-priors/v1/approval.json"), "utf8"));
+const checkedInApproval = JSON.parse(await readFile(path.join(ROOT, "content/local-priors/v1/approval.json"), "utf8"));
 const clone = (value) => structuredClone(value);
+const pendingApproval = {
+  schema_version: 1,
+  catalog_version: priors.catalog_version,
+  status: "pending_owner_approval",
+  approver: null,
+  content_hash: null,
+  identity: null,
+  approved_at: null,
+};
 
 function approvedRecord(catalog = priors, overrides = {}) {
   const record = {
@@ -56,16 +65,17 @@ test("pending developer catalog verifies structurally without approved identity 
   assert.equal(Object.hasOwn(report, "approved_identity"), false);
   assert.match(report.content_hash, /^[a-f0-9]{64}$/);
   assert.deepEqual(report.issues, []);
-  assert.deepEqual(await runCli(), report);
 });
 
-test("checked-in pending CLI prints its report and exits one", () => {
+test("checked-in approved CLI prints its exact production-ready identity and exits zero", async () => {
   const result = spawnSync(process.execPath, [path.join(ROOT, "scripts/local-priors.mjs")], { cwd: ROOT, encoding: "utf8" });
-  assert.equal(result.status, 1, result.stderr);
+  assert.equal(result.status, 0, result.stderr);
   const report = JSON.parse(result.stdout);
-  assert.equal(report.readiness, "pending_owner_approval");
-  assert.equal(report.production_ready, false);
-  assert.equal(Object.hasOwn(report, "approved_identity"), false);
+  assert.equal(report.readiness, "approved");
+  assert.equal(report.production_ready, true);
+  assert.equal(report.approved_identity, "2163f355be2e24e1a730938adcb81f70e72208619d34248116d6350c6d925ded");
+  assert.deepEqual(await runCli(), report);
+  assert.deepEqual(checkedInApproval.identity, report.approved_identity);
 });
 
 test("exact owner approval binds version, canonical content, identity, and timestamp", () => {

@@ -45,6 +45,7 @@
 
 import { readFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
+import { isDeepStrictEqual } from "node:util";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -147,6 +148,20 @@ function check(label, fn) {
 }
 
 const readJson = (relative) => JSON.parse(readFileSync(path.join(ROOT, relative), "utf8"));
+
+export function validatePipelineJudge(pipeline, env) {
+  const expected = {
+    role: "STRUCT-JUDGE",
+    provider: "cloudflare-workers-ai",
+    resolved_model: env.AI_MODEL,
+    qualification_ref: "7dc1ec98a625a1dd16f1166067b496e4209a415e7f10854ff781f46d0d0062d0",
+    status: "active",
+    outcome: "GO",
+  };
+  return isDeepStrictEqual(pipeline?.PIPELINE_JUDGE, expected)
+    ? []
+    : ["constructed PIPELINE_JUDGE must deep-equal the qualified STRUCT-JUDGE descriptor"];
+}
 
 export function main() {
   // 1. runtime-baseline verify
@@ -327,9 +342,9 @@ export function main() {
   // 7. offline assembly smoke — NOT the trivially-null path. A fully-approved
   //    content set is constructed offline through the module's content seam
   //    (smoke authority only: computed through the real identity functions,
-  //    never bundled, never deployed), the provider ports are asserted
-  //    present — proving wireability — and then absent AND malformed
-  //    manifests must each yield a null writer.
+  //    never bundled, never deployed), the provider ports and exact qualified
+  //    judge descriptor are asserted present — proving wireability — and then
+  //    absent AND malformed manifests must each yield a null writer.
   check("offline assembly smoke (wireable ports + absent/malformed manifest ⇒ writer null)", () => {
     const problems = [];
     const priorsCatalog = readJson("content/local-priors/v1/priors.json");
@@ -369,7 +384,7 @@ export function main() {
       for (const key of ["PIPELINE_PRIORS", "PIPELINE_HOUSE", "PIPELINE_CORPUS", "PIPELINE_GENERATE_PROVIDER", "PIPELINE_JUDGE_PROVIDER"]) {
         if (!(key in pipeline)) problems.push(`constructed pipeline env is missing ${key}`);
       }
-      if ("PIPELINE_JUDGE" in pipeline) problems.push("PIPELINE_JUDGE must stay absent — qualification refs are never fabricated");
+      problems.push(...validatePipelineJudge(pipeline, fakeEnv));
     }
     for (const [name, manifest] of Object.entries({ absent: undefined, malformed: "{not json" })) {
       const env = manifest === undefined ? { ...fakeEnv } : { ...fakeEnv, ACTIVATION_MANIFEST: manifest };
