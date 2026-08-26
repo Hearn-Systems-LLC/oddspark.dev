@@ -4,8 +4,9 @@ import { productionPipelineEnv } from "../../src/pipeline/production-ports.mjs";
 import { HOUSE_NOTICE, committedBriefPresentation } from "../../src/pipeline/rendering.mjs";
 import { boundedProviderCall, providerErrorDetail } from "./provider-call.mjs";
 import { attemptsFrom, failureOutcome, qualificationCoordinator } from "./adapter-evidence.mjs";
+import runtimeAssembly from "../../runtime-assembly.json" with { type: "json" };
 
-const ASSEMBLY_IDENTITY = "7971844c5779fe1a435970eef522cd2c23f9b7c121708f6675299e58aff96ed6";
+const ASSEMBLY_IDENTITY = runtimeAssembly.assembly_identity_sha256;
 
 const json = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
 const hex = (bytes) => [...new Uint8Array(bytes)].map((byte) => byte.toString(16).padStart(2, "0")).join("");

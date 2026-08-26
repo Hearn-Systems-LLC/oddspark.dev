@@ -311,3 +311,43 @@ occurred. Next gate: independently review this zero-call preflight and repair
 the governed tooling under separate authority; any future provider execution
 requires a fresh exact plan and approval because this authorization was
 consumed by the terminal ambiguity/failure.
+
+## 2026-08-26 Stage 3 offline preflight tooling repair
+
+The approved zero-call preflight review authorized a narrow offline repair.
+Retired plan `95e4d4a23565c4e178cf5b7b2f1058f9c16da16b61b9abaa2ad00b2a44dcc8c9`
+and run `09ad79e1-f57d-4130-bfe9-ec0bce3aae68` remain immutable and cannot be
+modified, retried, resumed, approved, or executed.
+
+Worker health/authorization and current-plan validation now derive assembly
+identity from committed `runtime-assembly.json`; `assembly:verify` independently
+recomputes it over the current assembly. Exact runner/worker identity checks
+remain. A new offline `spike:full-request:approve` command accepts all exact
+owner decision fields explicitly, validates canonical unapproved plan bytes and
+SHA/run binding, emits canonical closed approval bytes, and rejects malformed
+timestamps/identity, extra fields, traversal, symlinks, and collisions. Tests
+prove it has no provider, adapter, network, or process-spawn path.
+
+Activation v2 inspection found no committed authorized production trust-key
+map. Its Ed25519 signature and selected public trust key are operator-held, so
+no key, signature, snapshot, or trust map was fabricated. Valid JSON values for
+`LOCAL_FULL_REQUEST_ACTIVATION_SNAPSHOT` and
+`LOCAL_FULL_REQUEST_ACTIVATION_TRUST_KEYS` remain a fail-closed live preflight
+gate. They are outside plan identity: the plan binds activation contract version
+`2`; the launcher independently requires the signed runtime inputs.
+
+After every agent-doable offline prerequisite passed, exactly one canonical
+successor was created:
+
+- path: `spikes/local-full-request-qualification/plans/story-1-26-local-full-request-d55480bb-unapproved.plan.json`;
+- SHA-256/ref: `4b8cb7d1c7d2b7e2002d5851bb1fc03053c3cdb87a7590ce79e94b3a5caa92ac`;
+- run ID: `d55480bb-601d-425c-be6b-5c33cdd66033`;
+- assembly: `9e20e72300d2c84c85d62e98ff5d9bd9a2f806dc94b808d2305bad132f4217f5`;
+- generation/config refs: `cf602f143373958591b7a4954ec2ebe951160af45fa0fc45802eb0d96030f90c` / `0473102c40734947c91e8c605e6ae8e03b1e895a8c5b18867a9579dbb6abe514`;
+- judge ref: `64691773c52085f0241c81fb738ac8b849dceab73a9881bec7b38b3c4fb59799`;
+- caps: six calls, three attempts, `$0.06`, route `120000` ms, reserve `1000` ms, provider timeout `19833` ms;
+- state: unapproved, approval/execution null, allowance false, calls zero.
+
+Stage 3 remains **UNAPPROVED AND UNEXECUTED**. Next gate is independent repair
+and exact-plan review. Only after acceptance may the operator supply authorized
+activation inputs and issue a fresh exact owner approval.

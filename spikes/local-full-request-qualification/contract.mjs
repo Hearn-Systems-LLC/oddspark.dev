@@ -1,7 +1,8 @@
 import { createHash } from "node:crypto";
+import runtimeAssembly from "../../runtime-assembly.json" with { type: "json" };
 
 export const ASSEMBLY_IDENTITY = "7971844c5779fe1a435970eef522cd2c23f9b7c121708f6675299e58aff96ed6";
-export const CURRENT_ASSEMBLY_IDENTITY = "9e20e72300d2c84c85d62e98ff5d9bd9a2f806dc94b808d2305bad132f4217f5";
+export const CURRENT_ASSEMBLY_IDENTITY = runtimeAssembly.assembly_identity_sha256;
 export const GENERATION_REF = "34731e26b1c1ef79acd444ba8e775143d9a616c3ab915f52481bd81475796bfc";
 export const GENERATION_ROLE_REF = "5cf5a547b29d31304af686c610da9c4c5959299faf12d434db28493de92404b1";
 export const JUDGE_REF = "7dc1ec98a625a1dd16f1166067b496e4209a415e7f10854ff781f46d0d0062d0";

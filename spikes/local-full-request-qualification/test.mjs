@@ -7,9 +7,10 @@ import { fileURLToPath } from "node:url";
 import os from "node:os";
 import path from "node:path";
 import { acquireLock, appendAttempt, atomicWrite, releaseLock, STALE_LOCK_MS } from "./governance.mjs";
-import { CURRENT_ASSEMBLY_IDENTITY, deriveFullRequestRef, PREDICATES, providerTimeoutFor, sha256, validatePlan } from "./contract.mjs";
+import { canonicalBytes, CURRENT_ASSEMBLY_IDENTITY, deriveFullRequestRef, PREDICATES, providerTimeoutFor, sha256, validatePlan } from "./contract.mjs";
 import { preflight, runLive } from "./run.mjs";
 import { createUnapprovedPlan, writeUnapprovedPlan } from "./plan-creator.mjs";
+import { createApproval, readGovernedPlan, runCli as runApprovalCli, writeApproval } from "./approval-creator.mjs";
 import { verifyPublication } from "./publication.mjs";
 import { verifyEvidenceBytes } from "./verifier.mjs";
 import { boundedProviderCall, PROVIDER_ERROR_FIELD_MAX_LENGTH, providerErrorDetail } from "./provider-call.mjs";
@@ -21,8 +22,16 @@ import adapterWorker from "./worker.mjs";
 
 const planBytes = await readFile(new URL("./plans/story-1-19-local-full-request-5ef8222e-unapproved.plan.json", import.meta.url));
 const plan = JSON.parse(planBytes);
+const currentPlan = createUnapprovedPlan({
+  output: "synthetic.plan.json", assembly_ref: CURRENT_ASSEMBLY_IDENTITY,
+  generation_ref: "1".repeat(64), generation_role_ref: "2".repeat(64), judge_ref: "3".repeat(64),
+  run_id: "22222222-2222-4222-8222-222222222222", strike_timestamp: "2026-08-26T15:00:00.000Z",
+  route_ceiling_ms: "120000", commit_reserve_ms: "1000", provider_timeout_ms: "19833",
+  call_cap: "6", attempt_cap: "3", maximum_cost_usd: "0.06",
+});
+const currentPlanBytes = canonicalBytes(currentPlan);
 const diagnosticPlan = {
-  ...structuredClone(plan), schema_version: "oddspark.local-full-request-diagnostic-plan/v1",
+  ...structuredClone(currentPlan), schema_version: "oddspark.local-full-request-diagnostic-plan/v1",
   run_id: "11111111-1111-4111-8111-111111111111",
   purpose: { kind: "provider_error_capture", generation_calls: 1, request_shape: "frozen_production_generation", max_tokens: 2048 },
   limits: { route_ceiling_ms: 30000, commit_reserve_ms: 1000, provider_timeout_ms: 29000, call_cap: 1, attempt_cap: 1, maximum_cost_usd: 0.01 },
@@ -72,6 +81,46 @@ const verify = (evidence) => verifyEvidenceBytes(Buffer.from(JSON.stringify(evid
 
 test("unapproved plan is closed, finite, and carries no execution authority", () => {
   assert.equal(validatePlan(plan), true); assert.equal(plan.limits.route_ceiling_ms, 120000); assert.equal(plan.limits.commit_reserve_ms, 1000); assert.equal(plan.limits.provider_timeout_ms, providerTimeoutFor(plan.limits)); assert.equal(plan.approval, null); assert.equal(plan.execution, null); assert.equal(plan.allowance_consumed, false);
+});
+test("adapter identity is derived from the independently verified runtime assembly", async () => {
+  const response = await adapterWorker.fetch(new Request("http://127.0.0.1/health", { headers: { "x-qualification-authority": "authority" } }), { AUTHORITY_SHA256: "authority" });
+  assert.equal(response.status, 200);
+  assert.deepEqual(await response.json(), { ok: true, assembly_identity: CURRENT_ASSEMBLY_IDENTITY, inference_calls: 0 });
+  assert.equal(currentPlan.authorities.assembly_identity, CURRENT_ASSEMBLY_IDENTITY);
+  const workerSource = await readFile(new URL("./worker.mjs", import.meta.url), "utf8");
+  assert.match(workerSource, /runtimeAssembly\.assembly_identity_sha256/);
+  assert.doesNotMatch(workerSource, /const ASSEMBLY_IDENTITY = "[a-f0-9]{64}"/);
+});
+test("governed approval creation binds exact canonical plan bytes and owner metadata", () => {
+  const input = { planBytes: currentPlanBytes, plan_sha256: sha256(currentPlanBytes), run_id: currentPlan.run_id, approved_by: "Justin", approved_at: "2026-08-26T20:00:00.000Z", expires_at: "2026-08-26T21:00:00.000Z", decision: "approved" };
+  const created = createApproval(input);
+  assert.deepEqual(Object.keys(created).sort(), ["approved_at", "approved_by", "decision", "expires_at", "plan_sha256", "run_id", "schema_version"]);
+  assert.equal(created.plan_sha256, sha256(currentPlanBytes));
+  assert.equal(created.run_id, currentPlan.run_id);
+  for (const bad of ["2026-08-26T20:00:00Z", "not-a-time", "2026-08-26T20:00:00.000+00:00"]) {
+    assert.throws(() => createApproval({ ...input, approved_at: bad }), /canonical ISO-8601/);
+  }
+  assert.throws(() => createApproval({ ...input, run_id: "11111111-1111-4111-8111-111111111111" }), /run ID/);
+  assert.throws(() => createApproval({ ...input, plan_sha256: "0".repeat(64) }), /SHA-256/);
+  assert.throws(() => createApproval({ ...input, approved_by: " Justin" }), /owner metadata/);
+  assert.throws(() => createApproval({ ...input, extra: true }), /closed approval inputs/);
+  assert.throws(() => createApproval({ ...input, decision: "denied" }), /exactly approved/);
+});
+test("approval CLI is traversal-safe, noninteractive, refuse-overwrite, and provider-free", async () => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), "full-request-approval-"));
+  const planName = "reviewed.plan.json"; const outputName = "reviewed-approval.approval.json";
+  await writeFile(path.join(directory, planName), currentPlanBytes, { flag: "wx" });
+  const args = ["--plan", planName, "--output", outputName, "--plan-sha256", sha256(currentPlanBytes), "--run-id", currentPlan.run_id, "--approved-by", "Justin", "--approved-at", "2026-08-26T20:00:00.000Z", "--expires-at", "2026-08-26T21:00:00.000Z", "--decision", "approved"];
+  await runApprovalCli(args, { directory });
+  const retained = await readFile(path.join(directory, outputName));
+  assert.equal(retained.equals(canonicalBytes(JSON.parse(retained))), true);
+  await assert.rejects(runApprovalCli(args, { directory }), /EEXIST/);
+  await assert.rejects(readGovernedPlan("../reviewed.plan.json", { directory }), /unsafe/);
+  await assert.rejects(writeApproval(JSON.parse(retained), "../escape.approval.json", { directory }), /unsafe/);
+  await assert.rejects(runApprovalCli([...args, "--extra", "field"], { directory }), /all and only/);
+  const source = await readFile(new URL("./approval-creator.mjs", import.meta.url), "utf8");
+  assert.doesNotMatch(source, /\bfetch\s*\(|AI\.run|start-adapter|worker\.mjs|spawn\s*\(|exec(?:File)?\s*\(/);
+  assert.doesNotMatch(source, /process\.stdin|isatty/);
 });
 test("one-call diagnostic plan is closed, unapproved, and cannot drift the frozen generation request", () => {
   assert.equal(validatePlan(diagnosticPlan), true);
@@ -218,12 +267,13 @@ test("provider failure evidence remains bounded and current runtime exhaustion f
   };
   let providerCalls = 0; const providerStages = [];
   const env = {
-    ...qualificationActivation(plan),
-    AUTHORITY_SHA256: "a".repeat(64), AI_MODEL: plan.pricing.model, AI_MODEL_FALLBACK: "unwired-house-fallback", QUALIFICATION_CONTENT: qualificationContent,
+    ...qualificationActivation(currentPlan),
+    AUTHORITY_SHA256: "a".repeat(64), AI_MODEL: currentPlan.pricing.model, AI_MODEL_FALLBACK: "unwired-house-fallback", QUALIFICATION_CONTENT: qualificationContent,
     AI: { run(_model, providerRequest) { providerCalls += 1; providerStages.push(providerRequest?.response_format?.json_schema?.required?.includes("gates") ? "judge" : "generation"); return new Promise(() => {}); } },
     QUALIFICATION_TIMERS: { setTimeout(callback) { queueMicrotask(callback); return providerCalls; }, clearTimeout() {} },
   };
-  const request = new Request("http://127.0.0.1/run", { method: "POST", headers: { "content-type": "application/json", "x-qualification-authority": env.AUTHORITY_SHA256 }, body: JSON.stringify({ plan, approval }) });
+  const currentApproval = { ...approval, run_id: currentPlan.run_id, plan_sha256: sha256(currentPlanBytes) };
+  const request = new Request("http://127.0.0.1/run", { method: "POST", headers: { "content-type": "application/json", "x-qualification-authority": env.AUTHORITY_SHA256 }, body: JSON.stringify({ plan: currentPlan, approval: currentApproval }) });
   const integrationStarted = Date.now();
   const response = await Promise.race([adapterWorker.fetch(request, env), new Promise((_, reject) => setTimeout(() => reject(new Error("adapter worker hung")), 1000))]);
   const integrated = await response.json();
@@ -231,7 +281,7 @@ test("provider failure evidence remains bounded and current runtime exhaustion f
   assert.deepEqual(integrated.evidence.outcome, { source: "none", code: "pipeline_failed", failure_stage: "strike", error: { class: "Error", message: "inactive domain writer unavailable", http_status: null, code: null } });
   assert.equal(integrated.evidence.run.calls_started, 0); assert.equal(integrated.evidence.run.terminal, true); assert.equal(integrated.evidence.strike, null); assert.deepEqual(integrated.evidence.attempts, []);
   assert.equal(integrated.evidence.commit.confirmed, false); assert.equal(integrated.evidence.render.completed, false); assert.equal(integrated.evidence.full_request_ref, null);
-  assert.ok(Date.now() - integrationStarted < plan.limits.route_ceiling_ms - plan.limits.commit_reserve_ms);
+  assert.ok(Date.now() - integrationStarted < currentPlan.limits.route_ceiling_ms - currentPlan.limits.commit_reserve_ms);
 });
 
 test("plan creator binds current assembly and synthetic accepted refs, rejects drift and collisions, and has no provider path", async () => {
