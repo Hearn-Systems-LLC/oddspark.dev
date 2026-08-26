@@ -1,0 +1,520 @@
+From 9514448a5eecce7460419ea477bbd81ee8abbc4c Mon Sep 17 00:00:00 2001
+From: Justin Hearn <justin@hearn.me>
+Date: Wed, 26 Aug 2026 06:17:33 -0400
+Subject: [PATCH] feat: add atomic activation decision snapshot
+
+---
+ package.json                      |  3 +-
+ runtime-assembly.json             | 10 +++-
+ scripts/release-decision.mjs      | 34 +++++++++++
+ scripts/release-decision.test.mjs | 56 ++++++++++++++++++
+ scripts/writer-preflight.mjs      |  2 +-
+ src/pipeline/assembly.mjs         | 22 ++++---
+ src/pipeline/release-decision.mjs | 98 +++++++++++++++++++++++++++++++
+ src/worker.js                     |  4 +-
+ test.mjs                          | 58 ++++++++++++++----
+ 9 files changed, 263 insertions(+), 24 deletions(-)
+ create mode 100644 scripts/release-decision.mjs
+ create mode 100644 scripts/release-decision.test.mjs
+ create mode 100644 src/pipeline/release-decision.mjs
+
+diff --git a/package.json b/package.json
+index 8999acf..4f43017 100644
+--- a/package.json
++++ b/package.json
+@@ -20,6 +20,7 @@
+     "assembly:verify": "node scripts/assembly-identity.mjs verify",
+     "reader:preflight": "node scripts/reader-preflight.mjs",
+     "writer:preflight": "node scripts/writer-preflight.mjs",
++    "release-decision:test": "node --test scripts/release-decision.test.mjs",
+     "assembly:test": "node --test scripts/assembly-identity.test.mjs",
+     "reader-preflight:test": "node --test scripts/reader-preflight.test.mjs",
+     "semantic:voice:test": "node --test scripts/semantic-corpus.test.mjs",
+@@ -35,7 +36,7 @@
+     "house-briefs:verify": "node scripts/house-briefs.mjs",
+     "composite-gate:test": "node --test scripts/composite-gate.test.mjs",
+     "strike-orchestrator:test": "node --test scripts/strike-orchestrator.test.mjs",
+-    "check": "npm run test && npm run test:baseline && npm run spike:judge:self-test && npm run spike:generation:self-test && npm run semantic:voice:test && npm run local-priors:test && npm run local-evidence:test && npm run generation:test && npm run brief-contracts:test && npm run brief-receipts:test && npm run brief-rendering:test && npm run house-briefs:test && npm run composite-gate:test && npm run strike-orchestrator:test && npm run check:types && npm run check:config && npm run baseline:verify && npm run assembly:test && npm run reader-preflight:test && npm run assembly:verify",
++    "check": "npm run release-decision:test && npm run test && npm run test:baseline && npm run spike:judge:self-test && npm run spike:generation:self-test && npm run semantic:voice:test && npm run local-priors:test && npm run local-evidence:test && npm run generation:test && npm run brief-contracts:test && npm run brief-receipts:test && npm run brief-rendering:test && npm run house-briefs:test && npm run composite-gate:test && npm run strike-orchestrator:test && npm run check:types && npm run check:config && npm run baseline:verify && npm run assembly:test && npm run reader-preflight:test && npm run assembly:verify",
+     "deploy": "wrangler deploy",
+     "spike:judge:self-test": "node spikes/judge-fidelity/test.mjs",
+     "spike:judge:verify": "node spikes/judge-fidelity/verify-v2.mjs",
+diff --git a/runtime-assembly.json b/runtime-assembly.json
+index 399342f..ee14c4e 100644
+--- a/runtime-assembly.json
++++ b/runtime-assembly.json
+@@ -2,7 +2,7 @@
+   "schema_version": 1,
+   "entrypoint": {
+     "path": "src/worker.js",
+-    "sha256": "ae6533c900692d83b54dc00ae3faecf99f76e0a596f459197d71e58494b0715d"
++    "sha256": "f47cc33a28b697002ea6f8ba6a018624cb5dd1b733975fe93c4ecc05ab42cbf3"
+   },
+   "modules": [
+     {
+@@ -11,7 +11,7 @@
+     },
+     {
+       "path": "src/pipeline/assembly.mjs",
+-      "sha256": "c8db80bfe3c2e2e46f93b94804830d8c8e861fc430e65023d9ba5b6b82786445"
++      "sha256": "25aa2abf4b2951e15c9bdb1f38a3f25df44c7e9913d1ef7ee7807d9b9018fa52"
+     },
+     {
+       "path": "src/pipeline/contracts.mjs",
+@@ -61,6 +61,10 @@
+       "path": "src/pipeline/receipts.mjs",
+       "sha256": "d5ad8798e6af8d582f696d8c56a8fb741254364bf984fce50702c1af1ca94ad8"
+     },
++    {
++      "path": "src/pipeline/release-decision.mjs",
++      "sha256": "8e7f95da40eebb04b2983ff80699fd5d90bd0fc5a6b00b282e72a0b84e749576"
++    },
+     {
+       "path": "src/pipeline/rendering.mjs",
+       "sha256": "0e456bc42782f79359cd8880e3bdb5b67bd246129ecef592b5adc62fc8c697b0"
+@@ -74,5 +78,5 @@
+       "sha256": "a11d0b9313de346d9bff8edc11de1557dc767f24e49992c1ea252ee5b64bc7db"
+     }
+   ],
+-  "assembly_identity_sha256": "7971844c5779fe1a435970eef522cd2c23f9b7c121708f6675299e58aff96ed6"
++  "assembly_identity_sha256": "f4825f0c5a1d587501d04dbf979467395ec73984af739ff7a938a3a917513c0c"
+ }
+diff --git a/scripts/release-decision.mjs b/scripts/release-decision.mjs
+new file mode 100644
+index 0000000..748264e
+--- /dev/null
++++ b/scripts/release-decision.mjs
+@@ -0,0 +1,34 @@
++#!/usr/bin/env node
++import { readFile } from "node:fs/promises";
++import { fileURLToPath } from "node:url";
++import path from "node:path";
++import { renderReleaseDecision } from "../src/pipeline/release-decision.mjs";
++
++export async function renderInput(text) {
++  let value;
++  try { value = JSON.parse(text); } catch { throw new TypeError("activation_snapshot_malformed"); }
++  return `${JSON.stringify(renderReleaseDecision(value))}\n`;
++}
++
++async function main(argv = process.argv.slice(2)) {
++  if (argv.length > 1) throw new TypeError("usage: release-decision [snapshot.json]");
++  let text;
++  if (argv.length === 1) text = await readFile(argv[0], "utf8");
++  else {
++    text = "";
++    process.stdin.setEncoding("utf8");
++    for await (const chunk of process.stdin) text += chunk;
++  }
++  const output = await renderInput(text);
++  process.stdout.write(output);
++  return JSON.parse(output).ready ? 0 : 2;
++}
++
++if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) {
++  main().then((code) => { process.exitCode = code; }).catch((error) => {
++    const message = error instanceof Error && /^activation_snapshot_[a-z_]+$/.test(error.message)
++      ? error.message : "activation_snapshot_malformed";
++    process.stderr.write(`${message}\n`);
++    process.exitCode = 1;
++  });
++}
+diff --git a/scripts/release-decision.test.mjs b/scripts/release-decision.test.mjs
+new file mode 100644
+index 0000000..f9a43ee
+--- /dev/null
++++ b/scripts/release-decision.test.mjs
+@@ -0,0 +1,56 @@
++import assert from "node:assert/strict";
++import { spawnSync } from "node:child_process";
++import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
++import { tmpdir } from "node:os";
++import path from "node:path";
++import test from "node:test";
++import { fileURLToPath } from "node:url";
++import { deriveActivationRef } from "../src/pipeline/activation.mjs";
++import { SNAPSHOT_REASON_CODES, applicableActivationGates, evaluateActivationSnapshot, renderReleaseDecision } from "../src/pipeline/release-decision.mjs";
++
++const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
++const manifest = () => ({ version: 2, deployed_source_identity: "deploy-123", generation_ref: "a".repeat(64), judge_ref: "b".repeat(64), local: { enabled: true, full_request_ref: "c".repeat(64) }, domain: { enabled: false, evidence_ref: null, full_request_ref: null }, house_catalog_ref: "d".repeat(64), receiver_ref: null, receipt_claim_ref: null, outcome: "active" });
++const snapshot = (m = manifest()) => ({ version: 1, manifest: m, facts: applicableActivationGates(m).map(({ gate_id, expected_ref }) => ({ gate_id, expected_ref, current_ref: expected_ref, verified: true, approved: true })) });
++
++test("ready snapshot derives the sole manifest ref and canonical frozen view", () => {
++  const input = snapshot(); const before = structuredClone(input); const decision = renderReleaseDecision(input);
++  assert.deepEqual(input, before); assert.equal(decision.activation_ref, deriveActivationRef(input.manifest));
++  assert.deepEqual(decision.gates.map((row) => row.gate_id), ["deployed_source", "generation", "judge", "house_catalog", "local_full_request"]);
++  assert.ok(decision.ready && Object.isFrozen(decision) && Object.isFrozen(decision.gates));
++});
++
++test("status precedence is stale, blocked, unapproved, then pass", () => {
++  for (const [status, mutate] of [["stale", (f) => { f.current_ref = "f".repeat(64); }], ["blocked", (f) => { f.verified = false; }], ["unapproved", (f) => { f.approved = false; }]]) {
++    const input = snapshot(); mutate(input.facts[1]); const result = evaluateActivationSnapshot(input);
++    assert.equal(result.ready, false); assert.equal(result.decision.gates[1].status, status); assert.equal(result.reason, SNAPSHOT_REASON_CODES[status.toUpperCase()]);
++  }
++});
++
++test("closed boundary rejects omissions, extras, duplicates, parallel refs, and inconsistent identities", () => {
++  const mutations = [(s) => { s.extra = true; }, (s) => { s.activation_ref = "e".repeat(64); }, (s) => { s.facts.pop(); }, (s) => { s.facts.push(structuredClone(s.facts[0])); }, (s) => { s.facts[1].gate_id = s.facts[0].gate_id; }, (s) => { s.manifest.semantic_ref = "e".repeat(64); }, (s) => { s.facts[1].expected_ref = "e".repeat(64); }];
++  for (const mutate of mutations) { const input = snapshot(); mutate(input); assert.equal(evaluateActivationSnapshot(input).valid, false); }
++});
++
++test("prototype, getter, and cycle inputs reject without invoking code", () => {
++  let invoked = false; const getter = snapshot(); Object.defineProperty(getter, "extra", { enumerable: true, get() { invoked = true; return 1; } });
++  assert.equal(evaluateActivationSnapshot(getter).valid, false); assert.equal(invoked, false);
++  const cyclic = snapshot(); cyclic.loop = cyclic; assert.equal(evaluateActivationSnapshot(cyclic).valid, false);
++  const polluted = snapshot(); Object.setPrototypeOf(polluted.facts[0], { surprise: true }); assert.equal(evaluateActivationSnapshot(polluted).valid, false);
++  const hidden = snapshot(); Object.defineProperty(hidden, "hidden", { value: true }); assert.equal(evaluateActivationSnapshot(hidden).valid, false);
++  const symbol = snapshot(); symbol[Symbol("hidden")] = true; assert.equal(evaluateActivationSnapshot(symbol).valid, false);
++});
++
++test("domain and nullable publication gates are derived exactly from manifest applicability", () => {
++  const domain = manifest(); domain.local = { enabled: false, full_request_ref: null }; domain.domain = { enabled: true, evidence_ref: "e".repeat(64), full_request_ref: "f".repeat(64) }; domain.receiver_ref = "1".repeat(64); domain.receipt_claim_ref = "2".repeat(64);
++  assert.deepEqual(renderReleaseDecision(snapshot(domain)).gates.map(({ gate_id }) => gate_id), ["deployed_source", "generation", "judge", "house_catalog", "domain_evidence", "domain_full_request", "receiver", "receipt_claim"]);
++  const local = renderReleaseDecision(snapshot()); assert.equal(local.ready, true); assert.equal(local.gates.some(({ gate_id }) => gate_id === "receiver" || gate_id === "receipt_claim"), false);
++});
++
++test("CLI is import-safe, deterministic, read-only, and exits nonzero when not ready", () => {
++  const dir = mkdtempSync(path.join(tmpdir(), "oddspark-decision-")); const file = path.join(dir, "snapshot.json"); const input = snapshot(); writeFileSync(file, JSON.stringify(input));
++  const run = () => spawnSync(process.execPath, ["scripts/release-decision.mjs", file], { cwd: ROOT, encoding: "utf8" });
++  const first = run(); const second = run(); assert.equal(first.status, 0); assert.equal(first.stdout, second.stdout); assert.equal(readFileSync(file, "utf8"), JSON.stringify(input));
++  input.facts[1].approved = false; const blocked = spawnSync(process.execPath, ["scripts/release-decision.mjs"], { cwd: ROOT, input: JSON.stringify(input), encoding: "utf8" }); assert.equal(blocked.status, 2); assert.equal(JSON.parse(blocked.stdout).ready, false);
++  const imported = spawnSync(process.execPath, ["--input-type=module", "-e", "import './scripts/release-decision.mjs'"], { cwd: ROOT, encoding: "utf8" }); assert.equal(imported.status, 0); assert.equal(imported.stdout, ""); assert.equal(imported.stderr, "");
++  const missing = spawnSync(process.execPath, ["scripts/release-decision.mjs", path.join(dir, "secret-name.json")], { cwd: ROOT, encoding: "utf8" }); assert.equal(missing.status, 1); assert.equal(missing.stderr, "activation_snapshot_malformed\n"); assert.equal(missing.stderr.includes("secret-name"), false);
++});
+diff --git a/scripts/writer-preflight.mjs b/scripts/writer-preflight.mjs
+index ef70b9a..92a57a8 100644
+--- a/scripts/writer-preflight.mjs
++++ b/scripts/writer-preflight.mjs
+@@ -387,7 +387,7 @@ export function main() {
+       problems.push(...validatePipelineJudge(pipeline, fakeEnv));
+     }
+     for (const [name, manifest] of Object.entries({ absent: undefined, malformed: "{not json" })) {
+-      const env = manifest === undefined ? { ...fakeEnv } : { ...fakeEnv, ACTIVATION_MANIFEST: manifest };
++      const env = manifest === undefined ? { ...fakeEnv } : { ...fakeEnv, ACTIVATION_SNAPSHOT: manifest };
+       const writer = createInactiveDomainWriter({ ...env, ...(pipeline ?? {}) }, { coordPost });
+       if (writer !== null) problems.push(`manifest ${name}: the assembled writer must be null`);
+     }
+diff --git a/src/pipeline/assembly.mjs b/src/pipeline/assembly.mjs
+index 23a94a4..062b7a2 100644
+--- a/src/pipeline/assembly.mjs
++++ b/src/pipeline/assembly.mjs
+@@ -34,7 +34,8 @@ import { generateCandidate } from "./generation.mjs";
+ import { runCompositeGate } from "./gate.mjs";
+ import { validateCorpus } from "./corpus.mjs";
+ import { STRIKE_CODES, runStrikeOrchestrator } from "./strike.mjs";
+-import { evaluateProductionActivation } from "./activation.mjs";
++import { evaluateActivationSnapshot } from "./release-decision.mjs";
++import { SNAPSHOT_REASON_CODES } from "./release-decision.mjs";
+ 
+ const WRITER_ERROR = "inactive domain writer unavailable";
+ export const DEFAULT_STRIKE_DEADLINE_BUDGET_MS = 15000;
+@@ -45,6 +46,13 @@ const MINIMUM_CALL_TIME_MS = 1000;
+ // truncated by a fixed short cap.
+ const CLAIM_WAIT_BUDGET_MS = 30000;
+ 
++function evaluateRuntimeSnapshot(env) {
++  if (env !== null && typeof env === "object" && Object.hasOwn(env, "ACTIVATION_MANIFEST")) {
++    return deepFreeze({ valid: false, ready: false, reason: SNAPSHOT_REASON_CODES.NOT_CLOSED, decision: null, manifest: null });
++  }
++  return evaluateActivationSnapshot(env?.ACTIVATION_SNAPSHOT);
++}
++
+ const DISPATCH_KEYS = [
+   "contract", "request_scope", "effective_mode", "claim_key", "notice_identity",
+   "notice", "scan_allowed", "evidence_provider_allowed", "permalink_allowed",
+@@ -81,8 +89,8 @@ function randomOwner() {
+ // domain-disabled) or that meets a missing/unverified pipeline port yields a
+ // fail-closed port instead — never a silent legacy fallthrough.
+ export function createInactiveDomainWriter(env, deps) {
+-  const activation = evaluateProductionActivation(env?.ACTIVATION_MANIFEST);
+-  if (!activation.enabled) return null;
++  const activation = evaluateRuntimeSnapshot(env);
++  if (!activation.ready) return null;
+ 
+   const failClosed = deepFreeze({
+     write: async () => { throw new Error(WRITER_ERROR); },
+@@ -210,8 +218,8 @@ export function createInactiveDomainWriter(env, deps) {
+     // Defense in depth: the writer re-evaluates the activation port on every
+     // dispatch and fails closed; a lapsed manifest can never fall through to
+     // any generator.
+-    const current = evaluateProductionActivation(env.ACTIVATION_MANIFEST);
+-    if (!current.enabled || current.manifest.local.enabled !== true || current.manifest.domain.enabled !== false) {
++    const current = evaluateRuntimeSnapshot(env);
++    if (!current.ready || current.manifest.local.enabled !== true || current.manifest.domain.enabled !== false) {
+       throw new Error(WRITER_ERROR);
+     }
+ 
+@@ -349,6 +357,6 @@ export function createInactiveDomainWriter(env, deps) {
+ 
+ // Redacted activation posture for observability: the stable reason code only.
+ export function activationPosture(env) {
+-  const evaluation = evaluateProductionActivation(env?.ACTIVATION_MANIFEST);
+-  return deepFreeze({ enabled: evaluation.enabled, reason: evaluation.reason });
++  const evaluation = evaluateRuntimeSnapshot(env);
++  return deepFreeze({ enabled: evaluation.ready, reason: evaluation.reason });
+ }
+diff --git a/src/pipeline/release-decision.mjs b/src/pipeline/release-decision.mjs
+new file mode 100644
+index 0000000..4a95ddc
+--- /dev/null
++++ b/src/pipeline/release-decision.mjs
+@@ -0,0 +1,98 @@
++import { deepFreeze } from "./contracts.mjs";
++import { deriveActivationRef, validateProductionActivationManifest } from "./activation.mjs";
++
++export const ACTIVATION_SNAPSHOT_VERSION = 1;
++export const SNAPSHOT_REASON_CODES = deepFreeze({
++  MISSING: "activation_snapshot_missing",
++  MALFORMED: "activation_snapshot_malformed",
++  NOT_CLOSED: "activation_snapshot_not_closed",
++  MANIFEST: "activation_snapshot_manifest_invalid",
++  EVIDENCE: "activation_snapshot_evidence_invalid",
++  STALE: "activation_snapshot_stale",
++  BLOCKED: "activation_snapshot_blocked",
++  UNAPPROVED: "activation_snapshot_unapproved",
++});
++
++const SHA256 = /^[a-f0-9]{64}$/;
++const SNAPSHOT_KEYS = ["version", "manifest", "facts"];
++const FACT_KEYS = ["gate_id", "expected_ref", "current_ref", "verified", "approved"];
++const closed = (value, keys) => {
++  if (value === null || typeof value !== "object" || Array.isArray(value)) return false;
++  const ownKeys = Reflect.ownKeys(value);
++  return ownKeys.length === keys.length && ownKeys.every((key) => typeof key === "string")
++    && keys.every((key) => Object.hasOwn(value, key));
++};
++
++const invalid = (reason) => deepFreeze({ valid: false, ready: false, reason, decision: null, manifest: null });
++
++function inertTree(value, seen = new Set()) {
++  if (value === null || typeof value !== "object") return true;
++  if (seen.has(value)) return false;
++  seen.add(value);
++  const prototype = Object.getPrototypeOf(value);
++  if (prototype !== Object.prototype && prototype !== null && prototype !== Array.prototype) return false;
++  const descriptors = Object.getOwnPropertyDescriptors(value);
++  for (const key of Reflect.ownKeys(descriptors)) {
++    const descriptor = descriptors[key];
++    if (descriptor.get || descriptor.set || !("value" in descriptor) || !inertTree(descriptor.value, seen)) return false;
++  }
++  seen.delete(value);
++  return true;
++}
++
++export function applicableActivationGates(manifest) {
++  const gates = [
++    { gate_id: "deployed_source", expected_ref: manifest.deployed_source_identity, ref_kind: "identity" },
++    { gate_id: "generation", expected_ref: manifest.generation_ref, ref_kind: "hash" },
++    { gate_id: "judge", expected_ref: manifest.judge_ref, ref_kind: "hash" },
++    { gate_id: "house_catalog", expected_ref: manifest.house_catalog_ref, ref_kind: "hash" },
++  ];
++  if (manifest.local.enabled) gates.push({ gate_id: "local_full_request", expected_ref: manifest.local.full_request_ref, ref_kind: "hash" });
++  if (manifest.domain.enabled) {
++    gates.push({ gate_id: "domain_evidence", expected_ref: manifest.domain.evidence_ref, ref_kind: "hash" });
++    gates.push({ gate_id: "domain_full_request", expected_ref: manifest.domain.full_request_ref, ref_kind: "hash" });
++  }
++  if (manifest.receiver_ref !== null) gates.push({ gate_id: "receiver", expected_ref: manifest.receiver_ref, ref_kind: "hash" });
++  if (manifest.receipt_claim_ref !== null) gates.push({ gate_id: "receipt_claim", expected_ref: manifest.receipt_claim_ref, ref_kind: "hash" });
++  return gates;
++}
++
++export function evaluateActivationSnapshot(value) {
++  if (value === undefined || value === null) return invalid(SNAPSHOT_REASON_CODES.MISSING);
++  let snapshot = value;
++  if (typeof snapshot === "string") {
++    try { snapshot = JSON.parse(snapshot); } catch { return invalid(SNAPSHOT_REASON_CODES.MALFORMED); }
++  }
++  if (!inertTree(snapshot) || !closed(snapshot, SNAPSHOT_KEYS) || snapshot.version !== ACTIVATION_SNAPSHOT_VERSION || !Array.isArray(snapshot.facts)) {
++    return invalid(SNAPSHOT_REASON_CODES.NOT_CLOSED);
++  }
++  const manifestValidation = validateProductionActivationManifest(snapshot.manifest);
++  if (!manifestValidation.valid) return invalid(SNAPSHOT_REASON_CODES.MANIFEST);
++  const gates = applicableActivationGates(snapshot.manifest);
++  if (snapshot.facts.length !== gates.length) return invalid(SNAPSHOT_REASON_CODES.EVIDENCE);
++  const rows = [];
++  for (let index = 0; index < gates.length; index++) {
++    const fact = snapshot.facts[index];
++    const { gate_id: gateId, expected_ref: expectedRef, ref_kind: refKind } = gates[index];
++    if (!closed(fact, FACT_KEYS) || fact.gate_id !== gateId || fact.expected_ref !== expectedRef
++        || typeof fact.current_ref !== "string" || (refKind === "hash" ? !SHA256.test(fact.current_ref) : fact.current_ref.trim() === "")
++        || typeof fact.verified !== "boolean" || typeof fact.approved !== "boolean") {
++      return invalid(SNAPSHOT_REASON_CODES.EVIDENCE);
++    }
++    const status = fact.current_ref !== expectedRef ? "stale" : !fact.verified ? "blocked" : !fact.approved ? "unapproved" : "pass";
++    rows.push({ gate_id: gateId, status });
++  }
++  const activationRef = deriveActivationRef(snapshot.manifest);
++  const ready = rows.every(({ status }) => status === "pass");
++  const firstFailure = rows.find(({ status }) => status !== "pass")?.status;
++  const reason = firstFailure ? SNAPSHOT_REASON_CODES[firstFailure.toUpperCase()] : null;
++  const manifest = structuredClone(snapshot.manifest);
++  const decision = { version: 1, activation_ref: activationRef, ready, gates: rows };
++  return deepFreeze({ valid: true, ready, reason, decision, manifest });
++}
++
++export function renderReleaseDecision(value) {
++  const result = evaluateActivationSnapshot(value);
++  if (!result.valid) throw new TypeError(result.reason);
++  return result.decision;
++}
+diff --git a/src/worker.js b/src/worker.js
+index 3dccd66..276be5a 100644
+--- a/src/worker.js
++++ b/src/worker.js
+@@ -3136,10 +3136,10 @@ export default {
+         // The assembled writer now sees the production pipeline environment:
+         // bundled, hash/approval-verified content plus AI-bound provider ports
+         // (null-safe — a verification failure contributes nothing). The
+-        // activation manifest stays absent, so the writer remains null and
++        // activation snapshot stays absent, so the writer remains null and
+         // the legacy fallthrough below is byte-identical to the 1.24 artifact.
+         // `env` itself is never mutated. Any fault reading the environment or
+-        // constructing the writer (e.g. a throwing ACTIVATION_MANIFEST
++        // constructing the writer (e.g. a throwing ACTIVATION_SNAPSHOT
+         // binding getter) fails closed to a null writer — the request is
+         // unaffected and keeps the legacy fallthrough.
+         let assembledWriter = null;
+diff --git a/test.mjs b/test.mjs
+index 6bb91c8..c71fb3f 100644
+--- a/test.mjs
++++ b/test.mjs
+@@ -18,6 +18,7 @@ import {
+ } from "./scripts/house-briefs.mjs";
+ import { deriveIdentity as corpusIdentity, validateCorpus } from "./scripts/semantic-corpus.mjs";
+ import { ACTIVATION_REASON_CODES, deriveActivationRef, evaluateProductionActivation } from "./src/pipeline/activation.mjs";
++import { SNAPSHOT_REASON_CODES, applicableActivationGates } from "./src/pipeline/release-decision.mjs";
+ import { canonicalJson, sha256Hex } from "./src/pipeline/contracts.mjs";
+ import { activationPosture, createInactiveDomainWriter, DEFAULT_STRIKE_DEADLINE_BUDGET_MS, MAX_STRIKE_DEADLINE_BUDGET_MS } from "./src/pipeline/assembly.mjs";
+ import {
+@@ -308,9 +309,15 @@ function createEnvironment(options = {}) {
+   // later environment through the shared fixture cache.
+   if (options.pipeline) {
+     const fixture = pipelineFixture();
+-    env.ACTIVATION_MANIFEST = "manifest" in options.pipeline
+-      ? (typeof options.pipeline.manifest === "string" ? options.pipeline.manifest : structuredClone(options.pipeline.manifest))
+-      : structuredClone(fixture.manifest);
++    if ("snapshot" in options.pipeline) env.ACTIVATION_SNAPSHOT = structuredClone(options.pipeline.snapshot);
++    else if (typeof options.pipeline.manifest === "string") {
++      try { env.ACTIVATION_SNAPSHOT = JSON.stringify(fixture.snapshotFor(JSON.parse(options.pipeline.manifest))); }
++      catch { env.ACTIVATION_SNAPSHOT = options.pipeline.manifest; }
++    }
++    else {
++      const manifest = "manifest" in options.pipeline ? structuredClone(options.pipeline.manifest) : structuredClone(fixture.manifest);
++      env.ACTIVATION_SNAPSHOT = fixture.snapshotFor(manifest);
++    }
+     env.PIPELINE_PRIORS = structuredClone(fixture.priors);
+     env.PIPELINE_HOUSE = structuredClone(fixture.house);
+     env.PIPELINE_CORPUS = structuredClone(fixture.corpus);
+@@ -387,6 +394,15 @@ function pipelineFixture() {
+     receipt_claim_ref: null,
+     outcome: "active",
+   };
++  const snapshotFor = (candidateManifest) => ({
++    version: 1,
++    manifest: candidateManifest,
++    facts: candidateManifest?.version === 2
++      ? applicableActivationGates(candidateManifest).map(({ gate_id, expected_ref }) => ({
++          gate_id, expected_ref, current_ref: expected_ref, verified: true, approved: true,
++        }))
++      : [],
++  });
+   const pipelineCandidate = (suffix = "") => ({
+     version: 1, mode: "local", title: `A calmer inquiry handoff${suffix}`,
+     plan: "Route repeated questions into one reviewed response.",
+@@ -409,6 +425,7 @@ function pipelineFixture() {
+   });
+   pipelineFixtureCache = {
+     manifest,
++    snapshotFor,
+     priors: { priors: priorsCatalog, approval: priorsApproval },
+     house: { catalog: houseCatalog, approval: houseApproval, authorities: houseAuthorities },
+     corpus,
+@@ -2895,10 +2912,10 @@ await test("without a valid manifest the assembled writer stays disabled and the
+     addSimpleSite(network);
+     const options = manifest === undefined ? {} : { pipeline: { manifest } };
+     const h = createEnvironment(options);
+-    if (name === "absent") assert.equal(activationPosture(h.env).reason, ACTIVATION_REASON_CODES.MISSING);
++    if (name === "absent") assert.equal(activationPosture(h.env).reason, SNAPSHOT_REASON_CODES.MISSING);
+     if (name === "invalid") {
+       assert.equal(activationPosture(h.env).enabled, false);
+-      assert.equal(activationPosture(h.env).reason, ACTIVATION_REASON_CODES.NOT_CLOSED);
++      assert.equal(activationPosture(h.env).reason, SNAPSHOT_REASON_CODES.MANIFEST);
+     }
+     // Absent or invalid manifests leave the seam port-absent: the route keeps
+     // its existing fallthrough to the quarantined legacy path, which scans.
+@@ -3239,7 +3256,7 @@ await test("writer failure terminals: negotiated 502 carries zero metric and the
+   // The 502 terminal carries exactly one redacted posture line and one
+   // redacted failure-class line — no internals, no stray emissions.
+   assert.equal(capture.rawCount, 2);
+-  assert.deepEqual(postureLines(capture), [{ event: "activation_posture", enabled: false, reason: ACTIVATION_REASON_CODES.MISSING }]);
++  assert.deepEqual(postureLines(capture), [{ event: "activation_posture", enabled: false, reason: SNAPSHOT_REASON_CODES.MISSING }]);
+   assert.deepEqual(failureLines(capture), [{ event: "inactive_domain_writer_failure", class: "port_error" }]);
+   assert.equal(JSON.stringify(capture.lines).includes("internal detail"), false);
+ });
+@@ -3255,7 +3272,7 @@ await test("activation posture is logged once per seam resolution, redacted to t
+     assert.equal(result.response.status, 200);
+   });
+   assert.equal(absentCapture.rawCount, 1);
+-  assert.deepEqual(postureLines(absentCapture), [{ event: "activation_posture", enabled: false, reason: ACTIVATION_REASON_CODES.MISSING }]);
++  assert.deepEqual(postureLines(absentCapture), [{ event: "activation_posture", enabled: false, reason: SNAPSHOT_REASON_CODES.MISSING }]);
+ 
+   // Local (no-website) strikes never reach the seam: no posture line.
+   const local = createEnvironment();
+@@ -3280,7 +3297,7 @@ await test("activation posture is logged once per seam resolution, redacted to t
+     assert.equal(result.response.status, 200);
+   });
+   assert.equal(malformedCapture.rawCount, 1);
+-  assert.deepEqual(postureLines(malformedCapture), [{ event: "activation_posture", enabled: false, reason: ACTIVATION_REASON_CODES.VERSION }]);
++  assert.deepEqual(postureLines(malformedCapture), [{ event: "activation_posture", enabled: false, reason: SNAPSHOT_REASON_CODES.MANIFEST }]);
+   const serialized = JSON.stringify(malformedCapture.lines);
+   assert.equal(serialized.includes(secretRef), false);
+   assert.equal(serialized.includes("full_request_ref"), false);
+@@ -3297,6 +3314,27 @@ await test("activation posture is logged once per seam resolution, redacted to t
+   assert.equal(JSON.stringify(activeCapture.lines).includes("a".repeat(64)), false);
+ });
+ 
++await test("stale, partial, and parallel snapshots cannot invoke the assembled pipeline at the worker boundary", async () => {
++  const fixture = pipelineFixture();
++  const cases = {
++    stale: (() => { const value = fixture.snapshotFor(structuredClone(fixture.manifest)); value.facts[1].current_ref = "f".repeat(64); return value; })(),
++    partial: (() => { const value = fixture.snapshotFor(structuredClone(fixture.manifest)); value.facts.pop(); return value; })(),
++    parallel: (() => { const value = fixture.snapshotFor(structuredClone(fixture.manifest)); value.activation_ref = "f".repeat(64); return value; })(),
++  };
++  for (const [name, snapshot] of Object.entries(cases)) {
++    const network = createNetwork(); addSimpleSite(network);
++    let generated = 0; let judged = 0;
++    const h = createEnvironment({ pipeline: { snapshot, generate: async () => { generated++; throw new Error("must not generate"); }, judge: async () => { judged++; throw new Error("must not judge"); } } });
++    let assembledCoordinatorCalls = 0;
++    assert.equal(createInactiveDomainWriter(h.env, { coordPost: async () => { assembledCoordinatorCalls++; throw new Error("must not claim or read"); } }), null, name);
++    assert.equal(assembledCoordinatorCalls, 0, name);
++    const capture = await captureLogLines(async () => { const result = await strike(h.env, "acmebakery.com"); assert.equal(result.response.status, 200, name); });
++    assert.equal(generated, 0, name); assert.equal(judged, 0, name);
++    const expectedReason = name === "stale" ? SNAPSHOT_REASON_CODES.STALE : name === "partial" ? SNAPSHOT_REASON_CODES.EVIDENCE : SNAPSHOT_REASON_CODES.NOT_CLOSED;
++    assert.deepEqual(postureLines(capture), [{ event: "activation_posture", enabled: false, reason: expectedReason }]);
++  }
++});
++
+ await test("a posture/logging fault can never fail the request", async () => {
+   const network = createNetwork();
+   addSimpleSite(network);
+@@ -3304,7 +3342,7 @@ await test("a posture/logging fault can never fail the request", async () => {
+   // The first read of ACTIVATION_MANIFEST (by the posture log) throws; the
+   // seam must swallow it and continue with the manifest absent.
+   let thrown = false;
+-  Object.defineProperty(h.env, "ACTIVATION_MANIFEST", {
++  Object.defineProperty(h.env, "ACTIVATION_SNAPSHOT", {
+     enumerable: true,
+     configurable: true,
+     get() {
+@@ -3329,7 +3367,7 @@ await test("a posture/logging fault can never fail the request", async () => {
+   const stubbornNetwork = createNetwork();
+   addSimpleSite(stubbornNetwork);
+   const stubborn = createEnvironment();
+-  Object.defineProperty(stubborn.env, "ACTIVATION_MANIFEST", {
++  Object.defineProperty(stubborn.env, "ACTIVATION_SNAPSHOT", {
+     enumerable: true,
+     configurable: true,
+     get() { throw new Error("manifest read always explodes"); },
+-- 
+2.55.0
+

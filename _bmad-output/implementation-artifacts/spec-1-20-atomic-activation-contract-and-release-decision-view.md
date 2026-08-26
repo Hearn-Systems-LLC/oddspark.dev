@@ -2,7 +2,7 @@
 title: 'Story 1.20: Atomic Activation Contract and Release Decision View'
 type: 'feature'
 created: '2026-08-26'
-status: 'in-progress'
+status: 'blocked'
 baseline_revision: '3e75980c504d29eb71e3a70768aaca59dbe70681'
 review_loop_iteration: 0
 followup_review_recommended: false
@@ -72,6 +72,17 @@ deferred: []
 
 ## Review Triage Log
 
+### 2026-08-26 — Review pass
+- intent_gap: 1: (high 1, medium 0, low 0)
+- bad_spec: 0
+- patch: 5: (high 1, medium 4, low 0)
+- defer: 0
+- reject: 15: (high 0, medium 8, low 7)
+- addressed_findings:
+  - none
+- attempted_change: `story-1-20-attempt-9514448.patch`
+- unresolved_question: Whether the activation snapshot is trusted evidence transport produced by an already-governed release process, or whether Story 1.20's validator/view must itself load and independently recompute current identities, verification outcomes, and approval state from retained evidence artifacts. The former permits caller-authored matching refs/booleans at the validation surface; the latter requires new concrete verifier integration and an exact artifact-input contract.
+
 ## Design Notes
 
 The snapshot is evidence transport, not authority. Its canonical gate order is `deployed_source`, `generation`, `judge`, `house_catalog`, then enabled-mode gates (`local_full_request`; `domain_evidence`, `domain_full_request`), followed by `receiver` and `receipt_claim` only when their nullable refs are present. Each closed fact binds its gate to the manifest's expected identity, an independently recomputed current identity, and verifier/approval outcome; identity mismatch is `stale`, a current negative verification is `blocked`, and a current approval absence is `unapproved`. Only exact current approved facts become `pass`. Null receiver/claim refs remain the current non-activation posture.
@@ -86,3 +97,17 @@ Planning baseline: `3e75980c504d29eb71e3a70768aaca59dbe70681` on `develop`.
 - `npm run assembly:freeze && npm run assembly:verify` -- expected: intentional runtime closure is recorded and verifies.
 - `npm run writer:preflight` -- expected: inactive deployment safety gate passes without remote mutation.
 - `npm run check` -- expected: full repository gate passes.
+
+## Auto Run Result
+
+Status: blocked
+
+Blocking condition: intent gap
+
+The first implementation produced a closed atomic snapshot, deterministic decision view, redacted fail-closed runtime posture, CLI, and executable-boundary tests. Independent review showed that its facts were self-attested by the same snapshot: matching `expected_ref`/`current_ref` values and `verified`/`approved` booleans could report ready without consuming existing verifier outputs or binding the qualified refs to the deployed source, runtime provider ports, house catalog, and full-request evidence.
+
+The implementation commit `9514448` was reverted by `d6e2e62`; its recoverable patch is `story-1-20-attempt-9514448.patch`. KEEP on re-derivation: closed manifest/snapshot structure, deterministic canonical gate order, sole v2 manifest-derived `activation_ref`, stable redacted reason codes, pure/no-persistence decision rendering, rejection of parallel legacy activation authority, inactive legacy compatibility, and outer worker tests proving zero assembled provider/coordinator activity.
+
+Review findings breakdown: one high intent gap; five lower patch findings held moot pending resolution (including the missing `ACTIVATION_SNAPSHOT` preflight prohibition, duplicate-key/array-closure checks, bounded parsing/depth, and blocked/unapproved outer-boundary coverage); fifteen findings rejected as duplicates, unsupported scope expansion, or consequences of the central authority question.
+
+Verification before review: `npm run release-decision:test` 6/6 passed; `npm run test` 104/104 passed; `npm run assembly:verify` passed at `f4825f0c5a1d587501d04dbf979467395ec73984af739ff7a938a3a917513c0c`; `npm run writer:preflight` passed every non-Wrangler check but remained blocked because the isolated worktree lacked the pinned Wrangler executable. No provider call, dependency install, deployment, activation, or remote mutation occurred.
