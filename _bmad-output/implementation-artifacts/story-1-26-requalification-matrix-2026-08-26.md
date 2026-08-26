@@ -1,11 +1,11 @@
-# Story 1.26 requalification matrix — UNAPPROVED
+# Story 1.26 requalification matrix — STAGE 2 r3 ACCOUNTING NO-GO
 
 Date: 2026-08-26  
 Repository tooling baseline: `9857bd4cdc80802ce78858889cb9a0aa10d0f07a` on `develop`
-Overall status: **BLOCKED / UNAPPROVED**  
-Provider calls: **0**  
-Remote mutations: **0**  
-Allowance consumed: **false**
+Overall status: **BLOCKED / STAGE 2 r3 ACCOUNTING NO-GO**
+Provider calls: **42 historical + 42 Stage 2 r3**
+Remote mutations: **one authorized Stage 2 r3 Workers AI qualification**
+Allowance consumed: **true for Stage 2 r3**
 
 ## 2026-08-26 Stage 2 historical-spend recovery development
 
@@ -66,7 +66,7 @@ The final statement must replace every placeholder with values copied from the v
 
 ## Stage 2 — judge qualification
 
-Status: **BLOCKED / UNAPPROVED**
+Status: **STRUCTURAL GO / ACCOUNTING NO-GO — STOP FOR INDEPENDENT REVIEW**
 
 Sequencing dependency: Stage 1 must first produce independently reviewed current generation GO evidence and an accepted generation role/configuration ref.
 
@@ -191,3 +191,17 @@ The first Stage 2 plan's one-hour approval-creation window expired with no appro
 The committed historical-spend closure at ref `e827240fbc244ac2f526d32eef3cc01e785ddda40a79fe5d2d9f0b251f22d066` terminally closes the prior 42-call, one-invocation historical run without resetting its accounting. From clean committed baseline `ef4fd0a19f7010e473e3358dafa385053839f258`, equal to `origin/develop`, the public offline plan boundary created exactly one distinct, still-**UNAPPROVED** successor bundle for run ID `story-1-26-judge-requalification-20260826-r3`: plan SHA-256 `1f4fb793a4ff9a7dc5ab0da37d031134ad3e98a525329385ee5a9f827d1f2863`, plan ref `a3fce39dc2af1afd34d36fa65d0005dab9c6a176ada118bb0d074771f4a19083`, 42-call new allowance cap, `$0.3054702` conservative new ceiling, zero retries, zero replacements, and one future runner invocation only. It binds cumulative historical calls `42`, historical conservative cap `$0.3054702`, `reset_permitted:false`, account profile `Hearn Systems account`, Workers plan `paid`, 10,000 daily free neurons with free-first paid-overage semantics, source identity `db425506757d630e163667dad0d17352206a79e64e7923c645ac0f209153874b`, and runtime identity `a3d5ae76d31669bc1f008f7ef3d0fdde14d4a5b1fcb0fc63e70d290cdae32feb`.
 
 The r3 plan was created at `2026-08-26T18:41:22.215Z`; its latest permissible approval creation is `2026-08-26T19:41:22.215Z`. The approval template retains `approved_at:null`, `expires_at:null`, and `decision:"REPLACE_WITH_APPROVED_AFTER_REVIEW"`. Independent reconstruction, canonical bytes, closure/member hashes, recovery classification, public plan boundary, 85/85 judge tests plus 79/79 fixtures and 18/18 predicates, baseline, assembly, diff, and exact-path checks pass. Creation made zero adapter starts, runner/provider calls, spend, or allowance consumption. Fresh exact owner authorization of only these r3 bytes is required before any later live action; Stage 3 remains untouched and blocked.
+
+## 2026-08-26 Stage 2 r3 live result — structural GO, accounting NO-GO
+
+Owner authorization bound plan SHA-256 `1f4fb793a4ff9a7dc5ab0da37d031134ad3e98a525329385ee5a9f827d1f2863`, plan ref `a3fce39dc2af1afd34d36fa65d0005dab9c6a176ada118bb0d074771f4a19083`, closure ref `e827240fbc244ac2f526d32eef3cc01e785ddda40a79fe5d2d9f0b251f22d066`, and run ID `story-1-26-judge-requalification-20260826-r3`. The canonical approval used `approved_at` `2026-08-26T18:57:27.300Z` and exclusive `expires_at` `2026-08-26T22:57:27.300Z`; approval was valid at runner start `2026-08-26T19:03:40.163Z`.
+
+Exactly one runner invocation started 42 provider calls and completed at `2026-08-26T19:10:46.697Z`; retries `0`, replacements `0`. Receipt attempt `cc246aab-3c0e-4a75-b237-07d0edc60652` is terminal `completed-spent`. Both models produced 20/20 direct-valid trials and 20/20 post-repair-valid trials, with all probes direct-valid, all 42 records `received`, all 42 usage records present, all 18 predicates passing, and all 79 fixtures passing. The retained qualification bundle is structurally `GO` and emits:
+
+- primary configuration ref `27c584f8f893653d26cbc12c2e83a3f9e86672e3878261c2cecb0afa5136e435`;
+- fallback configuration ref `d4b024cb990e3c483a4bf061eb3d939147f4a4c3a34ad5fc0f3dd9a54970c3cf`;
+- structural judge role ref `64691773c52085f0241c81fb738ac8b849dceab73a9881bec7b38b3c4fb59799`.
+
+Usage is complete: 43,428 prompt plus 23,271 completion equals 66,699 reported tokens. The priced 70B member used 21,714 prompt and 12,077 completion tokens, producing exact known cost `$0.033470309999999996` or 3,042.755454545454 neurons at the retained conversion. The 8B member used 21,714 prompt and 11,194 completion tokens, but the frozen plan records that endpoint as unpriced; exact observed 8B dollars and neurons remain noncomputable. Charging its observed usage at the plan's conservative 70B surrogate yields `$0.03148356`, for a combined conservative observed-usage estimate of `$0.06495387` or 5,904.897272727273 neurons, below the 10,000 daily free-neuron allocation. This surrogate is not verified provider billing and cannot prove exact free-neuron or paid-overage accounting.
+
+Therefore the independent model verdict is **GO / GO for structural fidelity**, while the overall Stage 2 verdict is **NO-GO** under the live packet's explicit rule that unverifiable spend fails closed. The refs are retained as structural evidence but are not accepted for Stage 3 binding. Adapter, runner, and port `8788` are stopped; `.judge-recovery.lock` is absent; the successor receipt remains immutable terminal accounting. Stop for independent review. No Stage 3 execution, deploy, sign, activation, commit, or push occurred.
