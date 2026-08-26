@@ -298,15 +298,15 @@ is a different approval and deployment.
 
 Operator authority remains intentionally incomplete and must not be inferred:
 
-- production key id: `oddspark-production-activation-2026-01` (**owner-selected 2026-08-26**);
+- production key id: `oddspark-production-activation-2026-02` (**owner-selected 2026-08-26; rotated from the superseded 2026-01 identity**);
 - production Ed25519 SPKI public key (base64url):
-  `MCowBQYDK2VwAyEARHw4lHZum5v0FkNakqeIbOxAMDoMHMKbl9IS0Fknxcg`
+  `MCowBQYDK2VwAyEAh4GQdgxMP65vNfGmtKRBfb2Z4ayMCnzNvuvtsihM5pY`
   (**owner-selected 2026-08-26**; DER SHA-256
-  `17cc333e3c59953bad278a2138ff53c579a793ec48f698dffabc780784fd450e`);
+  `8e2f2502d2ab783de6fb558663aa86ffd69c2d7f4a3fa98c2f2108358a047e6b`);
 - source-pinning code/config deployment approval: **granted by owner 2026-08-26**
-  for this exact single-key trust map, with `ACTIVATION_SNAPSHOT` absent;
-  deployed from commit `bf132ae` as Cloudflare version
-  `d7bdc546-04a5-4ee5-bd4a-9406b03c255e` on 2026-08-26;
+  for the superseded 2026-01 single-key trust map, with
+  `ACTIVATION_SNAPSHOT` absent; the 2026-02 rotation is source-pinned only and
+  remains undeployed;
 - external signing approval for exact payload bytes: **not granted**;
 - one-shot activation approval for an exact packet/target: **not granted**;
 - one-shot rollback approval: **not granted**.

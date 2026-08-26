@@ -101,8 +101,9 @@ test("payload expiry is the earliest distinct approval expiry and invalid calend
 
 test("production trust map pins only the owner-selected Ed25519 SPKI and closed/descriptor/symbol/cycle attacks reject", async () => {
   assert.deepEqual(PRODUCTION_ACTIVATION_TRUST_KEYS, {
-    "oddspark-production-activation-2026-01": "MCowBQYDK2VwAyEARHw4lHZum5v0FkNakqeIbOxAMDoMHMKbl9IS0Fknxcg",
+    "oddspark-production-activation-2026-02": "MCowBQYDK2VwAyEAh4GQdgxMP65vNfGmtKRBfb2Z4ayMCnzNvuvtsihM5pY",
   });
+  assert.deepEqual(Reflect.ownKeys(PRODUCTION_ACTIVATION_TRUST_KEYS), ["oddspark-production-activation-2026-02"]);
   assert.equal(Object.isFrozen(PRODUCTION_ACTIVATION_TRUST_KEYS), true);
   const { payload } = await readyPayload(); const key = keys(); const signed = envelope(payload, key.privateKey);
   assert.equal((await evaluateActivationSnapshot(signed, { now: () => Date.parse(issued) + 1 })).reason, SNAPSHOT_REASON_CODES.KEY);
