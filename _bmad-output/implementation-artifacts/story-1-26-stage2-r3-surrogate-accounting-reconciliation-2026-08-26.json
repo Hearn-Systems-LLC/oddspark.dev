@@ -1,0 +1,117 @@
+{
+  "schema_version": "oddspark.story-1-26-stage2-surrogate-reconciliation/v1",
+  "acceptance_identity": "02ac4f5a05b17bbe3d19a3492793d0c461c6da6dabe6c31d34cf7083e13ce1dc",
+  "bindings": {
+    "owner_decision": {
+      "path": "_bmad-output/implementation-artifacts/story-1-26-owner-decision-conservative-surrogate-accounting-2026-08-26.json",
+      "sha256": "830ac2e4254a768102bdaa56e719d0e7ba9a90862af57c829c79703b9429548c"
+    },
+    "r3_plan": {
+      "path": "spikes/judge-fidelity/results/story-1-26-judge-requalification-20260826-r3-unapproved.plan.json",
+      "sha256": "1f4fb793a4ff9a7dc5ab0da37d031134ad3e98a525329385ee5a9f827d1f2863",
+      "plan_ref": "a3fce39dc2af1afd34d36fa65d0005dab9c6a176ada118bb0d074771f4a19083"
+    },
+    "r3_approval": {
+      "path": "spikes/judge-fidelity/results/story-1-26-judge-requalification-20260826-r3-unapproved.plan-approval.json",
+      "sha256": "7bfca70b1e228193bb129793a607714b384f203e32fb288afd1ecb8529ff8767",
+      "approval_run_id": "story-1-26-judge-requalification-20260826-r3"
+    },
+    "attempt_receipt": {
+      "path": "spikes/judge-fidelity/results/.judge-llama-cycle-successor-spend.json",
+      "sha256": "8ab332d3e2a0ece14c44aa2d18d9bbd3b94f6a45a291bde19b8dc10d27932c76",
+      "attempt_id": "cc246aab-3c0e-4a75-b237-07d0edc60652"
+    },
+    "completion_marker": {
+      "path": "spikes/judge-fidelity/results/2026-08-26-story-1--44d8a8a7744d86fc-cc246aab-3c0e-4a75-b237-07d0edc60652-v2.complete.json",
+      "sha256": "fad7ae13f9f55ec322939767c512e3577adc63d59848020c73efa6f3e2df8bd8"
+    },
+    "qualification_bundle": {
+      "path": "spikes/judge-fidelity/results/2026-08-26-story-1--44d8a8a7744d86fc-cc246aab-3c0e-4a75-b237-07d0edc60652-qualification.json",
+      "sha256": "40677c50aa352877a6a691388f8a7c825c9caf0bb990c6df3ef5570db90c6622"
+    }
+  },
+  "identity_payload": {
+    "story": "1.26",
+    "stage": 2,
+    "run_id": "story-1-26-judge-requalification-20260826-r3",
+    "attempt_id": "cc246aab-3c0e-4a75-b237-07d0edc60652",
+    "plan_ref": "a3fce39dc2af1afd34d36fa65d0005dab9c6a176ada118bb0d074771f4a19083",
+    "owner_decision_sha256": "830ac2e4254a768102bdaa56e719d0e7ba9a90862af57c829c79703b9429548c",
+    "historical_packet": {
+      "preserved": true,
+      "original_accounting_verdict": "NO-GO",
+      "reason": "Exact authoritative pricing was absent for the selected 8B endpoint; the historical packet's then-governing rule rejected surrogate accounting."
+    },
+    "accounting": {
+      "usage_complete": true,
+      "usage": {
+        "priced": {
+          "endpoint": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+          "calls": 21,
+          "prompt": 21714,
+          "completion": 12077,
+          "total": 33791
+        },
+        "unpriced": {
+          "endpoint": "@cf/meta/llama-3.1-8b-instruct-fast",
+          "calls": 21,
+          "prompt": 21714,
+          "completion": 11194,
+          "total": 32908
+        },
+        "combined_calls": 42,
+        "combined_prompt": 43428,
+        "combined_completion": 23271,
+        "combined_total": 66699
+      },
+      "rates_usd_per_token": {
+        "highest_authoritative_frozen": {
+          "source": "r3 plan maximum_cost pricing disclosure",
+          "prompt": 2.9e-7,
+          "completion": 0.00000225
+        },
+        "plan_frozen_surrogate": {
+          "binding": "r3 plan maximum_cost conservatively charges the unpriced 8B endpoint at the documented 70B rate",
+          "prompt": 2.9e-7,
+          "completion": 0.00000225
+        }
+      },
+      "costs_usd": {
+        "priced_exact": 0.033470309999999996,
+        "unpriced_surrogate": 0.03148356,
+        "combined_conservative": 0.06495387
+      },
+      "usd_per_neuron": 0.000011,
+      "neurons": {
+        "priced_exact": 3042.755454545454,
+        "unpriced_surrogate": 2862.141818181818,
+        "combined_conservative": 5904.897272727273
+      },
+      "free_neuron_ordering": "free-first-then-paid-bounded-by-plan-cap",
+      "daily_free_neurons": 10000,
+      "remaining_free_neurons_observed": null,
+      "paid_neurons_range": {
+        "minimum": 0,
+        "maximum": 5904.897272727273
+      },
+      "worst_case_paid_usd": 0.06495387,
+      "caps": {
+        "calls_observed": 42,
+        "calls_approved": 42,
+        "maximum_cost_usd": 0.3054702,
+        "maximum_neurons": 27770.018181818185,
+        "within_call_cap": true,
+        "within_cost_cap": true
+      }
+    },
+    "structural_refs": {
+      "primary_configuration_ref": "27c584f8f893653d26cbc12c2e83a3f9e86672e3878261c2cecb0afa5136e435",
+      "fallback_configuration_ref": "d4b024cb990e3c483a4bf061eb3d939147f4a4c3a34ad5fc0f3dd9a54970c3cf",
+      "cycle_ref": "48585c41872321c1060ce39c21bdf32b4d4da9328740f8ef6c713f13b61447cc",
+      "judge_role_qualification_ref": "64691773c52085f0241c81fb738ac8b849dceab73a9881bec7b38b3c4fb59799",
+      "tested_source_identity": "db425506757d630e163667dad0d17352206a79e64e7923c645ac0f209153874b"
+    },
+    "reconciled_verdict": "ACCEPTED",
+    "stage_3_effect": "The accepted judge role ref may be used as the Story 1.26 Stage 2 prerequisite by the current governed Stage 3 plan creator; this artifact grants no Stage 3 approval or execution authority."
+  }
+}

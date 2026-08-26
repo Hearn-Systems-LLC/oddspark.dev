@@ -1,11 +1,16 @@
-# Story 1.26 requalification matrix — STAGE 2 r3 ACCOUNTING NO-GO
+# Story 1.26 requalification matrix — STAGE 2 r3 RECONCILED ACCEPTANCE / STAGE 3 UNAPPROVED PLAN
 
 Date: 2026-08-26  
 Repository tooling baseline: `9857bd4cdc80802ce78858889cb9a0aa10d0f07a` on `develop`
-Overall status: **BLOCKED / STAGE 2 r3 ACCOUNTING NO-GO**
+Overall status: **STAGE 2 r3 RECONCILED ACCEPTED / STAGE 3 PLAN UNAPPROVED AND UNEXECUTED**
 Provider calls: **42 historical + 42 Stage 2 r3**
 Remote mutations: **one authorized Stage 2 r3 Workers AI qualification**
 Allowance consumed: **true for Stage 2 r3**
+
+This heading is the current prospective disposition. The historical Stage 2 r3
+accounting NO-GO and its reasoning remain retained below unchanged as the
+original packet verdict; the owner decision and separate reconciliation do not
+rewrite those bytes or retroactively change that verdict.
 
 ## 2026-08-26 Stage 2 historical-spend recovery development
 
@@ -205,3 +210,63 @@ Exactly one runner invocation started 42 provider calls and completed at `2026-0
 Usage is complete: 43,428 prompt plus 23,271 completion equals 66,699 reported tokens. The priced 70B member used 21,714 prompt and 12,077 completion tokens, producing exact known cost `$0.033470309999999996` or 3,042.755454545454 neurons at the retained conversion. The 8B member used 21,714 prompt and 11,194 completion tokens, but the frozen plan records that endpoint as unpriced; exact observed 8B dollars and neurons remain noncomputable. Charging its observed usage at the plan's conservative 70B surrogate yields `$0.03148356`, for a combined conservative observed-usage estimate of `$0.06495387` or 5,904.897272727273 neurons, below the 10,000 daily free-neuron allocation. This surrogate is not verified provider billing and cannot prove exact free-neuron or paid-overage accounting.
 
 Therefore the independent model verdict is **GO / GO for structural fidelity**, while the overall Stage 2 verdict is **NO-GO** under the live packet's explicit rule that unverifiable spend fails closed. The refs are retained as structural evidence but are not accepted for Stage 3 binding. Adapter, runner, and port `8788` are stopped; `.judge-recovery.lock` is absent; the successor receipt remains immutable terminal accounting. Stop for independent review. No Stage 3 execution, deploy, sign, activation, commit, or push occurred.
+
+## 2026-08-26 prospective owner policy and Stage 2 r3 reconciliation
+
+Owner decision artifact
+`story-1-26-owner-decision-conservative-surrogate-accounting-2026-08-26.json`
+(SHA-256 `830ac2e4254a768102bdaa56e719d0e7ba9a90862af57c829c79703b9429548c`)
+records verbatim: “accept conservative surrogate accounting for unpriced
+endpoints.” Its authority is narrow to Story 1.26: complete usage may be
+accounted at a plan-frozen surrogate whose input and output rates are each at
+least the highest corresponding authoritative frozen rate among the run's
+priced endpoints; computed spend must remain inside the exact call/cost cap;
+free neurons apply first and any paid remainder remains plan-cap bounded.
+Missing usage, missing surrogate binding, nonconservative substitution, or a
+cap breach continues to fail closed. The decision does not generalize beyond
+Story 1.26 and does not mutate the historical r3 verdict.
+
+The separate reconciliation
+`story-1-26-stage2-r3-surrogate-accounting-reconciliation-2026-08-26.json`
+binds decision, plan/ref, approval, attempt receipt, completion marker,
+qualification bundle, usage, costs, caps, and structural refs. Its acceptance
+identity is
+`02ac4f5a05b17bbe3d19a3492793d0c461c6da6dabe6c31d34cf7083e13ce1dc`.
+All 42 calls retain complete usage. Exact priced 70B cost remains
+`$0.033470309999999996`; the plan-frozen 70B-rate surrogate for the unpriced 8B
+usage is `$0.03148356`; combined conservative exposure is `$0.06495387` or
+`5,904.897272727273` neurons. Remaining free neurons were not observed, so the
+reconciliation makes no exact billing claim: it records a paid range of zero to
+`5,904.897272727273` neurons and proves the worst-case `$0.06495387` remains
+within the exact `$0.3054702` / `27,770.018181818185`-neuron and 42-call caps.
+
+Prospective verdict: **Stage 2 r3 ACCEPTED under the owner-authorized Story
+1.26 surrogate policy**. Historical verdict: **original accounting NO-GO,
+preserved**.
+
+## 2026-08-26 canonical Stage 3 unapproved plan
+
+Existing Stage 1 acceptance supplies generation configuration ref
+`cf602f143373958591b7a4954ec2ebe951160af45fa0fc45802eb0d96030f90c`
+and generation role ref
+`0473102c40734947c91e8c605e6ae8e03b1e895a8c5b18867a9579dbb6abe514`.
+The prospective Stage 2 reconciliation accepts judge role ref
+`64691773c52085f0241c81fb738ac8b849dceab73a9881bec7b38b3c4fb59799`.
+Those refs and current committed assembly
+`9e20e72300d2c84c85d62e98ff5d9bd9a2f806dc94b808d2305bad132f4217f5`
+satisfy the current governed creator's exact prerequisites.
+
+The creator generated exactly one canonical plan at
+`spikes/local-full-request-qualification/plans/story-1-26-local-full-request-09ad79e1-unapproved.plan.json`:
+
+- bytes SHA-256 / plan ref: `95e4d4a23565c4e178cf5b7b2f1058f9c16da16b61b9abaa2ad00b2a44dcc8c9`;
+- run ID: `09ad79e1-f57d-4130-bfe9-ec0bce3aae68`;
+- route ceiling `120000` ms, commit reserve `1000` ms, provider timeout
+  `19833` ms, six-call cap, three-attempt cap, and `$0.06` maximum;
+- `status:"unapproved"`, `approval:null`, `execution:null`,
+  `allowance_consumed:false`, provider calls `0`.
+
+Stage 3 remains **UNAPPROVED AND UNEXECUTED**. This plan grants no adapter,
+provider, deployment, signing, activation, or remote-mutation authority. The
+next authorization gate is independent review followed by a fresh exact owner
+approval of these plan bytes; no Stage 3 action may occur before that gate.
