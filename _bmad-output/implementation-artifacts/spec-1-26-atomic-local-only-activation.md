@@ -82,6 +82,13 @@ deferred: []
   `9e20e72300d2c84c85d62e98ff5d9bd9a2f806dc94b808d2305bad132f4217f5`.
   Independent AGY adversarial review returned PASS after the full project gate.
   External signing, activation, and rollback approvals remain ungranted.
+- 2026-08-26 source-pin deployment — RECORD: committed as `bf132ae` and
+  deployed with pinned Wrangler 4.123.0 as Cloudflare version
+  `d7bdc546-04a5-4ee5-bd4a-9406b03c255e`. The deployment binding inventory
+  contained `METER`, `COORD`, `SPARKS`, `AI`, `AI_MODEL`, and
+  `AI_MODEL_FALLBACK`; `ACTIVATION_SNAPSHOT` was absent. Production GET and
+  no-website POST smoke checks returned 200 on that exact version. No signing
+  or activation mutation occurred.
 
 - 2026-08-26 operator authority update — RECORD: the owner selected production
   key id `oddspark-production-activation-2026-01` and supplied a valid Ed25519

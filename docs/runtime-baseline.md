@@ -305,6 +305,8 @@ Operator authority remains intentionally incomplete and must not be inferred:
   `17cc333e3c59953bad278a2138ff53c579a793ec48f698dffabc780784fd450e`);
 - source-pinning code/config deployment approval: **granted by owner 2026-08-26**
   for this exact single-key trust map, with `ACTIVATION_SNAPSHOT` absent;
+  deployed from commit `bf132ae` as Cloudflare version
+  `d7bdc546-04a5-4ee5-bd4a-9406b03c255e` on 2026-08-26;
 - external signing approval for exact payload bytes: **not granted**;
 - one-shot activation approval for an exact packet/target: **not granted**;
 - one-shot rollback approval: **not granted**.
