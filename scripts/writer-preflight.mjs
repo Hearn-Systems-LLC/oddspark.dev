@@ -45,6 +45,7 @@
 
 import { readFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
+import { generateKeyPairSync, sign } from "node:crypto";
 import { isDeepStrictEqual } from "node:util";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -73,6 +74,8 @@ import {
 import { validateCorpus } from "../src/pipeline/corpus.mjs";
 import { createInactiveDomainWriter } from "../src/pipeline/assembly.mjs";
 import { productionPipelineEnv } from "../src/pipeline/production-ports.mjs";
+import { canonicalJson } from "../src/pipeline/contracts.mjs";
+import { ACTIVATION_ATTESTATION_DOMAIN, applicableActivationGates } from "../src/pipeline/release-decision.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const ENTRYPOINT = "src/worker.js";
@@ -147,6 +150,14 @@ function check(label, fn) {
   }
 }
 
+async function checkAsync(label, fn) {
+  try {
+    const problems = await fn();
+    if (problems.length) { failed = true; console.error(`FAIL ${label}:\n${problems.map((problem) => `  - ${problem}`).join("\n")}`); }
+    else console.log(`PASS ${label}`);
+  } catch (error) { failed = true; console.error(`FAIL ${label}: ${error.message}`); }
+}
+
 const readJson = (relative) => JSON.parse(readFileSync(path.join(ROOT, relative), "utf8"));
 
 export function validatePipelineJudge(pipeline, env) {
@@ -163,7 +174,7 @@ export function validatePipelineJudge(pipeline, env) {
     : ["constructed PIPELINE_JUDGE must deep-equal the qualified STRUCT-JUDGE descriptor"];
 }
 
-export function main() {
+export async function main() {
   // 1. runtime-baseline verify
   check("runtime-baseline verify (toolchain identity, config isolation)", () => {
     const baseline = verifyBaseline(ROOT);
@@ -345,7 +356,7 @@ export function main() {
   //    never bundled, never deployed), the provider ports and exact qualified
   //    judge descriptor are asserted present — proving wireability — and then
   //    absent AND malformed manifests must each yield a null writer.
-  check("offline assembly smoke (wireable ports + absent/malformed manifest ⇒ writer null)", () => {
+  await checkAsync("offline assembly smoke (wireable ports + absent/malformed manifest ⇒ writer null)", async () => {
     const problems = [];
     const priorsCatalog = readJson("content/local-priors/v1/priors.json");
     const houseCatalog = readJson("content/house-briefs/v1/catalog.json");
@@ -386,11 +397,32 @@ export function main() {
       }
       problems.push(...validatePipelineJudge(pipeline, fakeEnv));
     }
-    for (const [name, manifest] of Object.entries({ absent: undefined, malformed: "{not json" })) {
-      const env = manifest === undefined ? { ...fakeEnv } : { ...fakeEnv, ACTIVATION_MANIFEST: manifest };
-      const writer = createInactiveDomainWriter({ ...env, ...(pipeline ?? {}) }, { coordPost });
-      if (writer !== null) problems.push(`manifest ${name}: the assembled writer must be null`);
+    const identities = pipeline?.PIPELINE_ACTIVATION_IDENTITIES;
+    const manifest = identities ? {
+      version: 2, deployed_source_identity: identities.deployed_source_identity, generation_ref: identities.generation_ref,
+      judge_ref: identities.judge_ref, local: { enabled: true, full_request_ref: identities.local_full_request_ref },
+      domain: { enabled: false, evidence_ref: null, full_request_ref: null }, house_catalog_ref: identities.house_catalog_ref,
+      receiver_ref: null, receipt_claim_ref: null, outcome: "active",
+    } : null;
+    const keys = generateKeyPairSync("ed25519");
+    const signed = (status) => {
+      const payload = { version: 1, key_id: "preflight", issued_at: "2026-01-01T00:00:00.000Z", expires_at: "2030-01-01T00:00:00.000Z", manifest, gates: applicableActivationGates(manifest).map((gate) => ({ ...gate, status, approval_expires_at: "2030-01-01T00:00:00.000Z" })) };
+      return { payload, signature: sign(null, Buffer.from(`${ACTIVATION_ATTESTATION_DOMAIN}${canonicalJson(payload)}`), keys.privateKey).toString("base64url") };
+    };
+    const candidates = {
+      absent: undefined,
+      malformed: "{not json",
+      stale: signed("stale"), blocked: signed("blocked"), unapproved: signed("unapproved"),
+      partial: { ...signed("pass"), payload: { ...signed("pass").payload, gates: signed("pass").payload.gates.slice(1) } },
+    };
+    const activationTrustedKeys = { preflight: new Uint8Array(keys.publicKey.export({ format: "der", type: "spki" })) };
+    for (const [name, snapshot] of Object.entries(candidates)) {
+      const env = snapshot === undefined ? { ...fakeEnv } : { ...fakeEnv, ACTIVATION_SNAPSHOT: snapshot };
+      const writer = await createInactiveDomainWriter({ ...env, ...(pipeline ?? {}) }, { activationTrustedKeys, coordPost });
+      if (writer !== null) problems.push(`snapshot ${name}: the assembled writer must be null`);
     }
+    const parallel = await createInactiveDomainWriter({ ...fakeEnv, ...(pipeline ?? {}), ACTIVATION_SNAPSHOT: signed("pass"), ACTIVATION_MANIFEST: "{}" }, { activationTrustedKeys, coordPost });
+    if (parallel !== null) problems.push("parallel activation values: the assembled writer must be null");
     return problems;
   });
 
@@ -404,5 +436,5 @@ export function main() {
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  process.exitCode = main();
+  process.exitCode = await main();
 }

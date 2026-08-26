@@ -3131,7 +3131,7 @@ export default {
         // fault can never fail the request.
         try {
           // `event` pinned last so a future posture field can never shadow it.
-          console.log(JSON.stringify({ ...activationPosture(env), event: "activation_posture" }));
+          console.log(JSON.stringify({ ...await activationPosture(env), event: "activation_posture" }));
         } catch { /* observability is best-effort */ }
         // The assembled writer now sees the production pipeline environment:
         // bundled, hash/approval-verified content plus AI-bound provider ports
@@ -3144,7 +3144,7 @@ export default {
         // unaffected and keeps the legacy fallthrough.
         let assembledWriter = null;
         try {
-          assembledWriter = createInactiveDomainWriter(
+          assembledWriter = await createInactiveDomainWriter(
             { ...env, ...(productionPipelineEnv(env) ?? {}) },
             { coordPost: (path, body) => coordPost(env, path, body) },
           );

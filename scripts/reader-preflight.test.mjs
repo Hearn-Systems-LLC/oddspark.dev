@@ -35,7 +35,7 @@ test("a forbidden var on line 2+ of a multi-line [vars] section is caught", () =
 
 test("forbidden-var matching is case-insensitive and covers every forbidden family", () => {
   const config = '[vars]\npipeline_x = "1"\nactivation_manifest = "2"\nInactive_Domain_Writer = "3"\n';
-  assert.deepEqual(findForbiddenVars(config), ["PIPELINE_X", "ACTIVATION_MANIFEST", "INACTIVE_DOMAIN_WRITER"]);
+  assert.deepEqual(findForbiddenVars(`${config}\nACTIVATION_SNAPSHOT = "off"\n`), ["PIPELINE_X", "ACTIVATION_MANIFEST", "INACTIVE_DOMAIN_WRITER", "ACTIVATION_SNAPSHOT"]);
 });
 
 test("forbidden names outside [vars] are not reported as vars", () => {

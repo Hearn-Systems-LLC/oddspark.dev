@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
+import { generateKeyPairSync, sign } from "node:crypto";
 import { mkdtemp, readFile, readdir, writeFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import os from "node:os";
@@ -12,7 +13,8 @@ import { verifyPublication } from "./publication.mjs";
 import { verifyEvidenceBytes } from "./verifier.mjs";
 import { boundedProviderCall, PROVIDER_ERROR_FIELD_MAX_LENGTH, providerErrorDetail } from "./provider-call.mjs";
 import { attemptsFrom, failureOutcome, qualificationCoordinator } from "./adapter-evidence.mjs";
-import { ARTIFACT_VERSION, buildCommittedBrief, CANDIDATE_SCHEMA_VERSION, deriveCandidateRef as derivePipelineCandidateRef } from "../../src/pipeline/contracts.mjs";
+import { ARTIFACT_VERSION, buildCommittedBrief, CANDIDATE_SCHEMA_VERSION, canonicalJson, deriveCandidateRef as derivePipelineCandidateRef } from "../../src/pipeline/contracts.mjs";
+import { ACTIVATION_ATTESTATION_DOMAIN, applicableActivationGates } from "../../src/pipeline/release-decision.mjs";
 import { parseReceipt } from "../../src/pipeline/receipts.mjs";
 import adapterWorker from "./worker.mjs";
 
@@ -33,6 +35,12 @@ const approval = {
   expires_at: "2026-08-24T21:00:00.000Z", decision: "approved",
 };
 const approvalBytes = Buffer.from(`${JSON.stringify(approval)}\n`);
+const activationKeys = generateKeyPairSync("ed25519");
+function qualificationActivation(currentPlan) {
+  const manifest = { version: 2, deployed_source_identity: currentPlan.authorities.assembly_identity, generation_ref: currentPlan.authorities.generation_ref, judge_ref: currentPlan.authorities.judge_ref, local: { enabled: true, full_request_ref: "0".repeat(64) }, domain: { enabled: false, evidence_ref: null, full_request_ref: null }, house_catalog_ref: currentPlan.authorities.house_catalog_ref, receiver_ref: null, receipt_claim_ref: null, outcome: "active" };
+  const payload = { version: 1, key_id: "qualification-test", issued_at: "2026-01-01T00:00:00.000Z", expires_at: "2030-01-01T00:00:00.000Z", manifest, gates: applicableActivationGates(manifest).map((gate) => ({ ...gate, status: "pass", approval_expires_at: "2030-01-01T00:00:00.000Z" })) };
+  return { QUALIFICATION_ACTIVATION_SNAPSHOT: { payload, signature: sign(null, Buffer.from(`${ACTIVATION_ATTESTATION_DOMAIN}${canonicalJson(payload)}`), activationKeys.privateKey).toString("base64url") }, QUALIFICATION_ACTIVATION_TRUST_KEYS: { "qualification-test": new Uint8Array(activationKeys.publicKey.export({ format: "der", type: "spki" })) } };
+}
 const call = (stage, candidateRef, input = 100, output = 50) => ({
   stage, calls: 1, candidate_ref: candidateRef, started_at: started, finished_at: "2026-08-24T20:00:01.100Z",
   latency_ms: 100, timeout_ms: plan.limits.provider_timeout_ms, request_sha256: "a".repeat(64), response_sha256: "b".repeat(64), success: true,
@@ -81,6 +89,7 @@ test("provider errors are safely bounded and retain class, message, HTTP status,
 
   const json = async (relative) => JSON.parse(await readFile(new URL(relative, import.meta.url), "utf8"));
   const env = {
+    ...qualificationActivation(diagnosticPlan),
     AUTHORITY_SHA256: "a".repeat(64), AI_MODEL: diagnosticPlan.pricing.model, AI_MODEL_FALLBACK: "unwired-house-fallback",
     QUALIFICATION_CONTENT: {
       priors: { priors: await json("../../content/local-priors/v1/priors.json"), approval: await json("../../content/local-priors/v1/approval.json") },
@@ -209,6 +218,7 @@ test("provider failure, exhaustion, and a slow call remain bounded, terminal, an
   };
   let providerCalls = 0; const providerStages = [];
   const env = {
+    ...qualificationActivation(plan),
     AUTHORITY_SHA256: "a".repeat(64), AI_MODEL: plan.pricing.model, AI_MODEL_FALLBACK: "unwired-house-fallback", QUALIFICATION_CONTENT: qualificationContent,
     AI: { run(_model, providerRequest) { providerCalls += 1; providerStages.push(providerRequest?.response_format?.json_schema?.required?.includes("gates") ? "judge" : "generation"); return new Promise(() => {}); } },
     QUALIFICATION_TIMERS: { setTimeout(callback) { queueMicrotask(callback); return providerCalls; }, clearTimeout() {} },
@@ -247,6 +257,62 @@ test("provider failure, exhaustion, and a slow call remain bounded, terminal, an
 });
 test("fsynced atomic accounting and append-only attempt history retain complete records", async () => { const directory = await mkdtemp(path.join(os.tmpdir(), "full-request-accounting-")); const receipt = path.join(directory, "receipt.json"); const history = path.join(directory, "attempts.jsonl"); await atomicWrite(receipt, Buffer.from("{\"calls_started\":0}\n")); await appendAttempt(history, { sequence: 1, terminal: "provider_failed" }); await appendAttempt(history, { sequence: 2, terminal: "accepted" }); assert.match(await readFile(receipt, "utf8"), /calls_started/); assert.equal((await readFile(history, "utf8")).trim().split("\n").length, 2); });
 test("cycle lock is exclusive, stale-safe, and refuses successor release", async () => { const directory = await mkdtemp(path.join(os.tmpdir(), "full-request-lock-")); const first = await acquireLock(directory); await assert.rejects(acquireLock(directory), /live or not stale/); await releaseLock(first); const old = await acquireLock(directory, { now: 0 }); await writeFile(old.lockPath, `${JSON.stringify({ pid: 99999999, nonce: old.nonce, acquired_at: new Date(0).toISOString() })}\n`); const recovered = await acquireLock(directory, { now: STALE_LOCK_MS + 1, alive: () => false }); await assert.rejects(releaseLock(old), /successor/); await releaseLock(recovered); });
+test("cycle lock deterministically closes FileHandles when write, sync, read, or parse fails", async () => {
+  const directory = path.join(os.tmpdir(), "full-request-lock-injected");
+  const handle = (overrides = {}) => {
+    const state = { closes: 0 };
+    return { state, value: { async writeFile() {}, async sync() {}, async readFile() { return "{}"; }, async close() { state.closes += 1; }, ...overrides } };
+  };
+  for (const [label, overrides, pattern] of [
+    ["write", { async writeFile() { throw new Error("write failed"); } }, /write failed/],
+    ["sync", { async sync() { throw new Error("sync failed"); } }, /sync failed/],
+  ]) {
+    const injected = handle(overrides);
+    await assert.rejects(acquireLock(directory, { openFile: async () => injected.value }), pattern, label);
+    assert.equal(injected.state.closes, 1, `${label} failure must close once`);
+  }
+  for (const [label, overrides, pattern] of [
+    ["contended read", { async readFile() { throw new Error("read failed"); } }, /read failed/],
+    ["contended parse", { async readFile() { return "{"; } }, /JSON/],
+  ]) {
+    const injected = handle(overrides); let calls = 0;
+    const openFile = async () => { calls += 1; if (calls === 1) { const error = new Error("exists"); error.code = "EEXIST"; throw error; } return injected.value; };
+    await assert.rejects(acquireLock(directory, { openFile }), pattern, label);
+    assert.equal(injected.state.closes, 1, `${label} failure must close once`);
+  }
+  for (const [label, overrides, pattern] of [
+    ["release read", { async readFile() { throw new Error("release read failed"); } }, /release read failed/],
+    ["release parse", { async readFile() { return "{"; } }, /JSON/],
+  ]) {
+    const injected = handle(overrides);
+    await assert.rejects(releaseLock({ lockPath: path.join(directory, ".cycle.lock"), nonce: "expected" }, { openFile: async () => injected.value }), pattern, label);
+    assert.equal(injected.state.closes, 1, `${label} failure must close once`);
+  }
+});
+test("cycle lock closes FileHandles on success, contention, stale recovery, and failed successor release", () => {
+  const governanceUrl = new URL("./governance.mjs", import.meta.url).href;
+  const program = `
+    import { mkdtemp, rm, writeFile } from "node:fs/promises";
+    import os from "node:os";
+    import path from "node:path";
+    import { acquireLock, releaseLock, STALE_LOCK_MS } from ${JSON.stringify(governanceUrl)};
+    const directory = await mkdtemp(path.join(os.tmpdir(), "full-request-lock-handles-"));
+    try {
+      const first = await acquireLock(directory);
+      for (let index = 0; index < 4; index += 1) await acquireLock(directory).then(() => { throw new Error("contention unexpectedly acquired"); }, (error) => { if (!/live or not stale/.test(error.message)) throw error; });
+      await releaseLock(first);
+      const old = await acquireLock(directory, { now: 0 });
+      await writeFile(old.lockPath, JSON.stringify({ pid: 99999999, nonce: old.nonce, acquired_at: new Date(0).toISOString() }) + "\\n");
+      const recovered = await acquireLock(directory, { now: STALE_LOCK_MS + 1, alive: () => false });
+      await releaseLock(old).then(() => { throw new Error("successor release unexpectedly succeeded"); }, (error) => { if (!/successor/.test(error.message)) throw error; });
+      await releaseLock(recovered);
+      for (let index = 0; index < 4; index += 1) { global.gc(); await new Promise((resolve) => setImmediate(resolve)); }
+    } finally { await rm(directory, { recursive: true, force: true }); }
+  `;
+  const child = spawnSync(process.execPath, ["--expose-gc", "--throw-deprecation", "--input-type=module", "--eval", program], { encoding: "utf8", timeout: 10000 });
+  assert.equal(child.status, 0, child.stderr || child.stdout);
+  assert.doesNotMatch(child.stderr, /Closing file descriptor|DEP0137/);
+});
 test("all frozen predicates are retained exactly once", () => { const evidence = closeEvidence(); assert.deepEqual(evidence.predicate_results.map(({ id }) => id), PREDICATES); assert.equal(new Set(PREDICATES).size, PREDICATES.length); });
 test("check and CI scripts cannot reach the live adapter entrypoints", async () => { const pkg = JSON.parse(await readFile(new URL("../../package.json", import.meta.url))); const ci = await readFile(new URL("../../.github/check-ci.mjs", import.meta.url), "utf8"); assert.doesNotMatch(pkg.scripts.check, /full-request/); assert.doesNotMatch(pkg.scripts.test, /full-request/); assert.doesNotMatch(ci, /local-full-request|full-request:plan|start-adapter/); });
 test("remote-required AI binding is never paired with a launcher posture that disables remote bindings", async () => {

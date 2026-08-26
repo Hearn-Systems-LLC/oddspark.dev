@@ -2,7 +2,7 @@
 title: 'Story 1.20: Atomic Activation Contract and Release Decision View'
 type: 'feature'
 created: '2026-08-26'
-status: 'ready-for-dev'
+status: 'done'
 baseline_revision: '3e75980c504d29eb71e3a70768aaca59dbe70681'
 baseline_commit: '6f2546d68d98eaa9c3187c89ee11ecff0cb63065'
 review_loop_iteration: 2
@@ -57,13 +57,13 @@ deferred: []
 ## Tasks & Acceptance
 
 **Execution:**
-- `src/pipeline/release-decision.mjs` -- define the pure closed signed-payload and ordered decision-view contracts; canonicalize and domain-separate every signed field; verify Ed25519/SPKI signatures, key id, issued/expiry times, and injected trusted-key map/clock; keep the production map empty; close arrays/objects including symbols/descriptors, bound nesting, and reject duplicate/partial/parallel values.
-- `scripts/release-decision.mjs` plus narrowly scoped verifier adapters -- implement the read-only trusted builder: safely load retained artifact sets, invoke existing generation, judge, full-request, assembly/source, house, and applicable receiver/claim verification seams, derive every status and earliest approval expiry, and emit an unsigned canonical signing payload only when every gate passes. Bound bytes/depth, reject duplicate JSON keys and traversal/symlink escapes, redact filesystem details, and never sign, rewrite, or persist evidence.
-- `src/pipeline/activation.mjs` and `src/pipeline/assembly.mjs` -- make runtime enablement asynchronous where needed and consume only a signature-valid, time-valid payload; bind manifest identities to actual assembled source/content/provider descriptors, retain manifest shape/ref tooling, reject `ACTIVATION_MANIFEST` as parallel authority, and keep posture redacted.
-- `scripts/release-decision.test.mjs`, existing verifier fixtures, and `package.json` -- prove real verifier invocation/currentness with copied or in-memory retained artifacts; use ephemeral Ed25519 test keys to cover valid, wrong-key, unknown-key, altered-field/signature, expiry, not-yet-valid, and empty-production-keyring behavior; reject self-attested fields and compose the offline test into `npm run check`.
-- `test.mjs` -- prove current, stale, missing, malformed, partial, and parallel snapshots at the executable worker boundary; assert zero assembled provider/claim/reference activity on failure, one redacted posture line, and unchanged safe legacy/approved-house compatibility behavior.
-- `scripts/reader-preflight.mjs`, `scripts/reader-preflight.test.mjs`, and `scripts/writer-preflight.mjs` -- forbid `ACTIVATION_SNAPSHOT` in inactive configuration as both vars and binding names; smoke absent, malformed, stale, blocked, unapproved, partial, and parallel candidates.
-- `runtime-assembly.json` -- refresh and verify the frozen runtime closure only for intentional runtime imports.
+- [x] `src/pipeline/release-decision.mjs` -- define the pure closed signed-payload and ordered decision-view contracts; canonicalize and domain-separate every signed field; verify Ed25519/SPKI signatures, key id, issued/expiry times, and injected trusted-key map/clock; keep the production map empty; close arrays/objects including symbols/descriptors, bound nesting, and reject duplicate/partial/parallel values.
+- [x] `scripts/release-decision.mjs` plus narrowly scoped verifier adapters -- implement the read-only trusted builder: safely load retained artifact sets, invoke existing generation, judge, full-request, assembly/source, house, and applicable receiver/claim verification seams, derive every status and earliest approval expiry, and emit an unsigned canonical signing payload only when every gate passes. Bound bytes/depth, reject duplicate JSON keys and traversal/symlink escapes, redact filesystem details, and never sign, rewrite, or persist evidence.
+- [x] `src/pipeline/activation.mjs` and `src/pipeline/assembly.mjs` -- make runtime enablement asynchronous where needed and consume only a signature-valid, time-valid payload; bind manifest identities to actual assembled source/content/provider descriptors, retain manifest shape/ref tooling, reject `ACTIVATION_MANIFEST` as parallel authority, and keep posture redacted.
+- [x] `scripts/release-decision.test.mjs`, existing verifier fixtures, and `package.json` -- prove real verifier invocation/currentness with copied or in-memory retained artifacts; use ephemeral Ed25519 test keys to cover valid, wrong-key, unknown-key, altered-field/signature, expiry, not-yet-valid, and empty-production-keyring behavior; reject self-attested fields and compose the offline test into `npm run check`.
+- [x] `test.mjs` -- prove current, stale, missing, malformed, partial, and parallel snapshots at the executable worker boundary; assert zero assembled provider/claim/reference activity on failure, one redacted posture line, and unchanged safe legacy/approved-house compatibility behavior.
+- [x] `scripts/reader-preflight.mjs`, `scripts/reader-preflight.test.mjs`, and `scripts/writer-preflight.mjs` -- forbid `ACTIVATION_SNAPSHOT` in inactive configuration as both vars and binding names; smoke absent, malformed, stale, blocked, unapproved, partial, and parallel candidates.
+- [x] `runtime-assembly.json` -- refresh and verify the frozen runtime closure only for intentional runtime imports.
 
 **Acceptance Criteria:**
 - Given a fully current closed snapshot, when activation validation runs, then the shared refs occur once, mode fields remain mode-specific, all applicable facts bind to the same immutable candidate, and `activation_ref` equals the v2 domain-separated hash of the sole manifest.
@@ -142,3 +142,46 @@ Justin selected option 1: verifier-integrated authority. The intent and executio
 ### Resumption — authenticated runtime trust
 
 Justin selected option 2: signed runtime snapshots. The contract now authorizes the Ed25519 verification boundary while explicitly withholding production key provisioning, private signing material, publication, configuration, and activation.
+
+## Suggested Review Order
+
+**Signed runtime trust boundary**
+
+- Start with closed payload validation, signature verification, time bounds, and redacted failure.
+  [`release-decision.mjs:134`](../../src/pipeline/release-decision.mjs#L134)
+
+- Confirm runtime identities bind the attestation to the actually assembled pipeline.
+  [`assembly.mjs:107`](../../src/pipeline/assembly.mjs#L107)
+
+- Follow asynchronous activation posture and writer construction at the public Worker seam.
+  [`worker.js:3131`](../../src/worker.js#L3131)
+
+**Trusted offline decision builder**
+
+- Review concrete retained-verifier adapters and atomic artifact-read protections.
+  [`release-decision.mjs:92`](../../scripts/release-decision.mjs#L92)
+
+- Trace the closed CLI input into the unsigned, earliest-expiry signing payload.
+  [`release-decision.mjs:152`](../../scripts/release-decision.mjs#L152)
+
+- Verify the retained qualification worker now consumes only signed snapshots asynchronously.
+  [`worker.mjs:63`](../../spikes/local-full-request-qualification/worker.mjs#L63)
+
+**Executable safety evidence**
+
+- Inspect adversarial signature, parser, verifier, expiry, and conditional-gate coverage.
+  [`release-decision.test.mjs:1`](../../scripts/release-decision.test.mjs#L1)
+
+- Check assembled identity binding and fail-closed Worker behavior at the outer boundary.
+  [`test.mjs:2985`](../../test.mjs#L2985)
+
+- Confirm inactive deployment preflight rejects every snapshot and parallel authority shape.
+  [`writer-preflight.mjs:420`](../../scripts/writer-preflight.mjs#L420)
+
+**Frozen closure and command wiring**
+
+- End with the refreshed runtime import closure and verification command registration.
+  [`runtime-assembly.json:1`](../../runtime-assembly.json#L1)
+
+- Confirm the focused release suite runs first in the repository check chain.
+  [`package.json:22`](../../package.json#L22)

@@ -2,7 +2,7 @@
   "schema_version": 1,
   "entrypoint": {
     "path": "src/worker.js",
-    "sha256": "ae6533c900692d83b54dc00ae3faecf99f76e0a596f459197d71e58494b0715d"
+    "sha256": "8c7e16f8875e7d9d550f2204c30369fd2d94e94f336cffebd039311e37c681fa"
   },
   "modules": [
     {
@@ -11,7 +11,7 @@
     },
     {
       "path": "src/pipeline/assembly.mjs",
-      "sha256": "c8db80bfe3c2e2e46f93b94804830d8c8e861fc430e65023d9ba5b6b82786445"
+      "sha256": "9b2df4eca0eff55a41ab0825faa8f90d4bf9bc19d7ae952e2ef2db2815fdc4c3"
     },
     {
       "path": "src/pipeline/contracts.mjs",
@@ -55,11 +55,15 @@
     },
     {
       "path": "src/pipeline/production-ports.mjs",
-      "sha256": "5b70d1ab6cceb8c8f527e782284cce12f299e2cecf2a886ba327a43b4650cd7f"
+      "sha256": "b25b833472d542ffb0a6098f4395258b1600c14a183f1bedd791bcdcb3639688"
     },
     {
       "path": "src/pipeline/receipts.mjs",
       "sha256": "d5ad8798e6af8d582f696d8c56a8fb741254364bf984fce50702c1af1ca94ad8"
+    },
+    {
+      "path": "src/pipeline/release-decision.mjs",
+      "sha256": "8607047d00569be972457fc04a8b21e5fc3cc52fa975bb260a53403faa148376"
     },
     {
       "path": "src/pipeline/rendering.mjs",
@@ -74,5 +78,5 @@
       "sha256": "a11d0b9313de346d9bff8edc11de1557dc767f24e49992c1ea252ee5b64bc7db"
     }
   ],
-  "assembly_identity_sha256": "7971844c5779fe1a435970eef522cd2c23f9b7c121708f6675299e58aff96ed6"
+  "assembly_identity_sha256": "6569338c8f04a1e6aa070af4a8ab41350d11d0341597a39e65db1488f5326a7a"
 }

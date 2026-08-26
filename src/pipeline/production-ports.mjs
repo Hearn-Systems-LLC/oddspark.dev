@@ -34,6 +34,7 @@ import voiceRubric from "../../semantic/voice/v1/rubric.json" with { type: "json
 import voiceGoldens from "../../semantic/voice/v1/goldens.json" with { type: "json" };
 import voiceAntiGoldens from "../../semantic/voice/v1/anti-goldens.json" with { type: "json" };
 import voiceCorpusApproval from "../../semantic/voice/v1/approval.json" with { type: "json" };
+import runtimeAssembly from "../../runtime-assembly.json" with { type: "json" };
 
 // The content bundled with the Worker. Hashes are provable at build/verify
 // time: the closed verifiers below recompute content identity and bind it to
@@ -48,6 +49,8 @@ const BUNDLED_CONTENT = deepFreeze({
 
 const nonblank = (value) => typeof value === "string" && value.trim() !== "";
 const JUDGE_QUALIFICATION_REF = "7dc1ec98a625a1dd16f1166067b496e4209a415e7f10854ff781f46d0d0062d0";
+const GENERATION_QUALIFICATION_REF = "34731e26b1c1ef79acd444ba8e775143d9a616c3ab915f52481bd81475796bfc";
+const LOCAL_FULL_REQUEST_REF = "a0b656c04ccc89ae3bdb35fea583b6937bb2f43dd8ec26825a72a38fc696cec4";
 
 /* ------------------------------------------------------------------ *
  * Frozen adapter wire shape (the governed generation/judge qualification
@@ -229,7 +232,19 @@ export function productionPipelineEnv(env, content = BUNDLED_CONTENT) {
     if (typeof env?.AI?.run !== "function") return null;
     if (!nonblank(env.AI_MODEL) || !nonblank(env.AI_MODEL_FALLBACK)) return null;
     if (!contentReady(content, Date.now())) return null;
+    const activationIdentities = {
+      deployed_source_identity: runtimeAssembly.assembly_identity_sha256,
+      generation_ref: GENERATION_QUALIFICATION_REF,
+      judge_ref: JUDGE_QUALIFICATION_REF,
+      house_catalog_ref: content.house.approval.identity,
+      local_full_request_ref: LOCAL_FULL_REQUEST_REF,
+      domain_evidence_ref: null,
+      domain_full_request_ref: null,
+      receiver_ref: null,
+      receipt_claim_ref: null,
+    };
     return deepFreeze({
+      PIPELINE_ACTIVATION_IDENTITIES: activationIdentities,
       PIPELINE_PRIORS: content.priors,
       PIPELINE_HOUSE: deepFreeze({
         catalog: content.house.catalog,

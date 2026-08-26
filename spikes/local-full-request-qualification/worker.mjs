@@ -60,10 +60,20 @@ export default {
     const pipeline = productionPipelineEnv({ ...env, AI: instrumentedAI }, env.QUALIFICATION_CONTENT);
     if (!pipeline) return json({ error: "pipeline_unavailable", inference_calls: 0 }, 503);
     const clock = () => Date.now(); const coord = qualificationCoordinator(clock, hash); const manifest = activation(plan); let strike = null;
-    const writer = createInactiveDomainWriter({
-      ...env, ...pipeline, ACTIVATION_MANIFEST: manifest, PIPELINE_NOW: clock,
+    const snapshot = env.QUALIFICATION_ACTIVATION_SNAPSHOT;
+    const trustKeys = env.QUALIFICATION_ACTIVATION_TRUST_KEYS;
+    const writer = await createInactiveDomainWriter({
+      ...env, ...pipeline,
+      PIPELINE_ACTIVATION_IDENTITIES: {
+        deployed_source_identity: manifest.deployed_source_identity, generation_ref: manifest.generation_ref,
+        judge_ref: manifest.judge_ref, house_catalog_ref: manifest.house_catalog_ref,
+        local_full_request_ref: manifest.local.full_request_ref, domain_evidence_ref: manifest.domain.evidence_ref,
+        domain_full_request_ref: manifest.domain.full_request_ref, receiver_ref: manifest.receiver_ref,
+        receipt_claim_ref: manifest.receipt_claim_ref,
+      },
+      ACTIVATION_SNAPSHOT: snapshot, PIPELINE_NOW: clock,
       PIPELINE_STRIKE_DEADLINE_BUDGET_MS: plan.limits.route_ceiling_ms - plan.limits.commit_reserve_ms,
-    }, { coordPost: (route, value) => coord.post(route, value), onStrikeResult: (value) => { strike = structuredClone(value); } });
+    }, { activationTrustedKeys: trustKeys, coordPost: (route, value) => coord.post(route, value), onStrikeResult: (value) => { strike = structuredClone(value); } });
     if (!writer) return json({ error: "writer_unavailable", inference_calls: 0 }, 503);
     try {
       const committed = await writer.write(plan.request.dispatch); const presentation = committedBriefPresentation(committed.artifact); const finishedMs = Date.now();

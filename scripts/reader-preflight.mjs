@@ -51,7 +51,7 @@ const READER_CRITICAL_MODULES = [
 
 // Bindings/vars that would turn this reader deploy into a writer or an
 // activation. None may exist in the deployed configuration.
-const FORBIDDEN_CONFIG = /(?:PIPELINE_[A-Z0-9_]*|ACTIVATION_MANIFEST|INACTIVE_DOMAIN_WRITER)/i;
+const FORBIDDEN_CONFIG = /(?:PIPELINE_[A-Z0-9_]*|ACTIVATION_(?:MANIFEST|SNAPSHOT)|INACTIVE_DOMAIN_WRITER)/i;
 
 /* ------------------------------------------------------------------ *
  * Pure helpers (unit-tested in scripts/reader-preflight.test.mjs)

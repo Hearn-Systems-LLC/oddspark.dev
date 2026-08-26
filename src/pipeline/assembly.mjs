@@ -34,7 +34,7 @@ import { generateCandidate } from "./generation.mjs";
 import { runCompositeGate } from "./gate.mjs";
 import { validateCorpus } from "./corpus.mjs";
 import { STRIKE_CODES, runStrikeOrchestrator } from "./strike.mjs";
-import { evaluateProductionActivation } from "./activation.mjs";
+import { ACTIVATION_TRUST_KEYS_TEST_PORT, evaluateActivationSnapshot, SNAPSHOT_REASON_CODES } from "./release-decision.mjs";
 
 const WRITER_ERROR = "inactive domain writer unavailable";
 export const DEFAULT_STRIKE_DEADLINE_BUDGET_MS = 15000;
@@ -75,14 +75,38 @@ function randomOwner() {
   return `writer-${[...bytes].map((byte) => byte.toString(16).padStart(2, "0")).join("")}`;
 }
 
+function activationIdentitiesMatch(manifest, identities) {
+  const keys = ["deployed_source_identity", "generation_ref", "judge_ref", "house_catalog_ref", "local_full_request_ref", "domain_evidence_ref", "domain_full_request_ref", "receiver_ref", "receipt_claim_ref"];
+  if (identities === null || typeof identities !== "object" || Array.isArray(identities)
+      || Object.getPrototypeOf(identities) !== Object.prototype || Reflect.ownKeys(identities).length !== keys.length
+      || !keys.every((key) => Object.hasOwn(identities, key))) return false;
+  return manifest.deployed_source_identity === identities.deployed_source_identity
+    && manifest.generation_ref === identities.generation_ref
+    && manifest.judge_ref === identities.judge_ref
+    && manifest.house_catalog_ref === identities.house_catalog_ref
+    && manifest.local.full_request_ref === identities.local_full_request_ref
+    && manifest.domain.evidence_ref === identities.domain_evidence_ref
+    && manifest.domain.full_request_ref === identities.domain_full_request_ref
+    && manifest.receiver_ref === identities.receiver_ref
+    && manifest.receipt_claim_ref === identities.receipt_claim_ref;
+}
+
 // Assemble the inactive-domain writer port from the environment. Returns null
 // only when activation is absent or invalid (port-absent posture); a valid
 // manifest that is out of phase for this writer (not local-enabled/
 // domain-disabled) or that meets a missing/unverified pipeline port yields a
 // fail-closed port instead — never a silent legacy fallthrough.
-export function createInactiveDomainWriter(env, deps) {
-  const activation = evaluateProductionActivation(env?.ACTIVATION_MANIFEST);
-  if (!activation.enabled) return null;
+async function evaluateRuntimeActivation(env, injectedTrustedKeys) {
+  if (env !== null && typeof env === "object" && Object.hasOwn(env, "ACTIVATION_MANIFEST")) {
+    return deepFreeze({ ready: false, reason: SNAPSHOT_REASON_CODES.NOT_CLOSED, manifest: null });
+  }
+  const trustedKeys = injectedTrustedKeys ?? env?.[ACTIVATION_TRUST_KEYS_TEST_PORT];
+  return evaluateActivationSnapshot(env?.ACTIVATION_SNAPSHOT, trustedKeys === undefined ? undefined : { trustedKeys });
+}
+
+export async function createInactiveDomainWriter(env, deps) {
+  const activation = await evaluateRuntimeActivation(env, deps?.activationTrustedKeys);
+  if (!activation.ready) return null;
 
   const failClosed = deepFreeze({
     write: async () => { throw new Error(WRITER_ERROR); },
@@ -90,6 +114,7 @@ export function createInactiveDomainWriter(env, deps) {
 
   const manifest = activation.manifest;
   if (manifest.local.enabled !== true || manifest.domain.enabled !== false) return failClosed;
+  if (!activationIdentitiesMatch(manifest, env?.PIPELINE_ACTIVATION_IDENTITIES)) return failClosed;
 
   const coordPost = deps?.coordPost;
   const strikeObserver = deps?.onStrikeResult;
@@ -210,8 +235,8 @@ export function createInactiveDomainWriter(env, deps) {
     // Defense in depth: the writer re-evaluates the activation port on every
     // dispatch and fails closed; a lapsed manifest can never fall through to
     // any generator.
-    const current = evaluateProductionActivation(env.ACTIVATION_MANIFEST);
-    if (!current.enabled || current.manifest.local.enabled !== true || current.manifest.domain.enabled !== false) {
+    const current = await evaluateRuntimeActivation(env, deps?.activationTrustedKeys);
+    if (!current.ready || current.manifest.local.enabled !== true || current.manifest.domain.enabled !== false) {
       throw new Error(WRITER_ERROR);
     }
 
@@ -348,7 +373,7 @@ export function createInactiveDomainWriter(env, deps) {
 }
 
 // Redacted activation posture for observability: the stable reason code only.
-export function activationPosture(env) {
-  const evaluation = evaluateProductionActivation(env?.ACTIVATION_MANIFEST);
-  return deepFreeze({ enabled: evaluation.enabled, reason: evaluation.reason });
+export async function activationPosture(env) {
+  const evaluation = await evaluateRuntimeActivation(env);
+  return deepFreeze({ enabled: evaluation.ready, reason: evaluation.reason });
 }

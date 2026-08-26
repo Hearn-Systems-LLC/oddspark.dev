@@ -7,6 +7,12 @@ import { fileURLToPath } from "node:url";
 if (process.env.CI || !process.stdin.isTTY || !process.stdout.isTTY) throw new Error("adapter requires an interactive non-CI session");
 const authority = process.env.LOCAL_FULL_REQUEST_AUTHORITY_SHA256;
 if (!/^[a-f0-9]{64}$/.test(authority ?? "")) throw new Error("exact approval authority is required before adapter start");
+const activationSnapshot = process.env.LOCAL_FULL_REQUEST_ACTIVATION_SNAPSHOT;
+const activationTrustKeys = process.env.LOCAL_FULL_REQUEST_ACTIVATION_TRUST_KEYS;
+if (!activationSnapshot || !activationTrustKeys) throw new Error("signed qualification activation inputs are required before adapter start");
+let parsedSnapshot; let parsedTrustKeys;
+try { parsedSnapshot = JSON.parse(activationSnapshot); parsedTrustKeys = JSON.parse(activationTrustKeys); }
+catch { throw new Error("signed qualification activation inputs are malformed"); }
 
 const configDirectory = await mkdtemp(path.join(tmpdir(), "oddspark-full-request-"));
 const configPath = path.join(configDirectory, "adapter.jsonc");
@@ -30,6 +36,8 @@ const config = {
     AI_MODEL_FALLBACK: "unwired-house-fallback",
     AUTHORITY_SHA256: authority,
     QUALIFICATION_CONTENT: qualificationContent,
+    QUALIFICATION_ACTIVATION_SNAPSHOT: parsedSnapshot,
+    QUALIFICATION_ACTIVATION_TRUST_KEYS: parsedTrustKeys,
   },
 };
 

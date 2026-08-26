@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { readFileSync } from "node:fs";
+import { generateKeyPairSync, sign } from "node:crypto";
 import { pathToFileURL } from "node:url";
 import worker, { NeuronMeter, SparkCoordinator, deriveInactiveDomainDispatch, runInactiveDomainWriter, INACTIVE_DOMAIN_WRITER_DEADLINE_MS, PRE_ACTIVATION_NOTICE } from "./src/worker.js";
 import { story15Cases } from "./scripts/brief-rendering.outer.mjs";
@@ -18,6 +19,7 @@ import {
 } from "./scripts/house-briefs.mjs";
 import { deriveIdentity as corpusIdentity, validateCorpus } from "./scripts/semantic-corpus.mjs";
 import { ACTIVATION_REASON_CODES, deriveActivationRef, evaluateProductionActivation } from "./src/pipeline/activation.mjs";
+import { ACTIVATION_ATTESTATION_DOMAIN, ACTIVATION_TRUST_KEYS_TEST_PORT, SNAPSHOT_REASON_CODES, applicableActivationGates, buildUnsignedActivationPayload } from "./src/pipeline/release-decision.mjs";
 import { canonicalJson, sha256Hex } from "./src/pipeline/contracts.mjs";
 import { activationPosture, createInactiveDomainWriter, DEFAULT_STRIKE_DEADLINE_BUDGET_MS, MAX_STRIKE_DEADLINE_BUDGET_MS } from "./src/pipeline/assembly.mjs";
 import {
@@ -308,10 +310,29 @@ function createEnvironment(options = {}) {
   // later environment through the shared fixture cache.
   if (options.pipeline) {
     const fixture = pipelineFixture();
-    env.ACTIVATION_MANIFEST = "manifest" in options.pipeline
-      ? (typeof options.pipeline.manifest === "string" ? options.pipeline.manifest : structuredClone(options.pipeline.manifest))
-      : structuredClone(fixture.manifest);
+    const selected = "manifest" in options.pipeline ? options.pipeline.manifest : fixture.manifest;
+    if ("snapshot" in options.pipeline) {
+      env.ACTIVATION_SNAPSHOT = structuredClone(options.pipeline.snapshot);
+    } else if (typeof selected === "string") {
+      try { env.ACTIVATION_SNAPSHOT = JSON.stringify(signedActivationFixture(JSON.parse(selected))); }
+      catch { env.ACTIVATION_SNAPSHOT = selected; }
+    } else {
+      try { env.ACTIVATION_SNAPSHOT = signedActivationFixture(selected); }
+      catch { env.ACTIVATION_SNAPSHOT = structuredClone(selected); }
+    }
+    Object.defineProperty(env, ACTIVATION_TRUST_KEYS_TEST_PORT, { value: { "ephemeral-test": activationTestSpki }, enumerable: true });
     env.PIPELINE_PRIORS = structuredClone(fixture.priors);
+    env.PIPELINE_ACTIVATION_IDENTITIES = {
+      deployed_source_identity: selected?.deployed_source_identity ?? fixture.manifest.deployed_source_identity,
+      generation_ref: selected?.generation_ref ?? fixture.manifest.generation_ref,
+      judge_ref: selected?.judge_ref ?? fixture.manifest.judge_ref,
+      house_catalog_ref: selected?.house_catalog_ref ?? fixture.manifest.house_catalog_ref,
+      local_full_request_ref: selected?.local?.full_request_ref ?? fixture.manifest.local.full_request_ref,
+      domain_evidence_ref: selected?.domain?.evidence_ref ?? fixture.manifest.domain.evidence_ref,
+      domain_full_request_ref: selected?.domain?.full_request_ref ?? fixture.manifest.domain.full_request_ref,
+      receiver_ref: selected?.receiver_ref ?? fixture.manifest.receiver_ref,
+      receipt_claim_ref: selected?.receipt_claim_ref ?? fixture.manifest.receipt_claim_ref,
+    };
     env.PIPELINE_HOUSE = structuredClone(fixture.house);
     env.PIPELINE_CORPUS = structuredClone(fixture.corpus);
     env.PIPELINE_JUDGE = structuredClone(fixture.judge);
@@ -331,6 +352,20 @@ function createEnvironment(options = {}) {
  * ------------------------------------------------------------------ */
 
 let pipelineFixtureCache = null;
+const activationTestKeys = generateKeyPairSync("ed25519");
+const activationTestSpki = new Uint8Array(activationTestKeys.publicKey.export({ format: "der", type: "spki" }));
+function signedActivationFixture(manifest) {
+  const payload = {
+    version: 1,
+    key_id: "ephemeral-test",
+    issued_at: "2026-01-01T00:00:00.000Z",
+    expires_at: "2030-01-01T00:00:00.000Z",
+    manifest: structuredClone(manifest),
+    gates: applicableActivationGates(manifest).map((gate) => ({ ...gate, status: "pass", approval_expires_at: "2030-01-01T00:00:00.000Z" })),
+  };
+  const signature = sign(null, Buffer.from(`${ACTIVATION_ATTESTATION_DOMAIN}${canonicalJson(payload)}`), activationTestKeys.privateKey).toString("base64url");
+  return { payload, signature };
+}
 function pipelineFixture() {
   if (pipelineFixtureCache) return pipelineFixtureCache;
   const readJson = (path) => JSON.parse(readFileSync(new URL(path, import.meta.url), "utf8"));
@@ -2865,7 +2900,7 @@ await test("a valid but out-of-phase manifest (domain enabled) fails closed — 
   }));
   // The manifest itself is valid; it just does not authorize this local-only
   // writer. The seam fails closed with the writer error and no scan.
-  assert.equal(activationPosture(h.env).enabled, true);
+  assert.equal((await activationPosture(h.env)).enabled, true);
   const result = await strike(h.env, "acmebakery.com");
   assert.equal(result.response.status, 502);
   assert.match(result.body.error, /inactive domain writer unavailable/);
@@ -2895,10 +2930,10 @@ await test("without a valid manifest the assembled writer stays disabled and the
     addSimpleSite(network);
     const options = manifest === undefined ? {} : { pipeline: { manifest } };
     const h = createEnvironment(options);
-    if (name === "absent") assert.equal(activationPosture(h.env).reason, ACTIVATION_REASON_CODES.MISSING);
+    if (name === "absent") assert.equal((await activationPosture(h.env)).reason, SNAPSHOT_REASON_CODES.MISSING);
     if (name === "invalid") {
-      assert.equal(activationPosture(h.env).enabled, false);
-      assert.equal(activationPosture(h.env).reason, ACTIVATION_REASON_CODES.NOT_CLOSED);
+      assert.equal((await activationPosture(h.env)).enabled, false);
+      assert.equal((await activationPosture(h.env)).reason, SNAPSHOT_REASON_CODES.NOT_CLOSED);
     }
     // Absent or invalid manifests leave the seam port-absent: the route keeps
     // its existing fallthrough to the quarantined legacy path, which scans.
@@ -2908,8 +2943,51 @@ await test("without a valid manifest the assembled writer stays disabled and the
     assert.equal(network.siteCalls.length, 1, name);
   }
   const h = createEnvironment({ pipeline: {} });
-  assert.equal(activationPosture(h.env).enabled, true);
-  assert.equal(activationPosture(h.env).reason, null);
+  assert.equal((await activationPosture(h.env)).enabled, true);
+  assert.equal((await activationPosture(h.env)).reason, null);
+});
+
+await test("blocked, unapproved, stale, partial, and parallel signed candidates disable every assembled activity", async () => {
+  for (const [name, mutate] of [
+    ["blocked", (snapshot) => { snapshot.payload.gates[1].status = "blocked"; }],
+    ["unapproved", (snapshot) => { snapshot.payload.gates[1].status = "unapproved"; }],
+    ["stale", (snapshot) => { snapshot.payload.gates[1].status = "stale"; }],
+    ["partial", (snapshot) => { snapshot.payload.gates.pop(); }],
+  ]) {
+    const network = createNetwork(); addSimpleSite(network);
+    const snapshot = signedActivationFixture(pipelineFixture().manifest); mutate(snapshot);
+    // Re-sign the still-closed status variants; partial remains invalid before signature verification.
+    if (name !== "partial") snapshot.signature = sign(null, Buffer.from(`${ACTIVATION_ATTESTATION_DOMAIN}${canonicalJson(snapshot.payload)}`), activationTestKeys.privateKey).toString("base64url");
+    let assembledCalls = 0;
+    const h = createEnvironment({ pipeline: { snapshot, generate: async () => { assembledCalls += 1; return pipelineFixture().pipelineCandidate(); } } });
+    const result = await strike(h.env, "acmebakery.com");
+    assert.equal(result.response.status, 200, name); assert.equal(network.siteCalls.length, 1, name);
+    assert.equal(assembledCalls, 0, name);
+  }
+  const parallel = createEnvironment({ pipeline: {} }); parallel.env.ACTIVATION_MANIFEST = JSON.stringify(pipelineFixture().manifest);
+  const posture = await activationPosture(parallel.env); assert.equal(posture.enabled, false); assert.equal(posture.reason, SNAPSHOT_REASON_CODES.NOT_CLOSED);
+});
+
+await test("worker consumes the exact trusted-builder payload and its earliest approval expiry", async () => {
+  const fixture = pipelineFixture();
+  const selectorKeys = ["deployed_source", "generation", "judge", "house_catalog", "local_full_request", "domain_evidence", "domain_full_request", "receiver", "receipt_claim"];
+  const selectors = Object.fromEntries(selectorKeys.map((key) => [key, {}]));
+  const expiries = applicableActivationGates(fixture.manifest).map((_, index) => `2029-01-0${index + 2}T00:00:00.000Z`);
+  const adapters = Object.fromEntries(applicableActivationGates(fixture.manifest).map((gate, index) => [gate.gate_id, async () => ({ current_ref: gate.evidence_ref, verified: true, approved: true, approval_expires_at: expiries[index] })]));
+  const built = await buildUnsignedActivationPayload({ manifest: fixture.manifest, key_id: "ephemeral-test", issued_at: "2026-01-01T00:00:00.000Z", selectors }, adapters);
+  assert.equal(built.payload.expires_at, expiries[0]);
+  const snapshot = { payload: structuredClone(built.payload), signature: sign(null, Buffer.from(`${ACTIVATION_ATTESTATION_DOMAIN}${canonicalJson(built.payload)}`), activationTestKeys.privateKey).toString("base64url") };
+  const h = isolateInjectedPipeline(createEnvironment({ pipeline: { snapshot } }));
+  const network = createNetwork(); const result = await strike(h.env, "acmebakery.com");
+  assert.equal(result.response.status, 200); assert.equal(result.body.request_scope, "domain"); assert.equal(network.siteCalls.length, 0);
+});
+
+await test("assembled identities bind source, generation, judge, house, and applicable full-request refs", async () => {
+  for (const key of ["deployed_source_identity", "generation_ref", "judge_ref", "house_catalog_ref", "local_full_request_ref"]) {
+    const h = isolateInjectedPipeline(createEnvironment({ pipeline: {} })); h.env.PIPELINE_ACTIVATION_IDENTITIES[key] = "9".repeat(64);
+    const writer = await createInactiveDomainWriter(h.env, { activationTrustedKeys: h.env[ACTIVATION_TRUST_KEYS_TEST_PORT], coordPost: async () => { throw new Error("must not coordinate"); } });
+    assert.ok(writer); await assert.rejects(writer.write({}), /inactive domain writer unavailable/, key);
+  }
 });
 
 await test("an injected writer port still wins over the assembled writer", async () => {
@@ -2980,6 +3058,7 @@ await test("production pipeline env constructs from verified content and stays i
   const wired = productionPipelineEnv(h.env, content);
   assert.ok(wired, "verified content must construct the pipeline env");
   assert.deepEqual(Object.keys(wired).sort(), [
+    "PIPELINE_ACTIVATION_IDENTITIES",
     "PIPELINE_CORPUS", "PIPELINE_GENERATE_PROVIDER", "PIPELINE_HOUSE", "PIPELINE_JUDGE", "PIPELINE_JUDGE_PROVIDER", "PIPELINE_PRIORS",
   ]);
   assert.deepEqual(wired.PIPELINE_JUDGE, {
@@ -2996,7 +3075,7 @@ await test("production pipeline env constructs from verified content and stays i
 
   // Manifest checked first: the assembled writer is null even with every
   // pipeline port verified and present.
-  const writer = createInactiveDomainWriter(
+  const writer = await createInactiveDomainWriter(
     { ...h.env, ...wired },
     { coordPost: (path, body) => h.env.COORD.get("global").fetch("https://coord" + path, { method: "POST", body: JSON.stringify(body) }) },
   );
@@ -3038,6 +3117,7 @@ await test("the approved bundled content constructs the complete qualified env a
   const wired = productionPipelineEnv(h.env);
   assert.ok(wired);
   assert.deepEqual(Object.keys(wired).sort(), [
+    "PIPELINE_ACTIVATION_IDENTITIES",
     "PIPELINE_CORPUS", "PIPELINE_GENERATE_PROVIDER", "PIPELINE_HOUSE", "PIPELINE_JUDGE", "PIPELINE_JUDGE_PROVIDER", "PIPELINE_PRIORS",
   ]);
   assert.equal(wired.PIPELINE_PRIORS.approval.identity, "2163f355be2e24e1a730938adcb81f70e72208619d34248116d6350c6d925ded");
@@ -3049,7 +3129,7 @@ await test("the approved bundled content constructs the complete qualified env a
     status: "active",
     outcome: "GO",
   });
-  assert.equal(createInactiveDomainWriter({ ...h.env, ...wired }), null);
+  assert.equal(await createInactiveDomainWriter({ ...h.env, ...wired }), null);
 });
 
 await test("bundled content hashes are pinned against byte drift (the writer:preflight constants)", async () => {
@@ -3239,7 +3319,7 @@ await test("writer failure terminals: negotiated 502 carries zero metric and the
   // The 502 terminal carries exactly one redacted posture line and one
   // redacted failure-class line — no internals, no stray emissions.
   assert.equal(capture.rawCount, 2);
-  assert.deepEqual(postureLines(capture), [{ event: "activation_posture", enabled: false, reason: ACTIVATION_REASON_CODES.MISSING }]);
+  assert.deepEqual(postureLines(capture), [{ event: "activation_posture", enabled: false, reason: SNAPSHOT_REASON_CODES.MISSING }]);
   assert.deepEqual(failureLines(capture), [{ event: "inactive_domain_writer_failure", class: "port_error" }]);
   assert.equal(JSON.stringify(capture.lines).includes("internal detail"), false);
 });
@@ -3255,7 +3335,7 @@ await test("activation posture is logged once per seam resolution, redacted to t
     assert.equal(result.response.status, 200);
   });
   assert.equal(absentCapture.rawCount, 1);
-  assert.deepEqual(postureLines(absentCapture), [{ event: "activation_posture", enabled: false, reason: ACTIVATION_REASON_CODES.MISSING }]);
+  assert.deepEqual(postureLines(absentCapture), [{ event: "activation_posture", enabled: false, reason: SNAPSHOT_REASON_CODES.MISSING }]);
 
   // Local (no-website) strikes never reach the seam: no posture line.
   const local = createEnvironment();
@@ -3280,14 +3360,14 @@ await test("activation posture is logged once per seam resolution, redacted to t
     assert.equal(result.response.status, 200);
   });
   assert.equal(malformedCapture.rawCount, 1);
-  assert.deepEqual(postureLines(malformedCapture), [{ event: "activation_posture", enabled: false, reason: ACTIVATION_REASON_CODES.VERSION }]);
+  assert.deepEqual(postureLines(malformedCapture), [{ event: "activation_posture", enabled: false, reason: SNAPSHOT_REASON_CODES.NOT_CLOSED }]);
   const serialized = JSON.stringify(malformedCapture.lines);
   assert.equal(serialized.includes(secretRef), false);
   assert.equal(serialized.includes("full_request_ref"), false);
 
   // Valid manifest: enabled posture with a null reason, still fully redacted
   // (the fixture manifest's "a"-repeat refs never appear in the log).
-  const active = createEnvironment({ pipeline: {} });
+  const active = isolateInjectedPipeline(createEnvironment({ pipeline: {} }));
   const activeCapture = await captureLogLines(async () => {
     const result = await strike(active.env, "acmebakery.com");
     assert.equal(result.response.status, 200);
@@ -3301,10 +3381,10 @@ await test("a posture/logging fault can never fail the request", async () => {
   const network = createNetwork();
   addSimpleSite(network);
   const h = createEnvironment();
-  // The first read of ACTIVATION_MANIFEST (by the posture log) throws; the
+  // The first read of ACTIVATION_SNAPSHOT (by the posture log) throws; the
   // seam must swallow it and continue with the manifest absent.
   let thrown = false;
-  Object.defineProperty(h.env, "ACTIVATION_MANIFEST", {
+  Object.defineProperty(h.env, "ACTIVATION_SNAPSHOT", {
     enumerable: true,
     configurable: true,
     get() {
@@ -3329,7 +3409,7 @@ await test("a posture/logging fault can never fail the request", async () => {
   const stubbornNetwork = createNetwork();
   addSimpleSite(stubbornNetwork);
   const stubborn = createEnvironment();
-  Object.defineProperty(stubborn.env, "ACTIVATION_MANIFEST", {
+  Object.defineProperty(stubborn.env, "ACTIVATION_SNAPSHOT", {
     enumerable: true,
     configurable: true,
     get() { throw new Error("manifest read always explodes"); },
