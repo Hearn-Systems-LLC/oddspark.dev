@@ -7,6 +7,7 @@ import test from "node:test";
 import { deriveActivationRef } from "../src/pipeline/activation.mjs";
 import {
   ACTIVATION_ATTESTATION_DOMAIN,
+  PRODUCTION_ACTIVATION_TRUST_KEYS,
   SNAPSHOT_REASON_CODES,
   applicableActivationGates,
   buildUnsignedActivationPayload,
@@ -98,7 +99,11 @@ test("payload expiry is the earliest distinct approval expiry and invalid calend
   const invalidDate = structuredClone(result.payload); invalidDate.issued_at = "2026-02-30T12:00:00.000Z"; assert.throws(() => renderReleaseDecision(invalidDate));
 });
 
-test("production trust map is empty and closed/descriptor/symbol/cycle attacks reject", async () => {
+test("production trust map pins only the owner-selected Ed25519 SPKI and closed/descriptor/symbol/cycle attacks reject", async () => {
+  assert.deepEqual(PRODUCTION_ACTIVATION_TRUST_KEYS, {
+    "oddspark-production-activation-2026-01": "MCowBQYDK2VwAyEARHw4lHZum5v0FkNakqeIbOxAMDoMHMKbl9IS0Fknxcg",
+  });
+  assert.equal(Object.isFrozen(PRODUCTION_ACTIVATION_TRUST_KEYS), true);
   const { payload } = await readyPayload(); const key = keys(); const signed = envelope(payload, key.privateKey);
   assert.equal((await evaluateActivationSnapshot(signed, { now: () => Date.parse(issued) + 1 })).reason, SNAPSHOT_REASON_CODES.KEY);
   for (const mutate of [

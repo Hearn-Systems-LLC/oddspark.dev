@@ -63,7 +63,7 @@
     },
     {
       "path": "src/pipeline/release-decision.mjs",
-      "sha256": "8607047d00569be972457fc04a8b21e5fc3cc52fa975bb260a53403faa148376"
+      "sha256": "95f3b69df7c8aab9a815354e690be3eace78eb7620433502f684b5e3ed6d6532"
     },
     {
       "path": "src/pipeline/rendering.mjs",
@@ -78,5 +78,5 @@
       "sha256": "a11d0b9313de346d9bff8edc11de1557dc767f24e49992c1ea252ee5b64bc7db"
     }
   ],
-  "assembly_identity_sha256": "4388ba940e9518aa4a8d1dc112c3a1d220d01ed67ecc19da5fead216ddea8324"
+  "assembly_identity_sha256": "9e20e72300d2c84c85d62e98ff5d9bd9a2f806dc94b808d2305bad132f4217f5"
 }

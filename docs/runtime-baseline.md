@@ -303,13 +303,14 @@ Operator authority remains intentionally incomplete and must not be inferred:
   `MCowBQYDK2VwAyEARHw4lHZum5v0FkNakqeIbOxAMDoMHMKbl9IS0Fknxcg`
   (**owner-selected 2026-08-26**; DER SHA-256
   `17cc333e3c59953bad278a2138ff53c579a793ec48f698dffabc780784fd450e`);
-- source-pinning code/config deployment approval: **not granted**;
+- source-pinning code/config deployment approval: **granted by owner 2026-08-26**
+  for this exact single-key trust map, with `ACTIVATION_SNAPSHOT` absent;
 - external signing approval for exact payload bytes: **not granted**;
 - one-shot activation approval for an exact packet/target: **not granted**;
 - one-shot rollback approval: **not granted**.
 
-Until the remaining approvals are explicitly supplied, the source-pinned
-production trust map remains empty, `ACTIVATION_SNAPSHOT` must remain absent,
-and both activation and rollback execution are blocked. No private key
+The source-pinned production trust map contains only the selected public key,
+but `ACTIVATION_SNAPSHOT` must remain absent until the remaining approvals are
+explicitly supplied. Activation and rollback execution remain blocked. No private key
 material belongs in this repository, command output, packet, or operator
 record.

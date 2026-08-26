@@ -75,6 +75,14 @@ deferred: []
 
 ## Review Triage Log
 
+- 2026-08-26 source-pin approval and review — RECORD: the owner explicitly
+  approved the exact single-key source-pinning code/config deployment while
+  requiring `ACTIVATION_SNAPSHOT` to remain absent. The trust map now pins only
+  `oddspark-production-activation-2026-01`; runtime assembly identity is
+  `9e20e72300d2c84c85d62e98ff5d9bd9a2f806dc94b808d2305bad132f4217f5`.
+  Independent AGY adversarial review returned PASS after the full project gate.
+  External signing, activation, and rollback approvals remain ungranted.
+
 - 2026-08-26 operator authority update — RECORD: the owner selected production
   key id `oddspark-production-activation-2026-01` and supplied a valid Ed25519
   DER SPKI public key with SHA-256

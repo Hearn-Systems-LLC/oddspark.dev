@@ -3,7 +3,9 @@ import { deriveActivationRef, validateProductionActivationManifest } from "./act
 
 export const ACTIVATION_ATTESTATION_VERSION = 1;
 export const ACTIVATION_ATTESTATION_DOMAIN = "oddspark-activation-attestation/v1\n";
-export const PRODUCTION_ACTIVATION_TRUST_KEYS = deepFreeze({});
+export const PRODUCTION_ACTIVATION_TRUST_KEYS = deepFreeze({
+  "oddspark-production-activation-2026-01": "MCowBQYDK2VwAyEARHw4lHZum5v0FkNakqeIbOxAMDoMHMKbl9IS0Fknxcg",
+});
 // Test harnesses inject ephemeral public keys through a symbol property. Such
 // a property cannot be represented by Workers vars/bindings or JSON, so it is
 // not a parallel production configuration surface.
