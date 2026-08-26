@@ -75,6 +75,13 @@ deferred: []
 
 ## Review Triage Log
 
+- 2026-08-26 operator authority update — RECORD: the owner selected production
+  key id `oddspark-production-activation-2026-01` and supplied a valid Ed25519
+  DER SPKI public key with SHA-256
+  `17cc333e3c59953bad278a2138ff53c579a793ec48f698dffabc780784fd450e`.
+  Source-pinning/config/deployment, external signing, activation, and rollback
+  approvals remain ungranted; the production trust map remains empty.
+
 - 2026-08-26 required-repair pass — PATCH: terminal race was real because the
   outer timeout could not revoke an already in-flight coordinator commit.
   Added a coordinator-enforced absolute terminal deadline at the transaction

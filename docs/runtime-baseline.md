@@ -298,13 +298,17 @@ is a different approval and deployment.
 
 Operator authority remains intentionally incomplete and must not be inferred:
 
-- production key id and SPKI public key: **not owner-selected**;
+- production key id: `oddspark-production-activation-2026-01` (**owner-selected 2026-08-26**);
+- production Ed25519 SPKI public key (base64url):
+  `MCowBQYDK2VwAyEARHw4lHZum5v0FkNakqeIbOxAMDoMHMKbl9IS0Fknxcg`
+  (**owner-selected 2026-08-26**; DER SHA-256
+  `17cc333e3c59953bad278a2138ff53c579a793ec48f698dffabc780784fd450e`);
 - source-pinning code/config deployment approval: **not granted**;
 - external signing approval for exact payload bytes: **not granted**;
 - one-shot activation approval for an exact packet/target: **not granted**;
 - one-shot rollback approval: **not granted**.
 
-Until those values and approvals are explicitly supplied, the source-pinned
+Until the remaining approvals are explicitly supplied, the source-pinned
 production trust map remains empty, `ACTIVATION_SNAPSHOT` must remain absent,
 and both activation and rollback execution are blocked. No private key
 material belongs in this repository, command output, packet, or operator
