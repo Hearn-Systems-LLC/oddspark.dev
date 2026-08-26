@@ -1,0 +1,16 @@
+{
+  "schema_version": "oddspark.judge-cycle-completion/v2",
+  "basename": "story-1-26-judge-requalification-20260826-r3-unapproved.plan-disclosure",
+  "files": [
+    {
+      "name": "story-1-26-judge-requalification-20260826-r3-unapproved.plan.json",
+      "bytes": 63111,
+      "sha256": "1f4fb793a4ff9a7dc5ab0da37d031134ad3e98a525329385ee5a9f827d1f2863"
+    },
+    {
+      "name": "story-1-26-judge-requalification-20260826-r3-unapproved.plan-approval-template.json",
+      "bytes": 367,
+      "sha256": "38be160f7d0373f43724b11400191d7ada572e1d8aecdbcd90c17ee1ee7341cd"
+    }
+  ]
+}
