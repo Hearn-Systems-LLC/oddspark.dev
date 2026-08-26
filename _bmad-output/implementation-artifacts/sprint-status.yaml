@@ -119,7 +119,7 @@ development_status:
   1-18-1-judge-semantic-discrimination-recovery-retained-failed-pro: done
   1-18-2-direct-quality-gate-simplification: done
   1-19-local-full-request-qualification: done
-  1-20-atomic-activation-contract-and-release-decision-view: review
+  1-20-atomic-activation-contract-and-release-decision-view: done
   1-21-local-artifact-retention-lifecycle: done
   1-22-honest-pipeline-explanation: review
   1-23-worker-runtime-assembly: done
