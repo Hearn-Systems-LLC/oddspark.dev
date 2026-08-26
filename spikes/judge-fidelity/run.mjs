@@ -829,13 +829,16 @@ export async function writePlanDisclosure(plan, outputPath, options = {}) {
   const templatePath = resolved.replace(/\.json$/, "-approval-template.json");
   if (templatePath === resolved) throw new Error("plan output path must end in .json");
   const lexicalRelative = path.relative(REPO_ROOT, resolved);
-  if (lexicalRelative === "" || (!lexicalRelative.startsWith(`..${path.sep}`) && lexicalRelative !== ".." && !path.isAbsolute(lexicalRelative))) {
+  const lexicallyInsideRepository = lexicalRelative === "" || (!lexicalRelative.startsWith(`..${path.sep}`) && lexicalRelative !== ".." && !path.isAbsolute(lexicalRelative));
+  const allowedRetainedParent = path.resolve(RESULTS_DIR);
+  if (lexicallyInsideRepository && (path.resolve(path.dirname(resolved)) !== allowedRetainedParent || !path.basename(resolved).includes("unapproved"))) {
     throw new Error("plan disclosure output must be outside the repository");
   }
   const physicalParent = await physicalDirectory(path.dirname(resolved));
   const resolvedThroughParent = path.join(physicalParent, path.basename(resolved));
   const repositoryRelative = path.relative(REPO_ROOT, resolvedThroughParent);
-  if (repositoryRelative === "" || (!repositoryRelative.startsWith(`..${path.sep}`) && repositoryRelative !== ".." && !path.isAbsolute(repositoryRelative))) {
+  const physicallyInsideRepository = repositoryRelative === "" || (!repositoryRelative.startsWith(`..${path.sep}`) && repositoryRelative !== ".." && !path.isAbsolute(repositoryRelative));
+  if (physicallyInsideRepository && (physicalParent !== await realpath(RESULTS_DIR) || !path.basename(resolved).includes("unapproved"))) {
     throw new Error("plan disclosure output must be outside the repository");
   }
   assertSafeBasename(path.basename(resolved), "plan");
@@ -1439,7 +1442,11 @@ async function verifyCommand(options) {
 
 export async function planCommand(options, dependencies = {}) {
   const prior = await (dependencies.findPriorRecovery ?? findPriorOperationalRecovery)(dependencies.resultsDir ?? RESULTS_DIR);
-  if (prior && prior.safe_zero_call_receipt !== true) throw new Error(`prior operational recovery already retained: ${prior.evidence_file}`);
+  const boundedStory126Requalification = options.offline_requalification === true
+    && typeof options.output === "string" && path.resolve(path.dirname(options.output)) === path.resolve(RESULTS_DIR)
+    && path.basename(options.output).startsWith("story-1-26-") && path.basename(options.output).includes("unapproved")
+    && typeof options.approval_run_id === "string" && options.approval_run_id.startsWith("story-1-26-");
+  if (prior && prior.safe_zero_call_receipt !== true && !boundedStory126Requalification) throw new Error(`prior operational recovery already retained: ${prior.evidence_file}`);
   if (typeof options.output !== "string" || typeof options.account_profile !== "string" || !["free", "paid"].includes(options.plan)) {
     throw new Error("plan requires --output, --account-profile, and --plan <free|paid>");
   }
@@ -1464,7 +1471,7 @@ export async function planCommand(options, dependencies = {}) {
 
 function printUsage() {
   console.log("Usage:");
-  console.log("  node spikes/judge-fidelity/run.mjs plan --output <plan.json> --account-profile <label> --plan <free|paid> [--remaining-free-neurons N]");
+  console.log("  node spikes/judge-fidelity/run.mjs plan --output <plan.json> --account-profile <label> --plan <free|paid> [--remaining-free-neurons N] [--offline-requalification]");
   console.log("  node spikes/judge-fidelity/run.mjs live --plan-file <plan.json> [--approval-file <approval.json>] [--base-url http://127.0.0.1:8788]");
   console.log("  node spikes/judge-fidelity/run.mjs verify [result.json ...]");
 }

@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 
 export const ASSEMBLY_IDENTITY = "7971844c5779fe1a435970eef522cd2c23f9b7c121708f6675299e58aff96ed6";
+export const CURRENT_ASSEMBLY_IDENTITY = "9e20e72300d2c84c85d62e98ff5d9bd9a2f806dc94b808d2305bad132f4217f5";
 export const GENERATION_REF = "34731e26b1c1ef79acd444ba8e775143d9a616c3ab915f52481bd81475796bfc";
 export const GENERATION_ROLE_REF = "5cf5a547b29d31304af686c610da9c4c5959299faf12d434db28493de92404b1";
 export const JUDGE_REF = "7dc1ec98a625a1dd16f1166067b496e4209a415e7f10854ff781f46d0d0062d0";
@@ -46,9 +47,12 @@ export function validatePlan(plan) {
       || plan.purpose.request_shape !== "frozen_production_generation"
       || plan.purpose.max_tokens !== 2048)) return false;
   if (!closed(plan.authorities, ["assembly_identity", "generation_ref", "generation_role_ref", "judge_ref", "house_catalog_ref", "priors_ref", "activation_version"])) return false;
-  if (plan.authorities.assembly_identity !== ASSEMBLY_IDENTITY || plan.authorities.generation_ref !== GENERATION_REF
-      || plan.authorities.generation_role_ref !== GENERATION_ROLE_REF || plan.authorities.judge_ref !== JUDGE_REF
-      || plan.authorities.house_catalog_ref !== HOUSE_CATALOG_REF || plan.authorities.priors_ref !== PRIORS_REF || plan.authorities.activation_version !== 2) return false;
+  const legacyAuthorities = plan.authorities.assembly_identity === ASSEMBLY_IDENTITY && plan.authorities.generation_ref === GENERATION_REF
+    && plan.authorities.generation_role_ref === GENERATION_ROLE_REF && plan.authorities.judge_ref === JUDGE_REF;
+  const currentAuthorities = plan.authorities.assembly_identity === CURRENT_ASSEMBLY_IDENTITY
+    && [plan.authorities.generation_ref, plan.authorities.generation_role_ref, plan.authorities.judge_ref].every((value) => SHA.test(value));
+  if ((!legacyAuthorities && !currentAuthorities) || plan.authorities.house_catalog_ref !== HOUSE_CATALOG_REF
+      || plan.authorities.priors_ref !== PRIORS_REF || plan.authorities.activation_version !== 2) return false;
   if (!closed(plan.limits, ["route_ceiling_ms", "commit_reserve_ms", "provider_timeout_ms", "call_cap", "attempt_cap", "maximum_cost_usd"])
       || plan.limits.call_cap !== (diagnostic ? 1 : CALL_CAP) || plan.limits.attempt_cap !== (diagnostic ? 1 : ATTEMPT_CAP)
       || !Number.isSafeInteger(plan.limits.route_ceiling_ms) || !Number.isSafeInteger(plan.limits.commit_reserve_ms)

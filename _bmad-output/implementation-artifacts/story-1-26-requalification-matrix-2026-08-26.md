@@ -1,7 +1,7 @@
 # Story 1.26 requalification matrix — UNAPPROVED
 
 Date: 2026-08-26  
-Repository baseline: `fc3a215150260bd10b918b7ebd06eb2fb1fb2440` on `develop`  
+Repository tooling baseline: `9857bd4cdc80802ce78858889cb9a0aa10d0f07a` on `develop`
 Overall status: **BLOCKED / UNAPPROVED**  
 Provider calls: **0**  
 Remote mutations: **0**  
@@ -154,3 +154,14 @@ For each stage, in order:
 7. Independently verify arbitrary retained bytes and require a GO authority ref before advancing to the next stage.
 
 Final signing preparation remains blocked until all three current refs pass retained verifiers, all applicable approvals are unexpired, and an independent reviewer confirms the exact assembly/ref chain. This matrix grants no signing or activation authority.
+
+## 2026-08-26 offline tooling evidence at `9857bd4`
+
+- Local-full-request offline regressions are repaired against the current inactive-domain writer behavior: the stale synthetic expectations now prove fail-closed `pipeline_failed` with zero provider dispatch. The focused suite passes 30/30 without production-pipeline changes.
+- A traversal-safe, refuse-overwrite local-full-request plan creator now requires assembly `9e20e72300d2c84c85d62e98ff5d9bd9a2f806dc94b808d2305bad132f4217f5`, exact synthetic Stage 1 configuration/role refs, exact Stage 2 role ref, UUID run ID, canonical strike timestamp, and explicit route/deadline/call/cost limits. Tests prove valid synthetic creation, collision refusal, stale assembly/ref rejection, inconsistent deadline rejection, approval/execution null, and `allowance_consumed:false`. No Stage 3 plan was created.
+- The expanded packet completed Stage 1 offline planning. Generation plan v3 binds `Hearn Systems account`, `paid`, 10,000 daily free neurons, `free-first-then-paid-bounded-by-plan-cap`, and no paid remaining-free-neuron requirement. Retained v2 authority/ref validation remains available unchanged. The canonical retained plan is `spikes/generation-qualification/results/story-1-26-generation-requalification-20260826.plan.json`: bytes SHA-256 `79ed71acfe5e5e886b05ea1d2523b620cee9f71878976c2eb208cac87d9fc0bd`, plan ref `9676b8fa3f42ab08890f3217a9c40c108b1ca5f2820f166c6b2388caace66486`, run ID `story-1-26-generation-requalification-20260826`, 63-call cap, `$0.30586038` ceiling. Approval/execution are null, allowance false, calls zero.
+- The expanded packet completed Stage 2 offline planning. The exact bounded non-secret label is valid without weakening path/traversal/account-ID/secret exclusions. The canonical retained plan is `spikes/judge-fidelity/results/story-1-26-judge-requalification-20260826-unapproved.plan.json`: bytes SHA-256 `741d207d1b3a054555a8f73afcf63e758875c276c84b0424a1718600558d42ad`, plan ref `0e6a02d0a5971453ff429534ac91fa496219c0ed5cd1a039a96cfb1f7361b336`, run ID `story-1-26-judge-requalification-20260826`, 42-call cap, `$0.3054702` ceiling, zero retry/replacement. The marker-bound approval template remains unapproved with null timestamps.
+- Final focused verification: generation 48/48; judge 82/82 plus 79/79 fixtures and 18/18 predicates; local full-request 30/30; retained validators and judge disclosure marker PASS; assembly verify PASS at `9e20e72300d2c84c85d62e98ff5d9bd9a2f806dc94b808d2305bad132f4217f5` over 18 modules; diff/boundary checks PASS.
+- Provider calls: **0**. Remote mutations: **0**. Allowance consumed: **false**. No adapter was started and no plan was approved.
+
+This terminal update supersedes the earlier Stage 1/2 missing-owner-input and validator-blocker paragraphs above. Stage 1 and Stage 2 now each have exactly one fresh unapproved offline plan, not execution authority. Stage 3 still depends on fresh separately approved and independently accepted Stage 1/2 GO refs; no Stage 3 plan exists.

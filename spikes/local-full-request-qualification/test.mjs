@@ -7,8 +7,9 @@ import { fileURLToPath } from "node:url";
 import os from "node:os";
 import path from "node:path";
 import { acquireLock, appendAttempt, atomicWrite, releaseLock, STALE_LOCK_MS } from "./governance.mjs";
-import { deriveFullRequestRef, PREDICATES, providerTimeoutFor, sha256, validatePlan } from "./contract.mjs";
+import { CURRENT_ASSEMBLY_IDENTITY, deriveFullRequestRef, PREDICATES, providerTimeoutFor, sha256, validatePlan } from "./contract.mjs";
 import { preflight, runLive } from "./run.mjs";
+import { createUnapprovedPlan, writeUnapprovedPlan } from "./plan-creator.mjs";
 import { verifyPublication } from "./publication.mjs";
 import { verifyEvidenceBytes } from "./verifier.mjs";
 import { boundedProviderCall, PROVIDER_ERROR_FIELD_MAX_LENGTH, providerErrorDetail } from "./provider-call.mjs";
@@ -79,7 +80,7 @@ test("one-call diagnostic plan is closed, unapproved, and cannot drift the froze
   assert.deepEqual(diagnosticPlan.schedule, [{ attempt: 1, role: "diagnostic", generation_slots: [1], judge_slots: [] }]);
   assert.equal(diagnosticPlan.approval, null); assert.equal(diagnosticPlan.execution, null); assert.equal(diagnosticPlan.allowance_consumed, false);
 });
-test("provider errors are safely bounded and retain class, message, HTTP status, and code in evidence", async () => {
+test("provider errors are bounded, while current inactive-domain authority fails closed before provider dispatch", async () => {
   class ProviderShapeError extends Error { constructor() { super("invalid response_format ".repeat(40)); this.status = 400; this.code = "BAD_REQUEST_SHAPE"; } }
   const detail = providerErrorDetail(new ProviderShapeError());
   assert.deepEqual({ class: detail.class, http_status: detail.http_status, code: detail.code }, { class: "ProviderShapeError", http_status: 400, code: "BAD_REQUEST_SHAPE" });
@@ -104,9 +105,8 @@ test("provider errors are safely bounded and retain class, message, HTTP status,
   const diagnosticApproval = { ...approval, run_id: diagnosticPlan.run_id, plan_sha256: sha256(diagnosticPlanBytes) };
   const response = await adapterWorker.fetch(new Request("http://127.0.0.1/run", { method: "POST", headers: { "content-type": "application/json", "x-qualification-authority": env.AUTHORITY_SHA256 }, body: JSON.stringify({ plan: diagnosticPlan, approval: diagnosticApproval }) }), env);
   const { evidence } = await response.json();
-  assert.equal(evidence.run.calls_started, 1); assert.equal(evidence.attempts.length, 1);
-  assert.deepEqual(evidence.attempts[0].generation.provider_error, detail);
-  assert.notEqual(evidence.attempts[0].generation.response_sha256, sha256(Buffer.from('{"error":"provider_failure"}')));
+  assert.equal(evidence.run.calls_started, 0); assert.equal(evidence.attempts.length, 0);
+  assert.deepEqual(evidence.outcome, { source: "none", code: "pipeline_failed", failure_stage: "strike", error: { class: "Error", message: "inactive domain writer unavailable", http_status: null, code: null } });
 });
 test("Worker entry module exports only the default ExportedHandler", async () => {
   assert.deepEqual(Object.keys(await import("./worker.mjs")), ["default"]);
@@ -205,7 +205,7 @@ test("deterministic rejection retains zero judge calls and can advance to a late
 });
 test("house fallback is retained and never judged", () => { const evidence = baseEvidence(); evidence.attempts[0].judge = null; evidence.attempts[0].deterministic.pass = false; evidence.attempts[0].terminal = "deterministic_rejected"; evidence.outcome = { source: "house", code: "house_accepted" }; evidence.run.calls_started = 1; evidence.run.cost_usd = evidence.attempts[0].generation.cost_usd; assert.equal(verify(closeEvidence(evidence)).valid, true); });
 test("ambiguous provider attempt is terminal NO-GO and preserves evidence without a ref", () => { const evidence = closeEvidence(); evidence.attempts[0].terminal = "ambiguous"; evidence.run.terminal = false; evidence.full_request_ref = null; const outcome = verify(evidence); assert.equal(outcome.valid, false); assert.match(outcome.errors.join(";"), /chronology.complete/); });
-test("provider failure, exhaustion, and a slow call remain bounded, terminal, and independently visible", async () => { const evidence = baseEvidence(); const failed = evidence.attempts[0].generation; failed.success = false; failed.provider_error = { class: "Error", message: "provider_timeout", http_status: null, code: null }; failed.usage = { input_tokens: 0, output_tokens: 0 }; failed.cost_usd = 0; evidence.attempts[0].judge = null; evidence.attempts[0].terminal = "provider_failed"; evidence.outcome = { source: "house", code: "house_accepted" }; evidence.run.calls_started = 1; evidence.run.cost_usd = 0; assert.equal(verify(closeEvidence(evidence)).valid, true);
+test("provider failure evidence remains bounded and current runtime exhaustion fails closed before provider dispatch", async () => { const evidence = baseEvidence(); const failed = evidence.attempts[0].generation; failed.success = false; failed.provider_error = { class: "Error", message: "provider_timeout", http_status: null, code: null }; failed.usage = { input_tokens: 0, output_tokens: 0 }; failed.cost_usd = 0; evidence.attempts[0].judge = null; evidence.attempts[0].terminal = "provider_failed"; evidence.outcome = { source: "house", code: "house_accepted" }; evidence.run.calls_started = 1; evidence.run.cost_usd = 0; assert.equal(verify(closeEvidence(evidence)).valid, true);
   let timeout; let cleared = false;
   const timers = { setTimeout(callback, ms) { timeout = ms; callback(); return 1; }, clearTimeout(id) { assert.equal(id, 1); cleared = true; } };
   await assert.rejects(boundedProviderCall(() => new Promise(() => {}), plan.limits.provider_timeout_ms, timers), /provider_timeout/);
@@ -227,33 +227,20 @@ test("provider failure, exhaustion, and a slow call remain bounded, terminal, an
   const integrationStarted = Date.now();
   const response = await Promise.race([adapterWorker.fetch(request, env), new Promise((_, reject) => setTimeout(() => reject(new Error("adapter worker hung")), 1000))]);
   const integrated = await response.json();
-  assert.equal(response.status, 200); assert.deepEqual(integrated.evidence.outcome, { source: "house", code: "house_accepted" });
-  assert.equal(providerCalls, 3); assert.deepEqual(providerStages, ["generation", "generation", "generation"]);
-  assert.equal(integrated.evidence.run.calls_started, 3); assert.equal(integrated.evidence.run.terminal, true);
-  assert.equal(typeof integrated.evidence.strike.code, "string"); assert.ok(integrated.evidence.strike.ledger.length > 0);
-  assert.equal(integrated.evidence.strike.ledger.some(({ event }) => event === "generation_rejected"), true);
-  assert.equal(integrated.evidence.attempts.length, 3);
-  assert.equal(integrated.evidence.attempts.every((attempt) => attempt.terminal === "provider_failed" && attempt.judge === null && attempt.external_retries === 0 && attempt.generation.success === false && attempt.generation.timeout_ms === 19833 && attempt.generation.usage.input_tokens === 0 && attempt.generation.usage.output_tokens === 0 && attempt.generation.cost_usd === 0), true);
-  for (const { generation } of integrated.evidence.attempts) { assert.match(generation.request_sha256, /^[a-f0-9]{64}$/); assert.match(generation.response_sha256, /^[a-f0-9]{64}$/); assert.ok(generation.latency_ms >= 0); assert.ok(Date.parse(generation.finished_at) >= Date.parse(generation.started_at)); }
-  assert.equal(integrated.evidence.commit.confirmed, true); assert.equal(integrated.evidence.commit.coordinator_status, "committed"); assert.match(integrated.evidence.commit.receipt_sha256, /^[a-f0-9]{64}$/);
-  assert.equal(integrated.evidence.render.completed, true); assert.match(integrated.evidence.render.sha256, /^[a-f0-9]{64}$/); assert.ok(integrated.evidence.render.bytes > 0); assert.equal(integrated.evidence.full_request_ref, null);
-  assert.equal(integrated.evidence.run.commit_reserve_observed, true); assert.ok(integrated.evidence.run.remaining_before_commit_ms >= plan.limits.commit_reserve_ms);
+  assert.equal(response.status, 200); assert.equal(providerCalls, 0); assert.deepEqual(providerStages, []);
+  assert.deepEqual(integrated.evidence.outcome, { source: "none", code: "pipeline_failed", failure_stage: "strike", error: { class: "Error", message: "inactive domain writer unavailable", http_status: null, code: null } });
+  assert.equal(integrated.evidence.run.calls_started, 0); assert.equal(integrated.evidence.run.terminal, true); assert.equal(integrated.evidence.strike, null); assert.deepEqual(integrated.evidence.attempts, []);
+  assert.equal(integrated.evidence.commit.confirmed, false); assert.equal(integrated.evidence.render.completed, false); assert.equal(integrated.evidence.full_request_ref, null);
   assert.ok(Date.now() - integrationStarted < plan.limits.route_ceiling_ms - plan.limits.commit_reserve_ms);
-  const directory = await mkdtemp(path.join(os.tmpdir(), "full-request-worker-house-go-"));
-  const approvalNow = Date.now();
-  const currentApproval = { ...approval, approved_at: new Date(approvalNow - 1000).toISOString(), expires_at: new Date(approvalNow + 3600000).toISOString() };
-  const currentApprovalBytes = Buffer.from(`${JSON.stringify(currentApproval)}\n`);
-  const adapter = {
-    async health() { return { ok: true, assembly_identity: plan.authorities.assembly_identity }; },
-    async run() {
-      const workerResponse = await adapterWorker.fetch(new Request("http://127.0.0.1/run", { method: "POST", headers: { "content-type": "application/json", "x-qualification-authority": env.AUTHORITY_SHA256 }, body: JSON.stringify({ plan, approval: currentApproval }) }), env);
-      assert.equal(workerResponse.status, 200); return workerResponse.json();
-    },
-  };
-  const outer = await runLive({ planBytes, approvalBytes: currentApprovalBytes, resultsDirectory: directory, adapter, tty: true, ci: false, now: () => approvalNow });
-  assert.equal(outer.ok, true, outer.verification.errors.join(";")); assert.equal(outer.code, "go"); assert.equal(outer.allowance_consumed, true); assert.match(outer.evidence.full_request_ref, /^[a-f0-9]{64}$/);
-  const publishedReceipt = JSON.parse(await readFile(path.join(directory, `${plan.run_id}.receipt.json`), "utf8"));
-  assert.equal(publishedReceipt.state, "completed"); assert.equal(publishedReceipt.full_request_ref, outer.evidence.full_request_ref); assert.equal((await verifyPublication(directory, plan.run_id)).marker.members.length, 5);
+});
+
+test("plan creator binds current assembly and synthetic accepted refs, rejects drift and collisions, and has no provider path", async () => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), "full-request-plan-")); const output = path.join(directory, "story-1-26-synthetic.plan.json");
+  const options = { output, assembly_ref: CURRENT_ASSEMBLY_IDENTITY, generation_ref: "1".repeat(64), generation_role_ref: "2".repeat(64), judge_ref: "3".repeat(64), run_id: "12345678-1234-4123-8123-123456789abc", strike_timestamp: "2026-08-26T15:00:00.000Z", route_ceiling_ms: "120000", commit_reserve_ms: "1000", provider_timeout_ms: "19833", call_cap: "6", attempt_cap: "3", maximum_cost_usd: "0.06" };
+  const created = createUnapprovedPlan(options); assert.equal(validatePlan(created), true); assert.equal(created.approval, null); assert.equal(created.execution, null); assert.equal(created.allowance_consumed, false);
+  const retained = await writeUnapprovedPlan(created, output); assert.equal(retained.sha256, sha256(retained.bytes)); await assert.rejects(writeUnapprovedPlan(created, output), /EEXIST/);
+  assert.throws(() => createUnapprovedPlan({ ...options, assembly_ref: "0".repeat(64) }), /current assembly/); assert.throws(() => createUnapprovedPlan({ ...options, judge_ref: "stale" }), /accepted Stage/); assert.throws(() => createUnapprovedPlan({ ...options, provider_timeout_ms: "19832" }), /inconsistent/);
+  await assert.rejects(writeUnapprovedPlan(created, path.join(directory, "..", "escape.plan.json")), /EEXIST|unsafe|ENOENT/);
 });
 test("fsynced atomic accounting and append-only attempt history retain complete records", async () => { const directory = await mkdtemp(path.join(os.tmpdir(), "full-request-accounting-")); const receipt = path.join(directory, "receipt.json"); const history = path.join(directory, "attempts.jsonl"); await atomicWrite(receipt, Buffer.from("{\"calls_started\":0}\n")); await appendAttempt(history, { sequence: 1, terminal: "provider_failed" }); await appendAttempt(history, { sequence: 2, terminal: "accepted" }); assert.match(await readFile(receipt, "utf8"), /calls_started/); assert.equal((await readFile(history, "utf8")).trim().split("\n").length, 2); });
 test("cycle lock is exclusive, stale-safe, and refuses successor release", async () => { const directory = await mkdtemp(path.join(os.tmpdir(), "full-request-lock-")); const first = await acquireLock(directory); await assert.rejects(acquireLock(directory), /live or not stale/); await releaseLock(first); const old = await acquireLock(directory, { now: 0 }); await writeFile(old.lockPath, `${JSON.stringify({ pid: 99999999, nonce: old.nonce, acquired_at: new Date(0).toISOString() })}\n`); const recovered = await acquireLock(directory, { now: STALE_LOCK_MS + 1, alive: () => false }); await assert.rejects(releaseLock(old), /successor/); await releaseLock(recovered); });

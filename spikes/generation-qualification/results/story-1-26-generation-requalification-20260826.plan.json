@@ -1,0 +1,729 @@
+{
+  "schema_version": "oddspark.generation-qualification-plan/v3",
+  "plan_ref": "9676b8fa3f42ab08890f3217a9c40c108b1ca5f2820f166c6b2388caace66486",
+  "approval_run_id": "story-1-26-generation-requalification-20260826",
+  "created_at": "2026-08-26T15:32:57.063Z",
+  "provider": "cloudflare-workers-ai",
+  "authority": {
+    "account_profile": "Hearn Systems account",
+    "credential_path": "wrangler-remote-binding",
+    "headroom_confirmed": true,
+    "workers_plan": "paid",
+    "daily_free_neurons": 10000,
+    "billing_order": "free-first-then-paid-bounded-by-plan-cap",
+    "remaining_free_neurons": null
+  },
+  "roles": [
+    {
+      "role": "primary",
+      "resolved_model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    {
+      "role": "fallback",
+      "resolved_model": "@cf/openai/gpt-oss-20b"
+    }
+  ],
+  "parameters": {
+    "temperature": 0,
+    "max_tokens": 2048
+  },
+  "timeout_policy": {
+    "adapter_timeout_ms": 120000,
+    "preflight_timeout_ms": 10000,
+    "probes_must_complete_before_trials": true,
+    "execution": "sequential",
+    "transient_retries": 1,
+    "retry_states": [
+      "provider_error",
+      "timeout"
+    ],
+    "replacements": 0
+  },
+  "input": {
+    "evidence": {
+      "version": 1,
+      "mode": "local",
+      "priors": {
+        "region": "Blue Water Area",
+        "season": "summer",
+        "date": "2026-08-18",
+        "situation": "repeated inquiries",
+        "capability_bundle": [
+          "software",
+          "workflow automation"
+        ]
+      }
+    },
+    "seed": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  "requests": [
+    {
+      "role": "primary",
+      "resolved_model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+      "body": {
+        "role": "primary",
+        "model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a product strategist for small local businesses. The user message contains generation inputs (an evidence object — region, season, situation, capability_bundle — and a random seed). Your task: INVENT one new, practical improvement the business could make using software or workflow automation, and return it as exactly one JSON Candidate object matching the supplied JSON Schema.\n\nRules:\n- The user message is input only. NEVER copy, echo, or reshape it into the output. The output is a new object describing your invented idea.\n- Use these exact nested object shapes: why_fits is an object {\"text\": \"...\"} (never a dotted key, never a breadcrumb field); before_after is {\"before\": \"...\", \"after\": \"...\"}; change_level is {\"time_range\": \"...\", \"steps_changed\": 0, \"steps_removed\": 0, \"preliminary\": true} with non-negative integer step counts; stays_same is {\"tools\": [...], \"authority\": [...], \"steps\": [...]}.\n- version is exactly 1; mode is exactly \"local\"; title, plan, what_gets_better, invitation are nonblank strings.\n- grounded_numbers MUST be an empty array [] in local mode. Write every narrative field qualitatively: no digits or numeric tokens anywhere outside change_level's integer fields (use words like \"one afternoon\" instead).\n- Never mention prices or costs: no currency symbols and none of the words price, pricing, cost, fee, subscription, per month, per year.\n- invitation must contain the word \"Spark\" and be a confident, bounded next step addressed to the owner — a statement, not a question. Never hedge (\"if it is worth\", \"if it sounds useful\", \"not worth changing\", \"call it off\") and never use pitch language (\"act now\", \"book now\", \"limited time\", \"schedule a call\", \"don't miss\", \"last chance\").\n- Do not include a candidate_ref. Do not wrap, fence, explain, or add any text outside the JSON object."
+          },
+          {
+            "role": "user",
+            "content": "{\"evidence\":{\"mode\":\"local\",\"priors\":{\"capability_bundle\":[\"software\",\"workflow automation\"],\"date\":\"2026-08-18\",\"region\":\"Blue Water Area\",\"season\":\"summer\",\"situation\":\"repeated inquiries\"},\"version\":1},\"seed\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}"
+          }
+        ],
+        "temperature": 0,
+        "max_tokens": 2048,
+        "response_format": {
+          "type": "json_schema",
+          "json_schema": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "version",
+              "mode",
+              "title",
+              "plan",
+              "why_fits",
+              "what_gets_better",
+              "before_after",
+              "change_level",
+              "stays_same",
+              "invitation",
+              "grounded_numbers"
+            ],
+            "properties": {
+              "version": {
+                "const": 1
+              },
+              "mode": {
+                "enum": [
+                  "local",
+                  "domain"
+                ]
+              },
+              "title": {
+                "type": "string",
+                "minLength": 1
+              },
+              "plan": {
+                "type": "string",
+                "minLength": 1
+              },
+              "why_fits": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "text"
+                ],
+                "properties": {
+                  "text": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "breadcrumb": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
+              },
+              "what_gets_better": {
+                "type": "string",
+                "minLength": 1
+              },
+              "before_after": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "before",
+                  "after"
+                ],
+                "properties": {
+                  "before": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "after": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
+              },
+              "change_level": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "time_range",
+                  "steps_changed",
+                  "steps_removed",
+                  "preliminary"
+                ],
+                "properties": {
+                  "time_range": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "steps_changed": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "steps_removed": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "preliminary": {
+                    "const": true
+                  }
+                }
+              },
+              "stays_same": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "tools",
+                  "authority",
+                  "steps"
+                ],
+                "properties": {
+                  "tools": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "authority": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "steps": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  }
+                }
+              },
+              "invitation": {
+                "type": "string",
+                "minLength": 1
+              },
+              "grounded_numbers": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "notice": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "allOf": [
+              {
+                "if": {
+                  "properties": {
+                    "mode": {
+                      "const": "domain"
+                    }
+                  }
+                },
+                "then": {
+                  "properties": {
+                    "why_fits": {
+                      "required": [
+                        "text",
+                        "breadcrumb"
+                      ]
+                    }
+                  }
+                },
+                "else": {
+                  "properties": {
+                    "why_fits": {
+                      "not": {
+                        "required": [
+                          "breadcrumb"
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "request_sha256": "d04115e10854b71a6bbe529e86b9753d5920dee150a874265115bbd37679b793",
+      "adapter_input_sha256": "d41b03281e87550ba5438e01d773ee1336275d23c9a0a8ea815e3239568f4ade"
+    },
+    {
+      "role": "fallback",
+      "resolved_model": "@cf/openai/gpt-oss-20b",
+      "body": {
+        "role": "fallback",
+        "model": "@cf/openai/gpt-oss-20b",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a product strategist for small local businesses. The user message contains generation inputs (an evidence object — region, season, situation, capability_bundle — and a random seed). Your task: INVENT one new, practical improvement the business could make using software or workflow automation, and return it as exactly one JSON Candidate object matching the supplied JSON Schema.\n\nRules:\n- The user message is input only. NEVER copy, echo, or reshape it into the output. The output is a new object describing your invented idea.\n- Use these exact nested object shapes: why_fits is an object {\"text\": \"...\"} (never a dotted key, never a breadcrumb field); before_after is {\"before\": \"...\", \"after\": \"...\"}; change_level is {\"time_range\": \"...\", \"steps_changed\": 0, \"steps_removed\": 0, \"preliminary\": true} with non-negative integer step counts; stays_same is {\"tools\": [...], \"authority\": [...], \"steps\": [...]}.\n- version is exactly 1; mode is exactly \"local\"; title, plan, what_gets_better, invitation are nonblank strings.\n- grounded_numbers MUST be an empty array [] in local mode. Write every narrative field qualitatively: no digits or numeric tokens anywhere outside change_level's integer fields (use words like \"one afternoon\" instead).\n- Never mention prices or costs: no currency symbols and none of the words price, pricing, cost, fee, subscription, per month, per year.\n- invitation must contain the word \"Spark\" and be a confident, bounded next step addressed to the owner — a statement, not a question. Never hedge (\"if it is worth\", \"if it sounds useful\", \"not worth changing\", \"call it off\") and never use pitch language (\"act now\", \"book now\", \"limited time\", \"schedule a call\", \"don't miss\", \"last chance\").\n- Do not include a candidate_ref. Do not wrap, fence, explain, or add any text outside the JSON object."
+          },
+          {
+            "role": "user",
+            "content": "{\"evidence\":{\"mode\":\"local\",\"priors\":{\"capability_bundle\":[\"software\",\"workflow automation\"],\"date\":\"2026-08-18\",\"region\":\"Blue Water Area\",\"season\":\"summer\",\"situation\":\"repeated inquiries\"},\"version\":1},\"seed\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}"
+          }
+        ],
+        "temperature": 0,
+        "max_tokens": 2048,
+        "response_format": {
+          "type": "json_schema",
+          "json_schema": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "version",
+              "mode",
+              "title",
+              "plan",
+              "why_fits",
+              "what_gets_better",
+              "before_after",
+              "change_level",
+              "stays_same",
+              "invitation",
+              "grounded_numbers"
+            ],
+            "properties": {
+              "version": {
+                "const": 1
+              },
+              "mode": {
+                "enum": [
+                  "local",
+                  "domain"
+                ]
+              },
+              "title": {
+                "type": "string",
+                "minLength": 1
+              },
+              "plan": {
+                "type": "string",
+                "minLength": 1
+              },
+              "why_fits": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "text"
+                ],
+                "properties": {
+                  "text": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "breadcrumb": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
+              },
+              "what_gets_better": {
+                "type": "string",
+                "minLength": 1
+              },
+              "before_after": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "before",
+                  "after"
+                ],
+                "properties": {
+                  "before": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "after": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
+              },
+              "change_level": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "time_range",
+                  "steps_changed",
+                  "steps_removed",
+                  "preliminary"
+                ],
+                "properties": {
+                  "time_range": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "steps_changed": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "steps_removed": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "preliminary": {
+                    "const": true
+                  }
+                }
+              },
+              "stays_same": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "tools",
+                  "authority",
+                  "steps"
+                ],
+                "properties": {
+                  "tools": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "authority": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "steps": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  }
+                }
+              },
+              "invitation": {
+                "type": "string",
+                "minLength": 1
+              },
+              "grounded_numbers": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "notice": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "allOf": [
+              {
+                "if": {
+                  "properties": {
+                    "mode": {
+                      "const": "domain"
+                    }
+                  }
+                },
+                "then": {
+                  "properties": {
+                    "why_fits": {
+                      "required": [
+                        "text",
+                        "breadcrumb"
+                      ]
+                    }
+                  }
+                },
+                "else": {
+                  "properties": {
+                    "why_fits": {
+                      "not": {
+                        "required": [
+                          "breadcrumb"
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "request_sha256": "4ca358197291cc50cee7684122b565f392a46e834cd3f1636cbea952ecbc4662",
+      "adapter_input_sha256": "d41b03281e87550ba5438e01d773ee1336275d23c9a0a8ea815e3239568f4ade"
+    }
+  ],
+  "sources": [
+    {
+      "path": "package.json",
+      "bytes": 4547,
+      "sha256": "82a4a77a70d84c53266589322261591e18bafe436cc21810bb83a4ead2215174"
+    },
+    {
+      "path": "runtime-baseline.json",
+      "bytes": 2900,
+      "sha256": "50d8e3fdb06b548a2b90d8f620cee6ed9620c33ed23314aa5f65db1ecec2cf35"
+    },
+    {
+      "path": "scripts/generation.mjs",
+      "bytes": 247,
+      "sha256": "616b68cb4b9e51014732dd60daca9207577d1ac1a73004b53291683c04af6f84"
+    },
+    {
+      "path": "scripts/brief-contracts.mjs",
+      "bytes": 245,
+      "sha256": "25b0ec6859bad24c938b0bded7ca45874c8c74d09e6bed9090f65d3ae68346d1"
+    },
+    {
+      "path": "spikes/judge-fidelity/contract.mjs",
+      "bytes": 35523,
+      "sha256": "62f236799f4477dd10afd488a4331103aabb3cb00fc5b2a9b551a9228bcea2ed"
+    },
+    {
+      "path": "spikes/generation-qualification/contract.mjs",
+      "bytes": 10603,
+      "sha256": "f7bbf074cb76cd2e988e05487d2874e4ac44eca27765dfe5e71c5657bbf9ce41"
+    },
+    {
+      "path": "spikes/generation-qualification/evidence-v2.mjs",
+      "bytes": 21734,
+      "sha256": "819bc398e3da89c1ea74d079ee19ae9e3b80d13ff7426c1f07c207d213a38b9f"
+    },
+    {
+      "path": "spikes/generation-qualification/fixture-executor.mjs",
+      "bytes": 2890,
+      "sha256": "60f950c422a0bd567b4753a645b754e3b67b514547241a72a13af52b00a90ab5"
+    },
+    {
+      "path": "spikes/generation-qualification/fixtures.json",
+      "bytes": 1147,
+      "sha256": "bc7a49026898e60c0717590ee6b2575b0f4dc32363322c2e06326b05f2ede9a3"
+    },
+    {
+      "path": "spikes/generation-qualification/pricing.mjs",
+      "bytes": 904,
+      "sha256": "7bd870f13ab6234e8dba707d98cb6c285b77a65d3cd4a94fc62ad0a0603b3fc8"
+    },
+    {
+      "path": "spikes/generation-qualification/qualification.mjs",
+      "bytes": 14277,
+      "sha256": "b42314d751f11e96959aac0586c5f7c8cbd128704558dcc04dbc90dfe9d95ba3"
+    },
+    {
+      "path": "spikes/generation-qualification/recovery-finder.mjs",
+      "bytes": 11723,
+      "sha256": "4147ed5b02884b5b14a15320fa13b93c8eb3df611ebf2e467eaa9bad098e5136"
+    },
+    {
+      "path": "spikes/generation-qualification/run.mjs",
+      "bytes": 20926,
+      "sha256": "983de0d21e180ecc33632d6537c75a048f8747d89dd776e33dda7a550d73a228"
+    },
+    {
+      "path": "spikes/generation-qualification/start-adapter.mjs",
+      "bytes": 3647,
+      "sha256": "d3c11c52a66c6b0271d194529834b892a80beb7992421bfceff6ad4b5fe7518e"
+    },
+    {
+      "path": "spikes/generation-qualification/test.mjs",
+      "bytes": 43715,
+      "sha256": "2bf92f4cacb765c56a09bda1cf068f6573fb0d52fbcd74737127bc5c225c1cfd"
+    },
+    {
+      "path": "spikes/generation-qualification/verify-v2.mjs",
+      "bytes": 805,
+      "sha256": "ae223fa409035d9efa535b2af9efd42f0f367980b3dc896c27167621c66d857c"
+    },
+    {
+      "path": "spikes/generation-qualification/worker.mjs",
+      "bytes": 5524,
+      "sha256": "d86af9f6665bede67cdb6f13564f83d13224c05b3744f68bc9714971aa6aa812"
+    },
+    {
+      "path": "spikes/generation-qualification/wrangler.toml",
+      "bytes": 298,
+      "sha256": "f61abbf68c7b3908700c596ad9c972b90b78fda5b94d500a35958594f03110c2"
+    }
+  ],
+  "runtime": {
+    "path": "runtime-baseline.json",
+    "bytes": 2900,
+    "sha256": "50d8e3fdb06b548a2b90d8f620cee6ed9620c33ed23314aa5f65db1ecec2cf35",
+    "runtime_identity_sha256": "a3d5ae76d31669bc1f008f7ef3d0fdde14d4a5b1fcb0fc63e70d290cdae32feb",
+    "node": "v24.18.0",
+    "wrangler": "4.123.0"
+  },
+  "expected_health": {
+    "ok": true,
+    "inference": false,
+    "schema_version": "oddspark.generation-adapter-health/v1",
+    "provider": "cloudflare-workers-ai",
+    "roles": [
+      {
+        "role": "primary",
+        "resolved_model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+      },
+      {
+        "role": "fallback",
+        "resolved_model": "@cf/openai/gpt-oss-20b"
+      }
+    ],
+    "parameters": {
+      "temperature": 0,
+      "max_tokens": 2048
+    },
+    "binding": "AI",
+    "worker_sha256": "d86af9f6665bede67cdb6f13564f83d13224c05b3744f68bc9714971aa6aa812",
+    "config_sha256": "f61abbf68c7b3908700c596ad9c972b90b78fda5b94d500a35958594f03110c2",
+    "runtime_sha256": "a3d5ae76d31669bc1f008f7ef3d0fdde14d4a5b1fcb0fc63e70d290cdae32feb"
+  },
+  "estimate": {
+    "pricing": {
+      "as_of": "2026-08-22",
+      "source": "https://developers.cloudflare.com/workers-ai/platform/pricing/",
+      "disclosure": "Cloudflare publishes $0.29/M input and $2.25/M output for the selected 70B endpoint and $0.20/M input and $0.30/M output for the selected gpt-oss-20b endpoint; both bindings are exact published rates.",
+      "currency": "USD",
+      "observed": {
+        "@cf/meta/llama-3.3-70b-instruct-fp8-fast": {
+          "input_per_million_usd": 0.29,
+          "output_per_million_usd": 2.25,
+          "exact": true
+        },
+        "@cf/openai/gpt-oss-20b": {
+          "input_per_million_usd": 0.2,
+          "output_per_million_usd": 0.3,
+          "exact": true
+        }
+      },
+      "budget": {
+        "@cf/meta/llama-3.3-70b-instruct-fp8-fast": {
+          "input_per_million_usd": 0.29,
+          "output_per_million_usd": 2.25,
+          "exact": true
+        },
+        "@cf/openai/gpt-oss-20b": {
+          "input_per_million_usd": 0.2,
+          "output_per_million_usd": 0.3,
+          "exact": true
+        }
+      }
+    },
+    "roles": [
+      {
+        "role": "primary",
+        "resolved_model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+        "calls": 42,
+        "input_tokens_upper_bound": 4211,
+        "max_output_tokens_per_call": 2048,
+        "pricing_exact": true,
+        "input_usd": 0.05128998,
+        "output_usd": 0.193536,
+        "maximum_usd": 0.24482598
+      },
+      {
+        "role": "fallback",
+        "resolved_model": "@cf/openai/gpt-oss-20b",
+        "calls": 42,
+        "input_tokens_upper_bound": 4194,
+        "max_output_tokens_per_call": 2048,
+        "pricing_exact": true,
+        "input_usd": 0.0352296,
+        "output_usd": 0.0258048,
+        "maximum_usd": 0.0610344
+      }
+    ],
+    "call_cap": 63,
+    "maximum_usd": 0.30586038
+  },
+  "retention": {
+    "provider_retention_disclosed": true,
+    "retained_locally": [
+      "plan",
+      "approval",
+      "records",
+      "bounded output envelopes",
+      "usage",
+      "latency",
+      "cost",
+      "source/runtime/adapter identities",
+      "predicate results",
+      "manifests",
+      "completion marker"
+    ],
+    "forbidden": [
+      "credentials",
+      "account identifiers",
+      "provider reasoning",
+      "unbounded raw output"
+    ]
+  },
+  "schedule": [
+    {
+      "role": "primary",
+      "probe": 1,
+      "trials_after_successful_probe": 20,
+      "sequential": true,
+      "transient_retries": 1,
+      "retry_states": [
+        "provider_error",
+        "timeout"
+      ],
+      "replacements": 0
+    },
+    {
+      "role": "fallback",
+      "probe": 1,
+      "trials_after_successful_probe": 20,
+      "sequential": true,
+      "transient_retries": 1,
+      "retry_states": [
+        "provider_error",
+        "timeout"
+      ],
+      "replacements": 0
+    }
+  ],
+  "call_cap": 63,
+  "predicate_ids": [
+    "evidence.shape",
+    "oracle.identity",
+    "legacy.immutable",
+    "runtime.identity",
+    "source.identity",
+    "adapter.identity",
+    "candidate.binding",
+    "fixtures.executed",
+    "records.classified",
+    "records.closed",
+    "run.authorization",
+    "run.cardinality",
+    "run.ordering",
+    "run.common_request",
+    "summary.rates",
+    "outcome.deterministic",
+    "predicates.retained",
+    "report.deterministic",
+    "roles.independent",
+    "output.direct_candidate",
+    "schedule.transient_retry_only",
+    "cost.recomputed",
+    "manifest.independent"
+  ]
+}

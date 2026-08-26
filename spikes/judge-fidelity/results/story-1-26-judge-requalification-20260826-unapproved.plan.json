@@ -1,0 +1,1200 @@
+{
+  "schema_version": "oddspark.judge-cycle-plan/v2",
+  "plan_ref": "0e6a02d0a5971453ff429534ac91fa496219c0ed5cd1a039a96cfb1f7361b336",
+  "approval_run_id": "story-1-26-judge-requalification-20260826",
+  "created_at": "2026-08-26T15:27:01.231Z",
+  "provider": "cloudflare-workers-ai",
+  "account": {
+    "profile": "Hearn Systems account",
+    "plan": "paid",
+    "headroom_confirmed": true,
+    "remaining_free_neurons": null
+  },
+  "models": [
+    {
+      "position": "primary",
+      "resolved_model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+      "request_sha256": "2e680669487fd2786cb05cbd0c116a71ce59a686933b53db97423e597f6efef0",
+      "adapter_input_sha256": "b466624b60fb2ac3fa70e6f1ec7af0a864f1a1a8ab2e1e87b7601356f333a6b4"
+    },
+    {
+      "position": "fallback",
+      "resolved_model": "@cf/meta/llama-3.1-8b-instruct-fast",
+      "request_sha256": "713a7c345a34691f483cb1fdf432740c3fb5a8ed8db00df92da777fe31402ee9",
+      "adapter_input_sha256": "b466624b60fb2ac3fa70e6f1ec7af0a864f1a1a8ab2e1e87b7601356f333a6b4"
+    }
+  ],
+  "request_parameters": {
+    "temperature": 0,
+    "max_tokens": 2048,
+    "response_format_type": "json_schema"
+  },
+  "request_manifest": {
+    "by_model": [
+      {
+        "model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+        "body": {
+          "model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+          "messages": [
+            {
+              "role": "system",
+              "content": "You are the independent Oddspark judge. Evaluate the supplied synthetic Candidate Brief against every check below.\n\n1. Recognizable routine: starts from a credible routine and recurring annoyance.\n2. Constructive intervention: every friction leads to an imaginable solution.\n3. Capability inventory: does not duplicate an existing capability.\n4. Channel fit: uses an observed channel or clearly introduces a fitting one.\n5. Proportionality: matches likely scale, complexity, and maintenance capacity.\n6. Delivery fit: Hearn Systems could implement it as software, AI automation, integration, data workflow, or adjacent digital system.\n7. Preservation: retains helpful tools, workflow steps, and decision rights it need not change.\n8. Natural retelling: a person could naturally explain the situation, capability, and payoff.\n9. Novel but imaginable: goes beyond the obvious while remaining concrete.\n\nAlso evaluate tone (confident plan, plain language, no pitch, no consultant-speak, no bare-mush effects) and claims (qualitative unless supplied evidence grounds a number). Use the supplied grounding report; do not add a grounding field or a tenth gate.\n\nDecision protocol v2:\n- Evaluate every gate, tone, and claims independently from the exact Candidate, Evidence, and grounding report supplied. Strength in one check cannot compensate for failure or uncertainty in another.\n- For each check, look for both supporting facts and disqualifying facts. Treat the check as unproven and set its pass to false when required support is absent, ambiguous, internally inconsistent, or contradicted.\n- Before passing, specifically test for a routine without a recurring annoyance, friction without an imaginable intervention, capability duplication, channel mismatch, disproportionate scope or maintenance, work outside Hearn Systems' delivery fit, weak preservation, unnatural retelling, an obvious or implausible idea, consultant or pitch register, bare-mush effects, unsupported claims, and invitation pressure.\n- Every reason must identify the specific Candidate element and the supplied fact, contradiction, or missing fact that controls the decision. A generic restatement of the check is not a valid reason.\n- Use only the supplied input. Do not infer missing business facts or resolve ambiguity in the Candidate's favor.\n- Do not use corpus labels, fixture identifiers, expected outcomes, or case-specific answer keys.\n\nReturn only one JSON value matching the supplied schema. Report gate 1 through gate 9 as the separate gate_1 through gate_9 properties, each an object with a boolean pass and a non-empty reason string; tone and claims use that same object shape. Set top-level pass to true only when all nine gates, tone, and claims pass."
+            },
+            {
+              "role": "user",
+              "content": "{\"candidate_ref\":\"36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891\",\"input\":{\"candidate\":{\"before_after\":{\"after\":\"The same request enters the same form and appears in a short staff-approved follow-up queue.\",\"before\":\"A request enters the current form and staff remember to revisit it between other work.\"},\"change_level\":{\"preliminary\":true,\"steps_changed\":2,\"steps_removed\":1,\"time_range\":\"1–2 weeks\"},\"grounded_numbers\":[],\"invitation\":\"Hearn Systems can map the smallest version of this Spark around the existing form and show exactly how the relay would work.\",\"mode\":\"domain\",\"plan\":\"Add a small staff-approved follow-up queue around the existing appointment-request form so unanswered requests return to the front desk at the next useful moment.\",\"stays_same\":{\"authority\":[\"Front-desk staff decide when and how to contact a requester\"],\"steps\":[\"Patients use the existing form\",\"Staff confirm appointments in the current calendar\"],\"tools\":[\"Existing website request form\",\"Current appointment calendar\"]},\"title\":\"Monday Follow-Up Relay\",\"version\":1,\"what_gets_better\":\"Requests are less likely to sit between the website and the front desk, while staff keep control of every patient conversation.\",\"why_fits\":{\"breadcrumb\":\"Open late on Mondays\",\"text\":\"The practice already accepts appointment requests online and keeps a later Monday window, so the smallest useful change is a follow-up relay around that familiar routine.\"}},\"evidence_bundle\":{\"capabilities\":[\"Online appointment requests\",\"Existing appointment calendar\"],\"channels\":[\"Website request form\",\"Phone\"],\"clarity\":\"clear\",\"observation\":{\"text\":\"Request an appointment online. Open late on Mondays. Call the front desk with questions.\",\"url\":\"https://synthetic.example.invalid/appointments\"},\"scanned_urls\":[\"https://synthetic.example.invalid/\",\"https://synthetic.example.invalid/appointments\"],\"vertical\":\"Family dental practice\"},\"grounding_report\":{\"breadcrumb_count\":1,\"claims\":[{\"field\":\"candidate.why_fits.breadcrumb\",\"matched_text\":\"Open late on Mondays\",\"source\":\"evidence_bundle.observation.text\"}],\"fixture_only\":true,\"issues\":[],\"numeric_claims\":[],\"pii_free\":true,\"schema_version\":\"synthetic-grounding-report/v1\",\"valid\":true},\"synthetic\":true}}"
+            }
+          ],
+          "max_tokens": 2048,
+          "temperature": 0,
+          "response_format": {
+            "type": "json_schema",
+            "json_schema": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "candidate_ref",
+                "verdict"
+              ],
+              "properties": {
+                "candidate_ref": {
+                  "type": "string",
+                  "pattern": "^[a-f0-9]{64}$"
+                },
+                "verdict": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "title": "Oddspark judge wire verdict v2",
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "pass",
+                    "gate_1",
+                    "gate_2",
+                    "gate_3",
+                    "gate_4",
+                    "gate_5",
+                    "gate_6",
+                    "gate_7",
+                    "gate_8",
+                    "gate_9",
+                    "tone",
+                    "claims"
+                  ],
+                  "properties": {
+                    "pass": {
+                      "type": "boolean"
+                    },
+                    "gate_1": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "pass",
+                        "reason"
+                      ],
+                      "properties": {
+                        "pass": {
+                          "type": "boolean"
+                        },
+                        "reason": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      }
+                    },
+                    "gate_2": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "pass",
+                        "reason"
+                      ],
+                      "properties": {
+                        "pass": {
+                          "type": "boolean"
+                        },
+                        "reason": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      }
+                    },
+                    "gate_3": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "pass",
+                        "reason"
+                      ],
+                      "properties": {
+                        "pass": {
+                          "type": "boolean"
+                        },
+                        "reason": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      }
+                    },
+                    "gate_4": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "pass",
+                        "reason"
+                      ],
+                      "properties": {
+                        "pass": {
+                          "type": "boolean"
+                        },
+                        "reason": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      }
+                    },
+                    "gate_5": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "pass",
+                        "reason"
+                      ],
+                      "properties": {
+                        "pass": {
+                          "type": "boolean"
+                        },
+                        "reason": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      }
+                    },
+                    "gate_6": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "pass",
+                        "reason"
+                      ],
+                      "properties": {
+                        "pass": {
+                          "type": "boolean"
+                        },
+                        "reason": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      }
+                    },
+                    "gate_7": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "pass",
+                        "reason"
+                      ],
+                      "properties": {
+                        "pass": {
+                          "type": "boolean"
+                        },
+                        "reason": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      }
+                    },
+                    "gate_8": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "pass",
+                        "reason"
+                      ],
+                      "properties": {
+                        "pass": {
+                          "type": "boolean"
+                        },
+                        "reason": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      }
+                    },
+                    "gate_9": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "pass",
+                        "reason"
+                      ],
+                      "properties": {
+                        "pass": {
+                          "type": "boolean"
+                        },
+                        "reason": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      }
+                    },
+                    "tone": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "pass",
+                        "reason"
+                      ],
+                      "properties": {
+                        "pass": {
+                          "type": "boolean"
+                        },
+                        "reason": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      }
+                    },
+                    "claims": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "pass",
+                        "reason"
+                      ],
+                      "properties": {
+                        "pass": {
+                          "type": "boolean"
+                        },
+                        "reason": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "candidate_schema_version": "oddspark-candidate/v1",
+          "candidate": {
+            "version": 1,
+            "mode": "domain",
+            "title": "Monday Follow-Up Relay",
+            "plan": "Add a small staff-approved follow-up queue around the existing appointment-request form so unanswered requests return to the front desk at the next useful moment.",
+            "why_fits": {
+              "text": "The practice already accepts appointment requests online and keeps a later Monday window, so the smallest useful change is a follow-up relay around that familiar routine.",
+              "breadcrumb": "Open late on Mondays"
+            },
+            "what_gets_better": "Requests are less likely to sit between the website and the front desk, while staff keep control of every patient conversation.",
+            "before_after": {
+              "before": "A request enters the current form and staff remember to revisit it between other work.",
+              "after": "The same request enters the same form and appears in a short staff-approved follow-up queue."
+            },
+            "change_level": {
+              "time_range": "1–2 weeks",
+              "steps_changed": 2,
+              "steps_removed": 1,
+              "preliminary": true
+            },
+            "stays_same": {
+              "tools": [
+                "Existing website request form",
+                "Current appointment calendar"
+              ],
+              "authority": [
+                "Front-desk staff decide when and how to contact a requester"
+              ],
+              "steps": [
+                "Patients use the existing form",
+                "Staff confirm appointments in the current calendar"
+              ]
+            },
+            "invitation": "Hearn Systems can map the smallest version of this Spark around the existing form and show exactly how the relay would work.",
+            "grounded_numbers": []
+          },
+          "candidate_ref": "36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891"
+        },
+        "sha256": "2e680669487fd2786cb05cbd0c116a71ce59a686933b53db97423e597f6efef0",
+        "adapter_input": {
+          "messages": [
+            {
+              "role": "system",
+              "content": "You are the independent Oddspark judge. Evaluate the supplied synthetic Candidate Brief against every check below.\n\n1. Recognizable routine: starts from a credible routine and recurring annoyance.\n2. Constructive intervention: every friction leads to an imaginable solution.\n3. Capability inventory: does not duplicate an existing capability.\n4. Channel fit: uses an observed channel or clearly introduces a fitting one.\n5. Proportionality: matches likely scale, complexity, and maintenance capacity.\n6. Delivery fit: Hearn Systems could implement it as software, AI automation, integration, data workflow, or adjacent digital system.\n7. Preservation: retains helpful tools, workflow steps, and decision rights it need not change.\n8. Natural retelling: a person could naturally explain the situation, capability, and payoff.\n9. Novel but imaginable: goes beyond the obvious while remaining concrete.\n\nAlso evaluate tone (confident plan, plain language, no pitch, no consultant-speak, no bare-mush effects) and claims (qualitative unless supplied evidence grounds a number). Use the supplied grounding report; do not add a grounding field or a tenth gate.\n\nDecision protocol v2:\n- Evaluate every gate, tone, and claims independently from the exact Candidate, Evidence, and grounding report supplied. Strength in one check cannot compensate for failure or uncertainty in another.\n- For each check, look for both supporting facts and disqualifying facts. Treat the check as unproven and set its pass to false when required support is absent, ambiguous, internally inconsistent, or contradicted.\n- Before passing, specifically test for a routine without a recurring annoyance, friction without an imaginable intervention, capability duplication, channel mismatch, disproportionate scope or maintenance, work outside Hearn Systems' delivery fit, weak preservation, unnatural retelling, an obvious or implausible idea, consultant or pitch register, bare-mush effects, unsupported claims, and invitation pressure.\n- Every reason must identify the specific Candidate element and the supplied fact, contradiction, or missing fact that controls the decision. A generic restatement of the check is not a valid reason.\n- Use only the supplied input. Do not infer missing business facts or resolve ambiguity in the Candidate's favor.\n- Do not use corpus labels, fixture identifiers, expected outcomes, or case-specific answer keys.\n\nReturn only one JSON value matching the supplied schema. Report gate 1 through gate 9 as the separate gate_1 through gate_9 properties, each an object with a boolean pass and a non-empty reason string; tone and claims use that same object shape. Set top-level pass to true only when all nine gates, tone, and claims pass."
+            },
+            {
+              "role": "user",
+              "content": "{\"candidate_ref\":\"36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891\",\"input\":{\"candidate\":{\"before_after\":{\"after\":\"The same request enters the same form and appears in a short staff-approved follow-up queue.\",\"before\":\"A request enters the current form and staff remember to revisit it between other work.\"},\"change_level\":{\"preliminary\":true,\"steps_changed\":2,\"steps_removed\":1,\"time_range\":\"1–2 weeks\"},\"grounded_numbers\":[],\"invitation\":\"Hearn Systems can map the smallest version of this Spark around the existing form and show exactly how the relay would work.\",\"mode\":\"domain\",\"plan\":\"Add a small staff-approved follow-up queue around the existing appointment-request form so unanswered requests return to the front desk at the next useful moment.\",\"stays_same\":{\"authority\":[\"Front-desk staff decide when and how to contact a requester\"],\"steps\":[\"Patients use the existing form\",\"Staff confirm appointments in the current calendar\"],\"tools\":[\"Existing website request form\",\"Current appointment calendar\"]},\"title\":\"Monday Follow-Up Relay\",\"version\":1,\"what_gets_better\":\"Requests are less likely to sit between the website and the front desk, while staff keep control of every patient conversation.\",\"why_fits\":{\"breadcrumb\":\"Open late on Mondays\",\"text\":\"The practice already accepts appointment requests online and keeps a later Monday window, so the smallest useful change is a follow-up relay around that familiar routine.\"}},\"evidence_bundle\":{\"capabilities\":[\"Online appointment requests\",\"Existing appointment calendar\"],\"channels\":[\"Website request form\",\"Phone\"],\"clarity\":\"clear\",\"observation\":{\"text\":\"Request an appointment online. Open late on Mondays. Call the front desk with questions.\",\"url\":\"https://synthetic.example.invalid/appointments\"},\"scanned_urls\":[\"https://synthetic.example.invalid/\",\"https://synthetic.example.invalid/appointments\"],\"vertical\":\"Family dental practice\"},\"grounding_report\":{\"breadcrumb_count\":1,\"claims\":[{\"field\":\"candidate.why_fits.breadcrumb\",\"matched_text\":\"Open late on Mondays\",\"source\":\"evidence_bundle.observation.text\"}],\"fixture_only\":true,\"issues\":[],\"numeric_claims\":[],\"pii_free\":true,\"schema_version\":\"synthetic-grounding-report/v1\",\"valid\":true},\"synthetic\":true}}"
+            }
+          ],
+          "max_tokens": 2048,
+          "temperature": 0,
+          "response_format": {
+            "type": "json_schema",
+            "json_schema": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "candidate_ref",
+                "verdict"
+              ],
+              "properties": {
+                "candidate_ref": {
+                  "type": "string",
+                  "pattern": "^[a-f0-9]{64}$"
+                },
+                "verdict": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "title": "Oddspark judge wire verdict v2",
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "pass",
+                    "gate_1",
+                    "gate_2",
+                    "gate_3",
+                    "gate_4",
+                    "gate_5",
+                    "gate_6",
+                    "gate_7",
+                    "gate_8",
+                    "gate_9",
+                    "tone",
+                    "claims"
+                  ],
+                  "properties": {
+                    "pass": {
+                      "type": "boolean"
+                    },
+                    "gate_1": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "pass",
+                        "reason"
+                      ],
+                      "properties": {
+                        "pass": {
+                          "type": "boolean"
+                        },
+                        "reason": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      }
+                    },
+                    "gate_2": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "pass",
+                        "reason"
+                      ],
+                      "properties": {
+                        "pass": {
+                          "type": "boolean"
+                        },
+                        "reason": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      }
+                    },
+                    "gate_3": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "pass",
+                        "reason"
+                      ],
+                      "properties": {
+                        "pass": {
+                          "type": "boolean"
+                        },
+                        "reason": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      }
+                    },
+                    "gate_4": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "pass",
+                        "reason"
+                      ],
+                      "properties": {
+                        "pass": {
+                          "type": "boolean"
+                        },
+                        "reason": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      }
+                    },
+                    "gate_5": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "pass",
+                        "reason"
+                      ],
+                      "properties": {
+                        "pass": {
+                          "type": "boolean"
+                        },
+                        "reason": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      }
+                    },
+                    "gate_6": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "pass",
+                        "reason"
+                      ],
+                      "properties": {
+                        "pass": {
+                          "type": "boolean"
+                        },
+                        "reason": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      }
+                    },
+                    "gate_7": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "pass",
+                        "reason"
+                      ],
+                      "properties": {
+                        "pass": {
+                          "type": "boolean"
+                        },
+                        "reason": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      }
+                    },
+                    "gate_8": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "pass",
+                        "reason"
+                      ],
+                      "properties": {
+                        "pass": {
+                          "type": "boolean"
+                        },
+                        "reason": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      }
+                    },
+                    "gate_9": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "pass",
+                        "reason"
+                      ],
+                      "properties": {
+                        "pass": {
+                          "type": "boolean"
+                        },
+                        "reason": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      }
+                    },
+                    "tone": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "pass",
+                        "reason"
+                      ],
+                      "properties": {
+                        "pass": {
+                          "type": "boolean"
+                        },
+                        "reason": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      }
+                    },
+                    "claims": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "pass",
+                        "reason"
+                      ],
+                      "properties": {
+                        "pass": {
+                          "type": "boolean"
+                        },
+                        "reason": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "adapter_input_sha256": "b466624b60fb2ac3fa70e6f1ec7af0a864f1a1a8ab2e1e87b7601356f333a6b4"
+      },
+      {
+        "model": "@cf/meta/llama-3.1-8b-instruct-fast",
+        "body": {
+          "model": "@cf/meta/llama-3.1-8b-instruct-fast",
+          "messages": [
+            {
+              "role": "system",
+              "content": "You are the independent Oddspark judge. Evaluate the supplied synthetic Candidate Brief against every check below.\n\n1. Recognizable routine: starts from a credible routine and recurring annoyance.\n2. Constructive intervention: every friction leads to an imaginable solution.\n3. Capability inventory: does not duplicate an existing capability.\n4. Channel fit: uses an observed channel or clearly introduces a fitting one.\n5. Proportionality: matches likely scale, complexity, and maintenance capacity.\n6. Delivery fit: Hearn Systems could implement it as software, AI automation, integration, data workflow, or adjacent digital system.\n7. Preservation: retains helpful tools, workflow steps, and decision rights it need not change.\n8. Natural retelling: a person could naturally explain the situation, capability, and payoff.\n9. Novel but imaginable: goes beyond the obvious while remaining concrete.\n\nAlso evaluate tone (confident plan, plain language, no pitch, no consultant-speak, no bare-mush effects) and claims (qualitative unless supplied evidence grounds a number). Use the supplied grounding report; do not add a grounding field or a tenth gate.\n\nDecision protocol v2:\n- Evaluate every gate, tone, and claims independently from the exact Candidate, Evidence, and grounding report supplied. Strength in one check cannot compensate for failure or uncertainty in another.\n- For each check, look for both supporting facts and disqualifying facts. Treat the check as unproven and set its pass to false when required support is absent, ambiguous, internally inconsistent, or contradicted.\n- Before passing, specifically test for a routine without a recurring annoyance, friction without an imaginable intervention, capability duplication, channel mismatch, disproportionate scope or maintenance, work outside Hearn Systems' delivery fit, weak preservation, unnatural retelling, an obvious or implausible idea, consultant or pitch register, bare-mush effects, unsupported claims, and invitation pressure.\n- Every reason must identify the specific Candidate element and the supplied fact, contradiction, or missing fact that controls the decision. A generic restatement of the check is not a valid reason.\n- Use only the supplied input. Do not infer missing business facts or resolve ambiguity in the Candidate's favor.\n- Do not use corpus labels, fixture identifiers, expected outcomes, or case-specific answer keys.\n\nReturn only one JSON value matching the supplied schema. Report gate 1 through gate 9 as the separate gate_1 through gate_9 properties, each an object with a boolean pass and a non-empty reason string; tone and claims use that same object shape. Set top-level pass to true only when all nine gates, tone, and claims pass."
+            },
+            {
+              "role": "user",
+              "content": "{\"candidate_ref\":\"36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891\",\"input\":{\"candidate\":{\"before_after\":{\"after\":\"The same request enters the same form and appears in a short staff-approved follow-up queue.\",\"before\":\"A request enters the current form and staff remember to revisit it between other work.\"},\"change_level\":{\"preliminary\":true,\"steps_changed\":2,\"steps_removed\":1,\"time_range\":\"1–2 weeks\"},\"grounded_numbers\":[],\"invitation\":\"Hearn Systems can map the smallest version of this Spark around the existing form and show exactly how the relay would work.\",\"mode\":\"domain\",\"plan\":\"Add a small staff-approved follow-up queue around the existing appointment-request form so unanswered requests return to the front desk at the next useful moment.\",\"stays_same\":{\"authority\":[\"Front-desk staff decide when and how to contact a requester\"],\"steps\":[\"Patients use the existing form\",\"Staff confirm appointments in the current calendar\"],\"tools\":[\"Existing website request form\",\"Current appointment calendar\"]},\"title\":\"Monday Follow-Up Relay\",\"version\":1,\"what_gets_better\":\"Requests are less likely to sit between the website and the front desk, while staff keep control of every patient conversation.\",\"why_fits\":{\"breadcrumb\":\"Open late on Mondays\",\"text\":\"The practice already accepts appointment requests online and keeps a later Monday window, so the smallest useful change is a follow-up relay around that familiar routine.\"}},\"evidence_bundle\":{\"capabilities\":[\"Online appointment requests\",\"Existing appointment calendar\"],\"channels\":[\"Website request form\",\"Phone\"],\"clarity\":\"clear\",\"observation\":{\"text\":\"Request an appointment online. Open late on Mondays. Call the front desk with questions.\",\"url\":\"https://synthetic.example.invalid/appointments\"},\"scanned_urls\":[\"https://synthetic.example.invalid/\",\"https://synthetic.example.invalid/appointments\"],\"vertical\":\"Family dental practice\"},\"grounding_report\":{\"breadcrumb_count\":1,\"claims\":[{\"field\":\"candidate.why_fits.breadcrumb\",\"matched_text\":\"Open late on Mondays\",\"source\":\"evidence_bundle.observation.text\"}],\"fixture_only\":true,\"issues\":[],\"numeric_claims\":[],\"pii_free\":true,\"schema_version\":\"synthetic-grounding-report/v1\",\"valid\":true},\"synthetic\":true}}"
+            }
+          ],
+          "max_tokens": 2048,
+          "temperature": 0,
+          "response_format": {
+            "type": "json_schema",
+            "json_schema": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "candidate_ref",
+                "verdict"
+              ],
+              "properties": {
+                "candidate_ref": {
+                  "type": "string",
+                  "pattern": "^[a-f0-9]{64}$"
+                },
+                "verdict": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "title": "Oddspark judge wire verdict v2",
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "pass",
+                    "gate_1",
+                    "gate_2",
+                    "gate_3",
+                    "gate_4",
+                    "gate_5",
+                    "gate_6",
+                    "gate_7",
+                    "gate_8",
+                    "gate_9",
+                    "tone",
+                    "claims"
+                  ],
+                  "properties": {
+                    "pass": {
+                      "type": "boolean"
+                    },
+                    "gate_1": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "pass",
+                        "reason"
+                      ],
+                      "properties": {
+                        "pass": {
+                          "type": "boolean"
+                        },
+                        "reason": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      }
+                    },
+                    "gate_2": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "pass",
+                        "reason"
+                      ],
+                      "properties": {
+                        "pass": {
+                          "type": "boolean"
+                        },
+                        "reason": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      }
+                    },
+                    "gate_3": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "pass",
+                        "reason"
+                      ],
+                      "properties": {
+                        "pass": {
+                          "type": "boolean"
+                        },
+                        "reason": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      }
+                    },
+                    "gate_4": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "pass",
+                        "reason"
+                      ],
+                      "properties": {
+                        "pass": {
+                          "type": "boolean"
+                        },
+                        "reason": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      }
+                    },
+                    "gate_5": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "pass",
+                        "reason"
+                      ],
+                      "properties": {
+                        "pass": {
+                          "type": "boolean"
+                        },
+                        "reason": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      }
+                    },
+                    "gate_6": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "pass",
+                        "reason"
+                      ],
+                      "properties": {
+                        "pass": {
+                          "type": "boolean"
+                        },
+                        "reason": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      }
+                    },
+                    "gate_7": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "pass",
+                        "reason"
+                      ],
+                      "properties": {
+                        "pass": {
+                          "type": "boolean"
+                        },
+                        "reason": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      }
+                    },
+                    "gate_8": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "pass",
+                        "reason"
+                      ],
+                      "properties": {
+                        "pass": {
+                          "type": "boolean"
+                        },
+                        "reason": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      }
+                    },
+                    "gate_9": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "pass",
+                        "reason"
+                      ],
+                      "properties": {
+                        "pass": {
+                          "type": "boolean"
+                        },
+                        "reason": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      }
+                    },
+                    "tone": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "pass",
+                        "reason"
+                      ],
+                      "properties": {
+                        "pass": {
+                          "type": "boolean"
+                        },
+                        "reason": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      }
+                    },
+                    "claims": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "pass",
+                        "reason"
+                      ],
+                      "properties": {
+                        "pass": {
+                          "type": "boolean"
+                        },
+                        "reason": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "candidate_schema_version": "oddspark-candidate/v1",
+          "candidate": {
+            "version": 1,
+            "mode": "domain",
+            "title": "Monday Follow-Up Relay",
+            "plan": "Add a small staff-approved follow-up queue around the existing appointment-request form so unanswered requests return to the front desk at the next useful moment.",
+            "why_fits": {
+              "text": "The practice already accepts appointment requests online and keeps a later Monday window, so the smallest useful change is a follow-up relay around that familiar routine.",
+              "breadcrumb": "Open late on Mondays"
+            },
+            "what_gets_better": "Requests are less likely to sit between the website and the front desk, while staff keep control of every patient conversation.",
+            "before_after": {
+              "before": "A request enters the current form and staff remember to revisit it between other work.",
+              "after": "The same request enters the same form and appears in a short staff-approved follow-up queue."
+            },
+            "change_level": {
+              "time_range": "1–2 weeks",
+              "steps_changed": 2,
+              "steps_removed": 1,
+              "preliminary": true
+            },
+            "stays_same": {
+              "tools": [
+                "Existing website request form",
+                "Current appointment calendar"
+              ],
+              "authority": [
+                "Front-desk staff decide when and how to contact a requester"
+              ],
+              "steps": [
+                "Patients use the existing form",
+                "Staff confirm appointments in the current calendar"
+              ]
+            },
+            "invitation": "Hearn Systems can map the smallest version of this Spark around the existing form and show exactly how the relay would work.",
+            "grounded_numbers": []
+          },
+          "candidate_ref": "36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891"
+        },
+        "sha256": "713a7c345a34691f483cb1fdf432740c3fb5a8ed8db00df92da777fe31402ee9",
+        "adapter_input": {
+          "messages": [
+            {
+              "role": "system",
+              "content": "You are the independent Oddspark judge. Evaluate the supplied synthetic Candidate Brief against every check below.\n\n1. Recognizable routine: starts from a credible routine and recurring annoyance.\n2. Constructive intervention: every friction leads to an imaginable solution.\n3. Capability inventory: does not duplicate an existing capability.\n4. Channel fit: uses an observed channel or clearly introduces a fitting one.\n5. Proportionality: matches likely scale, complexity, and maintenance capacity.\n6. Delivery fit: Hearn Systems could implement it as software, AI automation, integration, data workflow, or adjacent digital system.\n7. Preservation: retains helpful tools, workflow steps, and decision rights it need not change.\n8. Natural retelling: a person could naturally explain the situation, capability, and payoff.\n9. Novel but imaginable: goes beyond the obvious while remaining concrete.\n\nAlso evaluate tone (confident plan, plain language, no pitch, no consultant-speak, no bare-mush effects) and claims (qualitative unless supplied evidence grounds a number). Use the supplied grounding report; do not add a grounding field or a tenth gate.\n\nDecision protocol v2:\n- Evaluate every gate, tone, and claims independently from the exact Candidate, Evidence, and grounding report supplied. Strength in one check cannot compensate for failure or uncertainty in another.\n- For each check, look for both supporting facts and disqualifying facts. Treat the check as unproven and set its pass to false when required support is absent, ambiguous, internally inconsistent, or contradicted.\n- Before passing, specifically test for a routine without a recurring annoyance, friction without an imaginable intervention, capability duplication, channel mismatch, disproportionate scope or maintenance, work outside Hearn Systems' delivery fit, weak preservation, unnatural retelling, an obvious or implausible idea, consultant or pitch register, bare-mush effects, unsupported claims, and invitation pressure.\n- Every reason must identify the specific Candidate element and the supplied fact, contradiction, or missing fact that controls the decision. A generic restatement of the check is not a valid reason.\n- Use only the supplied input. Do not infer missing business facts or resolve ambiguity in the Candidate's favor.\n- Do not use corpus labels, fixture identifiers, expected outcomes, or case-specific answer keys.\n\nReturn only one JSON value matching the supplied schema. Report gate 1 through gate 9 as the separate gate_1 through gate_9 properties, each an object with a boolean pass and a non-empty reason string; tone and claims use that same object shape. Set top-level pass to true only when all nine gates, tone, and claims pass."
+            },
+            {
+              "role": "user",
+              "content": "{\"candidate_ref\":\"36d4688e099b79e792563656e6cd64466aaa77367cdcbda4eddd125e2d87a891\",\"input\":{\"candidate\":{\"before_after\":{\"after\":\"The same request enters the same form and appears in a short staff-approved follow-up queue.\",\"before\":\"A request enters the current form and staff remember to revisit it between other work.\"},\"change_level\":{\"preliminary\":true,\"steps_changed\":2,\"steps_removed\":1,\"time_range\":\"1–2 weeks\"},\"grounded_numbers\":[],\"invitation\":\"Hearn Systems can map the smallest version of this Spark around the existing form and show exactly how the relay would work.\",\"mode\":\"domain\",\"plan\":\"Add a small staff-approved follow-up queue around the existing appointment-request form so unanswered requests return to the front desk at the next useful moment.\",\"stays_same\":{\"authority\":[\"Front-desk staff decide when and how to contact a requester\"],\"steps\":[\"Patients use the existing form\",\"Staff confirm appointments in the current calendar\"],\"tools\":[\"Existing website request form\",\"Current appointment calendar\"]},\"title\":\"Monday Follow-Up Relay\",\"version\":1,\"what_gets_better\":\"Requests are less likely to sit between the website and the front desk, while staff keep control of every patient conversation.\",\"why_fits\":{\"breadcrumb\":\"Open late on Mondays\",\"text\":\"The practice already accepts appointment requests online and keeps a later Monday window, so the smallest useful change is a follow-up relay around that familiar routine.\"}},\"evidence_bundle\":{\"capabilities\":[\"Online appointment requests\",\"Existing appointment calendar\"],\"channels\":[\"Website request form\",\"Phone\"],\"clarity\":\"clear\",\"observation\":{\"text\":\"Request an appointment online. Open late on Mondays. Call the front desk with questions.\",\"url\":\"https://synthetic.example.invalid/appointments\"},\"scanned_urls\":[\"https://synthetic.example.invalid/\",\"https://synthetic.example.invalid/appointments\"],\"vertical\":\"Family dental practice\"},\"grounding_report\":{\"breadcrumb_count\":1,\"claims\":[{\"field\":\"candidate.why_fits.breadcrumb\",\"matched_text\":\"Open late on Mondays\",\"source\":\"evidence_bundle.observation.text\"}],\"fixture_only\":true,\"issues\":[],\"numeric_claims\":[],\"pii_free\":true,\"schema_version\":\"synthetic-grounding-report/v1\",\"valid\":true},\"synthetic\":true}}"
+            }
+          ],
+          "max_tokens": 2048,
+          "temperature": 0,
+          "response_format": {
+            "type": "json_schema",
+            "json_schema": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "candidate_ref",
+                "verdict"
+              ],
+              "properties": {
+                "candidate_ref": {
+                  "type": "string",
+                  "pattern": "^[a-f0-9]{64}$"
+                },
+                "verdict": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "title": "Oddspark judge wire verdict v2",
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "pass",
+                    "gate_1",
+                    "gate_2",
+                    "gate_3",
+                    "gate_4",
+                    "gate_5",
+                    "gate_6",
+                    "gate_7",
+                    "gate_8",
+                    "gate_9",
+                    "tone",
+                    "claims"
+                  ],
+                  "properties": {
+                    "pass": {
+                      "type": "boolean"
+                    },
+                    "gate_1": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "pass",
+                        "reason"
+                      ],
+                      "properties": {
+                        "pass": {
+                          "type": "boolean"
+                        },
+                        "reason": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      }
+                    },
+                    "gate_2": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "pass",
+                        "reason"
+                      ],
+                      "properties": {
+                        "pass": {
+                          "type": "boolean"
+                        },
+                        "reason": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      }
+                    },
+                    "gate_3": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "pass",
+                        "reason"
+                      ],
+                      "properties": {
+                        "pass": {
+                          "type": "boolean"
+                        },
+                        "reason": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      }
+                    },
+                    "gate_4": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "pass",
+                        "reason"
+                      ],
+                      "properties": {
+                        "pass": {
+                          "type": "boolean"
+                        },
+                        "reason": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      }
+                    },
+                    "gate_5": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "pass",
+                        "reason"
+                      ],
+                      "properties": {
+                        "pass": {
+                          "type": "boolean"
+                        },
+                        "reason": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      }
+                    },
+                    "gate_6": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "pass",
+                        "reason"
+                      ],
+                      "properties": {
+                        "pass": {
+                          "type": "boolean"
+                        },
+                        "reason": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      }
+                    },
+                    "gate_7": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "pass",
+                        "reason"
+                      ],
+                      "properties": {
+                        "pass": {
+                          "type": "boolean"
+                        },
+                        "reason": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      }
+                    },
+                    "gate_8": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "pass",
+                        "reason"
+                      ],
+                      "properties": {
+                        "pass": {
+                          "type": "boolean"
+                        },
+                        "reason": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      }
+                    },
+                    "gate_9": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "pass",
+                        "reason"
+                      ],
+                      "properties": {
+                        "pass": {
+                          "type": "boolean"
+                        },
+                        "reason": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      }
+                    },
+                    "tone": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "pass",
+                        "reason"
+                      ],
+                      "properties": {
+                        "pass": {
+                          "type": "boolean"
+                        },
+                        "reason": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      }
+                    },
+                    "claims": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "pass",
+                        "reason"
+                      ],
+                      "properties": {
+                        "pass": {
+                          "type": "boolean"
+                        },
+                        "reason": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "adapter_input_sha256": "b466624b60fb2ac3fa70e6f1ec7af0a864f1a1a8ab2e1e87b7601356f333a6b4"
+      }
+    ]
+  },
+  "identities": {
+    "prompt_template_sha256": "3b1128bfcd463380cff7fec0d1f14a2f8a63cc67dd61c50da4ae8cf3eca19056",
+    "wire_schema_sha256": "6a6b404c9700911b57cd383431e4b96bf8102678de6d1befa13bfff753b58450",
+    "adapter_sha256": "8101d91408b2a1dff65533107c94f2bf0bc6858236b600aaf0a6c20bc0da93e2",
+    "binding_version": "oddspark-candidate-ref/v1",
+    "runtime_identity_sha256": "a3d5ae76d31669bc1f008f7ef3d0fdde14d4a5b1fcb0fc63e70d290cdae32feb",
+    "source_identity_sha256": "f8cfc0c2600e4df098f029aa708db65f9e455e98f83205040c044e36ce5a8bb0",
+    "timeout_policy_sha256": "57d8315fea241529825c3c1865f7e1129fe2f59c1f49b81d594acf27aed7a9cc",
+    "retained_fields_sha256": "7270cf049ec8c9cb5ba10fb783e0e6c573b00a905341e0ef29cffe1c74018a73"
+  },
+  "timeout_policy": {
+    "adapter_timeout_ms": 120000,
+    "preflight_timeout_ms": 10000,
+    "probes_must_complete_before_trials": true,
+    "execution": "sequential",
+    "retries": 0,
+    "replacements": 0
+  },
+  "retained_fields": [
+    "plan (full closed recovery plan)",
+    "approval (full closed approval record)",
+    "qualification (full closed bundle)",
+    "qualification.approval_check",
+    "qualification.evidence",
+    "qualification.manifests",
+    "qualification.qualification_refs",
+    "qualification.role_qualification_set",
+    "qualification.role_qualification_ref",
+    "qualification.outcome",
+    "evidence.candidate.schema_version",
+    "evidence.candidate.value",
+    "evidence.candidate.ref",
+    "evidence.candidate.request_input",
+    "evidence.run.id",
+    "evidence.run.started_at",
+    "evidence.run.ended_at",
+    "evidence.run.models",
+    "evidence.run.authorization",
+    "evidence.run.preflight_checks",
+    "evidence.run.preflight_blockers",
+    "record.kind",
+    "record.model",
+    "record.index",
+    "record.started_at",
+    "record.ended_at",
+    "record.call_state",
+    "record.error_code",
+    "record.envelope",
+    "record.usage",
+    "record.request_sha256",
+    "record.candidate_ref",
+    "record.classification",
+    "record.repair_kind",
+    "record.verdict_sha256",
+    "evidence.runtime",
+    "evidence.sources",
+    "evidence.adapter",
+    "evidence.fixtures",
+    "evidence.summary",
+    "evidence.outcome",
+    "evidence.predicate_results",
+    "evidence.report",
+    "evidence.oracle",
+    "evidence.legacy"
+  ],
+  "call_policy": {
+    "probes_per_model": 1,
+    "trials_per_model": 20,
+    "approved_call_cap": 42,
+    "continue_accepted_models_after_probe_failure": true,
+    "ci_permitted": false,
+    "deployment_permitted": false,
+    "persistent_resources_permitted": false
+  },
+  "maximum_cost": {
+    "pricing_as_of": "2026-08-19",
+    "pricing_source": "https://developers.cloudflare.com/workers-ai/platform/pricing/",
+    "pricing_disclosure": "Cloudflare publishes $0.29/M input and $2.25/M output for the selected 70B endpoint. No exact price binding was found for the selected 8B fast endpoint, so its maximum is conservatively charged at the documented 70B rate; this is not observed 8B pricing.",
+    "input_token_upper_bound_per_request": 9190,
+    "max_output_tokens_per_call": 2048,
+    "calls_per_model": 21,
+    "total_calls": 42,
+    "gross_usd": 0.3054702,
+    "gross_neurons": 27770.018181818185,
+    "free_neurons_per_day": 10000,
+    "by_model": {
+      "@cf/meta/llama-3.3-70b-instruct-fp8-fast": {
+        "calls": 21,
+        "input_usd": 0.0559671,
+        "output_usd": 0.096768
+      },
+      "@cf/meta/llama-3.1-8b-instruct-fast": {
+        "calls": 21,
+        "input_usd": 0.0559671,
+        "output_usd": 0.096768
+      }
+    }
+  },
+  "governance": {
+    "recovery_allowance": 1,
+    "prior_operational_recovery": null,
+    "legacy_v1_evidence_sha256": "1cc4431088e37ba069e128e0059f19229551de2398db0d686524bc70aa752377",
+    "cycle_available_after_calls": false
+  }
+}

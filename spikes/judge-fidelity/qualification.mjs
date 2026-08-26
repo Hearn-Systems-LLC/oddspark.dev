@@ -66,6 +66,9 @@ const canonicalTimestamp = (value) => typeof value === "string" && Number.isFini
   && new Date(value).toISOString() === value;
 const nonnegativeFinite = (value) => typeof value === "number" && Number.isFinite(value) && value >= 0;
 const safeNonnegativeInteger = (value) => Number.isSafeInteger(value) && value >= 0;
+const safeAccountLabel = (value) => typeof value === "string" && value.length <= 64
+  && /^[A-Za-z0-9](?:[A-Za-z0-9._ -]*[A-Za-z0-9])?$/.test(value)
+  && !value.includes("..") && !/\s{2}/.test(value) && !/^[a-f0-9]{32}$/i.test(value);
 
 export function canonicalJsonBytes(value) {
   return Buffer.from(`${JSON.stringify(value, null, 2)}\n`);
@@ -277,8 +280,7 @@ export function validateRecoveryPlan(plan, { legacy } = {}) {
   if (!canonicalTimestamp(plan.created_at)) errors.push("created_at must be canonical UTC");
   if (plan.provider !== PROVIDER) errors.push("provider is not the frozen provider");
   if (!exact(plan.account, ["profile", "plan", "headroom_confirmed", "remaining_free_neurons"])
-    || typeof plan.account.profile !== "string" || !/^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/.test(plan.account.profile)
-    || /^[a-f0-9]{32}$/i.test(plan.account.profile)
+    || !safeAccountLabel(plan.account.profile)
     || !["free", "paid"].includes(plan.account.plan) || plan.account.headroom_confirmed !== true
     || (plan.account.plan === "free" && !nonnegativeFinite(plan.account.remaining_free_neurons))
     || (plan.account.plan === "paid" && plan.account.remaining_free_neurons !== null)) errors.push("account/plan/headroom disclosure is invalid");

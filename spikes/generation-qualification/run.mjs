@@ -39,7 +39,20 @@ function retain(kind, index, attempt, request, call) { const classified = classi
 // One scheduled call retries only a transient terminal state (provider_error/timeout), at most once, immediately after the failed attempt; retries consume the shared call cap and the schedule stops when the cap is exhausted, leaving remaining trials absent so verification fails closed on cardinality.
 export async function executeSchedule(requests, invokeCall) { const records = []; const accepted = []; const scheduled = async (kind, index, request) => { let attempt = 0; let record; do { attempt += 1; record = retain(kind, index, attempt, request, await invokeCall(request)); records.push(record); } while (TIMEOUT_POLICY.retry_states.includes(record.classification) && attempt <= TIMEOUT_POLICY.transient_retries && records.length < CALL_CAP); return record; }; for (const request of requests) { if (records.length >= CALL_CAP) break; const probe = await scheduled("probe", 1, request); if (probe.classification === "direct_valid") accepted.push(request); } for (const request of accepted) for (let index = 1; index <= 20 && records.length < CALL_CAP; index += 1) await scheduled("trial", index, request); if (records.length > CALL_CAP) throw new Error("call cap exceeded"); return records; }
 export function approvalTemplate(plan) { return { schema_version: APPROVAL_VERSION, plan_ref: plan.plan_ref, approval_run_id: plan.approval_run_id, approved_at: null, approved_by: null, approved_call_cap: CALL_CAP, approved_maximum_usd: plan.estimate.maximum_usd, authorization: null }; }
-async function commandPlan() { const id = process.argv[3] ?? `generation-${new Date().toISOString().replace(/[:.]/g, "-")}`; if (!safeBase(id)) throw new TypeError("plan id is unsafe"); const plan = await createPlan({ approval_run_id: id, input: fixtureInput(), authority: { account_profile: "operator-reviewed-profile", credential_path: "wrangler-remote-binding", headroom_confirmed: true } }); const directory = await mkdtemp(path.join(os.tmpdir(), "oddspark-generation-plan-")); const files = { [`${id}.plan.json`]: plan, [`${id}.approval-template.json`]: approvalTemplate(plan), [`${id}.execution.json`]: { schema_version: "oddspark.generation-execution-marker/v1", plan_ref: plan.plan_ref, approval: null, execution: null, allowance_consumed: false } }; for (const [name, value] of Object.entries(files)) await atomic(path.join(directory, name), canonical(value)); console.log(directory); }
+export async function commandPlan(argv = process.argv.slice(3)) {
+  const id = argv[0] ?? `generation-${new Date().toISOString().replace(/[:.]/g, "-")}`;
+  if (!safeBase(id)) throw new TypeError("plan id is unsafe");
+  const options = {}; for (let index = 1; index < argv.length; index += 1) { const token = argv[index]; if (!token.startsWith("--")) throw new TypeError("unexpected plan argument"); const key = token.slice(2).replaceAll("-", "_"); if (key === "retain") options.retain = true; else { const value = argv[++index]; if (value === undefined || value.startsWith("--")) throw new TypeError(`missing value for ${token}`); options[key] = value; } }
+  if (options.account_profile !== "Hearn Systems account" || !["free", "paid"].includes(options.plan)) throw new TypeError("plan requires the reviewed account profile and --plan <free|paid>");
+  const remaining = options.remaining_free_neurons === undefined ? null : Number(options.remaining_free_neurons);
+  const authority = { account_profile: options.account_profile, credential_path: "wrangler-remote-binding", headroom_confirmed: true, workers_plan: options.plan, daily_free_neurons: 10_000, billing_order: "free-first-then-paid-bounded-by-plan-cap", remaining_free_neurons: options.plan === "paid" ? null : remaining };
+  const plan = await createPlan({ approval_run_id: id, input: fixtureInput(), authority });
+  const directory = options.retain === true ? OUTPUT : await mkdtemp(path.join(os.tmpdir(), "oddspark-generation-plan-"));
+  await mkdir(directory, { recursive: true });
+  const files = { [`${id}.plan.json`]: plan, [`${id}.approval-template.json`]: approvalTemplate(plan), [`${id}.execution.json`]: { schema_version: "oddspark.generation-execution-marker/v1", plan_ref: plan.plan_ref, approval: null, execution: null, allowance_consumed: false, provider_calls: 0 } };
+  for (const [name, value] of Object.entries(files)) await atomic(path.join(directory, name), canonical(value));
+  console.log(directory); return { directory, plan, files };
+}
 async function commandLive() {
   const planFile = process.argv[3]; const approvalFile = process.argv[4]; if (!planFile || !approvalFile) throw new Error("Usage: run.mjs live <plan.json> <approval.json>");
   if (process.env.CI || !process.stdin.isTTY || !process.stdout.isTTY) throw new Error("live qualification requires an interactive TTY and refuses CI");
@@ -61,5 +74,5 @@ async function commandLive() {
   } finally { await releaseCycleLock(acquired); }
 }
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const command = process.argv[2]; if (command === "plan") await commandPlan(); else if (command === "live") await commandLive(); else { console.error("Usage: run.mjs <plan [id]|live <plan> <approval>>"); process.exitCode = 2; }
+  const command = process.argv[2]; if (command === "plan") await commandPlan(); else if (command === "live") await commandLive(); else { console.error("Usage: run.mjs <plan <id> --account-profile <label> --plan <free|paid> [--remaining-free-neurons N] [--retain]|live <plan> <approval>>"); process.exitCode = 2; }
 }

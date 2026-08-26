@@ -1,0 +1,10 @@
+{
+  "schema_version": "oddspark.judge-cycle-approval/v2",
+  "plan_ref": "0e6a02d0a5971453ff429534ac91fa496219c0ed5cd1a039a96cfb1f7361b336",
+  "approval_run_id": "story-1-26-judge-requalification-20260826",
+  "approved_at": null,
+  "expires_at": null,
+  "approved_call_cap": 42,
+  "maximum_cost_usd": 0.3054702,
+  "decision": "REPLACE_WITH_APPROVED_AFTER_REVIEW"
+}

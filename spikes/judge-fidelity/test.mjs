@@ -1054,6 +1054,14 @@ test("retained-field disclosure is comprehensive and account profiles cannot be 
   accountIdPlan.account.profile = "0123456789abcdef0123456789abcdef";
   accountIdPlan.plan_ref = derivePlanRef(accountIdPlan);
   assert.match(validateRecoveryPlan(accountIdPlan).errors.join("\n"), /account\/plan\/headroom/);
+  const ownerLabel = clone(setup.recoveryPlan);
+  ownerLabel.account.profile = "Hearn Systems account";
+  ownerLabel.plan_ref = derivePlanRef(ownerLabel);
+  assert.equal(validateRecoveryPlan(ownerLabel, { legacy: setup.legacy }).valid, true);
+  for (const unsafe of ["../Hearn Systems account", "/tmp/account", "Hearn  Systems account", " Hearn Systems account", "Hearn Systems account ", "account@example.com", "x".repeat(65), "0123456789abcdef0123456789abcdef"]) {
+    const changed = clone(setup.recoveryPlan); changed.account.profile = unsafe; changed.plan_ref = derivePlanRef(changed);
+    assert.match(validateRecoveryPlan(changed, { legacy: setup.legacy }).errors.join("\n"), /account\/plan\/headroom/, unsafe);
+  }
 });
 
 test("maximum cost independently recomputes every frozen pricing and arithmetic component", async () => {

@@ -1,0 +1,8 @@
+{
+  "schema_version": "oddspark.generation-execution-marker/v1",
+  "plan_ref": "9676b8fa3f42ab08890f3217a9c40c108b1ca5f2820f166c6b2388caace66486",
+  "approval": null,
+  "execution": null,
+  "allowance_consumed": false,
+  "provider_calls": 0
+}

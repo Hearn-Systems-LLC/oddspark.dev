@@ -5,6 +5,7 @@ import { acquireLock, atomicWrite, releaseLock } from "./governance.mjs";
 import { canonicalBytes, sha256, validateApproval, validatePlan } from "./contract.mjs";
 import { publishArtifactSet } from "./publication.mjs";
 import { finalizeEvidence, verifyEvidenceBytes } from "./verifier.mjs";
+import { createUnapprovedPlan, writeUnapprovedPlan } from "./plan-creator.mjs";
 
 const planUrl = new URL("./plans/story-1-19-local-full-request-2385cc23-unapproved.plan.json", import.meta.url);
 const zero = (code) => ({ ok: false, calls_started: 0, allowance_consumed: false, code });
@@ -82,11 +83,14 @@ function httpAdapter(endpoint) {
   };
 }
 
+function planOptions(argv) { const result = {}; for (let index = 0; index < argv.length; index += 2) { const flag = argv[index]; const value = argv[index + 1]; if (!flag?.startsWith("--") || value === undefined) throw new TypeError("plan arguments must be --name value pairs"); const key = flag.slice(2).replaceAll("-", "_"); if (Object.hasOwn(result, key)) throw new TypeError(`duplicate plan argument: ${flag}`); result[key] = value; } return result; }
+
 if (import.meta.url === `file://${process.argv[1]}`) {
   const command = process.argv[2] ?? "plan";
   if (command === "plan") {
-    const bytes = await readFile(planUrl); const plan = JSON.parse(bytes); if (!validatePlan(plan)) throw new Error("unapproved plan is invalid");
-    console.log(JSON.stringify({ path: planUrl.pathname, sha256: sha256(bytes), approved: false, allowance_consumed: false }));
+    const options = planOptions(process.argv.slice(3)); if (typeof options.output !== "string") throw new Error("plan requires --output and all exact authority/run/limit inputs");
+    const plan = createUnapprovedPlan(options); const retained = await writeUnapprovedPlan(plan, options.output);
+    console.log(JSON.stringify({ path: retained.path, sha256: retained.sha256, assembly_ref: plan.authorities.assembly_identity, generation_ref: plan.authorities.generation_ref, generation_role_ref: plan.authorities.generation_role_ref, judge_ref: plan.authorities.judge_ref, run_id: plan.run_id, limits: plan.limits, approval: null, execution: null, approved: false, allowance_consumed: false, provider_calls: 0 }));
   } else if (command === "live") {
     const [planPath, approvalPath, resultsDirectory, endpoint = "http://127.0.0.1:8787"] = process.argv.slice(3);
     if (!planPath || !approvalPath || !resultsDirectory) throw new Error("usage: run.mjs live PLAN APPROVAL RESULTS [LOOPBACK_ENDPOINT]");
