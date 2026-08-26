@@ -73,7 +73,7 @@ def worker(record: Path) -> int:
     if harness == "codex":
         command = ["codex", "-C", workdir, "--no-alt-screen", prompt]
     else:
-        command = ["agy", "--prompt-interactive", prompt]
+        command = ["agy", "--sandbox", "--dangerously-skip-permissions", "--prompt-interactive", prompt]
     data["started_at"] = now()
     data["status"] = "running"
     atomic_write(record, data)
