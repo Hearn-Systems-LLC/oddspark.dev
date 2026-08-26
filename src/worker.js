@@ -21,6 +21,28 @@ import {
 } from "./pipeline/legacy-rendering.mjs";
 import { activationPosture, createInactiveDomainWriter } from "./pipeline/assembly.mjs";
 import { productionPipelineEnv } from "./pipeline/production-ports.mjs";
+
+// One immutable assembly per exact environment/snapshot/content identity.
+// Request/coordinator state is never retained here. A binding value or
+// deployed-content identity change produces a different key and reassembles.
+const ASSEMBLED_WRITER_CACHE = new WeakMap();
+
+async function cachedInactiveDomainWriter(env, snapshot) {
+  const pipeline = productionPipelineEnv(env) ?? {};
+  const identities = pipeline.PIPELINE_ACTIVATION_IDENTITIES ?? null;
+  const snapshotKey = JSON.stringify({ snapshot, identities });
+  const resolved = { ...env, ...pipeline };
+  const dependencyKeys = ["PIPELINE_ACTIVATION_IDENTITIES", "PIPELINE_PRIORS", "PIPELINE_HOUSE", "PIPELINE_CORPUS", "PIPELINE_JUDGE", "PIPELINE_GENERATE_PROVIDER", "PIPELINE_JUDGE_PROVIDER"];
+  const dependencyValues = dependencyKeys.map((key) => resolved[key]);
+  const prior = ASSEMBLED_WRITER_CACHE.get(env);
+  if (prior?.snapshotKey === snapshotKey && dependencyValues.every((value, index) => value === prior.dependencyValues[index])) return prior.writer;
+  const assemblyEnv = { ...env, ...pipeline, ACTIVATION_SNAPSHOT: snapshot };
+  const writer = await createInactiveDomainWriter(assemblyEnv, {
+    coordPost: (path, body) => coordPost(env, path, body),
+  });
+  ASSEMBLED_WRITER_CACHE.set(env, { snapshotKey, dependencyValues, writer });
+  return writer;
+}
 import {
   ABUSE_SLOT_RETENTION_MS,
   NEURON_RECEIPT_RETENTION_MS,
@@ -977,8 +999,14 @@ export class SparkCoordinator {
       );
     }
 
-    if (url.pathname === "/commit" && input.scope) {
-      const commit = validateCommitPayload(input);
+    if (["/commit", "/terminal-commit"].includes(url.pathname) && input.scope) {
+      const terminalCommit = url.pathname === "/terminal-commit";
+      const terminalDeadlineMs = terminalCommit && closedInput(input, ["scope", "owner", "artifact", "terminal_deadline_ms"])
+        && Number.isSafeInteger(input.terminal_deadline_ms) && input.terminal_deadline_ms > 0 ? input.terminal_deadline_ms : null;
+      const commit = validateCommitPayload(terminalCommit
+        ? { scope: input.scope, owner: input.owner, artifact: input.artifact }
+        : input);
+      if (terminalCommit && terminalDeadlineMs === null) return Response.json({ error: "invalid coordinator commit" }, { status: 400 });
       if (!commit) return Response.json({ error: "invalid coordinator commit" }, { status: 400 });
       const key = "receipt:" + canonicalScopeKey(commit.scope);
       const result = await transactionWithExpiry(this.state.storage, async (txn) => {
@@ -1002,6 +1030,11 @@ export class SparkCoordinator {
         }
         if (existing?.status === "committed") return existing;
         if (!existing || existing.status !== "claimed" || existing.owner !== commit.owner) return existing || { status: "missing" };
+        // The coordinator owns the authoritative terminal check at the exact
+        // mutation boundary. A delayed request can never commit after the
+        // outer writer deadline merely because it entered the transport
+        // before that deadline.
+        if (terminalCommit && Date.now() >= terminalDeadlineMs) return { status: "terminal" };
         const commitNow = Date.now();
         let localExpiresAt;
         try { if (commit.scope.kind === "local") localExpiresAt = localArtifactExpiresAt(commitNow); }
@@ -1893,13 +1926,18 @@ export function deriveInactiveDomainDispatch(website, round) {
 const WRITER_DEADLINE_EXPIRED = Object.freeze({ marker: "inactive-domain-writer-deadline" });
 export async function runInactiveDomainWriter(port, dispatch, deadlineMs = INACTIVE_DOMAIN_WRITER_DEADLINE_MS) {
   const boundedMs = Number.isFinite(deadlineMs) && deadlineMs > 0 ? deadlineMs : INACTIVE_DOMAIN_WRITER_DEADLINE_MS;
+  const deadlineMsAbsolute = Date.now() + boundedMs;
+  const terminal = new AbortController();
   let outcome;
   let timer;
   try {
     outcome = await Promise.race([
-      Promise.resolve(port.write(dispatch)),
+      Promise.resolve(port.write(dispatch, { signal: terminal.signal, deadline_ms: deadlineMsAbsolute })),
       new Promise((_, reject) => {
-        timer = setTimeout(() => reject(WRITER_DEADLINE_EXPIRED), boundedMs);
+        timer = setTimeout(() => {
+          terminal.abort(WRITER_DEADLINE_EXPIRED);
+          reject(WRITER_DEADLINE_EXPIRED);
+        }, boundedMs);
       }),
     ]);
   } catch (err) {
@@ -3129,9 +3167,11 @@ export default {
         // structured Workers Logs, once per writer-seam resolution. Logs
         // only: no metric, no coordinator write, no stored data; a logging
         // fault can never fail the request.
+        let activationSnapshot;
         try {
+          activationSnapshot = env.ACTIVATION_SNAPSHOT;
           // `event` pinned last so a future posture field can never shadow it.
-          console.log(JSON.stringify({ ...await activationPosture(env), event: "activation_posture" }));
+          console.log(JSON.stringify({ ...await activationPosture({ ...env, ACTIVATION_SNAPSHOT: activationSnapshot }), event: "activation_posture" }));
         } catch { /* observability is best-effort */ }
         // The assembled writer now sees the production pipeline environment:
         // bundled, hash/approval-verified content plus AI-bound provider ports
@@ -3144,10 +3184,7 @@ export default {
         // unaffected and keeps the legacy fallthrough.
         let assembledWriter = null;
         try {
-          assembledWriter = await createInactiveDomainWriter(
-            { ...env, ...(productionPipelineEnv(env) ?? {}) },
-            { coordPost: (path, body) => coordPost(env, path, body) },
-          );
+          assembledWriter = await cachedInactiveDomainWriter(env, activationSnapshot);
         } catch { /* fail closed: no writer */ }
         const inactiveWriter = injectedWriter != null && typeof injectedWriter.write === "function"
           ? injectedWriter

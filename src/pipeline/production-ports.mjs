@@ -51,6 +51,8 @@ const nonblank = (value) => typeof value === "string" && value.trim() !== "";
 const JUDGE_QUALIFICATION_REF = "7dc1ec98a625a1dd16f1166067b496e4209a415e7f10854ff781f46d0d0062d0";
 const GENERATION_QUALIFICATION_REF = "34731e26b1c1ef79acd444ba8e775143d9a616c3ab915f52481bd81475796bfc";
 const LOCAL_FULL_REQUEST_REF = "a0b656c04ccc89ae3bdb35fea583b6937bb2f43dd8ec26825a72a38fc696cec4";
+const DEFAULT_PROVIDER_DEADLINE_MS = 15000;
+const PIPELINE_ENV_CACHE = new WeakMap();
 
 /* ------------------------------------------------------------------ *
  * Frozen adapter wire shape (the governed generation/judge qualification
@@ -181,38 +183,59 @@ function contentReady(content, nowMs) {
   return validateCorpus(content?.corpus, { nowMs }).readiness === "approved";
 }
 
+async function runBoundedAi(env, model, request, terminal = {}) {
+  const now = Date.now();
+  const remaining = Number.isFinite(terminal?.deadline_ms) ? terminal.deadline_ms - now : DEFAULT_PROVIDER_DEADLINE_MS;
+  if (remaining <= 0 || terminal?.signal?.aborted) throw new Error("provider deadline expired");
+  let timer; let abortHandler;
+  const aborted = terminal?.signal ? new Promise((_, reject) => {
+    abortHandler = () => reject(new Error("provider deadline expired"));
+    terminal.signal.addEventListener("abort", abortHandler, { once: true });
+  }) : new Promise(() => {});
+  try {
+    return await Promise.race([
+      Promise.resolve(env.AI.run(model, request)),
+      new Promise((_, reject) => { timer = setTimeout(() => reject(new Error("provider deadline expired")), remaining); }),
+      aborted,
+    ]);
+  } finally {
+    clearTimeout(timer);
+    if (abortHandler) terminal.signal.removeEventListener("abort", abortHandler);
+  }
+}
+
 function generationProvider(env) {
   const model = env.AI_MODEL;
-  return async (request) => {
-    const result = await env.AI.run(model, {
+  return async (request, terminal) => {
+    const result = await runBoundedAi(env, model, {
       messages: [
         { role: "system", content: GENERATION_PROMPT },
         { role: "user", content: canonicalJson(request) },
       ],
       ...GENERATION_PARAMETERS,
       response_format: GENERATION_RESPONSE_FORMAT,
-    });
+    }, terminal);
     return decodeStructuredResponse(result);
   };
 }
 
 function judgeProvider(env) {
   const model = env.AI_MODEL;
-  return async (request) => {
+  return async (request, terminal) => {
     // The request must carry the frozen candidate_ref the Gate bound; a null
     // or malformed request is a closed provider error, never a leaked
     // TypeError from property access.
     if (!request || typeof request !== "object" || typeof request.candidate_ref !== "string") {
       throw new Error("judge request must carry the frozen candidate_ref");
     }
-    const result = await env.AI.run(model, {
+    const result = await runBoundedAi(env, model, {
       messages: [
         { role: "system", content: JUDGE_PROMPT },
         { role: "user", content: canonicalJson(request) },
       ],
       ...JUDGE_PARAMETERS,
       response_format: JUDGE_RESPONSE_FORMAT,
-    });
+    }, terminal);
     // The wrapper metadata maps losslessly: the candidate_ref is the frozen
     // request value and the verdict is the one decoded value. This module
     // only decodes — the verdict itself is validated downstream by the
@@ -231,6 +254,10 @@ export function productionPipelineEnv(env, content = BUNDLED_CONTENT) {
   try {
     if (typeof env?.AI?.run !== "function") return null;
     if (!nonblank(env.AI_MODEL) || !nonblank(env.AI_MODEL_FALLBACK)) return null;
+    const contentIdentity = canonicalJson(content);
+    const cached = PIPELINE_ENV_CACHE.get(env);
+    if (cached && cached.aiRun === env.AI.run && cached.model === env.AI_MODEL
+        && cached.fallback === env.AI_MODEL_FALLBACK && cached.contentIdentity === contentIdentity) return cached.pipeline;
     if (!contentReady(content, Date.now())) return null;
     const activationIdentities = {
       deployed_source_identity: runtimeAssembly.assembly_identity_sha256,
@@ -243,7 +270,7 @@ export function productionPipelineEnv(env, content = BUNDLED_CONTENT) {
       receiver_ref: null,
       receipt_claim_ref: null,
     };
-    return deepFreeze({
+    const pipeline = deepFreeze({
       PIPELINE_ACTIVATION_IDENTITIES: activationIdentities,
       PIPELINE_PRIORS: content.priors,
       PIPELINE_HOUSE: deepFreeze({
@@ -263,6 +290,8 @@ export function productionPipelineEnv(env, content = BUNDLED_CONTENT) {
       PIPELINE_GENERATE_PROVIDER: generationProvider(env),
       PIPELINE_JUDGE_PROVIDER: judgeProvider(env),
     });
+    PIPELINE_ENV_CACHE.set(env, { aiRun: env.AI.run, model: env.AI_MODEL, fallback: env.AI_MODEL_FALLBACK, contentIdentity, pipeline });
+    return pipeline;
   } catch {
     return null;
   }

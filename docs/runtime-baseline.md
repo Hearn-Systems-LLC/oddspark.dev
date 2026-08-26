@@ -264,3 +264,48 @@ It is deliberately **not** composed into `npm run check`: it is a release
 gate, run explicitly before a separately approved deployment. Deployment
 itself requires separate explicit approval; rollback redeploys the 1.24
 artifact with no data change.
+
+## Atomic local-only activation packet (Story 1.26)
+
+Activation preparation is offline and creates no authority. `npm run
+activation:prepare -- <input.json>` re-runs the retained Story 1.20 verifiers,
+closes the local-only manifest and production target, and emits canonical
+payload bytes plus hashes for an owner-external Ed25519 signing handoff. It
+does not call a provider, sign, deploy, change configuration, or mutate a
+remote resource. The signing request exposes the exact domain-separated bytes
+as base64url (plus their SHA-256), so an owner-controlled signer never has to
+reconstruct or infer the signed message. `npm run activation:verify --
+<input.json> <trust.json>` accepts only the exact prepared object, its hash,
+and the externally produced signature. The separate owner-selected trust file
+must contain exactly `expected_key_id` and `trusted_keys`; no public key in the
+signed candidate is accepted as trust authority. Verification checks the
+signature, validity, local-only shape, target, observation plan, and inactive
+rollback before emitting the final hash-bound packet.
+
+`scripts/activation-controller.mjs` has no production adapter by design. Its
+library entry point requires a separate expiring one-shot authority record
+that names the exact packet hash, target, and operation. It freezes the live
+whole binding, then permits exactly one deadline-bearing compare-and-set from
+that value to the approved replacement. Claim, mutation, and observation are
+each bounded. It rejects target/value drift, reuse, or substitution; a failed
+post-mutation observation is a distinct terminal outcome that explicitly says
+the mutation may already have occurred. Activation observation binds every
+field independently: installed snapshot hash, runtime identity, local
+enablement, effective-local domain posture, and a zero terminal-error window.
+Rollback is separately authorized and compare-and-sets only the exact frozen
+snapshot to the inactive value, then observes inactive posture. Code rollback
+is a different approval and deployment.
+
+Operator authority remains intentionally incomplete and must not be inferred:
+
+- production key id and SPKI public key: **not owner-selected**;
+- source-pinning code/config deployment approval: **not granted**;
+- external signing approval for exact payload bytes: **not granted**;
+- one-shot activation approval for an exact packet/target: **not granted**;
+- one-shot rollback approval: **not granted**.
+
+Until those values and approvals are explicitly supplied, the source-pinned
+production trust map remains empty, `ACTIVATION_SNAPSHOT` must remain absent,
+and both activation and rollback execution are blocked. No private key
+material belongs in this repository, command output, packet, or operator
+record.

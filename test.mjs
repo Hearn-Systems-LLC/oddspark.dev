@@ -3057,6 +3057,8 @@ await test("production pipeline env constructs from verified content and stays i
   const h = createEnvironment();
   const wired = productionPipelineEnv(h.env, content);
   assert.ok(wired, "verified content must construct the pipeline env");
+  assert.strictEqual(productionPipelineEnv(h.env, content), wired, "same immutable content identity reuses the verified pipeline");
+  assert.strictEqual(productionPipelineEnv(h.env, structuredClone(content)), wired, "byte-identical content reuses verification even across object identity");
   assert.deepEqual(Object.keys(wired).sort(), [
     "PIPELINE_ACTIVATION_IDENTITIES",
     "PIPELINE_CORPUS", "PIPELINE_GENERATE_PROVIDER", "PIPELINE_HOUSE", "PIPELINE_JUDGE", "PIPELINE_JUDGE_PROVIDER", "PIPELINE_PRIORS",
@@ -3160,10 +3162,14 @@ await test("bundled content hashes are pinned against byte drift (the writer:pre
 
 await test("production pipeline env fails closed on drifted content — never partial", async () => {
   const content = productionContentFixture();
+  const sameEnv = createEnvironment().env;
+  const verified = productionPipelineEnv(sameEnv, content);
+  assert.ok(verified);
 
   // Corrupt one approval hash: the house approval no longer binds content.
   const driftedHouse = structuredClone(content);
   driftedHouse.house.approval = { ...driftedHouse.house.approval, content_hash: "f".repeat(64) };
+  assert.equal(productionPipelineEnv(sameEnv, driftedHouse), null, "content drift invalidates the same-env cache");
   assert.equal(productionPipelineEnv(createEnvironment().env, driftedHouse), null);
 
   // Drifted priors content under a valid-looking approval.
@@ -3232,6 +3238,17 @@ await test("production providers wrap env.AI.run through the closed envelope dec
   assert.deepEqual(aiCalls[1].request.response_format, JUDGE_RESPONSE_FORMAT);
   assert.ok(Object.isFrozen(JUDGE_PARAMETERS) && Object.isFrozen(JUDGE_RESPONSE_FORMAT));
 
+  const controller = new AbortController(); let added = 0; let removed = 0;
+  const add = controller.signal.addEventListener.bind(controller.signal);
+  const remove = controller.signal.removeEventListener.bind(controller.signal);
+  controller.signal.addEventListener = (...args) => { added += 1; return add(...args); };
+  controller.signal.removeEventListener = (...args) => { removed += 1; return remove(...args); };
+  await wired.PIPELINE_GENERATE_PROVIDER(
+    { evidence: { version: 1, mode: "local", priors: {} }, seed: "a".repeat(64) },
+    { deadline_ms: Date.now() + 1000, signal: controller.signal },
+  );
+  assert.equal(added, 1); assert.equal(removed, 1);
+
   // A null or malformed judge request is a closed provider error.
   for (const badRequest of [null, undefined, {}, { candidate_ref: 42 }]) {
     await assert.rejects(wired.PIPELINE_JUDGE_PROVIDER(badRequest), /^Error: judge request must carry the frozen candidate_ref$/);
@@ -3246,6 +3263,13 @@ await test("production providers wrap env.AI.run through the closed envelope dec
       Error,
     );
   }
+
+  const hungEnv = { ...env, AI: { run() { return new Promise(() => {}); } } };
+  const hung = productionPipelineEnv(hungEnv, content);
+  await assert.rejects(
+    hung.PIPELINE_GENERATE_PROVIDER({ evidence: { version: 1, mode: "local", priors: {} }, seed: "a".repeat(64) }, { deadline_ms: Date.now() + 20 }),
+    /^Error: provider deadline expired$/,
+  );
 });
 
 await test("the writer-port deadline constant is pinned and ordered above the writer's internal budgets", async () => {
@@ -3301,6 +3325,57 @@ await test("writer port deadline: a never-settling port fails closed; a settling
     const artifact = await runInactiveDomainWriter(settling, dispatch, bad);
     assert.equal(artifact.id, "deadline-settled", String(bad));
   }
+});
+
+await test("writer terminal contract aborts late work before coordinator commit or served outcome", async () => {
+  const dispatch = deriveInactiveDomainDispatch({ domain: "acmebakery.com" }, ROUND);
+  let commits = 0;
+  let served = 0;
+  const late = {
+    async write(value, { signal }) {
+      await new Promise((resolve) => setTimeout(resolve, 40));
+      if (signal.aborted) throw new Error("terminal");
+      commits += 1;
+      return { status: "committed", scope: value.request_scope, artifact: inactiveDomainCommitted("late", "acmebakery.com") };
+    },
+  };
+  await assert.rejects(runInactiveDomainWriter(late, dispatch, 10), /^Error: inactive domain writer unavailable$/);
+  await new Promise((resolve) => setTimeout(resolve, 60));
+  assert.equal(commits, 0);
+  assert.equal(served, 0);
+});
+
+await test("assembled writer coordinator contract rejects a controllably delayed commit after the outer deadline", async () => {
+  const h = isolateInjectedPipeline(createEnvironment({ pipeline: {} }));
+  let allowCommit; let markCommitStarted; let markReleased; let commits = 0;
+  const commitGate = new Promise((resolve) => { allowCommit = resolve; });
+  const commitStarted = new Promise((resolve) => { markCommitStarted = resolve; });
+  const released = new Promise((resolve) => { markReleased = resolve; });
+  const writer = await createInactiveDomainWriter(h.env, {
+    activationTrustedKeys: h.env[ACTIVATION_TRUST_KEYS_TEST_PORT],
+    coordPost: async (path, body) => {
+      if (path === "/read") return { status: "missing" };
+      if (path === "/claim") return { status: "claimed", scope: body.scope, owner: body.owner, lease_until: Date.now() + 1000 };
+      if (path === "/terminal-commit") {
+        markCommitStarted();
+        await commitGate;
+        if (Date.now() >= body.terminal_deadline_ms) return { status: "terminal" };
+        commits += 1;
+        throw new Error("test must not reach an on-time commit");
+      }
+      if (path === "/release") { markReleased(); return { status: "released" }; }
+      throw new Error(`unexpected coordinator path ${path}`);
+    },
+  });
+  assert.ok(writer);
+  const dispatch = deriveInactiveDomainDispatch({ domain: "acmebakery.com" }, ROUND);
+  const execution = runInactiveDomainWriter(writer, dispatch, 50);
+  await commitStarted;
+  await assert.rejects(execution, /^Error: inactive domain writer unavailable$/);
+  allowCommit();
+  await released;
+  assert.equal(commits, 0);
+  assert.equal(h.coordStorage.map.has(`receipt:domain:${ROUND}:acmebakery.com`), false);
 });
 
 await test("writer failure terminals: negotiated 502 carries zero metric and the redacted posture plus failure-class log lines", async () => {

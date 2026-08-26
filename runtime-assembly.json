@@ -2,7 +2,7 @@
   "schema_version": 1,
   "entrypoint": {
     "path": "src/worker.js",
-    "sha256": "8c7e16f8875e7d9d550f2204c30369fd2d94e94f336cffebd039311e37c681fa"
+    "sha256": "59d4db078fbc61809fe43902b98ab338dbf338ad2f441ee794fdd1f4af2ab657"
   },
   "modules": [
     {
@@ -11,7 +11,7 @@
     },
     {
       "path": "src/pipeline/assembly.mjs",
-      "sha256": "9b2df4eca0eff55a41ab0825faa8f90d4bf9bc19d7ae952e2ef2db2815fdc4c3"
+      "sha256": "013bf82677ce82ce5e490a799c20aca826ebc4b99db033752dc1f8a46069c4a9"
     },
     {
       "path": "src/pipeline/contracts.mjs",
@@ -55,7 +55,7 @@
     },
     {
       "path": "src/pipeline/production-ports.mjs",
-      "sha256": "b25b833472d542ffb0a6098f4395258b1600c14a183f1bedd791bcdcb3639688"
+      "sha256": "5b35b9e25399375e4886c9d952a75e495dcb46a086a69056ab3ef808e21b2f95"
     },
     {
       "path": "src/pipeline/receipts.mjs",
@@ -78,5 +78,5 @@
       "sha256": "a11d0b9313de346d9bff8edc11de1557dc767f24e49992c1ea252ee5b64bc7db"
     }
   ],
-  "assembly_identity_sha256": "6569338c8f04a1e6aa070af4a8ab41350d11d0341597a39e65db1488f5326a7a"
+  "assembly_identity_sha256": "4388ba940e9518aa4a8d1dc112c3a1d220d01ed67ecc19da5fead216ddea8324"
 }

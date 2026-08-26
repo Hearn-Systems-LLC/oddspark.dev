@@ -44,6 +44,7 @@ const MINIMUM_CALL_TIME_MS = 1000;
 // lease is waited out against its real lease_until (with jitter), never
 // truncated by a fixed short cap.
 const CLAIM_WAIT_BUDGET_MS = 30000;
+const PROVIDER_RESERVE_MS = 250;
 
 const DISPATCH_KEYS = [
   "contract", "request_scope", "effective_mode", "claim_key", "notice_identity",
@@ -115,6 +116,7 @@ export async function createInactiveDomainWriter(env, deps) {
   const manifest = activation.manifest;
   if (manifest.local.enabled !== true || manifest.domain.enabled !== false) return failClosed;
   if (!activationIdentitiesMatch(manifest, env?.PIPELINE_ACTIVATION_IDENTITIES)) return failClosed;
+  const activationIdentities = deepFreeze(structuredClone(env.PIPELINE_ACTIVATION_IDENTITIES));
 
   const coordPost = deps?.coordPost;
   const strikeObserver = deps?.onStrikeResult;
@@ -123,10 +125,13 @@ export async function createInactiveDomainWriter(env, deps) {
   const strikeDeadlineBudgetMs = configuredStrikeBudget === undefined ? DEFAULT_STRIKE_DEADLINE_BUDGET_MS : configuredStrikeBudget;
   if (!Number.isSafeInteger(strikeDeadlineBudgetMs) || strikeDeadlineBudgetMs <= 0
       || strikeDeadlineBudgetMs > MAX_STRIKE_DEADLINE_BUDGET_MS) return failClosed;
-  const priorsInput = env.PIPELINE_PRIORS;
-  const house = env.PIPELINE_HOUSE;
-  const corpus = env.PIPELINE_CORPUS;
-  const judge = env.PIPELINE_JUDGE;
+  let priorsInput; let house; let corpus; let judge;
+  try {
+    priorsInput = deepFreeze(structuredClone(env.PIPELINE_PRIORS));
+    house = deepFreeze(structuredClone(env.PIPELINE_HOUSE));
+    corpus = deepFreeze(structuredClone(env.PIPELINE_CORPUS));
+    judge = deepFreeze(structuredClone(env.PIPELINE_JUDGE));
+  } catch { return failClosed; }
   const generateProvider = env.PIPELINE_GENERATE_PROVIDER;
   const judgeProvider = env.PIPELINE_JUDGE_PROVIDER;
   if (typeof coordPost !== "function" || !priorsInput || !house || !corpus || !judge
@@ -191,8 +196,8 @@ export async function createInactiveDomainWriter(env, deps) {
     }
   }
 
-  async function commit(scope, owner, artifact) {
-    const result = await coordPost("/commit", { scope, owner, artifact });
+  async function commit(scope, owner, artifact, terminalDeadlineMs) {
+    const result = await coordPost("/terminal-commit", { scope, owner, artifact, terminal_deadline_ms: terminalDeadlineMs });
     if (result?.status === "committed") {
       const receipt = parseReceipt(result, scope);
       if (!receipt) throw new Error(WRITER_ERROR);
@@ -228,7 +233,15 @@ export async function createInactiveDomainWriter(env, deps) {
     return { situation_id: situation.id, capability_bundle_id };
   }
 
-  async function write(dispatchValue) {
+  async function write(dispatchValue, terminal = {}) {
+    const signal = terminal?.signal;
+    const terminalDeadlineMs = terminal?.deadline_ms;
+    const assertLive = () => {
+      if (signal?.aborted) throw new Error(WRITER_ERROR);
+    };
+    if (signal !== undefined && !(signal instanceof AbortSignal)) throw new Error(WRITER_ERROR);
+    if (!Number.isSafeInteger(terminalDeadlineMs) || terminalDeadlineMs <= Date.now()) throw new Error(WRITER_ERROR);
+    assertLive();
     const scope = validateDispatch(dispatchValue);
     const dispatch = dispatchValue;
 
@@ -239,16 +252,19 @@ export async function createInactiveDomainWriter(env, deps) {
     if (!current.ready || current.manifest.local.enabled !== true || current.manifest.domain.enabled !== false) {
       throw new Error(WRITER_ERROR);
     }
+    if (!activationIdentitiesMatch(current.manifest, activationIdentities)) throw new Error(WRITER_ERROR);
 
     // Resubmission reads the authority: a committed receipt ends the request
     // with no generation and no replacement.
     const existing = await readAuthority(scope);
+    assertLive();
     if (existing) return { status: "committed", scope, artifact: existing.artifact };
 
     const owner = randomOwner();
     let claimHeld = false;
     try {
       const claimOutcome = await claim(scope, owner);
+      assertLive();
       if (claimOutcome.committed) return { status: "committed", scope, artifact: claimOutcome.committed.artifact };
       claimHeld = true;
 
@@ -265,9 +281,29 @@ export async function createInactiveDomainWriter(env, deps) {
       });
       const seasonId = resolveSeason(deriveDetroitDate(strikeTimestamp), priors).id;
       const seed = sha256Hex(`oddspark-inactive-domain-writer/v1\n${dispatch.claim_key}`);
+      const boundedProvider = (provider) => async (request) => {
+        assertLive();
+        const remaining = startedMs + strikeDeadlineBudgetMs - clock() - PROVIDER_RESERVE_MS;
+        if (!Number.isFinite(remaining) || remaining <= 0) throw new Error(WRITER_ERROR);
+        let timeout; let abortHandler;
+        const aborted = signal ? new Promise((_, reject) => {
+          abortHandler = () => reject(new Error(WRITER_ERROR));
+          signal.addEventListener("abort", abortHandler, { once: true });
+        }) : new Promise(() => {});
+        try {
+          return await Promise.race([
+            Promise.resolve(provider(request, { signal, deadline_ms: startedMs + strikeDeadlineBudgetMs })),
+            new Promise((_, reject) => { timeout = setTimeout(() => reject(new Error(WRITER_ERROR)), remaining); }),
+            aborted,
+          ]);
+        } finally {
+          clearTimeout(timeout);
+          if (abortHandler) signal.removeEventListener("abort", abortHandler);
+        }
+      };
       const roleDependencies = () => ({
-        generation: { provider: generateProvider },
-        gate: { judge_provider: judgeProvider, judge, rubric: corpus },
+        generation: { provider: boundedProvider(generateProvider) },
+        gate: { judge_provider: boundedProvider(judgeProvider), judge, rubric: corpus },
       });
       const strike = await runStrikeOrchestrator({
         evidence: assembled.evidence,
@@ -347,7 +383,11 @@ export async function createInactiveDomainWriter(env, deps) {
         },
       });
 
-      const receipt = await commit(scope, owner, committed);
+      assertLive();
+      const receipt = await commit(scope, owner, committed, terminalDeadlineMs);
+      // A deadline that races an in-flight commit is terminally reconciled:
+      // the response may not serve the committed value after cancellation.
+      assertLive();
       claimHeld = false;
       // Concurrent cold requests converge on one authoritative receipt: every
       // success resolves the artifact the coordinator committed first.

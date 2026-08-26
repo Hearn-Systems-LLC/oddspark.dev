@@ -125,7 +125,7 @@ development_status:
   1-23-worker-runtime-assembly: done
   1-24-compatibility-reader-deployment: done
   1-25-inactive-writer-deployment: done
-  1-26-atomic-local-only-activation: backlog
+  1-26-atomic-local-only-activation: awaiting-operator
   epic-1-retrospective: optional
 
   epic-2: backlog
