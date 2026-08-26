@@ -2,7 +2,7 @@
 title: 'Story 1.20: Atomic Activation Contract and Release Decision View'
 type: 'feature'
 created: '2026-08-26'
-status: 'blocked'
+status: 'ready-for-dev'
 baseline_revision: '3e75980c504d29eb71e3a70768aaca59dbe70681'
 baseline_commit: '6f2546d68d98eaa9c3187c89ee11ecff0cb63065'
 review_loop_iteration: 2
@@ -20,15 +20,15 @@ deferred: []
 
 **Problem:** The v2 activation manifest currently proves only shape and hash syntax. It cannot reject stale or mutually inconsistent evidence, and there is no closed on-demand view showing why a candidate is or is not releasable.
 
-**Approach:** Build one immutable activation snapshot by running the existing retained-artifact verifiers and current source/runtime/content identity functions, never by accepting asserted statuses. Derive the activation ref only from the sole canonical manifest, and render a pure deterministic decision view over the exact applicable gates before that snapshot may be published or consumed for activation.
+**Approach:** Build one immutable activation snapshot by running the existing retained-artifact verifiers and current source/runtime/content identity functions, then require an Ed25519 signature over its complete canonical payload before runtime can trust it. Derive the activation ref only from the sole canonical manifest, and render a pure deterministic decision view over the exact applicable gates before any separate signing or publication step.
 
 ## Boundaries & Constraints
 
-**Always:** Keep `ProductionActivationManifest` v2 closed and canonical: shared generation/judge refs occur once, mode objects contain only enablement and mode-specific refs, and `semantic_ref` remains forbidden. Validate the manifest and all applicable evidence as one atomic candidate before enabling any assembled model role. The release validator must invoke existing retained-artifact verification and current identity seams for deployed source/runtime, generation, judge, catalog, and each enabled mode; caller JSON may select artifact locations but cannot supply `current`, `verified`, `approved`, or gate-status assertions. Bind manifest refs to recomputed identities and map verifier results to `pass`, `blocked`, `stale`, or `unapproved`. Only an all-pass decision may emit the closed runtime snapshot; the view is deterministic, redacted, and creates no authority or persistence. Missing/invalid runtime snapshots expose only a stable reason code and cannot enable the assembled writer, claim copy, or reference handoff. Preserve the inactive legacy compatibility path and safe committed/approved-house behavior established by Story 1.25.
+**Always:** Keep `ProductionActivationManifest` v2 closed and canonical: shared generation/judge refs occur once, mode objects contain only enablement and mode-specific refs, and `semantic_ref` remains forbidden. Validate the manifest and all applicable evidence as one atomic candidate before enabling any assembled model role. The release validator must invoke existing retained-artifact verification and current identity seams for deployed source/runtime, generation, judge, catalog, and each enabled mode; caller JSON may select artifact locations but cannot supply `current`, `verified`, `approved`, or gate-status assertions. Bind manifest refs to recomputed identities and map verifier results to `pass`, `blocked`, `stale`, or `unapproved`. The view emits only an unsigned canonical signing payload when every gate passes and creates no authority or persistence. Runtime accepts only a closed payload carrying a valid Ed25519 signature under a source-pinned SPKI public key, a known key id, and an unexpired validity interval no later than the earliest verified approval expiry. Signature verification covers every payload field under a versioned domain; unknown keys, missing trust anchors, invalid signatures, and expired/not-yet-valid payloads fail closed with redacted reasons. The production trust-key map remains empty in this story—tests inject ephemeral keys—so no production activation becomes possible until a separately authorized activation change pins a public key and supplies a signed value. Preserve Story 1.25 inactive legacy and safe committed/approved-house behavior.
 
-**Block If:** Implementation requires deciding a new approval authority, changing which evidence an existing verifier recognizes, activating receiver/claim delivery, changing production configuration, invoking a provider, deploying, or removing the Story 1.25 legacy compatibility path.
+**Block If:** Implementation requires changing which evidence an existing verifier recognizes, selecting or generating a production signing key, storing private key material, activating receiver/claim delivery, changing production configuration, invoking a provider, deploying, or removing the Story 1.25 legacy compatibility path.
 
-**Never:** Do not mint, repair, refresh, overwrite, or infer evidence or approvals; accept caller-supplied current refs, verification booleans, approval booleans, or gate statuses; weaken or duplicate an existing verifier; add parallel activation values; add `semantic_ref`; publish an activation manifest; edit retained qualification results; create remote resources; or merge to `main`.
+**Never:** Do not mint, repair, refresh, overwrite, or infer evidence or approvals; accept caller-supplied current refs, verification booleans, approval booleans, or gate statuses; treat an unkeyed digest as provenance; commit, log, generate, or persist private signing material; invent a production public key or key id; weaken or duplicate an existing verifier; add parallel activation values; add `semantic_ref`; publish an activation manifest; edit retained qualification results; create remote resources; or merge to `main`.
 
 ## I/O & Edge-Case Matrix
 
@@ -57,10 +57,10 @@ deferred: []
 ## Tasks & Acceptance
 
 **Execution:**
-- `src/pipeline/release-decision.mjs` -- define the pure closed runtime-snapshot and ordered decision-view contracts; accept only verifier-derived facts from the trusted builder seam, close arrays/objects including symbols and descriptors, bound nesting, reject duplicate/partial/parallel values, and derive statuses rather than accepting them.
-- `scripts/release-decision.mjs` plus narrowly scoped verifier adapters -- implement the read-only trusted builder: load caller-selected retained artifact sets, invoke the existing generation, judge, full-request, assembly/source, house, and applicable receiver/claim verification seams, recompute current identities, bind them to the manifest, and emit a runtime snapshot only when every gate passes. Bound input size/depth, reject duplicate JSON keys, redact filesystem/error details, and never rewrite evidence.
-- `src/pipeline/activation.mjs` and `src/pipeline/assembly.mjs` -- make runtime enablement consume only the builder-emitted closed snapshot; additionally bind manifest identities to the actual assembled source/content/provider qualification descriptors available at runtime, retain pure manifest shape/ref tooling, reject `ACTIVATION_MANIFEST` as parallel authority, and keep posture redacted.
-- `scripts/release-decision.test.mjs`, existing verifier fixtures, and `package.json` -- prove real verifier invocation/currentness with copied or in-memory retained artifacts, adversarially mutate every evidence family, reject self-attested status/currentness fields, and compose the offline test into `npm run check`.
+- `src/pipeline/release-decision.mjs` -- define the pure closed signed-payload and ordered decision-view contracts; canonicalize and domain-separate every signed field; verify Ed25519/SPKI signatures, key id, issued/expiry times, and injected trusted-key map/clock; keep the production map empty; close arrays/objects including symbols/descriptors, bound nesting, and reject duplicate/partial/parallel values.
+- `scripts/release-decision.mjs` plus narrowly scoped verifier adapters -- implement the read-only trusted builder: safely load retained artifact sets, invoke existing generation, judge, full-request, assembly/source, house, and applicable receiver/claim verification seams, derive every status and earliest approval expiry, and emit an unsigned canonical signing payload only when every gate passes. Bound bytes/depth, reject duplicate JSON keys and traversal/symlink escapes, redact filesystem details, and never sign, rewrite, or persist evidence.
+- `src/pipeline/activation.mjs` and `src/pipeline/assembly.mjs` -- make runtime enablement asynchronous where needed and consume only a signature-valid, time-valid payload; bind manifest identities to actual assembled source/content/provider descriptors, retain manifest shape/ref tooling, reject `ACTIVATION_MANIFEST` as parallel authority, and keep posture redacted.
+- `scripts/release-decision.test.mjs`, existing verifier fixtures, and `package.json` -- prove real verifier invocation/currentness with copied or in-memory retained artifacts; use ephemeral Ed25519 test keys to cover valid, wrong-key, unknown-key, altered-field/signature, expiry, not-yet-valid, and empty-production-keyring behavior; reject self-attested fields and compose the offline test into `npm run check`.
 - `test.mjs` -- prove current, stale, missing, malformed, partial, and parallel snapshots at the executable worker boundary; assert zero assembled provider/claim/reference activity on failure, one redacted posture line, and unchanged safe legacy/approved-house compatibility behavior.
 - `scripts/reader-preflight.mjs`, `scripts/reader-preflight.test.mjs`, and `scripts/writer-preflight.mjs` -- forbid `ACTIVATION_SNAPSHOT` in inactive configuration as both vars and binding names; smoke absent, malformed, stale, blocked, unapproved, partial, and parallel candidates.
 - `runtime-assembly.json` -- refresh and verify the frozen runtime closure only for intentional runtime imports.
@@ -78,6 +78,12 @@ deferred: []
 - Amendment: Justin selected verifier-integrated authority. The execution contract now requires existing retained-artifact verifiers and current identity functions to derive every decision fact, forbids caller-supplied currentness/status assertions, binds available runtime descriptors, closes parser/array/config seams, and expands outer-boundary coverage.
 - Known-bad state avoided: A syntactically closed JSON value reporting all-pass without consuming the evidence and approvals it claims to represent.
 - KEEP: Closed canonical v2 manifest; deterministic gate order; sole manifest-derived `activation_ref`; stable redacted reasons; pure/no-persistence rendering; rejection of parallel activation authority; inactive legacy/approved-house compatibility; zero provider/coordinator activity on invalid activation.
+
+### 2026-08-26 — Owner-selected authenticated runtime trust
+- Trigger: Review proved that verifier-integrated output remained forgeable ordinary JSON when runtime trusted only a public digest.
+- Amendment: Justin selected authenticated signing. Runtime now requires Ed25519 verification against a source-pinned SPKI key map, with all fields domain-separated and signed and validity bounded by verified approval expiry. The production key map stays empty; signing and production key provisioning remain separate authority.
+- Known-bad state avoided: A caller recomputing a public digest over invented all-pass rows and activating without verifier provenance.
+- KEEP: The verifier-integrated offline builder and all prior KEEP constraints; no private keys, production key generation, signing, publication, configuration, or activation in this story.
 
 ## Review Triage Log
 
@@ -102,7 +108,7 @@ deferred: []
 
 ## Design Notes
 
-The runtime snapshot is transport, not evidence authority. Its canonical gate order is `deployed_source`, `generation`, `judge`, `house_catalog`, then enabled-mode gates (`local_full_request`; `domain_evidence`, `domain_full_request`), followed by `receiver` and `receipt_claim` only when their nullable refs are present. The trusted builder obtains each current identity and outcome exclusively from existing verifier seams: mismatch is `stale`, current negative verification is `blocked`, and current approval absence is `unapproved`; only exact current approved facts become `pass`. Null receiver/claim refs remain the current non-activation posture. Artifact selectors are paths/identifiers only and must themselves be closed and traversal-safe; they are not evidence claims.
+The runtime snapshot is authenticated transport, not evidence authority. Its canonical gate order is `deployed_source`, `generation`, `judge`, `house_catalog`, then enabled-mode gates (`local_full_request`; `domain_evidence`, `domain_full_request`), followed by `receiver` and `receipt_claim` only when their nullable refs are present. The builder obtains each current identity/outcome exclusively from existing verifiers: mismatch is `stale`, negative verification is `blocked`, and absent approval is `unapproved`; only exact current approved facts become `pass`. The signing payload contains version, key id, issued/expiry timestamps, manifest, and ordered evidence-bound gates; Ed25519 signs `oddspark-activation-attestation/v1\n` plus canonical JSON of that payload. The envelope adds only a base64url signature. Artifact selectors are closed traversal-safe paths, not evidence claims. No production key is pinned here; the empty production key map proves inactive posture until separate authorization.
 
 Planning baseline: `3e75980c504d29eb71e3a70768aaca59dbe70681` on `develop`.
 
@@ -132,3 +138,7 @@ Verification before review: `npm run release-decision:test` 6/6 passed; `npm run
 ### Resumption — 2026-08-26
 
 Justin selected option 1: verifier-integrated authority. The intent and execution contract are amended above; the story is reopened for complete re-derivation from retained verifier outputs. The prior patch remains diagnostic evidence only and must not be reapplied wholesale.
+
+### Resumption — authenticated runtime trust
+
+Justin selected option 2: signed runtime snapshots. The contract now authorizes the Ed25519 verification boundary while explicitly withholding production key provisioning, private signing material, publication, configuration, and activation.
