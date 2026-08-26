@@ -1131,8 +1131,30 @@ test("owner-reviewed and prompt-superseded cycles are immutable history; unrevie
   // granted prompt-recovery matrix may be planned.
   const directory = await mkdtemp(path.join(tmpdir(), "oddspark-plan-history-"));
   const output = path.join(directory, "recovery-plan.json");
-  await planCommand({ output, account_profile: "test-profile", plan: "paid", approval_run_id: "history-run" });
+  const retainedResults = new URL("./results/", import.meta.url);
+  const historicalResults = await mkdtemp(path.join(tmpdir(), "oddspark-plan-history-results-"));
+  const historicalPrefixes = [
+    "2026-08-22-e848e2bd-d072356c9de6a906-c43fb299-6891-4f10-aebe-e49cbf3f770c",
+    "2026-08-24-7c2c3860-cec14a30a3411043-3f980f8c-8e1d-45ba-bd87-ef961d1a808c",
+  ];
+  const historicalSuffixes = ["-qualification.json", "-v2.complete.json", "-v2.json", "-v2.md"];
+  for (const prefix of historicalPrefixes) {
+    for (const suffix of historicalSuffixes) {
+      const name = `${prefix}${suffix}`;
+      await writeFile(path.join(historicalResults, name), await readFile(new URL(name, retainedResults)));
+    }
+  }
+  await planCommand(
+    { output, account_profile: "test-profile", plan: "paid", approval_run_id: "history-run" },
+    { resultsDir: historicalResults },
+  );
   await access(output);
+
+  // The current real 42-call cycle remains authoritative and blocks successor planning.
+  await assert.rejects(
+    planCommand({ output: path.join(directory, "real-spend-plan.json"), account_profile: "test-profile", plan: "paid", approval_run_id: "real-spend-run" }),
+    /prior operational recovery already retained/,
+  );
 
   // An unreviewed receipt proving (or unable to disprove) provider invocation still blocks.
   const blockedResults = await mkdtemp(path.join(tmpdir(), "oddspark-plan-blocked-"));
