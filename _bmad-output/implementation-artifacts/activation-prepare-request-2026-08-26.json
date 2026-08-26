@@ -1,0 +1,70 @@
+{
+  "release_decision": {
+    "manifest": {
+      "version": 2,
+      "deployed_source_identity": "9e20e72300d2c84c85d62e98ff5d9bd9a2f806dc94b808d2305bad132f4217f5",
+      "generation_ref": "34731e26b1c1ef79acd444ba8e775143d9a616c3ab915f52481bd81475796bfc",
+      "judge_ref": "7dc1ec98a625a1dd16f1166067b496e4209a415e7f10854ff781f46d0d0062d0",
+      "local": {
+        "enabled": true,
+        "full_request_ref": "a0b656c04ccc89ae3bdb35fea583b6937bb2f43dd8ec26825a72a38fc696cec4"
+      },
+      "domain": {
+        "enabled": false,
+        "evidence_ref": null,
+        "full_request_ref": null
+      },
+      "house_catalog_ref": "9334910e17f7fa610ee2a18d54b1485bf19d00b866f8e7cd8f5258a0d17e9ad8",
+      "receiver_ref": null,
+      "receipt_claim_ref": null,
+      "outcome": "active"
+    },
+    "key_id": "oddspark-production-activation-2026-01",
+    "issued_at": "2026-08-26T14:17:22.000Z",
+    "selectors": {
+      "deployed_source": {},
+      "generation": {
+        "evidence_path": "spikes/generation-qualification/results/story-1-11-2026-08-22-l9-406d10ea-8629-4a24-ab8f-8873b0332e96.evidence.json"
+      },
+      "judge": {
+        "evidence_path": "spikes/judge-fidelity/results/2026-08-24-ba52ec91-051d5c7072d99a31-f543d3d5-80d4-44f6-b7bf-41083197fcc9-v2.json",
+        "bundle_path": "spikes/judge-fidelity/results/2026-08-24-ba52ec91-051d5c7072d99a31-f543d3d5-80d4-44f6-b7bf-41083197fcc9-qualification.json"
+      },
+      "house_catalog": {},
+      "local_full_request": {
+        "evidence_path": "spikes/local-full-request-qualification/results/a77bfb8a3a933fd279ddff03d722fd1daee12ef4704d36e7a2beb49ba7dcba7d/approval-e1c3f58a7c8edbca/5ef8222e-27e2-4d48-95f9-761991155e19.evidence.json",
+        "plan_path": "spikes/local-full-request-qualification/results/a77bfb8a3a933fd279ddff03d722fd1daee12ef4704d36e7a2beb49ba7dcba7d/approval-e1c3f58a7c8edbca/5ef8222e-27e2-4d48-95f9-761991155e19.plan.json",
+        "approval_path": "spikes/local-full-request-qualification/results/a77bfb8a3a933fd279ddff03d722fd1daee12ef4704d36e7a2beb49ba7dcba7d/approval-e1c3f58a7c8edbca/5ef8222e-27e2-4d48-95f9-761991155e19.approval.json"
+      },
+      "domain_evidence": {},
+      "domain_full_request": {},
+      "receiver": {},
+      "receipt_claim": {}
+    }
+  },
+  "target": {
+    "account_id": "e72c232411bedeed357f3c73e4f4f0aa",
+    "script_name": "oddspark",
+    "environment": "production",
+    "binding": "ACTIVATION_SNAPSHOT"
+  },
+  "operations": {
+    "activate": {
+      "kind": "set_whole_value",
+      "expected_current": null
+    },
+    "rollback": {
+      "kind": "remove_whole_value"
+    }
+  },
+  "observation": {
+    "window_seconds": 300,
+    "checks": [
+      "snapshot_hash",
+      "runtime_identity",
+      "local_enabled",
+      "domain_effective_local",
+      "no_terminal_errors"
+    ]
+  }
+}

@@ -75,6 +75,17 @@ deferred: []
 
 ## Review Triage Log
 
+- 2026-08-26 signing preparation attempt — BLOCK: exact offline preparation
+  emitted no payload or signing bytes. Deployed source and house catalog pass;
+  generation approval expired `2026-08-22T18:43:55.000Z`; judge approval
+  expired `2026-08-24T18:48:21.000Z` and its retained evidence now fails
+  `source.identity` against the Story 1.26 source bytes; local full-request
+  approval expired `2026-08-25T21:18:08.000Z` and predates the current
+  assembly. Fresh exact generation, judge, and local full-request qualification
+  plans/runs plus independent evidence review require separate owner authority.
+  Production remains inactive and zero provider calls or remote mutations were
+  performed by preparation.
+
 - 2026-08-26 source-pin approval and review — RECORD: the owner explicitly
   approved the exact single-key source-pinning code/config deployment while
   requiring `ACTIVATION_SNAPSHOT` to remain absent. The trust map now pins only
