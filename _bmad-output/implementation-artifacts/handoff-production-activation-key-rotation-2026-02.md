@@ -34,7 +34,7 @@ secret, or private-key file was changed.
   `MCowBQYDK2VwAyEAh4GQdgxMP65vNfGmtKRBfb2Z4ayMCnzNvuvtsihM5pY`
 - New public SPKI DER SHA-256:
   `8e2f2502d2ab783de6fb558663aa86ffd69c2d7f4a3fa98c2f2108358a047e6b`
-- Rotation status: source-pinned for delivery to `develop`;
+- Rotation status: source-pinned, committed, and pushed to `develop`;
   undeployed and inactive.
 - New runtime-assembly identity:
   `0eca7833bf857403949928960f2975116445e593471d5c84c9e47499657318e6`
@@ -74,9 +74,13 @@ secret, or private-key file was changed.
 
 ## Commit and push
 
-- Commit SHA: pending atomic commit; the final local handoff will record it.
-- Push result: pending normal push to `origin/develop`; the final local handoff
-  will record it.
+- Commit SHA: `e97f863912b2fc0cdfa17d58d6a50e4b68898fd5`
+- Push result: PASS; normal non-force push advanced `origin/develop` from
+  `3860425` to `e97f863`.
+- Terminal-record limitation: these exact post-commit/post-push fields were
+  filled locally after the single atomic commit and push. They are intentionally
+  not a second commit because the owner authorized one narrow commit, and a
+  commit cannot contain its own final SHA or the result of a later push.
 
 ## Remaining gates
 
