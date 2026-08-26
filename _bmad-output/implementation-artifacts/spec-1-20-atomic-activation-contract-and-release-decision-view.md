@@ -2,9 +2,10 @@
 title: 'Story 1.20: Atomic Activation Contract and Release Decision View'
 type: 'feature'
 created: '2026-08-26'
-status: 'ready-for-dev'
+status: 'blocked'
 baseline_revision: '3e75980c504d29eb71e3a70768aaca59dbe70681'
-review_loop_iteration: 1
+baseline_commit: '6f2546d68d98eaa9c3187c89ee11ecff0cb63065'
+review_loop_iteration: 2
 followup_review_recommended: false
 context:
   - '_bmad-output/implementation-artifacts/epic-1-context.md'
@@ -90,6 +91,14 @@ deferred: []
   - none
 - attempted_change: `story-1-20-attempt-9514448.patch`
 - unresolved_question: Whether the activation snapshot is trusted evidence transport produced by an already-governed release process, or whether Story 1.20's validator/view must itself load and independently recompute current identities, verification outcomes, and approval state from retained evidence artifacts. The former permits caller-authored matching refs/booleans at the validation surface; the latter requires new concrete verifier integration and an exact artifact-input contract.
+
+### 2026-08-26 — Verifier-integrated implementation review (iteration 2)
+- intent_gap: 1 high
+- patch findings held moot: duplicate-aware JSON parsing, bounded retained-artifact reads, symlink containment, and unsupported future applicable-gate adapters.
+- finding: A builder-emitted runtime snapshot remains ordinary caller-controlled JSON. Its public unkeyed digest and publicly derivable fields cannot prove builder provenance, so a caller can author an all-pass snapshot and recompute the digest without invoking any verifier.
+- consequence: Runtime activation can still be self-attested unless it re-verifies the retained evidence itself or consumes an authenticated attestation from an explicitly governed authority.
+- required owner decision: Choose the trust mechanism for runtime consumption. Options include bundling/runtime-accessible verification evidence, defining an authenticated signing/attestation authority and key boundary, or narrowing Story 1.20 to an offline decision view while deferring runtime activation consumption. The current spec forbids inventing that authority.
+- action: Reverted the iteration-2 implementation rather than retain a forgeable activation path.
 
 ## Design Notes
 
