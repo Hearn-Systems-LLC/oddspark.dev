@@ -17,6 +17,12 @@ import { buildAdapterIdentity, buildOperationalEvidence, currentLegacyIdentity, 
 import { executeCurrentFixtureCatalog } from "./fixture-executor.mjs";
 import { findPriorOperationalRecovery as _findPriorOperationalRecovery, validSpendReceipt, OWNER_REVIEWED_SPENDS } from "./recovery-finder.mjs";
 import {
+  HISTORICAL_MEMBERS,
+  HISTORICAL_RECEIPT,
+  verifyHistoricalSpendClosure,
+  writeHistoricalSpendClosure,
+} from "./historical-spend.mjs";
+import {
   RECOVERY_APPROVAL_VERSION,
   RECOVERY_COMPLETION_VERSION,
   buildQualificationBundle,
@@ -55,6 +61,7 @@ const REPO_ROOT = path.resolve(SPIKE_DIR, "../..");
 const RESULTS_DIR = path.join(SPIKE_DIR, "results");
 const RECOVERY_LOCK_FILE = ".judge-recovery.lock";
 const RECOVERY_RECEIPT_FILE = ".judge-llama-cycle-spend.json";
+const SUCCESSOR_RECEIPT_FILE = ".judge-llama-cycle-successor-spend.json";
 const RECOVERY_RECEIPT_VERSION = "oddspark.judge-cycle-spend/v2";
 const FIXTURES_PATH = path.join(SPIKE_DIR, "fixtures.json");
 const TEST_PATH = path.join(SPIKE_DIR, "test.mjs");
@@ -708,9 +715,9 @@ export async function acquireRecoveryLock(resultsDir = RESULTS_DIR, { now = new 
 
 
 
-export async function reserveRecoveryAttempt(resultsDir, attemptId, approvalRunId, now) {
+export async function reserveRecoveryAttempt(resultsDir, attemptId, approvalRunId, now, receiptFile = RECOVERY_RECEIPT_FILE) {
   try {
-    const existingBytes = await readFile(path.join(resultsDir, RECOVERY_RECEIPT_FILE));
+    const existingBytes = await readFile(path.join(resultsDir, receiptFile));
     // The owner-reviewed completed-spend receipt of the 2026-08-22 NO-GO cycle does not
     // block the one successor matrix Justin granted; its bytes are archived aside, not deleted.
     let parsed = null;
@@ -728,19 +735,19 @@ export async function reserveRecoveryAttempt(resultsDir, attemptId, approvalRunI
     } catch (error) {
       if (error?.code !== "ENOENT") throw error;
     }
-    await rename(path.join(resultsDir, RECOVERY_RECEIPT_FILE), archivePath);
+    await rename(path.join(resultsDir, receiptFile), archivePath);
     await syncDirectory(await physicalDirectory(resultsDir));
   } catch (error) {
     if (error?.code !== "ENOENT") throw error;
   }
   const timestamp = now.toISOString();
   const receipt = { schema_version: RECOVERY_RECEIPT_VERSION, attempt_id: attemptId, approval_run_id: approvalRunId, created_at: timestamp, updated_at: timestamp, state: "reserved", calls_started: 0, last_call: null };
-  await durableWriteJson(path.join(resultsDir, RECOVERY_RECEIPT_FILE), receipt);
+  await durableWriteJson(path.join(resultsDir, receiptFile), receipt);
   return receipt;
 }
 
-async function clearVerifiedZeroCallReservation(resultsDir, attemptId) {
-  const receiptPath = path.join(resultsDir, RECOVERY_RECEIPT_FILE);
+async function clearVerifiedZeroCallReservation(resultsDir, attemptId, receiptFile = RECOVERY_RECEIPT_FILE) {
+  const receiptPath = path.join(resultsDir, receiptFile);
   const parsed = parseCanonicalJsonBytes(await readFile(receiptPath), "spend receipt");
   if (!parsed.valid || !validSpendReceipt(parsed.value, APPROVED_CALL_CAP) || parsed.value.attempt_id !== attemptId
     || parsed.value.state !== "reserved" || parsed.value.calls_started !== 0) {
@@ -750,17 +757,17 @@ async function clearVerifiedZeroCallReservation(resultsDir, attemptId) {
   await syncDirectory(await physicalDirectory(resultsDir));
 }
 
-async function markRecoveryCallStarted(resultsDir, receipt, { kind, model, index }, now = new Date()) {
+async function markRecoveryCallStarted(resultsDir, receipt, { kind, model, index }, now = new Date(), receiptFile = RECOVERY_RECEIPT_FILE) {
   const sequence = receipt.calls_started + 1;
   const markedAt = now.toISOString();
   const next = { ...receipt, updated_at: markedAt, state: "calls-started", calls_started: sequence, last_call: { sequence, kind, model, index, marked_at: markedAt } };
-  await durableWriteJson(path.join(resultsDir, RECOVERY_RECEIPT_FILE), next);
+  await durableWriteJson(path.join(resultsDir, receiptFile), next);
   return next;
 }
 
-async function completeRecoverySpend(resultsDir, receipt, now = new Date(), state = "completed-spent") {
+async function completeRecoverySpend(resultsDir, receipt, now = new Date(), state = "completed-spent", receiptFile = RECOVERY_RECEIPT_FILE) {
   const completed = { ...receipt, updated_at: now.toISOString(), state };
-  await durableWriteJson(path.join(resultsDir, RECOVERY_RECEIPT_FILE), completed);
+  await durableWriteJson(path.join(resultsDir, receiptFile), completed);
   return completed;
 }
 
@@ -806,6 +813,7 @@ export async function buildCurrentRecoveryPlan(options, dependencies = {}) {
     runtime,
     expected_health: expectedHealth,
     legacy,
+    historical_closure: options.historical_closure ?? null,
   });
   return { recoveryPlan, input, estimate, requestManifest, legacy, sources, runtime, expectedHealth };
 }
@@ -1137,10 +1145,20 @@ async function retainInvalidEvidence(evidence, resultsDir = RESULTS_DIR, attempt
 }
 
 export async function runLive(options, dependencies = {}) {
+  const resultsDir = dependencies.resultsDir ?? RESULTS_DIR;
+  let historicalClosure = dependencies.historicalClosure ?? null;
+  if (historicalClosure === null && typeof options.historical_closure === "string") {
+    historicalClosure = await readFile(path.resolve(options.historical_closure));
+  }
+  const injectedUnitBoundary = Object.hasOwn(dependencies, "findPriorRecovery") || Object.hasOwn(dependencies, "plan");
+  if (historicalClosure === null && !injectedUnitBoundary) throw new Error("live recovery requires a verified historical closure before approval or adapter processing");
+  const closureVerification = historicalClosure === null
+    ? { valid: true, closure: null, errors: [] }
+    : await (dependencies.verifyHistoricalClosure ?? verifyHistoricalSpendClosure)(resultsDir, historicalClosure);
+  if (!closureVerification.valid) throw new Error(`historical closure is invalid: ${closureVerification.errors.join("; ")}`);
   if ((dependencies.ci ?? process.env.CI) && dependencies.allowCi !== true) throw new Error("live recovery is forbidden in CI");
   const operatorPresent = dependencies.operatorPresent ?? (process.stdin.isTTY === true && process.stdout.isTTY === true);
   if (!operatorPresent) throw new Error("live recovery requires an interactive operator terminal");
-  const resultsDir = dependencies.resultsDir ?? RESULTS_DIR;
   const filesystemGovernance = dependencies.recoveryGovernance === true || !Object.hasOwn(dependencies, "findPriorRecovery");
   const governanceState = { receipt: null, evidence: null, retained: false };
   const attemptId = dependencies.attemptId ?? randomUUID();
@@ -1152,10 +1170,10 @@ export async function runLive(options, dependencies = {}) {
     return "RECOVERY-LOCKED";
   }
   try {
-    return await runLiveExclusive(options, { ...dependencies, resultsDir, _attemptId: attemptId, _filesystemGovernance: filesystemGovernance, _governanceState: governanceState });
+    return await runLiveExclusive(options, { ...dependencies, resultsDir, _attemptId: attemptId, _filesystemGovernance: filesystemGovernance, _governanceState: governanceState, _historicalClosure: closureVerification.closure, _receiptFile: closureVerification.closure ? SUCCESSOR_RECEIPT_FILE : RECOVERY_RECEIPT_FILE });
   } catch (error) {
     if (filesystemGovernance && governanceState.receipt?.calls_started > 0) {
-      governanceState.receipt = await completeRecoverySpend(resultsDir, governanceState.receipt, new Date(), "consumed_incomplete").catch(() => governanceState.receipt);
+      governanceState.receipt = await completeRecoverySpend(resultsDir, governanceState.receipt, new Date(), "consumed_incomplete", closureVerification.closure ? SUCCESSOR_RECEIPT_FILE : RECOVERY_RECEIPT_FILE).catch(() => governanceState.receipt);
       if (governanceState.evidence && !governanceState.retained) {
         await retainInvalidEvidence(governanceState.evidence, resultsDir, governanceState.receipt.attempt_id).then(() => { governanceState.retained = true; }).catch(() => {});
       }
@@ -1169,9 +1187,13 @@ export async function runLive(options, dependencies = {}) {
 async function runLiveExclusive(options, dependencies = {}) {
   let prior = dependencies.findPriorRecovery
     ? await dependencies.findPriorRecovery(dependencies.resultsDir ?? RESULTS_DIR)
-    : await findPriorOperationalRecovery(dependencies.resultsDir ?? RESULTS_DIR, dependencies.evidenceDependencies ?? {});
+    : await findPriorOperationalRecovery(dependencies.resultsDir ?? RESULTS_DIR, {
+      ...(dependencies.evidenceDependencies ?? {}),
+      RECOVERY_RECEIPT_FILE: dependencies._receiptFile,
+      closedHistoricalMembers: HISTORICAL_MEMBERS,
+    });
   if (prior?.safe_zero_call_receipt === true && dependencies._filesystemGovernance) {
-    await clearVerifiedZeroCallReservation(dependencies.resultsDir, prior.attempt_id);
+    await clearVerifiedZeroCallReservation(dependencies.resultsDir, prior.attempt_id, dependencies._receiptFile);
     prior = null;
   }
   if (prior) {
@@ -1221,17 +1243,17 @@ async function runLiveExclusive(options, dependencies = {}) {
     account_profile: storedPlan.account.profile,
     plan: storedPlan.account.plan,
     remaining_free_neurons: storedPlan.account.remaining_free_neurons,
+    historical_closure: dependencies._historicalClosure,
   }, dependencies);
   const { recoveryPlan: plan, input, estimate, requestManifest: manifest, legacy, sources, runtime, expectedHealth } = current;
   const storedPlanValidation = validateRecoveryPlan(storedPlan, { legacy });
   if (!storedPlanValidation.valid) throw new Error(`recovery plan is invalid: ${storedPlanValidation.errors.join("; ")}`);
+  if (dependencies._historicalClosure && storedPlan.governance.prior_operational_recovery?.closure_ref !== dependencies._historicalClosure.closure_ref) {
+    throw new Error("recovery plan does not bind the verified historical closure");
+  }
   const attemptId = dependencies._attemptId;
   const receiptNow = dependencies.now ?? new Date();
-  let receipt = dependencies._filesystemGovernance
-    ? await reserveRecoveryAttempt(dependencies.resultsDir, attemptId, storedPlan.approval_run_id, receiptNow)
-    : { schema_version: RECOVERY_RECEIPT_VERSION, attempt_id: attemptId, approval_run_id: storedPlan.approval_run_id, created_at: receiptNow.toISOString(), updated_at: receiptNow.toISOString(), state: "reserved", calls_started: 0, last_call: null };
-  dependencies._governanceState.receipt = receipt;
-  await dependencies.afterReceiptReserved?.(structuredClone(receipt));
+  let receipt = { schema_version: RECOVERY_RECEIPT_VERSION, attempt_id: attemptId, approval_run_id: storedPlan.approval_run_id, created_at: receiptNow.toISOString(), updated_at: receiptNow.toISOString(), state: "reserved", calls_started: 0, last_call: null };
   const fixtures = await (dependencies.executeFixtures ?? executeCurrentFixtureCatalog)();
   console.log(`Frozen plan: ${plan.plan_ref}; approval run: ${plan.approval_run_id}.`);
   console.log(`Frozen cap: ${APPROVED_CALL_CAP} calls; conservative gross maximum: ${estimate.gross_neurons.toFixed(0)} neurons / $${estimate.gross_usd.toFixed(4)}.`);
@@ -1242,6 +1264,11 @@ async function runLiveExclusive(options, dependencies = {}) {
   const offlineErrors = offlinePreflightErrors({ legacy, runtime, fixtures });
   const approvalPermitsPreflight = planMatches && approvalValidation.valid && offlineErrors.length === 0;
   if (offlineErrors.length) console.log(`Offline preflight blocked: ${offlineErrors.join("; ")}`);
+  if (approvalPermitsPreflight && dependencies._filesystemGovernance) {
+    receipt = await reserveRecoveryAttempt(dependencies.resultsDir, attemptId, storedPlan.approval_run_id, receiptNow, dependencies._receiptFile);
+    dependencies._governanceState.receipt = receipt;
+    await dependencies.afterReceiptReserved?.(structuredClone(receipt));
+  }
   const baseUrl = options.base_url ?? DEFAULT_BASE_URL;
   const healthEndpoint = new URL("health", assertLoopbackBaseUrl(baseUrl)).href;
   let observed = { endpoint: healthEndpoint, http_status: 0, body: null };
@@ -1286,7 +1313,7 @@ async function runLiveExclusive(options, dependencies = {}) {
       async before_invoke(call) {
         try {
           receipt = dependencies._filesystemGovernance
-            ? await markRecoveryCallStarted(dependencies.resultsDir, receipt, call, dependencies.callReceiptNow?.(call) ?? new Date())
+            ? await markRecoveryCallStarted(dependencies.resultsDir, receipt, call, dependencies.callReceiptNow?.(call) ?? new Date(), dependencies._receiptFile)
             : { ...receipt, state: "calls-started", calls_started: receipt.calls_started + 1, last_call: { sequence: receipt.calls_started + 1, ...call, marked_at: new Date().toISOString() } };
           dependencies._governanceState.receipt = receipt;
           await dependencies.afterCallReceipt?.(structuredClone(receipt));
@@ -1411,10 +1438,10 @@ async function runLiveExclusive(options, dependencies = {}) {
         ...(dependencies.evidenceDependencies ?? {}),
       });
       if (!rereadVerification.valid) throw new Error(`published qualification failed independent verification: ${rereadVerification.errors.join("; ")}`);
-      receipt = await completeRecoverySpend(dependencies.resultsDir, receipt);
+      receipt = await completeRecoverySpend(dependencies.resultsDir, receipt, new Date(), "completed-spent", dependencies._receiptFile);
     }
     else {
-      await unlink(path.join(dependencies.resultsDir, RECOVERY_RECEIPT_FILE)).catch(() => {});
+      await unlink(path.join(dependencies.resultsDir, dependencies._receiptFile)).catch(() => {});
       await syncDirectory(await physicalDirectory(dependencies.resultsDir));
     }
     dependencies._governanceState.receipt = receipt.calls_started > 0 ? receipt : null;
@@ -1442,11 +1469,21 @@ async function verifyCommand(options) {
 
 export async function planCommand(options, dependencies = {}) {
   const prior = await (dependencies.findPriorRecovery ?? findPriorOperationalRecovery)(dependencies.resultsDir ?? RESULTS_DIR);
-  const boundedStory126Requalification = options.offline_requalification === true
-    && typeof options.output === "string" && path.resolve(path.dirname(options.output)) === path.resolve(RESULTS_DIR)
-    && path.basename(options.output).startsWith("story-1-26-") && path.basename(options.output).includes("unapproved")
-    && typeof options.approval_run_id === "string" && options.approval_run_id.startsWith("story-1-26-");
-  if (prior && prior.safe_zero_call_receipt !== true && !boundedStory126Requalification) throw new Error(`prior operational recovery already retained: ${prior.evidence_file}`);
+  let historicalClosure = null;
+  if (typeof options.historical_closure === "string") {
+    const parsed = await readFile(path.resolve(options.historical_closure));
+    const verified = await verifyHistoricalSpendClosure(dependencies.resultsDir ?? RESULTS_DIR, parsed);
+    if (!verified.valid) throw new Error(`historical closure is invalid: ${verified.errors.join("; ")}`);
+    historicalClosure = verified.closure;
+  }
+  if (prior && prior.safe_zero_call_receipt !== true && historicalClosure === null) throw new Error(`prior operational recovery already retained: ${prior.evidence_file}`);
+  if (prior && prior.safe_zero_call_receipt !== true && historicalClosure !== null
+    && prior.receipt_file !== HISTORICAL_RECEIPT) {
+    throw new Error("historical closure does not close the currently blocking recovery state");
+  }
+  if (historicalClosure && options.approval_run_id === historicalClosure.invocation.approval_run_id) {
+    throw new Error("successor plan run id must be distinct from the closed historical run");
+  }
   if (typeof options.output !== "string" || typeof options.account_profile !== "string" || !["free", "paid"].includes(options.plan)) {
     throw new Error("plan requires --output, --account-profile, and --plan <free|paid>");
   }
@@ -1455,6 +1492,7 @@ export async function planCommand(options, dependencies = {}) {
     plan: options.plan,
     remaining_free_neurons: options.remaining_free_neurons,
     approval_run_id: options.approval_run_id,
+    historical_closure: historicalClosure,
   }, dependencies);
   const fixtures = await (dependencies.executeFixtures ?? executeCurrentFixtureCatalog)();
   const offlineErrors = offlinePreflightErrors({ legacy: current.legacy, runtime: current.runtime, fixtures });
@@ -1471,8 +1509,9 @@ export async function planCommand(options, dependencies = {}) {
 
 function printUsage() {
   console.log("Usage:");
-  console.log("  node spikes/judge-fidelity/run.mjs plan --output <plan.json> --account-profile <label> --plan <free|paid> [--remaining-free-neurons N] [--offline-requalification]");
-  console.log("  node spikes/judge-fidelity/run.mjs live --plan-file <plan.json> [--approval-file <approval.json>] [--base-url http://127.0.0.1:8788]");
+  console.log("  node spikes/judge-fidelity/run.mjs close-history --output <closure.json>");
+  console.log("  node spikes/judge-fidelity/run.mjs plan --output <plan.json> --account-profile <label> --plan <free|paid> --historical-closure <closure.json> [--remaining-free-neurons N]");
+  console.log("  node spikes/judge-fidelity/run.mjs live --plan-file <plan.json> --historical-closure <closure.json> --approval-file <approval.json> [--base-url http://127.0.0.1:8788]");
   console.log("  node spikes/judge-fidelity/run.mjs verify [result.json ...]");
 }
 
@@ -1483,6 +1522,13 @@ export async function main(argv = process.argv.slice(2)) {
   }
   const command = argv[0];
   const options = parseOptions(argv.slice(1));
+  if (command === "close-history") {
+    if (typeof options.output !== "string") throw new Error("close-history requires --output");
+    const closure = await writeHistoricalSpendClosure(RESULTS_DIR, path.resolve(options.output));
+    console.log(`Historical closure: ${path.resolve(options.output)}`);
+    console.log(`Closure ref: ${closure.closure_ref}`);
+    return 0;
+  }
   if (command === "plan") {
     await planCommand(options);
     return 0;

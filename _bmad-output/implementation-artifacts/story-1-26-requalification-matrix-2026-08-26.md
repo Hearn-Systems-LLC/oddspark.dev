@@ -7,6 +7,14 @@ Provider calls: **0**
 Remote mutations: **0**  
 Allowance consumed: **false**
 
+## 2026-08-26 Stage 2 historical-spend recovery development
+
+The retained Stage 2 spend is now represented by a separate canonical, create-only historical-closure record. It closes only attempt `f543d3d5-80d4-44f6-b7bf-41083197fcc9`, run `ba52ec91-fe85-4987-954d-71054a0acc3d`, and 42 calls, with closure ref `e827240fbc244ac2f526d32eef3cc01e785ddda40a79fe5d2d9f0b251f22d066`. The original receipt and all evidence/result bytes remain in place and cumulative accounting remains 42 historical calls plus any separately approved future allowance.
+
+The closure records `$0.032631059999999996` exact computable observed 70B cost and retains the selected 8B endpoint as unpriced, with the full historical conservative cap `$0.3054702` / `27770.018181818185` neurons. It does not treat unavailable exact 8B pricing as zero. All non-terminal, incomplete, active, ambiguous, corrupt, mismatched, replayed, symlink-aliased, or unverifiable states remain blocking.
+
+The prior planning-only `--offline-requalification` exception no longer suffices to cross the retained-spend gate. After this packet is committed, a new distinct unapproved plan must be generated with the verified closure, then independently reviewed and freshly approved. No real successor plan, approval, adapter start, runner/provider invocation, allowance consumption, deployment, signing, activation, or Stage 3 action occurred in this development packet.
+
 This document is a planning artifact only. It is not approval to start an adapter, call a provider, consume an allowance, sign, deploy, activate, retry, replace, or mutate retained evidence. Historical plans, approvals, runs, manifests, and refs are templates only.
 
 ## Current frozen identities and shared constraints

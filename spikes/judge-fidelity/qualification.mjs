@@ -206,6 +206,7 @@ export function createRecoveryPlan({
   runtime,
   expected_health,
   legacy,
+  historical_closure = null,
 }) {
   const modelPositions = ["primary", "fallback"];
   const timeoutPolicySha256 = hash(stableStringify(TIMEOUT_POLICY));
@@ -258,7 +259,14 @@ export function createRecoveryPlan({
     maximum_cost: structuredClone(estimate),
     governance: {
       recovery_allowance: 1,
-      prior_operational_recovery: null,
+      prior_operational_recovery: historical_closure === null ? null : {
+        closure_ref: historical_closure.closure_ref,
+        attempt_id: historical_closure.invocation.attempt_id,
+        approval_run_id: historical_closure.invocation.approval_run_id,
+        cumulative_historical_calls: historical_closure.accounting.cumulative_historical_calls,
+        conservative_historical_cap_usd: historical_closure.accounting.conservative_historical_cap_usd,
+        reset_permitted: false,
+      },
       legacy_v1_evidence_sha256: legacy.find(({ path: legacyPath }) => legacyPath.endsWith(".json"))?.sha256 ?? null,
       cycle_available_after_calls: false,
     },
@@ -307,8 +315,12 @@ export function validateRecoveryPlan(plan, { legacy } = {}) {
   if (!exact(plan.maximum_cost, maximumCostKeys) || !recomputedMaximumCost || !same(plan.maximum_cost, recomputedMaximumCost)) errors.push("maximum-cost disclosure is invalid");
   if (plan.account?.plan === "free" && nonnegativeFinite(plan.account.remaining_free_neurons)
     && plan.account.remaining_free_neurons < plan.maximum_cost.gross_neurons) errors.push("free-plan headroom is below the disclosed maximum");
+  const prior = plan.governance?.prior_operational_recovery;
+  const validPrior = prior === null || (exact(prior, ["closure_ref", "attempt_id", "approval_run_id", "cumulative_historical_calls", "conservative_historical_cap_usd", "reset_permitted"])
+    && hex(prior.closure_ref) && typeof prior.attempt_id === "string" && typeof prior.approval_run_id === "string"
+    && prior.cumulative_historical_calls === 42 && nonnegativeFinite(prior.conservative_historical_cap_usd) && prior.reset_permitted === false);
   if (!exact(plan.governance, ["recovery_allowance", "prior_operational_recovery", "legacy_v1_evidence_sha256", "cycle_available_after_calls"])
-    || plan.governance.recovery_allowance !== 1 || plan.governance.prior_operational_recovery !== null
+    || plan.governance.recovery_allowance !== 1 || !validPrior
     || !hex(plan.governance.legacy_v1_evidence_sha256) || plan.governance.cycle_available_after_calls !== false) errors.push("recovery governance is invalid");
   const retainedLegacy = Array.isArray(legacy)
     ? legacy.find(({ path: legacyPath }) => typeof legacyPath === "string" && legacyPath.endsWith(".json") && legacyPath.includes("2026-08-16-d2b84005"))

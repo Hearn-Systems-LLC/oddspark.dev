@@ -76,6 +76,13 @@ import {
   validateRecoveryPlan,
   verifyQualificationBundle,
 } from "./qualification.mjs";
+import {
+  HISTORICAL_MEMBERS,
+  buildHistoricalSpendClosure,
+  deriveHistoricalClosureRef,
+  verifyHistoricalSpendClosure,
+  writeHistoricalSpendClosure,
+} from "./historical-spend.mjs";
 
 const fixtures = JSON.parse(
   await readFile(new URL("./fixtures.json", import.meta.url), "utf8"),
@@ -456,7 +463,7 @@ test("the runner accepts loopback only", () => {
 test("operator-only live execution rejects CI and non-interactive command use", async () => {
   await assert.rejects(runLive({}, { operatorPresent: true, ci: true, findPriorRecovery: async () => null }), /forbidden in CI/);
   await assert.rejects(runLive({}, { operatorPresent: false, ci: false, findPriorRecovery: async () => null }), /interactive operator terminal/);
-  await assert.rejects(execFileAsync(process.execPath, [new URL("./run.mjs", import.meta.url).pathname, "live", "--plan-file", path.join(tmpdir(), "unused-plan.json")], { cwd: new URL("../..", import.meta.url).pathname }), /interactive operator terminal/);
+  await assert.rejects(execFileAsync(process.execPath, [new URL("./run.mjs", import.meta.url).pathname, "live", "--plan-file", path.join(tmpdir(), "unused-plan.json")], { cwd: new URL("../..", import.meta.url).pathname }), /verified historical closure/);
 });
 
 test("the maximum-usage estimate binds the exact 42-call cap", () => {
@@ -1131,6 +1138,86 @@ test("approval templates require explicit timestamps and plan publication is ext
   await assert.rejects(writePlanDisclosure(setup.recoveryPlan, rollbackPlan));
   await assert.rejects(access(rollbackPlan));
   assert.equal(await readFile(rollbackTemplate, "utf8"), "occupied");
+});
+
+test("historical spend closure cryptographically closes exact retained bytes and fail-closes mutations", async () => {
+  const results = new URL("./results/", import.meta.url).pathname;
+  const closure = await buildHistoricalSpendClosure(results);
+  assert.equal(closure.state, "terminal-closed");
+  assert.equal(closure.invocation.calls_started, 42);
+  assert.equal(closure.invocation.runner_invocations, 1);
+  assert.equal(closure.accounting.cumulative_historical_calls, 42);
+  assert.equal(closure.accounting.reset_permitted, false);
+  assert.equal(closure.accounting.unpriced_models.length, 1);
+  assert.equal(closure.closure_ref, deriveHistoricalClosureRef(closure));
+  assert.deepEqual(closure.members.map(({ name }) => name), HISTORICAL_MEMBERS);
+  assert.equal((await verifyHistoricalSpendClosure(results, Buffer.from(`${JSON.stringify(closure, null, 2)}\n`))).valid, true);
+
+  const mutated = clone(closure);
+  mutated.invocation.calls_started = 41;
+  mutated.closure_ref = deriveHistoricalClosureRef(mutated);
+  assert.equal((await verifyHistoricalSpendClosure(results, Buffer.from(`${JSON.stringify(mutated, null, 2)}\n`))).valid, false);
+  const replay = clone(closure);
+  replay.invocation.approval_run_id = "different-run";
+  replay.closure_ref = deriveHistoricalClosureRef(replay);
+  assert.equal((await verifyHistoricalSpendClosure(results, Buffer.from(`${JSON.stringify(replay, null, 2)}\n`))).valid, false);
+  const open = clone(closure);
+  open.unexpected = true;
+  open.closure_ref = deriveHistoricalClosureRef(open);
+  assert.equal((await verifyHistoricalSpendClosure(results, Buffer.from(`${JSON.stringify(open, null, 2)}\n`))).valid, false);
+
+  const missingDir = await mkdtemp(path.join(tmpdir(), "oddspark-history-missing-"));
+  for (const name of HISTORICAL_MEMBERS) await writeFile(path.join(missingDir, name), await readFile(path.join(results, name)));
+  await unlink(path.join(missingDir, HISTORICAL_MEMBERS[2]));
+  assert.equal((await verifyHistoricalSpendClosure(missingDir, Buffer.from(`${JSON.stringify(closure, null, 2)}\n`))).valid, false);
+
+  const activeDir = await mkdtemp(path.join(tmpdir(), "oddspark-history-active-"));
+  for (const name of HISTORICAL_MEMBERS) await writeFile(path.join(activeDir, name), await readFile(path.join(results, name)));
+  const activeReceipt = JSON.parse(await readFile(path.join(activeDir, HISTORICAL_MEMBERS[0]), "utf8"));
+  activeReceipt.state = "calls-started";
+  await writeFile(path.join(activeDir, HISTORICAL_MEMBERS[0]), `${JSON.stringify(activeReceipt, null, 2)}\n`);
+  assert.equal((await verifyHistoricalSpendClosure(activeDir, Buffer.from(`${JSON.stringify(closure, null, 2)}\n`))).valid, false);
+
+  const symlinkDir = await mkdtemp(path.join(tmpdir(), "oddspark-history-symlink-"));
+  for (const name of HISTORICAL_MEMBERS) await writeFile(path.join(symlinkDir, name), await readFile(path.join(results, name)));
+  await unlink(path.join(symlinkDir, HISTORICAL_MEMBERS[1]));
+  await symlink(path.join(results, HISTORICAL_MEMBERS[1]), path.join(symlinkDir, HISTORICAL_MEMBERS[1]));
+  assert.equal((await verifyHistoricalSpendClosure(symlinkDir, Buffer.from(`${JSON.stringify(closure, null, 2)}\n`))).valid, false);
+});
+
+test("historical closure creation is create-only and public live authority ordering validates closure first", async () => {
+  const results = new URL("./results/", import.meta.url).pathname;
+  const directory = await mkdtemp(path.join(tmpdir(), "oddspark-history-closure-"));
+  const output = path.join(directory, "closure.json");
+  const settled = await Promise.allSettled([
+    writeHistoricalSpendClosure(results, output),
+    writeHistoricalSpendClosure(results, output),
+  ]);
+  assert.equal(settled.filter(({ status }) => status === "fulfilled").length, 1);
+  assert.equal(settled.filter(({ status }) => status === "rejected").length, 1);
+  const bytes = await readFile(output);
+  assert.equal((await verifyHistoricalSpendClosure(results, bytes)).valid, true);
+
+  const runPath = new URL("./run.mjs", import.meta.url).pathname;
+  await assert.rejects(execFileAsync(process.execPath, [runPath, "live", "--plan-file", path.join(directory, "missing-plan.json")], { cwd: new URL("../..", import.meta.url).pathname }), /verified historical closure/);
+  const corrupt = path.join(directory, "corrupt.json");
+  await writeFile(corrupt, "{}\n");
+  await assert.rejects(execFileAsync(process.execPath, [runPath, "live", "--historical-closure", corrupt, "--plan-file", path.join(directory, "missing-plan.json")], { cwd: new URL("../..", import.meta.url).pathname }), /historical closure is invalid/);
+});
+
+test("a verified closure binds a distinct synthetic offline successor plan without resetting history", async () => {
+  const results = new URL("./results/", import.meta.url).pathname;
+  const directory = await mkdtemp(path.join(tmpdir(), "oddspark-history-plan-"));
+  const closurePath = path.join(directory, "closure.json");
+  await writeHistoricalSpendClosure(results, closurePath);
+  const output = path.join(directory, "successor-unapproved.plan.json");
+  await planCommand({ output, account_profile: "test-profile", plan: "paid", approval_run_id: "distinct-successor-run", historical_closure: closurePath }, { resultsDir: results });
+  const plan = JSON.parse(await readFile(output, "utf8"));
+  const closure = JSON.parse(await readFile(closurePath, "utf8"));
+  assert.equal(plan.governance.prior_operational_recovery.closure_ref, closure.closure_ref);
+  assert.equal(plan.governance.prior_operational_recovery.cumulative_historical_calls, 42);
+  assert.equal(plan.governance.prior_operational_recovery.reset_permitted, false);
+  assert.notEqual(plan.approval_run_id, closure.invocation.approval_run_id);
 });
 
 test("owner-reviewed and prompt-superseded cycles are immutable history; unreviewed spend still blocks planning", async () => {

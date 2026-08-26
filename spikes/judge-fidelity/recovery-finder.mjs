@@ -222,6 +222,7 @@ export async function findPriorOperationalRecovery(resultsDir, options = {}) {
   let reservedReceipt = null;
   let receiptFallback = null;
   const historicalArtifacts = await classifyHistoricalArtifacts(resultsDir, entries);
+  for (const member of options.closedHistoricalMembers ?? []) historicalArtifacts.add(member);
 
   // --- Archived owner-reviewed receipts (renamed aside when successor cycles were granted) ---
   for (const spend of OWNER_REVIEWED_SPENDS) {

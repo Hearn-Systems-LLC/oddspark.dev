@@ -26,7 +26,7 @@ export const EVIDENCE_V2 = "oddspark.judge-recovery-evidence/v2";
 export const EVIDENCE_SOURCE_PATHS = Object.freeze([
   "package.json", "spikes/judge-fidelity/contract.mjs", "spikes/judge-fidelity/evidence-v2.mjs",
   "spikes/judge-fidelity/fixture-executor.mjs", "spikes/judge-fidelity/fixtures.json",
-  "spikes/judge-fidelity/pricing.mjs", "spikes/judge-fidelity/qualification.mjs", "spikes/judge-fidelity/recovery-finder.mjs", "spikes/judge-fidelity/run.mjs", "spikes/judge-fidelity/start-adapter.mjs", "spikes/judge-fidelity/test.mjs",
+  "spikes/judge-fidelity/historical-spend.mjs", "spikes/judge-fidelity/pricing.mjs", "spikes/judge-fidelity/qualification.mjs", "spikes/judge-fidelity/recovery-finder.mjs", "spikes/judge-fidelity/run.mjs", "spikes/judge-fidelity/start-adapter.mjs", "spikes/judge-fidelity/test.mjs",
   "spikes/judge-fidelity/worker.mjs", "spikes/judge-fidelity/verify-launcher.mjs", "spikes/judge-fidelity/verify-v2.mjs", "spikes/judge-fidelity/wrangler.toml",
 ]);
 const CLASSIFICATIONS = ["provider_error", "timeout", "empty_response", "ambiguous_envelope", "output_too_large", "unrecoverable_json", "schema_invalid", "repaired_valid", "direct_valid"];
