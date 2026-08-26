@@ -89,9 +89,9 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 # - Retrospective appends its action items to action_items; sprint-status surfaces open ones
 
-generated: 2026-08-16
-last_updated: 2026-08-23
-project: Github
+generated: '2026-08-16'
+last_updated: 08-25-2026 17:15
+project: oddspark
 project_key: NOKEY
 tracking_system: file-system
 story_location: /Volumes/fast/Github/oddspark/_bmad-output/implementation-artifacts
@@ -115,16 +115,19 @@ development_status:
   1-15-committed-brief-rendering: done
   1-16-request-hardening-and-inactive-domain-dispatch-contract: done
   1-17-semantic-regression-suite: done
-  1-18-semantic-qualification: backlog
-  1-19-local-full-request-qualification: backlog
+  1-18-semantic-qualification-retained-failed-broad-judge-history: done
+  1-18-1-judge-semantic-discrimination-recovery-retained-failed-pro: done
+  1-18-2-direct-quality-gate-simplification: done
+  1-19-local-full-request-qualification: done
   1-20-atomic-activation-contract-and-release-decision-view: backlog
-  1-21-local-artifact-retention-lifecycle: backlog
-  1-22-honest-pipeline-explanation: backlog
+  1-21-local-artifact-retention-lifecycle: done
+  1-22-honest-pipeline-explanation: review
   1-23-worker-runtime-assembly: done
   1-24-compatibility-reader-deployment: done
   1-25-inactive-writer-deployment: done
   1-26-atomic-local-only-activation: backlog
   epic-1-retrospective: optional
+
   epic-2: backlog
   2-1-robots-aware-public-site-scanning: backlog
   2-2-domain-evidence-contract-and-offline-adapter: backlog
@@ -137,6 +140,7 @@ development_status:
   2-9-governed-path-verification-and-legacy-quarantine: backlog
   2-10-domain-production-activation: backlog
   epic-2-retrospective: optional
+
   epic-3: backlog
   3-1-production-receipt-verification-harness: backlog
   3-2-local-production-receipt-verification-run: backlog
@@ -145,12 +149,14 @@ development_status:
   3-5-quiet-production-house-rate-gate-operational-checkpoint: backlog
   3-6-receipt-claim-approval-and-activation: backlog
   epic-3-retrospective: optional
+
   epic-4: backlog
   4-1-aggregate-invitation-event-endpoint: backlog
   4-2-hearn-sender-contract-and-plain-link-fallback: backlog
   4-3-hearn-receiver-contract-verification: backlog
   4-4-hearn-reference-handoff-activation: backlog
   epic-4-retrospective: optional
+
   epic-5: backlog
   5-1-closed-legacy-retirement-oracle: backlog
   5-2-destructive-legacy-seam-retirement: backlog
