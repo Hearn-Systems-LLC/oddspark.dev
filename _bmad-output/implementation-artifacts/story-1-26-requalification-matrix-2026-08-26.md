@@ -1,0 +1,156 @@
+# Story 1.26 requalification matrix — UNAPPROVED
+
+Date: 2026-08-26  
+Repository baseline: `fc3a215150260bd10b918b7ebd06eb2fb1fb2440` on `develop`  
+Overall status: **BLOCKED / UNAPPROVED**  
+Provider calls: **0**  
+Remote mutations: **0**  
+Allowance consumed: **false**
+
+This document is a planning artifact only. It is not approval to start an adapter, call a provider, consume an allowance, sign, deploy, activate, retry, replace, or mutate retained evidence. Historical plans, approvals, runs, manifests, and refs are templates only.
+
+## Current frozen identities and shared constraints
+
+- Current runtime assembly: `9e20e72300d2c84c85d62e98ff5d9bd9a2f806dc94b808d2305bad132f4217f5`, independently verified from `runtime-assembly.json` over 18 runtime-neutral modules.
+- Generation qualification runtime identity: `a3d5ae76d31669bc1f008f7ef3d0fdde14d4a5b1fcb0fc63e70d290cdae32feb` (`runtime-baseline.json` SHA-256 `50d8e3fdb06b548a2b90d8f620cee6ed9620c33ed23314aa5f65db1ecec2cf35`, Node `v24.18.0`, Wrangler `4.123.0`).
+- Provider: Cloudflare Workers AI through an isolated loopback Worker with only the AI binding remote. No adapter may start before exact owner approval.
+- Story 1.26 signing preparation cannot resume until all three stages below have current, independently reviewed GO evidence and unexpired approvals. Stage order is strict: generation, then judge, then local full-request.
+- Every live stage is a single exact approved invocation. No external retry, replacement, substitution, diagnostic call, or second runner invocation is authorized. Any called incomplete or ambiguous run is terminal and requires a new owner decision; it does not create authority.
+- Retained secrets, credentials, account IDs, headers, and provider reasoning are forbidden.
+
+## Stage 1 — generation structural qualification
+
+Status: **BLOCKED / UNAPPROVED**
+
+### Current exact contract
+
+- Models, independently reported:
+  - primary: `@cf/meta/llama-3.3-70b-instruct-fp8-fast`
+  - fallback: `@cf/openai/gpt-oss-20b`
+- Parameters: temperature `0`, maximum output `2048` tokens.
+- Schedule implemented by current tooling: one probe plus 20 sequential trials per role; probes precede trials; threshold is at least 19/20 `direct_valid` per role plus every retained predicate.
+- Deadlines: 10,000 ms adapter preflight; 120,000 ms per adapter call.
+- Current repository-authoritative pricing basis, as of 2026-08-22: 70B `$0.29/M` input and `$2.25/M` output; gpt-oss-20b `$0.20/M` input and `$0.30/M` output.
+- Current tool-computed conservative ceiling: `$0.30586038` and 63 calls. This ceiling includes one transient retry after `provider_error` or `timeout` for each scheduled slot; it permits no retry after an output classification and no replacement.
+- Approval freshness: approval must bind the exact plan and be observed no later than four hours after `approved_at`.
+- Retention: plan, approval, every attempt record, bounded output envelopes, usage, latency, cost, source/runtime/adapter identities, predicate results, manifests, and completion marker; no unbounded output or forbidden sensitive fields.
+- Expected output authority: independently verified per-role `STRUCT-GENERATION/v2` manifests/configuration refs, plus a closed generation role set/ref only for GO members.
+
+### Narrow blocker
+
+The governing Story 1.11-2 contract authorizes at most one retry inside the exact generation orchestrator only after a transient `provider_error` or `timeout`, retains every attempt, and enforces the 63-call cap. It permits no retry after an output classification, no replacement, and no external retry. This governed policy is current authority and is not a blocker or an amendment request.
+
+The remaining blocker is the owner choice: the exact non-secret Cloudflare account profile label and `paid` versus `free` plan; if `free`, exact observed remaining headroom is also required. Historical approvals do not supply or authorize those choices. No approvable plan, run ID, or plan hash was written.
+
+### Exact proposed command after the blockers are resolved
+
+```sh
+npm run spike:generation:plan -- story-1-26-generation-<owner-selected-run-id>
+```
+
+After the owner supplies the non-secret profile/plan choice and, for `free`, observed remaining headroom, the current generation plan machinery can write a fresh OS-temporary unapproved bundle without starting an adapter or making a provider call. The exact emitted plan bytes must then be independently reviewed before any separate execution approval is requested.
+
+### Future exact owner approval statement
+
+The final statement must replace every placeholder with values copied from the verified emitted plan:
+
+> I approve exactly generation plan SHA-256 `<PLAN_SHA256>`, plan ref `<PLAN_REF>`, run ID `<RUN_ID>`, Cloudflare Workers AI models `@cf/meta/llama-3.3-70b-instruct-fp8-fast` and `@cf/openai/gpt-oss-20b`, maximum 63 provider calls, maximum `$<MAXIMUM_USD>`, at most one retry inside the exact generation orchestrator only after a transient `provider_error` or `timeout`, retention of every attempt, no retry after output classification, no replacement, and the exact retained fields in those plan bytes, for execution once from `<APPROVED_AT>` until `<EXPIRES_AT>`. No substitution, diagnostic call, external retry, or second runner invocation is approved.
+
+## Stage 2 — judge qualification
+
+Status: **BLOCKED / UNAPPROVED**
+
+Sequencing dependency: Stage 1 must first produce independently reviewed current generation GO evidence and an accepted generation role/configuration ref.
+
+### Current exact contract
+
+- Models, independently reported:
+  - primary: `@cf/meta/llama-3.3-70b-instruct-fp8-fast`
+  - fallback: `@cf/meta/llama-3.1-8b-instruct-fast`
+- Parameters: temperature `0`, maximum output `2048` tokens, candidate-bound structured judge verdict.
+- Schedule: one probe plus 20 sequential trials per model; both probes precede trials; 42 calls maximum; zero retries and zero replacements.
+- Deadlines: 10,000 ms preflight; 120,000 ms per call.
+- Repository-authoritative conservative pricing basis, as of 2026-08-19: exact 70B price `$0.29/M` input and `$2.25/M` output; the 8B fast endpoint is conservatively budgeted at the same rates and is not represented as observed 8B pricing.
+- Current tool-computed ceiling: `$0.3054702`, 27,770.018181818185 neurons, 42 calls.
+- Approval timing: `approved_at` cannot precede plan creation or be more than one hour after the plan/headroom disclosure; `expires_at` is exclusive and at most four hours after `approved_at`.
+- Retention: the plan's closed `retained_fields` list, including full plan/approval/bundle, candidate and request input, all call records, bounded provider envelope, usage, hashes, source/runtime/adapter identities, fixtures, predicate results, manifests and refs. Credentials, headers, secrets, account IDs, tool calls, and provider reasoning are excluded.
+- Expected output authority: independently verified configuration refs and one closed `STRUCT-JUDGE` role ref only for passing members.
+
+### Narrow blocker
+
+The owner has not selected the exact non-secret Cloudflare account profile label and `paid` versus `free` plan. A free plan additionally requires exact observed remaining neurons of at least the conservative maximum. Historical approvals do not supply or authorize those choices.
+
+Standalone judge structural qualification does not require a generation-authority field in its plan schema. The current judge plan machinery needs no schema or source change for that purpose; Story 1.26 binds accepted generation and judge refs together later in the local full-request plan and activation payload. No plan file, approval template, run ID, or approvable plan hash was produced.
+
+### Exact proposed command after the blockers are resolved
+
+```sh
+npm run spike:judge:plan -- \
+  --output /tmp/story-1-26-judge-requalification.plan.json \
+  --account-profile '<OWNER_SELECTED_NON_SECRET_PROFILE>' \
+  --plan '<paid|free>' \
+  --approval-run-id '<OWNER_SELECTED_RUN_ID>'
+```
+
+For `free`, append `--remaining-free-neurons <EXACT_OBSERVED_REMAINING_NEURONS>`. After the owner supplies the profile/plan choice and any required headroom, the current judge plan machinery can produce this fresh unapproved plan without starting an adapter or making a provider call. Its exact bytes must be independently reviewed before any separate execution approval. Stage sequencing still requires accepted generation evidence before judge execution advances.
+
+### Future exact owner approval statement
+
+> I approve exactly judge plan SHA-256 `<PLAN_SHA256>`, plan ref `<PLAN_REF>`, run ID `<RUN_ID>`, Cloudflare Workers AI models `@cf/meta/llama-3.3-70b-instruct-fp8-fast` and `@cf/meta/llama-3.1-8b-instruct-fast`, maximum 42 provider calls, maximum `$0.3054702`, zero retries and zero replacements, and the exact retained fields in those plan bytes, for execution once from `<APPROVED_AT>` until `<EXPIRES_AT>`. No substitution, diagnostic call, retry, or second runner invocation is approved.
+
+## Stage 3 — local full-request qualification
+
+Status: **BLOCKED / UNAPPROVED**
+
+Sequencing dependency: Stages 1 and 2 must first produce independently reviewed current GO evidence and accepted generation/judge refs.
+
+### Required exact contract
+
+- Frozen runtime assembly: `9e20e72300d2c84c85d62e98ff5d9bd9a2f806dc94b808d2305bad132f4217f5`.
+- Provider/model envelope: Cloudflare Workers AI using the accepted generation and judge model/ref identities from Stages 1 and 2.
+- Historical template limits only: 120,000 ms route ceiling; 1,000 ms commit reserve; 19,833 ms provider timeout; three attempts; six calls maximum; `$0.06` maximum. These values are **not current authority** and must be regenerated and verified against the Story 1.26 assembly and accepted refs.
+- Historical schedule shape: attempt 1 primary generation/judge slots 1–2; attempts 2–3 fallback generation/judge slots 3–6. No external retry; deterministic rejection uses no judge call; house fallback is never judged.
+- Retention must include exact plan/approval/activation bytes; content/request/response hashes; bounded provider error and strike-terminal data; full strike ledger; stage timestamps/latencies/timeouts; attempt and candidate/judge binding; usage/cost; route/commit observations; receipt identity; render bytes/hash; and all 17 predicate results.
+- Approval template window: the retained v1 approval contract uses canonical `approved_at` and exclusive `expires_at`; historical approved examples used a one-hour window. A fresh plan must state the exact window.
+- Expected output authority: a marker-bound, independently verified evidence set passing all 17 predicates and one derived `LOCAL-FULL-REQUEST` ref.
+
+### Narrow blockers
+
+1. `npm run spike:full-request:self-test` currently fails 2 of 29 tests: provider-error accounting expected one call but observed zero, and provider-failure/exhaustion expected `house_accepted` but observed `pipeline_failed` / `inactive domain writer unavailable`.
+2. `npm run spike:full-request:plan` rejects the checked-in plan as `unapproved plan is invalid` because the command points to a stale Story 1.19 plan bound to assembly `39f24a…`, not the current assembly.
+3. Current tooling only reads that fixed pre-existing plan. It cannot safely create a new uniquely named plan binding assembly `9e20e723…` and the future accepted Stage 1/2 refs without source changes.
+
+This narrow tooling/test repair must complete before an exact Stage 3 plan can exist. Stage 3 also awaits independently accepted generation and judge refs. Therefore no current plan hash, run ID, cap/cost approval record, or template artifact exists for this stage. Historical plan values and refs are non-promotable.
+
+### Exact proposed invocation after the blockers are resolved
+
+The current command has no safe creation form. A compliant retained plan command must first be added or repaired to accept a fresh output name, current assembly identity, accepted generation/judge refs, exact run ID, route/deadline/call/cost limits, and expiry; it must produce only unapproved zero-call artifacts. After that narrow tooling work, the proposed operation is:
+
+```sh
+npm run spike:full-request:plan -- \
+  --output spikes/local-full-request-qualification/plans/story-1-26-local-full-request-<RUN_ID>-unapproved.plan.json \
+  --assembly-ref 9e20e72300d2c84c85d62e98ff5d9bd9a2f806dc94b808d2305bad132f4217f5 \
+  --generation-ref '<ACCEPTED_STAGE_1_REF>' \
+  --judge-ref '<ACCEPTED_STAGE_2_REF>' \
+  --run-id '<RUN_ID>'
+```
+
+That interface does not exist at this baseline and is documented only as the required future invocation contract, not as an executable command.
+
+### Future exact owner approval statement
+
+> I approve exactly local full-request plan SHA-256 `<PLAN_SHA256>`, run ID `<RUN_ID>`, assembly `9e20e72300d2c84c85d62e98ff5d9bd9a2f806dc94b808d2305bad132f4217f5`, accepted generation ref `<GENERATION_REF>`, accepted judge ref `<JUDGE_REF>`, maximum `<CALL_CAP>` provider calls, maximum `$<MAXIMUM_USD>`, route ceiling `<ROUTE_CEILING_MS>` ms, commit reserve `<COMMIT_RESERVE_MS>` ms, provider timeout `<PROVIDER_TIMEOUT_MS>` ms, no external retry or replacement, and the exact retained fields in those plan bytes, for one runner invocation from `<APPROVED_AT>` until `<EXPIRES_AT>`. No adapter restart, diagnostic call, substitution, external retry, or second invocation is approved.
+
+## Independent review gates and stop conditions
+
+For each stage, in order:
+
+1. Run the focused offline/self-test suite and require a complete pass.
+2. Generate one fresh unapproved plan from final current bytes and owner-supplied non-secret choices.
+3. Independently verify canonical plan bytes, plan hash/ref, current source/runtime identities, request hashes, models, pricing, cap, schedule, expiry contract, retention, allowance=false, and approval/execution null.
+4. Obtain the exact owner statement for only that plan. Approval of one stage grants no authority for another stage.
+5. Before any call, independently recheck plan/approval/run/source/runtime/adapter identity and unconsumed allowance. Stop with zero calls on any drift or ambiguity.
+6. Invoke the approved runner exactly once. Stop on expiry, source/runtime/request drift, prior spend, lock ambiguity, adapter mismatch, cap exhaustion, provider ambiguity, incomplete publication, or verifier failure. Do not repair, replace, or rerun.
+7. Independently verify arbitrary retained bytes and require a GO authority ref before advancing to the next stage.
+
+Final signing preparation remains blocked until all three current refs pass retained verifiers, all applicable approvals are unexpired, and an independent reviewer confirms the exact assembly/ref chain. This matrix grants no signing or activation authority.

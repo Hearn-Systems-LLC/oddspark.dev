@@ -75,6 +75,16 @@ deferred: []
 
 ## Review Triage Log
 
+- 2026-08-26 requalification planning — RECORD: the reviewed three-stage
+  generation → judge → local-full-request matrix is retained in
+  `story-1-26-requalification-matrix-2026-08-26.md`. Independent AGY review
+  returned PASS after reconciling the existing generation transient-only retry
+  authority and keeping standalone judge qualification independent. No live
+  plan is yet approvable: owner account-profile/paid-or-free inputs are absent,
+  and local-full-request tooling remains blocked by 2/29 failing self-tests,
+  stale fixed-plan rejection, and no current fresh-plan creation interface.
+  Provider calls, allowance consumption, and remote mutations remain zero.
+
 - 2026-08-26 signing preparation attempt — BLOCK: exact offline preparation
   emitted no payload or signing bytes. Deployed source and house catalog pass;
   generation approval expired `2026-08-22T18:43:55.000Z`; judge approval
