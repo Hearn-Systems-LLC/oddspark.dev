@@ -270,3 +270,44 @@ Stage 3 remains **UNAPPROVED AND UNEXECUTED**. This plan grants no adapter,
 provider, deployment, signing, activation, or remote-mutation authority. The
 next authorization gate is independent review followed by a fresh exact owner
 approval of these plan bytes; no Stage 3 action may occur before that gate.
+
+## 2026-08-26 Stage 3 exact live preflight — zero-call NO-GO
+
+Owner authorization was received verbatim for exactly plan SHA-256
+`95e4d4a23565c4e178cf5b7b2f1058f9c16da16b61b9abaa2ad00b2a44dcc8c9`
+and run ID `09ad79e1-f57d-4130-bfe9-ec0bce3aae68`. At observation
+`2026-08-26T19:52:54.000Z`, `HEAD == origin/develop ==
+c3b49009b756eec6c3c9f0d2a4f32032ae34f9f3`, tracked worktree and index were
+clean, the plan hash matched, the plan remained unapproved/unexecuted with
+allowance false, and no approval, result, receipt, attempt, invocation, call,
+or cycle lock existed for the run. Stage 2 reconciliation verification passed
+with acceptance identity
+`02ac4f5a05b17bbe3d19a3492793d0c461c6da6dabe6c31d34cf7083e13ce1dc`;
+all bound retained artifact hashes matched. Assembly, runtime baseline, and
+configuration verification passed; the focused full-request suite passed
+30/30 and surrogate-accounting tests passed 2/2.
+
+Stage 3 execution stopped before approval creation or adapter start because
+the committed live adapter has `ASSEMBLY_IDENTITY` pinned to
+`7971844c5779fe1a435970eef522cd2c23f9b7c121708f6675299e58aff96ed6`,
+while the approved plan and current 18-module assembly require
+`9e20e72300d2c84c85d62e98ff5d9bd9a2f806dc94b808d2305bad132f4217f5`.
+Its `/health` contract would therefore fail the runner's exact assembly check
+at zero calls. The launcher-required
+`LOCAL_FULL_REQUEST_ACTIVATION_SNAPSHOT` and
+`LOCAL_FULL_REQUEST_ACTIVATION_TRUST_KEYS` inputs were also absent, although
+the Cloudflare credential was present without disclosure. Finally, the
+repository has a validator for the closed approval schema but no governed
+approval-creation command; creating bytes manually would violate the supplied
+authority.
+
+Terminal counts: approval creations `0`; adapter starts `0`; runner
+invocations `0`; orchestrated attempts `0`; retries `0`; provider calls `0`;
+usage `0`; cost `$0`; allowance consumed `false`. No port listener or cycle
+lock was observed. Stage 3 verdict: **NO-GO (preflight identity and activation
+authority failure)**. No replacement plan, source repair, retry, rerun,
+deployment, signing, activation, commit, push, or unrelated remote mutation
+occurred. Next gate: independently review this zero-call preflight and repair
+the governed tooling under separate authority; any future provider execution
+requires a fresh exact plan and approval because this authorization was
+consumed by the terminal ambiguity/failure.
