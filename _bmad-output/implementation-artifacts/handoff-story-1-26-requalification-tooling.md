@@ -54,3 +54,7 @@ Stage 3 remains blocked until fresh Stage 1 and Stage 2 live runs are separately
 - `npm run spike:generation:self-test` — PASS, 48/48.
 - `git diff --check` — PASS.
 - Terminal outcome: Finding 1 repaired and locally reverified. Provider calls **0**; adapters started **0**; approvals/executions **0**; retained plan bytes unchanged; no commit or push performed. Stop for independent re-review.
+
+## Stage 1 r2 offline supersession
+
+The first retained Stage 1 plan and its template/execution bytes remain immutable. It is now source-drifted by the reviewed mutation-test repair, and the fail-closed attempt stopped before approval, adapter start, runner invocation, receipt creation, provider access, cost, or allowance consumption. The sole fresh approvable Stage 1 plan is the still-UNAPPROVED r2 bundle at `spikes/generation-qualification/results/story-1-26-generation-requalification-20260826-r2.{plan,approval-template,execution}.json`: plan SHA-256 `3a03d20f8f66917caf52550cc3fdd2339d40aa42f624c8a5a2e26f40c6c0b1ad`, plan ref `00135e29bbe0422ad77c1d8a6a5888a5ad714abb35f111bf07d4b9ea534de832`, run ID `story-1-26-generation-requalification-20260826-r2`, 63 calls maximum, and `$0.30586038` maximum. Current-source rebuild and retained validation pass; approval/execution remain null, allowance false, and calls zero. It requires fresh exact owner approval and independent review before any live action.

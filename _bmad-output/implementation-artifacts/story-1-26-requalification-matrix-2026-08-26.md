@@ -165,3 +165,7 @@ Final signing preparation remains blocked until all three current refs pass reta
 - Provider calls: **0**. Remote mutations: **0**. Allowance consumed: **false**. No adapter was started and no plan was approved.
 
 This terminal update supersedes the earlier Stage 1/2 missing-owner-input and validator-blocker paragraphs above. Stage 1 and Stage 2 now each have exactly one fresh unapproved offline plan, not execution authority. Stage 3 still depends on fresh separately approved and independently accepted Stage 1/2 GO refs; no Stage 3 plan exists.
+
+## 2026-08-26 Stage 1 r2 offline supersession
+
+The first Stage 1 plan remains immutable and unexecuted, but its retained source identity predates the reviewed mutation-test repair at baseline `b54d376bda1705f9426f5095145a39763b111541`; the fail-closed attempt made zero runner or provider calls and consumed no allowance. The only fresh approvable Stage 1 plan is the canonical, still-UNAPPROVED r2 bundle for run ID `story-1-26-generation-requalification-20260826-r2`: plan SHA-256 `3a03d20f8f66917caf52550cc3fdd2339d40aa42f624c8a5a2e26f40c6c0b1ad`, plan ref `00135e29bbe0422ad77c1d8a6a5888a5ad714abb35f111bf07d4b9ea534de832`, 63-call cap, and `$0.30586038` ceiling. It rebuilt byte-for-byte from the current committed sources and runtime, passed the retained validator, and retains null approval/execution, `allowance_consumed:false`, and zero calls. Fresh exact owner approval is required before any adapter start or execution.
