@@ -3059,7 +3059,7 @@ mermaid.initialize({
   },
   themeCSS: ".node rect,.node polygon,.node circle,.actor,.note{stroke:#7E8B98!important}.edgePath path,.flowchart-link,.messageLine0,.messageLine1{stroke:#7E8B98!important}"
 });
-mermaid.run({nodes:document.querySelectorAll(".mermaid")}).then(function(){
+function reconcileDiagrams(){
   document.querySelectorAll(".diagram-scroll").forEach(function(scroller){
     var figure = scroller.querySelector(".diagram-figure");
     var source = figure && figure.querySelector(".mermaid");
@@ -3070,9 +3070,8 @@ mermaid.run({nodes:document.querySelectorAll(".mermaid")}).then(function(){
     scroller.setAttribute("tabindex", "0");
     scroller.hidden = false;
   });
-}).catch(function(){
-  /* The ordered flows remain the complete, visible explanation. */
-});
+}
+mermaid.run({nodes:document.querySelectorAll(".mermaid")}).then(reconcileDiagrams,reconcileDiagrams);
 }
 </script>
 </body>
