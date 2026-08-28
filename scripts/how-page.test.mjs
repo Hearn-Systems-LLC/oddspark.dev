@@ -20,7 +20,7 @@ test("GET /how serves the complete honest pipeline explanation through the Worke
   const response = await fetchHow();
   assert.equal(response.status, 200);
   assert.match(response.headers.get("content-type"), /^text\/html/);
-  assert.equal(response.headers.get("cache-control"), "public, max-age=300");
+  assert.equal(response.headers.get("cache-control"), "no-store");
   assertHowPage(await response.text());
 });
 

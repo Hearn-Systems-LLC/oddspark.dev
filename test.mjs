@@ -543,6 +543,23 @@ await test("blank and invalid body variants preserve the generic spark and w: bo
   assert.equal(network.siteCalls.length, 0);
 });
 
+await test("upstream feed requests preserve their exact cache contracts", async () => {
+  const network = createNetwork();
+  const h = createEnvironment();
+  const response = await worker.fetch(sparkRequest(undefined), h.env);
+  assert.equal(response.status, 200);
+
+  const latestCalls = network.calls.filter(({ url }) => url.endsWith("/rounds/latest"));
+  const roundCalls = network.calls.filter(({ url }) => url.includes("api.drand.sh/v2/beacons/quicknet/rounds/") && !url.endsWith("/rounds/latest"));
+  const noaaCalls = network.calls.filter(({ url }) => url === NOAA_URL);
+  assert.equal(latestCalls.length, 1);
+  assert.equal(roundCalls.length, 1);
+  assert.equal(noaaCalls.length, 1);
+  for (const { init } of latestCalls) assert.deepEqual(init.cf, { cacheTtl: 3, cacheEverything: true });
+  for (const { init } of roundCalls) assert.deepEqual(init.cf, { cacheTtl: 3600, cacheEverything: true });
+  for (const { init } of noaaCalls) assert.deepEqual(init.cf, { cacheTtl: 60, cacheEverything: true });
+});
+
 await test("generic provenance and legacy public surfaces remain reproducible", async () => {
   createNetwork();
   const h = createEnvironment();
@@ -775,7 +792,7 @@ await test("router normalization and 404 variants preserve their response contra
   const how = await worker.fetch(new Request("https://oddspark.dev/how/"), h.env);
   assert.equal(how.status, 200);
   assert.match(how.headers.get("content-type") || "", /text\/html/);
-  assert.equal(how.headers.get("cache-control"), "public, max-age=300");
+  assert.equal(how.headers.get("cache-control"), "no-store");
   assert.match(await how.text(), /<!doctype html>/i);
 });
 

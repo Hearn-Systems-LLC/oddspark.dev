@@ -3299,7 +3299,7 @@ export default {
       // How it works
       if (path === "/how") {
         return new Response(howPage(), {
-          headers: { "content-type": "text/html; charset=utf-8", "cache-control": "public, max-age=300" },
+          headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" },
         });
       }
 

@@ -2,7 +2,7 @@
   "schema_version": 1,
   "entrypoint": {
     "path": "src/worker.js",
-    "sha256": "55892b69b5de5d3c1da940dbf2a8601a6cd2fb7b24291d391e787543f0c1c8b3"
+    "sha256": "a3ae28e04caf0dcf76894077c64b2cb868af456f8ea401165a41a79c74fc5d97"
   },
   "modules": [
     {
@@ -78,5 +78,5 @@
       "sha256": "a11d0b9313de346d9bff8edc11de1557dc767f24e49992c1ea252ee5b64bc7db"
     }
   ],
-  "assembly_identity_sha256": "36e537a55848b90333c96901cdcb47f237d5c48e2aaa6e9716ce0371c679ccfa"
+  "assembly_identity_sha256": "17cce52081f4dfcf004c683ceaa3839d5d3e3630ee498e63db7d1f84ebede680"
 }
