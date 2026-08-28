@@ -142,6 +142,14 @@ test("name policy is deterministic tri-state and fail or unknown cannot be mista
   assert.deepEqual(personalNamePolicy("Ask Jordan for approval"), { status: "unknown", reason: "name-policy/v1:ambiguous-capitalized-token" });
   assert.deepEqual(personalNamePolicy(""), { status: "unknown", reason: "name-policy/v1:input-not-plain-text" });
   for (const text of ["Alice Smith approved it", "José García approved it", "Anne-Marie O'Connor approved it", "Dr. D'Arcy approved it"]) assert.equal(personalNamePolicy(text).status, "fail", text);
+  for (const text of ["Sarah Chen", "Dr. Smith", "John OBrien"]) assert.equal(personalNamePolicy(text).status, "fail", text);
+  for (const text of ["Plan Your Week in Ten Minutes", "Summer Handoff Bridge", "Get Things Done Before Noon"]) assert.equal(personalNamePolicy(text).status, "pass", text);
+  for (const text of [
+    "Ask Taylor Morgan to review each answer.",
+    "Ask Taylor Morgan to review each answer",
+    "Could Taylor Morgan review each answer?",
+    "Tomorrow, ask Taylor Morgan to review each answer.",
+  ]) assert.equal(personalNamePolicy(text).status, "unknown", text);
   assert.equal(personalNamePolicy("Spark's invitation remains optional.").status, "pass");
   assert.equal(personalNamePolicy("Ask JORDAN for approval").status, "unknown");
 });

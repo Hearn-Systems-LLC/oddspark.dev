@@ -2,7 +2,7 @@
 title: 'Story 1.13: Strike Orchestrator and House Fallbacks'
 type: 'feature'
 created: '2026-08-18'
-status: 'awaiting-operator'
+status: 'done'
 baseline_revision: 'f2bed959ebba7714c4bd8f8abc45a0659b9eba46'
 review_loop_iteration: 0
 followup_review_recommended: true
@@ -14,7 +14,7 @@ operator_actions:
   - 'Approve the exact current house Brief catalog as owner and preserve its computed catalog and approval identities.'
   - 'Approve the exact current voice-v1 semantic corpus as owner and preserve its computed hashes and semantic identity.'
   - 'Run and independently verify the live generation and judge qualification plans, retaining GO evidence for every production role identity.'
-  - 'Resolve the verified primary and fallback generation identities and the active STRUCT-JUDGE identity for the later activation manifest.'
+  - 'Resolve the verified primary generation identity (Story 1.11 run l9 sole-member role set) and the active STRUCT-JUDGE identity for the later activation manifest; the generation fallback leg stays unwired per Justin's 2026-08-22 topology decision — generation exhaustion or failure serves the approved house Brief.'
 ---
 
 <intent-contract>
@@ -72,6 +72,15 @@ operator_actions:
 
 ## Spec Change Log
 
+### 2026-08-22 — Operator action reconciliation (partial satisfaction)
+- Satisfied: house Brief catalog v1 is owner-approved by Justin (2026-08-19T15:44:16.836Z) and independently re-verified against current bytes — `content_hash` `06f74672f2005a33c6ad030ac38d709e7021b70c45cf01dbd5d31741323ebc9b`, catalog `identity` `9334910e17f7fa610ee2a18d54b1485bf19d00b866f8e7cd8f5258a0d17e9ad8` (`npm run house-briefs:verify`: `readiness: "approved"`, `production_ready: true`). Operator action 1 is complete.
+- Satisfied: voice-v1 semantic corpus is owner-approved by Justin (2026-08-19T15:44:16.836Z) and re-verified — `semantic_identity` `b387b27c7fd91062ae7b0aec39ada8103b579655b5161e2556b614b1d2f6694e` (`npm run semantic:voice:verify`: `valid: true`, `readiness: "approved"`). Operator action 2 is complete.
+- Generation half of action 3 satisfied: Story 1.11 run l9 (attempt `406d10ea-8629-4a24-ab8f-8873b0332e96`) independently verified GO — resolved generation identity for the later activation manifest is the sole-member primary set: STRUCT-GENERATION qualification_ref `34731e26b1c1ef79acd444ba8e775143d9a616c3ab915f52481bd81475796bfc`, role_ref `5cf5a547b29d31304af686c610da9c4c5959299faf12d434db28493de92404b1`, cycle_ref `e615e7c03568bbf2ef9683131331909d1a5c5a6b6de2feabc3fd98bd9d0da8ae` (primary-only per Justin's 2026-08-22 topology decision; exhaustion/failure serves this story's approved house Brief). Operator action 4's generation line is resolved to these values.
+- Open: judge qualification has no live GO. All executed judge matrices (v1 2026-08-16; three gpt-oss runs 2026-08-19) are verified NO-GO, and the Story 1.4 Llama judge cycle harness has never run live. The active STRUCT-JUDGE identity cannot be resolved until Justin approves and an operator runs the Llama judge live cycle and it emits at least one verified configuration GO.
+- Status stays `awaiting-operator` until judge GO evidence exists.
+- 2026-08-22 update: the Llama judge cycle executed live (42 calls, approval run `e848e2bd`) and returned verified NO-GO on both configurations — 20/20 `schema_invalid` each (noncanonical verdict shape from unenforced advanced JSON-Schema constructs). Justin granted one new matrix under a flattened provider-enforceable wire schema (spec-1-4-workers-ai-llama-judge-qualification-cycle.md change log, 2026-08-22 amendment). The active STRUCT-JUDGE identity stays unresolved until that cycle emits verified GO evidence.
+- 2026-08-23 resolution: the third Llama judge matrix executed live (approval run `a0ed5363`, plan ref `bd862b49…`, 42 calls) and returned independently verified **GO** on both configurations (`npm run spike:judge:verify` PASS 18 predicates/79 fixtures; `npm run spike:judge:qualification:verify` PASS, GO; 2 refs). Judge half of action 3 / the judge-identity resolution is now satisfied: the active STRUCT-JUDGE identity for the later activation manifest is the qualified role set role_qualification_ref `4c70414b247316618f0a219eeecf1aa408d029af931abc45c15a65fda15b5d6a`, cycle_ref `2bc68963f9ba590a80a113a3c96eafd58c309a0bf32de5c1b2826733b791708a` — members `@cf/meta/llama-3.3-70b-instruct-fp8-fast` (`648dcdb86c12b6169f6ae47ec7c0479977fd5ccbf8f651e39cad0c2589d85c2a`) and `@cf/meta/llama-3.1-8b-instruct-fast` (`3b9f521048b3c6c8bc5b9cda3cc65b090066cbd28e0c845e574fa7c38648abdc`). All operator actions complete; status moves to done pending independent review.
+- 2026-08-23 independent-review reconciliation: close-out review could not re-verify the active STRUCT-JUDGE identity at `fc1f2b6` because evidence-pinned `spikes/judge-fidelity/test.mjs` drifted (governance-test flip). Working tree restored to pinned bytes `ebd31881b11859b42a3df7862a1aac98d959413375f1c1014224d75e70cec36d`. Independent re-verification: `npm run spike:judge:verify` PASS (18 predicates, 79 fixtures); `npm run spike:judge:qualification:verify` PASS / GO / 2 refs. Justin classified a0ed5363 as owner-reviewed immutable history (spec-1-4 change log, same date); no successor matrix; retained bytes/refs unchanged. Judge half of action 3 / action 4's judge line remains the role set above. Independent review closes on those two identity commands; the 80/81 `spike:judge:self-test` residual is DW-6 (stale plan-governance assertion, CI omitted) and does not reopen operator actions.
 ## Review Triage Log
 
 ### 2026-08-18 — Review pass

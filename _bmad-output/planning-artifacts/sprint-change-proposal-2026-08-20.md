@@ -205,3 +205,10 @@ Moderate: backlog reprioritization plus an incident-driven operational action, t
 - [x] 6.3 Justin explicitly approved the proposal on 2026-08-20.
 - [x] 6.4 sprint-status.yaml reconciliation block applied; no status values changed.
 - [x] 6.5 Moderate-scope handoff confirmed: PO approval recorded; interim redeploy awaits separate deployment approval; Developer proceeds to fresh Story 1.16 then Story 1.23.
+
+## 7. Post-Incident Addendum — 2026-08-21
+
+- Stories 1.16 (PR #10) and 1.23 (PR #11) merged and code-complete; the recovery lane is done in repository code.
+- **New finding:** the Cloudflare Workers Builds integration auto-deploys the configured production branch. The PR #11 merge triggered a production deploy of `main`, re-breaking production (502) until the approved pre-1.14 rollback artifact was redeployed (version `025cfac9-9266-4f13-adae-cb8570133e49`; production verified 200/200). Production deploys are therefore NOT purely manual as previously assumed.
+- Justin switched the Workers Builds production branch away from `main` (to `develop`) on 2026-08-21 and adopted gitflow: story work merges to `develop` only; Justin owns the `develop` → `main` merge.
+- Consequence for the release tail: Story 1.24's deployment preflight must verify the Workers Builds trigger configuration (which branch deploys, and whether develop merges deploy) before any deployment approval is exercised. Any branch that auto-deploys production must never carry code past the approved release sequence.

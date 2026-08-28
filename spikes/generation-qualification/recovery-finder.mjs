@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { constants } from "node:fs";
 import { lstat, open, readdir } from "node:fs/promises";
 import path from "node:path";
-import { CALL_CAP } from "./contract.mjs";
+import { CALL_CAP, LEGACY_CALL_CAP } from "./contract.mjs";
 import { deriveManifests, derivePlanRef, validateApproval } from "./qualification.mjs";
 import { verifyEvidence } from "./evidence-v2.mjs";
 
@@ -35,7 +35,7 @@ export function receiptValid(receipt, match) {
   const stateKeys = { "zero-call": common, calling: [...common, "first_call_started_at"], consumed_incomplete: [...common, "first_call_started_at", "failed_at", "original_error"], "completed-spent": [...common, "first_call_started_at", "completed_at", "calls_made", "actual_spend_usd", "actual_spend_known", "completion_marker"] };
   if (!receipt || !exact(receipt, stateKeys[receipt?.state] ?? []) || receipt.schema_version !== "oddspark.generation-spend-receipt/v1") return false;
   if (receipt.approval_run_id !== match.groups.run || receipt.attempt_id !== match.groups.attempt || !UUID.test(receipt.attempt_id) || !/^[a-f0-9]{64}$/.test(receipt.plan_ref) || !/^[a-f0-9]{64}$/.test(receipt.approval_sha256)) return false;
-  if (!canonicalTime(receipt.reserved_at) || receipt.call_cap !== CALL_CAP || !Number.isInteger(receipt.calls_started) || receipt.calls_started < 0 || receipt.calls_started > CALL_CAP) return false;
+  if (!canonicalTime(receipt.reserved_at) || (receipt.call_cap !== CALL_CAP && receipt.call_cap !== LEGACY_CALL_CAP) || !Number.isInteger(receipt.calls_started) || receipt.calls_started < 0 || receipt.calls_started > receipt.call_cap) return false;
   const allowed = new Set(["zero-call", "calling", "consumed_incomplete", "completed-spent"]); if (!allowed.has(receipt.state)) return false;
   if ((receipt.state === "zero-call") !== (receipt.calls_started === 0)) return false;
   if (receipt.calls_started > 0 && !canonicalTime(receipt.first_call_started_at)) return false;
@@ -68,13 +68,13 @@ async function verifyCompletion(directory, receipt, markerName, dependencies) {
 /** Exhaustively classify the current Llama cycle before deciding whether it may run. */
 export async function findPriorOperationalRecovery(directory, dependencies = {}) {
   let names = []; try { names = await readdir(directory); } catch (error) { if (error.code === "ENOENT") return { state: "available", zero_call_attempts: [] }; throw error; }
-  const legacy = (name) => /^story-1-11-2026-08-19-r[23](?:-|\.)/.test(name);
+  const legacy = (name) => /^story-1-11-2026-08-19-r[23](?:-|\.)/.test(name) || /^story-1-11-2026-08-22-l[246789](?:-|\.)/.test(name);
   const currentSuffix = /\.(?:spend-receipt\.json|complete\.json|evidence\.json|qualification\.json|report\.md)$/;
   const malformedCurrent = names.filter((name) => currentSuffix.test(name) && !legacy(name) && !RECEIPT.test(name) && !MARKER.test(name) && !/^[A-Za-z0-9][A-Za-z0-9._-]{0,127}-[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\.(?:evidence\.json|qualification\.json|report\.md)$/.test(name));
   if (malformedCurrent.length) throw new Error(`malformed current-looking artifact names: ${malformedCurrent.sort().join(", ")}`);
   const currentMember = /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}-[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\.(?:evidence\.json|qualification\.json|report\.md)$/;
-  const current = names.filter((name) => RECEIPT.test(name) || MARKER.test(name) || currentMember.test(name));
-  const receiptNames = names.filter((name) => RECEIPT.test(name)).sort(); const markerNames = names.filter((name) => MARKER.test(name)).sort();
+  const current = names.filter((name) => !legacy(name) && (RECEIPT.test(name) || MARKER.test(name) || currentMember.test(name)));
+  const receiptNames = current.filter((name) => RECEIPT.test(name)).sort(); const markerNames = current.filter((name) => MARKER.test(name)).sort();
   const receipts = []; for (const name of receiptNames) { const match = name.match(RECEIPT); let receipt; try { receipt = JSON.parse(await readStableNoFollow(path.join(directory, name))); } catch (error) { throw new Error(`unreadable receipt ${name}: ${error.message}`); } if (!receiptValid(receipt, match)) throw new Error(`invalid receipt ${name}`); receipts.push({ name, receipt }); }
   const planRefs = new Set(receipts.map(({ receipt }) => receipt.plan_ref)); const approvals = new Set(receipts.map(({ receipt }) => receipt.approval_sha256)); const runIds = new Set(receipts.map(({ receipt }) => receipt.approval_run_id)); const attempts = new Set(receipts.map(({ receipt }) => receipt.attempt_id));
   if (attempts.size !== receipts.length || planRefs.size > 1 || approvals.size > 1 || runIds.size > 1) throw new Error("receipt history crosses plan/run/approval cycle or duplicates an attempt");

@@ -1,0 +1,10 @@
+{
+  "schema_version": "oddspark.generation-qualification-approval/v2",
+  "plan_ref": "00135e29bbe0422ad77c1d8a6a5888a5ad714abb35f111bf07d4b9ea534de832",
+  "approval_run_id": "story-1-26-generation-requalification-20260826-r2",
+  "approved_at": null,
+  "approved_by": null,
+  "approved_call_cap": 63,
+  "approved_maximum_usd": 0.30586038,
+  "authorization": null
+}

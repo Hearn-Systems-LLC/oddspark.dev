@@ -4,7 +4,7 @@
 
 ## Goal
 
-Replace the legacy random-axis generator with a coherence-gated local Opportunity Brief pipeline and safely activate it in production without changing the one-button interaction. A successful strike produces an authoritative, accessible, contract-complete local Brief grounded in approved regional priors; bounded failures resolve to an approved house Brief, while infrastructure uncertainty fails closed.
+Deliver local-mode generation in production so a press without a domain returns a committed, gate-passed Opportunity Brief or an approved house Brief, through independently qualified generation and judging, behind one atomic local-only activation. The active Candidate path is intentionally direct (superseding an earlier three-specialist/twelve-call design): generate one Candidate, run deterministic checks, and — only on a deterministic pass — invoke one lightweight quality judge exactly once. Cached/saved Sparks and house fallbacks are never (re-)judged.
 
 ## Stories
 
@@ -25,8 +25,10 @@ Replace the legacy random-axis generator with a coherence-gated local Opportunit
 - Story 1.15: Committed Brief Rendering
 - Story 1.16: Request Hardening and Inactive-Domain Dispatch Contract
 - Story 1.17: Semantic Regression Suite
-- Story 1.18: Semantic Qualification
-- Story 1.19: Local Full-Request Qualification
+- Story 1.18: Semantic Qualification (retained failed broad-judge history)
+- Story 1.18.1: Judge Semantic Discrimination Recovery (retained failed prompt-only history)
+- Story 1.18.2: Direct Quality Gate Simplification
+- Story 1.19: Local Full-Request Qualification (rescoped to the direct path)
 - Story 1.20: Atomic Activation Contract and Release Decision View
 - Story 1.21: Local Artifact Retention Lifecycle
 - Story 1.22: Honest Pipeline Explanation
@@ -37,34 +39,33 @@ Replace the legacy random-axis generator with a coherence-gated local Opportunit
 
 ## Requirements & Constraints
 
-- Preserve the existing shell, security guards, one Strike button, and one optional domain field. Offline development and CI must have no callable production AI binding or remote activity.
-- Local Evidence is deterministic, immutable, and built from owner-approved Port Huron/Blue Water Area seasonal priors. It makes no submitted-business or person assertions and consumes no model call.
-- Every Candidate and pipeline handoff uses a closed, versioned, deeply frozen contract. Invalid, ambiguous, coerced, repaired, oversized, or reference-mismatched model output rejects before rendering.
-- The composite Gate runs deterministic schema, grounding, privacy, name, and number checks before exactly one candidate-bound semantic judge call. A local failure or unknown cannot be overridden by the judge.
-- A strike has a six-call ledger and a server-side deadline. It reserves only complete generation/judge pairs, never re-judges a Candidate, and uses the approved seasonal house catalog when qualified attempts cannot safely complete. Coordinator uncertainty returns `502`; no uncommitted result may render.
-- Structural generation and judge identities qualify independently at at least 95% direct-valid and must pass the closed integrity predicate set. Live metered runs require fresh exact approval, never run in CI, and retain immutable provenance, usage, latency, taxonomy, and cost evidence.
-- Semantic regression and owner-approved golden/anti-golden calibration are separate from structural qualification. Local full-request evidence must prove correctness, provenance, deadline, and cost before activation.
-- Render only authoritative `CommittedBrief` values. Every Brief contains all eight ordered elements, is confident rather than hypothetical, makes no unsupported numeric claims or Hearn pricing claims, and ends with a spark-specific, low-pressure invitation.
-- Activation is atomic, manifest-bound, and separate from implementation and deployment. Reader compatibility deploys first, the writer deploys inactive, and local-only activation occurs only when every applicable release gate is current. Rollback must restore the inactive safe posture atomically.
+- Ground local Candidates in local context, date, seasonality, business situation, and the capability bundle; exclude legacy random-axis vocabulary.
+- Gate order is fixed: deterministic schema, mode/Breadcrumb, grounding, PII, personal-name, and number-provenance checks run first; any fail or unknown rejects before any judge call. Only a deterministic survivor reaches exactly one candidate-bound quality-judge call; judge pass/reject/unknown/malformed/timeout/provider-failure all reject without retry on anything but pass.
+- Bounded attempts with a hard route-entry deadline; the orchestrator owns all retries. On exhaustion, insufficient deadline, or grounding/infra failure that invalidates a Candidate, serve the pre-vetted, gate-passing-by-construction house Brief — never judged again.
+- Render the closed, versioned eight-element Brief. Local output has no numeric ROI, percentages, savings, or pricing; effects are concrete and invitations are Spark-specific, pressure-free, and permit deciding against change.
+- Qualify generation and judge independently without pooling primary/fallback evidence. Structural and full-request evidence are separate; live metered runs require fresh exact-run approval and never run in CI. There is no semantic qualification ref in the active design — three separately approved semantic runs terminated NO-GO, and further semantic-ref pursuit is not authorized.
+- Preserve one button and one optional domain field. Before domain activation, domain requests stay domain-scoped but render effective local mode with a fixed notice; scanning, EvidenceProvider use, global local projections, and permalinks are prohibited.
+- COORD authoritatively claims, reads, commits, and counts served outcomes; KV is projection-only. Concurrent requests converge on one receipt, uncertainty returns 502 without rendering, and local artifacts expire non-sliding after 30 days.
 
 ## Technical Decisions
 
-- `src/worker.js` remains the only public Worker entrypoint. Runtime-neutral Evidence, generation, Gate, strike, receipt, and projection modules have one canonical ES-module implementation under `src/pipeline/`, shared by Worker assembly and Node verification; scripts cannot contain a second production writer.
-- Workers AI remains the provider. The newly selected primary candidate is `@cf/meta/llama-3.3-70b-instruct-fp8-fast`; fallback is `@cf/meta/llama-3.1-8b-instruct-fast`. Each role and configuration needs its own current qualification. Existing gpt-oss evidence remains NO-GO.
-- Model IDs are runtime variables, while prompts, schemas, parameters, adapter behavior, source hashes, runtime identity, timeout policy, and fixtures are qualification-bound. Transport adapters decode exactly one complete structured response value without extraction or repair.
-- COORD is the cross-request authority for claim, read, commit, and atomic served counters. KV entries are best-effort projections and HTTP responses are `no-store`; unsupported versions fail closed or behave as cache misses according to the compatibility contract.
-- Request scope owns claim/cache identity and permalink eligibility; effective mode owns rendering. During local-only activation, a valid domain request follows the canonical writer in domain request scope with effective local mode and a fixed pre-activation notice, but performs no scan and creates no permalink.
-- Representation is a transport concern: explicit JSON acceptance wins; otherwise HTML acceptance or browser-form content selects shell HTML. Local HTML success redirects to an eligible `/s/:id`; domain-scope HTML returns direct `200`. Metrics increment only when the committed artifact is actually delivered.
+- Use immutable, single-pass Evidence, Generate, Gate (deterministic + one judge call), Commit, and Render stages; only the strike orchestrator retries. `Evidence` never calls `Gate`; `Render` never sees free model text.
+- Keep one runtime-neutral pipeline under `src/pipeline/`, shared by Worker and Node verification, with infrastructure supplied through explicit ports.
+- Use versioned canonical hashes (`candidate_ref`, `evidence_ref`, etc.). Adapters decode one complete value from the frozen location without extraction, repair, coercion, invention, or omission; reference mismatch rejects.
+- The generation role is qualified primary-only from the approved Story 1.11 sole-member role set; the fallback leg remains unwired, and generation exhaustion or failure uses the house Brief path. The existing broad `CanonicalVerdict` contract is retained as the single lightweight judge port.
+- `ProductionActivationManifest` v2 (hash domain `oddspark-production-activation/v2`) binds exactly four proof kinds: generation structural ref, judge structural ref, house catalog ref, and per-mode full-request ref — plus separately governed nullable receiver/receipt-claim refs. There is no `semantic_ref`; a v1 manifest cannot validate.
+- COORD receipts hold a closed, versioned `CommittedBrief`; readers accept supported versions or an explicit lossless shim. Request scope owns cache and permalink eligibility; effective mode owns presentation.
+- Explicit JSON acceptance wins representation selection; browser forms and HTML-capable requests receive shell HTML. Dynamic responses are non-cacheable; 400 and 502 outcomes are not served events.
+- Activation atomically replaces one canonical manifest. Invalid or stale refs disable model roles. Assembly, reader deployment, inactive-writer deployment, and activation retain separate authority and rollback.
+- Cloudflare Workers Builds auto-deploys its configured production branch, currently `develop`. Story work merges only to `develop`, Justin owns `develop` to `main`, and deployment preflight must verify the live build trigger before approval.
 
 ## UX & Interaction Patterns
 
-- Render the eight elements in fixed order: title, plan, why it fits, what gets better, before/after, change level, what stays the same, and invitation. Treat every field as plain text.
-- The result region carries `aria-busy`; the Strike button uses `aria-disabled` and ignores repeat activation so keyboard focus is preserved. Enhanced results make exactly one focus move and one announcement; fresh full-document responses set no scripted focus.
-- House and pre-activation outcomes look like ordinary complete Briefs with one quiet, stable notice above the title. Invalid input stays in the shell with field-linked error semantics; coordinator uncertainty stays in the shell with a retry message.
-- Meet WCAG 2.2 AA, including visible offset focus indicators, minimum target sizes, contrast, 320px reflow, reduced/limited motion, semantic headings, no result live region, and equivalent no-JavaScript behavior.
-- Local Briefs may expose sharing; domain-scope results never expose or mint a permalink. Until the invitation receiver is activated in a later epic, render the invitation as a plain Hearn contact link.
+- Preserve the shell, breakpoints, one-button flow, and optional website field; the governed UX delta set is closed.
+- Keep all eight elements ordered across representations. Domain-scoped results never get public permalinks.
+- Suppress duplicate retries and use one status region. Enhanced results move focus once; full-document HTML does not. Errors and fallbacks remain inside the shell.
+- Notices disclose causes without exposing rejected ideas or retry detail. Avoid reproducibility claims before production proof. `/how` explains the pipeline, privacy, call cap, fallback, and non-determinism accessibly, and must not overstate what the direct single-judge design guarantees.
 
 ## Cross-Story Dependencies
 
-Foundation contracts, approved content, deterministic Evidence, and offline adapters precede structural qualification. Qualified generation and judge identities unlock the composite Gate and strike orchestrator; those feed authoritative commit, rendering, request hardening, semantic/full-request qualification, and retention. Release then proceeds strictly through activation-contract proof, canonical Worker assembly, reader-first deployment, inactive writer deployment, and separately approved atomic local-only activation. Domain generation remains an Epic 2 concern, production receipt proof an Epic 3 concern, and active invitation handoff an Epic 4 concern.
-- 2026-08-20 incident: production deployed the Story 1.14/1.15 committed_brief reader requirement ahead of the approved sequence while the writer still produced legacy Spark artifacts, returning 502 on every Strike. Interim mitigation is a separately approved redeploy of the pre-1.14 Worker artifact. Recovery runs through Story 1.16 and Story 1.23, which are the incident-recovery critical path ahead of the review and operator queues; the release-tail order (1.23 assembly, 1.24 reader deployment, 1.25 inactive writer, 1.26 activation) is unchanged.
+Frozen contracts (1.3–1.10) precede generation structural qualification (1.11) and the composite Gate/judge integration (1.12). Story 1.18.2 replaced the specialist-waterfall design in 1.12/1.13 with the direct deterministic-plus-one-judge path and removed the three-specialist/twelve-call machinery from active code. Stories 1.18 and 1.18.1 remain retained NO-GO history only — they are not active runtime or activation authority. Story 1.19 (rescoped by sprint-change-proposal-2026-08-24-4) measures the direct path end-to-end using current generation and judge structural refs, the house catalog ref, and an owner-approved route ceiling, and is a dependency of Stories 1.20 and 1.26's activation manifest. Release order is runtime assembly (1.23), compatibility reader deployment (1.24), inactive writer deployment (1.25), then separately authorized atomic local-only activation (1.26). Domain activation, production proof, receipt claims, receiver handoff, and legacy retirement remain later epics' authority.

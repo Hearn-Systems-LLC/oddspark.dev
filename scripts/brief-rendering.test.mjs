@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { buildCommittedBrief, deriveCandidateRef, CANDIDATE_SCHEMA_VERSION } from "./brief-contracts.mjs";
+import { buildCommittedBrief, deriveCandidateRef, CANDIDATE_SCHEMA_VERSION, sha256Hex } from "./brief-contracts.mjs";
 import { committedBriefAsText, committedBriefJson, committedBriefPresentation, projectCommittedBrief, renderCommittedBriefMarkup } from "./brief-rendering.mjs";
 
 const hash = "a".repeat(64);
@@ -20,12 +20,26 @@ function fixture({ id = "brief-1", mode = "local", requestScope = mode, notice, 
 test("projects the eight elements in UX-DR1 order and revalidates every entry point", () => {
   const envelope = fixture();
   const projection = projectCommittedBrief(envelope);
-  assert.deepEqual(Object.keys(projection).slice(4, 12), ["title", "plan", "why_fits", "what_gets_better", "before_after", "change_level", "stays_same", "invitation"]);
+  assert.deepEqual(Object.keys(projection).slice(5, 13), ["title", "plan", "why_fits", "what_gets_better", "before_after", "change_level", "stays_same", "invitation"]);
   assert.deepEqual(committedBriefJson(envelope), envelope);
   for (const render of [projectCommittedBrief, renderCommittedBriefMarkup, committedBriefAsText, committedBriefPresentation]) {
     assert.throws(() => render({ ...envelope, legacy: true }));
     assert.throws(() => render(envelope.brief));
   }
+});
+
+test("derives a deterministic public-id-only committed geometry fingerprint", () => {
+  const envelope = fixture({ id: "public-brief-id" });
+  const expected = sha256Hex("oddspark-seed-geometry/v1\0committed_brief\0public-brief-id");
+  assert.deepEqual(projectCommittedBrief(envelope).geometry, { version: 1, hash: expected });
+  assert.deepEqual(projectCommittedBrief(envelope).geometry, projectCommittedBrief(structuredClone(envelope)).geometry);
+  const changedProvenance = structuredClone(envelope);
+  changedProvenance.provenance.attempt_id = "attempt-elsewhere";
+  changedProvenance.provenance.evidence_ref = "b".repeat(64);
+  changedProvenance.policy_identity = "c".repeat(64);
+  changedProvenance.rubric_identity = "d".repeat(64);
+  assert.deepEqual(projectCommittedBrief(changedProvenance).geometry, projectCommittedBrief(envelope).geometry);
+  assert.equal(JSON.stringify(projectCommittedBrief(envelope).geometry).includes(envelope.provenance.attempt_id), false);
 });
 
 test("escapes every markup branch while JSON and text remain literal", () => {

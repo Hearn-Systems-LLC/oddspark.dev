@@ -11,6 +11,7 @@ import {
   LEGACY_MODEL_IDS,
   MAX_EXTRACTED_BYTES,
   SYSTEM_PROMPT,
+  validateJudgePromptContract,
   VERDICT_RESPONSE_FORMAT,
   VERDICT_SCHEMA,
   PREDICATE_ORACLE,
@@ -18,6 +19,7 @@ import {
   classifyJudgeCall,
   extractJudgeContent,
   fingerprintContractInput,
+  mapWireVerdictToCanonical,
   stableStringify,
   validateSpikeInput,
   validateVerdict,
@@ -42,6 +44,8 @@ import {
   findPriorOperationalRecovery,
   normalizeProviderUsage,
   observeAdapterHealth,
+  planCommand,
+  reserveRecoveryAttempt,
   runLive,
   summarizeTrials,
   writeRecoveryArtifacts,
@@ -72,6 +76,13 @@ import {
   validateRecoveryPlan,
   verifyQualificationBundle,
 } from "./qualification.mjs";
+import {
+  HISTORICAL_MEMBERS,
+  buildHistoricalSpendClosure,
+  deriveHistoricalClosureRef,
+  verifyHistoricalSpendClosure,
+  writeHistoricalSpendClosure,
+} from "./historical-spend.mjs";
 
 const fixtures = JSON.parse(
   await readFile(new URL("./fixtures.json", import.meta.url), "utf8"),
@@ -130,13 +141,13 @@ function materializeContractCase(fixture) {
   return value;
 }
 
-function verdictText(value = fixtures.valid_verdict) {
+function verdictText(value = fixtures.wire_valid_verdict) {
   return JSON.stringify(value);
 }
 
 function materializeNormalizationCase(fixture) {
   const text = verdictText();
-  const invalid = clone(fixtures.valid_verdict);
+  const invalid = clone(fixtures.wire_valid_verdict);
   invalid.pass = "true";
 
   switch (fixture.shape) {
@@ -149,7 +160,7 @@ function materializeNormalizationCase(fixture) {
     case "unknown_location":
       return { call_state: "received", envelope: { output: text } };
     case "response_object":
-      return { call_state: "received", envelope: { response: clone(fixtures.valid_verdict) } };
+      return { call_state: "received", envelope: { response: clone(fixtures.wire_valid_verdict) } };
     case "response_text":
       return { call_state: "received", envelope: { response: text } };
     case "result_text":
@@ -159,9 +170,9 @@ function materializeNormalizationCase(fixture) {
     case "identical_duplicates":
       return { call_state: "received", envelope: { response: text, result: text } };
     case "semantic_but_not_byte_duplicates":
-      return { call_state: "received", envelope: { response: text, result: JSON.stringify(fixtures.valid_verdict, null, 2) } };
+      return { call_state: "received", envelope: { response: text, result: JSON.stringify(fixtures.wire_valid_verdict, null, 2) } };
     case "object_and_text_duplicates":
-      return { call_state: "received", envelope: { response: clone(fixtures.valid_verdict), result: text } };
+      return { call_state: "received", envelope: { response: clone(fixtures.wire_valid_verdict), result: text } };
     case "bom":
       return { call_state: "received", envelope: { response: `\uFEFF${text}` } };
     case "json_fence":
@@ -171,8 +182,8 @@ function materializeNormalizationCase(fixture) {
     case "surrounding_prose":
       return { call_state: "received", envelope: { response: `Judge verdict follows. ${text} End verdict.` } };
     case "surrounding_prose_with_string_braces": {
-      const withBraces = clone(fixtures.valid_verdict);
-      withBraces.gates[0].reason = "The routine uses {braces} and an escaped quote: \"okay\".";
+      const withBraces = clone(fixtures.wire_valid_verdict);
+      withBraces.gate_1.reason = "The routine uses {braces} and an escaped quote: \"okay\".";
       return { call_state: "received", envelope: { response: `Start ${verdictText(withBraces)} End` } };
     }
     case "truncated":
@@ -267,6 +278,28 @@ test("the prompt contains all nine gates and the exact output instruction", () =
   assert.deepEqual(JSON.parse(messages[1].content), fixtures.synthetic_input);
 });
 
+test("the frozen Decision protocol v2 rejects semantic-discipline and case-leakage mutations", () => {
+  assert.deepEqual(validateJudgePromptContract(SYSTEM_PROMPT), { valid: true, errors: [] });
+
+  const mutations = [
+    ["missing independent evaluation", "- Evaluate every gate, tone, and claims independently from the exact Candidate, Evidence, and grounding report supplied. Strength in one check cannot compensate for failure or uncertainty in another.\n"],
+    ["missing contradiction search", "- For each check, look for both supporting facts and disqualifying facts. Treat the check as unproven and set its pass to false when required support is absent, ambiguous, internally inconsistent, or contradicted.\n"],
+    ["missing generic-reason rejection", " A generic restatement of the check is not a valid reason."],
+    ["missing fail-closed ambiguity", "- Use only the supplied input. Do not infer missing business facts or resolve ambiguity in the Candidate's favor.\n"],
+    ["unsafe top-level pass", "Set top-level pass to true only when all nine gates, tone, and claims pass."],
+  ];
+  for (const [label, removed] of mutations) {
+    const result = validateJudgePromptContract(SYSTEM_PROMPT.replace(removed, ""));
+    assert.equal(result.valid, false, label);
+  }
+
+  const compensating = SYSTEM_PROMPT.replace("Strength in one check cannot compensate for failure or uncertainty in another.", "Strength in one check may compensate for uncertainty in another.");
+  assert.equal(validateJudgePromptContract(compensating).valid, false);
+
+  const leaked = SYSTEM_PROMPT.replace("case-specific answer keys.", "case-specific answer keys such as anti-consultant-speak.");
+  assert.match(validateJudgePromptContract(leaked).errors.join("\n"), /leaks a frozen corpus or fixture label/);
+});
+
 test("the strict validator agrees with every versioned contract fixture", () => {
   for (const fixture of fixtures.verdict_contract_cases) {
     const result = validateVerdict(materializeContractCase(fixture));
@@ -292,6 +325,26 @@ test("pass false is preserved while pass true cannot coexist with a reported fai
   unsafe.tone.reason = "The wording sounds like a pitch.";
   assert.equal(validateVerdict(unsafe).valid, false);
   assert.equal(unsafe.pass, true);
+});
+
+test("wire verdict maps losslessly to the exact canonical verdict", () => {
+  const mapped = mapWireVerdictToCanonical(clone(fixtures.wire_valid_verdict));
+  assert.equal(mapped.valid, true);
+  assert.deepEqual(mapped.verdict, fixtures.valid_verdict);
+
+  const missing = clone(fixtures.wire_valid_verdict);
+  delete missing.gate_9;
+  assert.equal(mapWireVerdictToCanonical(missing).valid, false);
+
+  const extra = clone(fixtures.wire_valid_verdict);
+  extra.gate_10 = { pass: true, reason: "extra" };
+  assert.equal(mapWireVerdictToCanonical(extra).valid, false);
+
+  const inconsistent = clone(fixtures.wire_valid_verdict);
+  inconsistent.gate_9.pass = false;
+  assert.equal(mapWireVerdictToCanonical(inconsistent).valid, false);
+  inconsistent.pass = false;
+  assert.equal(mapWireVerdictToCanonical(inconsistent).valid, true);
 });
 
 test("contract fingerprints are deterministic and bind every frozen input", async () => {
@@ -410,7 +463,7 @@ test("the runner accepts loopback only", () => {
 test("operator-only live execution rejects CI and non-interactive command use", async () => {
   await assert.rejects(runLive({}, { operatorPresent: true, ci: true, findPriorRecovery: async () => null }), /forbidden in CI/);
   await assert.rejects(runLive({}, { operatorPresent: false, ci: false, findPriorRecovery: async () => null }), /interactive operator terminal/);
-  await assert.rejects(execFileAsync(process.execPath, [new URL("./run.mjs", import.meta.url).pathname, "live", "--plan-file", path.join(tmpdir(), "unused-plan.json")], { cwd: new URL("../..", import.meta.url).pathname }), /interactive operator terminal/);
+  await assert.rejects(execFileAsync(process.execPath, [new URL("./run.mjs", import.meta.url).pathname, "live", "--plan-file", path.join(tmpdir(), "unused-plan.json")], { cwd: new URL("../..", import.meta.url).pathname }), /verified historical closure/);
 });
 
 test("the maximum-usage estimate binds the exact 42-call cap", () => {
@@ -454,7 +507,7 @@ test("the adapter health route makes no inference and live POST makes exactly on
       async run(model, input) {
         calls.push({ model, input });
         return {
-          response: { candidate_ref: buildModelRequest(model, fixtures.synthetic_input).candidate_ref, verdict: clone(fixtures.valid_verdict) },
+          response: { candidate_ref: buildModelRequest(model, fixtures.synthetic_input).candidate_ref, verdict: clone(fixtures.wire_valid_verdict) },
           usage: { prompt_tokens: 100, completion_tokens: 200, total_tokens: 300, secret: 1 },
         };
       },
@@ -493,15 +546,34 @@ test("the adapter health route makes no inference and live POST makes exactly on
   assert.deepEqual(calls[0].input, buildRequestManifest(fixtures.synthetic_input).by_model[0].adapter_input);
   const body = await response.json();
   assert.equal(body.ok, true);
-  assert.deepEqual(body.envelope.response.verdict, fixtures.valid_verdict);
+  assert.deepEqual(body.envelope.response.verdict, fixtures.wire_valid_verdict);
   assert.deepEqual(body.usage, { prompt_tokens: 100, completion_tokens: 200, total_tokens: 300 });
   assert.equal(Object.hasOwn(body, "tool_calls"), false);
 
-  env.AI.run = async () => ({ response: { candidate_ref: buildModelRequest(MODELS[0], fixtures.synthetic_input).candidate_ref, verdict: clone(fixtures.valid_verdict), reasoning: "must not retain" } });
+  env.AI.run = async () => ({ response: { candidate_ref: buildModelRequest(MODELS[0], fixtures.synthetic_input).candidate_ref, verdict: clone(fixtures.wire_valid_verdict), reasoning: "must not retain" } });
   const metadataResponse = await adapter.fetch(new Request("http://127.0.0.1/run", {
     method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(buildModelRequest(MODELS[0], fixtures.synthetic_input)),
   }), env);
   assert.deepEqual((await metadataResponse.json()).envelope, {});
+
+  // Workers AI structured output returns the same verdict as both a parsed response
+  // object and a choices string; the adapter must retain exactly one representation
+  // (the 467ba931 cycle lost 39/42 calls to the resulting ambiguous_envelope).
+  const request = buildModelRequest(MODELS[0], fixtures.synthetic_input);
+  const wireResult = { candidate_ref: request.candidate_ref, verdict: clone(fixtures.wire_valid_verdict) };
+  env.AI.run = async () => ({ response: wireResult, choices: [{ message: { content: JSON.stringify(wireResult) } }] });
+  const duplicate = await adapter.fetch(new Request("http://127.0.0.1/run", {
+    method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(request),
+  }), env);
+  const duplicateBody = await duplicate.json();
+  assert.deepEqual(Object.keys(duplicateBody.envelope), ["response"]);
+  assert.deepEqual(duplicateBody.envelope.response, wireResult);
+
+  env.AI.run = async () => ({ choices: [{ message: { content: JSON.stringify(wireResult) } }] });
+  const choicesOnly = await adapter.fetch(new Request("http://127.0.0.1/run", {
+    method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(request),
+  }), env);
+  assert.deepEqual(Object.keys((await choicesOnly.json()).envelope), ["choices"]);
 });
 
 test("the adapter rejects non-JSON, alternate routes, and preflight without inference", async () => {
@@ -531,7 +603,7 @@ test("the sequential runner counts every invocation and never retries", async ()
     count: 3,
     async invoke() {
       invoked += 1;
-      return { call_state: "received", envelope: { response: clone(fixtures.valid_verdict) } };
+      return { call_state: "received", envelope: { response: clone(fixtures.wire_valid_verdict) } };
     },
   });
   assert.equal(invoked, 3);
@@ -629,7 +701,7 @@ test("the live protocol qualifies accepted configurations independently and neve
       tick += 10;
       if (position === 6) return { call_state: "timeout", started_at, ended_at };
       if (position === 29) return { call_state: "provider_error", error_code: "counted-provider-error", started_at, ended_at };
-      return { call_state: "received", envelope: { response: { candidate_ref: request_body.candidate_ref, verdict: clone(fixtures.valid_verdict) } }, usage: null, started_at, ended_at };
+      return { call_state: "received", envelope: { response: { candidate_ref: request_body.candidate_ref, verdict: clone(fixtures.wire_valid_verdict) } }, usage: null, started_at, ended_at };
     },
   });
   assert.equal(records.length, 42);
@@ -646,7 +718,7 @@ test("the live protocol qualifies accepted configurations independently and neve
     const started_at = new Date(tick).toISOString(); tick += 10;
     const ended_at = new Date(tick).toISOString(); tick += 10;
     if (request_body.model === MODELS[0] && calls === 1) return { call_state: "timeout", started_at, ended_at };
-    return { call_state: "received", envelope: { response: { candidate_ref: request_body.candidate_ref, verdict: clone(fixtures.valid_verdict) } }, started_at, ended_at };
+    return { call_state: "received", envelope: { response: { candidate_ref: request_body.candidate_ref, verdict: clone(fixtures.wire_valid_verdict) } }, started_at, ended_at };
   } });
   assert.equal(partial.length, 22);
   assert.equal(partial.filter(({ model }) => model === MODELS[0]).length, 1);
@@ -686,8 +758,8 @@ async function operationalEvidence({ blocked = false, endpoint = "http://127.0.0
     const modelIndex = MODELS.indexOf(request_body.model);
     const direct = callIndex === 0 || callIndex <= directByModel[modelIndex];
     const response = direct
-      ? { candidate_ref: request_body.candidate_ref, verdict: clone(fixtures.valid_verdict) }
-      : JSON.stringify({ candidate_ref: request_body.candidate_ref, verdict: { ...clone(fixtures.valid_verdict), pass: "true" } });
+      ? { candidate_ref: request_body.candidate_ref, verdict: clone(fixtures.wire_valid_verdict) }
+      : JSON.stringify({ candidate_ref: request_body.candidate_ref, verdict: { ...clone(fixtures.wire_valid_verdict), pass: "true" } });
     return { call_state: "received", started_at, ended_at, envelope: { response }, usage: missingUsage ? undefined : { prompt_tokens: 1, completion_tokens: 2, total_tokens: 3 } };
   } });
   const evidence = await buildOperationalEvidence({
@@ -989,6 +1061,14 @@ test("retained-field disclosure is comprehensive and account profiles cannot be 
   accountIdPlan.account.profile = "0123456789abcdef0123456789abcdef";
   accountIdPlan.plan_ref = derivePlanRef(accountIdPlan);
   assert.match(validateRecoveryPlan(accountIdPlan).errors.join("\n"), /account\/plan\/headroom/);
+  const ownerLabel = clone(setup.recoveryPlan);
+  ownerLabel.account.profile = "Hearn Systems account";
+  ownerLabel.plan_ref = derivePlanRef(ownerLabel);
+  assert.equal(validateRecoveryPlan(ownerLabel, { legacy: setup.legacy }).valid, true);
+  for (const unsafe of ["../Hearn Systems account", "/tmp/account", "Hearn  Systems account", " Hearn Systems account", "Hearn Systems account ", "account@example.com", "x".repeat(65), "0123456789abcdef0123456789abcdef"]) {
+    const changed = clone(setup.recoveryPlan); changed.account.profile = unsafe; changed.plan_ref = derivePlanRef(changed);
+    assert.match(validateRecoveryPlan(changed, { legacy: setup.legacy }).errors.join("\n"), /account\/plan\/headroom/, unsafe);
+  }
 });
 
 test("maximum cost independently recomputes every frozen pricing and arithmetic component", async () => {
@@ -1030,8 +1110,20 @@ test("approval templates require explicit timestamps and plan publication is ext
 
   const directory = await mkdtemp(path.join(tmpdir(), "oddspark-plan-command-"));
   const output = path.join(directory, "recovery-plan.json");
-  const { stdout } = await execFileAsync(process.execPath, [new URL("./run.mjs", import.meta.url).pathname, "plan", "--output", output, "--account-profile", "test-profile", "--plan", "paid", "--approval-run-id", "command-plan-run"], { cwd: new URL("../..", import.meta.url).pathname });
-  assert.match(stdout, /Approval template \(not authority/);
+  // Exercise the plan command against an isolated results directory: the real one now
+  // holds a completed called cycle (2026-08-22), whose retained evidence correctly makes
+  // the CLI refuse new plans (course-end governance). Template-safety behavior is what
+  // this test covers, so the prior-recovery gate is isolated, not weakened.
+  const isolatedResults = await mkdtemp(path.join(tmpdir(), "oddspark-plan-results-"));
+  const logs = [];
+  const originalLog = console.log;
+  console.log = (...args) => logs.push(args.join(" "));
+  try {
+    await planCommand({ output, account_profile: "test-profile", plan: "paid", approval_run_id: "command-plan-run" }, { resultsDir: isolatedResults });
+  } finally {
+    console.log = originalLog;
+  }
+  assert.ok(logs.some((line) => /Approval template \(not authority/.test(line)));
   const commandTemplate = JSON.parse(await readFile(output.replace(/\.json$/, "-approval-template.json"), "utf8"));
   assert.equal(commandTemplate.approved_at, null);
   assert.equal(commandTemplate.expires_at, null);
@@ -1046,6 +1138,162 @@ test("approval templates require explicit timestamps and plan publication is ext
   await assert.rejects(writePlanDisclosure(setup.recoveryPlan, rollbackPlan));
   await assert.rejects(access(rollbackPlan));
   assert.equal(await readFile(rollbackTemplate, "utf8"), "occupied");
+});
+
+test("historical spend closure cryptographically closes exact retained bytes and fail-closes mutations", async () => {
+  const results = new URL("./results/", import.meta.url).pathname;
+  const closure = await buildHistoricalSpendClosure(results);
+  assert.equal(closure.state, "terminal-closed");
+  assert.equal(closure.invocation.calls_started, 42);
+  assert.equal(closure.invocation.runner_invocations, 1);
+  assert.equal(closure.accounting.cumulative_historical_calls, 42);
+  assert.equal(closure.accounting.reset_permitted, false);
+  assert.equal(closure.accounting.unpriced_models.length, 1);
+  assert.equal(closure.closure_ref, deriveHistoricalClosureRef(closure));
+  assert.deepEqual(closure.members.map(({ name }) => name), HISTORICAL_MEMBERS);
+  assert.equal((await verifyHistoricalSpendClosure(results, Buffer.from(`${JSON.stringify(closure, null, 2)}\n`))).valid, true);
+
+  const mutated = clone(closure);
+  mutated.invocation.calls_started = 41;
+  mutated.closure_ref = deriveHistoricalClosureRef(mutated);
+  assert.equal((await verifyHistoricalSpendClosure(results, Buffer.from(`${JSON.stringify(mutated, null, 2)}\n`))).valid, false);
+  const replay = clone(closure);
+  replay.invocation.approval_run_id = "different-run";
+  replay.closure_ref = deriveHistoricalClosureRef(replay);
+  assert.equal((await verifyHistoricalSpendClosure(results, Buffer.from(`${JSON.stringify(replay, null, 2)}\n`))).valid, false);
+  const open = clone(closure);
+  open.unexpected = true;
+  open.closure_ref = deriveHistoricalClosureRef(open);
+  assert.equal((await verifyHistoricalSpendClosure(results, Buffer.from(`${JSON.stringify(open, null, 2)}\n`))).valid, false);
+
+  const missingDir = await mkdtemp(path.join(tmpdir(), "oddspark-history-missing-"));
+  for (const name of HISTORICAL_MEMBERS) await writeFile(path.join(missingDir, name), await readFile(path.join(results, name)));
+  await unlink(path.join(missingDir, HISTORICAL_MEMBERS[2]));
+  assert.equal((await verifyHistoricalSpendClosure(missingDir, Buffer.from(`${JSON.stringify(closure, null, 2)}\n`))).valid, false);
+
+  const activeDir = await mkdtemp(path.join(tmpdir(), "oddspark-history-active-"));
+  for (const name of HISTORICAL_MEMBERS) await writeFile(path.join(activeDir, name), await readFile(path.join(results, name)));
+  const activeReceipt = JSON.parse(await readFile(path.join(activeDir, HISTORICAL_MEMBERS[0]), "utf8"));
+  activeReceipt.state = "calls-started";
+  await writeFile(path.join(activeDir, HISTORICAL_MEMBERS[0]), `${JSON.stringify(activeReceipt, null, 2)}\n`);
+  assert.equal((await verifyHistoricalSpendClosure(activeDir, Buffer.from(`${JSON.stringify(closure, null, 2)}\n`))).valid, false);
+
+  const symlinkDir = await mkdtemp(path.join(tmpdir(), "oddspark-history-symlink-"));
+  for (const name of HISTORICAL_MEMBERS) await writeFile(path.join(symlinkDir, name), await readFile(path.join(results, name)));
+  await unlink(path.join(symlinkDir, HISTORICAL_MEMBERS[1]));
+  await symlink(path.join(results, HISTORICAL_MEMBERS[1]), path.join(symlinkDir, HISTORICAL_MEMBERS[1]));
+  assert.equal((await verifyHistoricalSpendClosure(symlinkDir, Buffer.from(`${JSON.stringify(closure, null, 2)}\n`))).valid, false);
+});
+
+test("historical closure creation is create-only and public live authority ordering validates closure first", async () => {
+  const results = new URL("./results/", import.meta.url).pathname;
+  const directory = await mkdtemp(path.join(tmpdir(), "oddspark-history-closure-"));
+  const output = path.join(directory, "closure.json");
+  const settled = await Promise.allSettled([
+    writeHistoricalSpendClosure(results, output),
+    writeHistoricalSpendClosure(results, output),
+  ]);
+  assert.equal(settled.filter(({ status }) => status === "fulfilled").length, 1);
+  assert.equal(settled.filter(({ status }) => status === "rejected").length, 1);
+  const bytes = await readFile(output);
+  assert.equal((await verifyHistoricalSpendClosure(results, bytes)).valid, true);
+
+  const runPath = new URL("./run.mjs", import.meta.url).pathname;
+  await assert.rejects(execFileAsync(process.execPath, [runPath, "live", "--plan-file", path.join(directory, "missing-plan.json")], { cwd: new URL("../..", import.meta.url).pathname }), /verified historical closure/);
+  const corrupt = path.join(directory, "corrupt.json");
+  await writeFile(corrupt, "{}\n");
+  await assert.rejects(execFileAsync(process.execPath, [runPath, "live", "--historical-closure", corrupt, "--plan-file", path.join(directory, "missing-plan.json")], { cwd: new URL("../..", import.meta.url).pathname }), /historical closure is invalid/);
+});
+
+test("a verified closure binds a distinct synthetic offline successor plan without resetting history", async () => {
+  const results = new URL("./results/", import.meta.url).pathname;
+  const directory = await mkdtemp(path.join(tmpdir(), "oddspark-history-plan-"));
+  const closurePath = path.join(directory, "closure.json");
+  await writeHistoricalSpendClosure(results, closurePath);
+  const output = path.join(directory, "successor-unapproved.plan.json");
+  await planCommand({ output, account_profile: "test-profile", plan: "paid", approval_run_id: "distinct-successor-run", historical_closure: closurePath }, { resultsDir: results });
+  const plan = JSON.parse(await readFile(output, "utf8"));
+  const closure = JSON.parse(await readFile(closurePath, "utf8"));
+  assert.equal(plan.governance.prior_operational_recovery.closure_ref, closure.closure_ref);
+  assert.equal(plan.governance.prior_operational_recovery.cumulative_historical_calls, 42);
+  assert.equal(plan.governance.prior_operational_recovery.reset_permitted, false);
+  assert.notEqual(plan.approval_run_id, closure.invocation.approval_run_id);
+});
+
+test("owner-reviewed and prompt-superseded cycles are immutable history; unreviewed spend still blocks planning", async () => {
+  // Completed owner-reviewed NO-GO cycles and the exact structurally-GO cycle superseded
+  // by the approved Decision protocol v2 correction are immutable history, so the newly
+  // granted prompt-recovery matrix may be planned.
+  const directory = await mkdtemp(path.join(tmpdir(), "oddspark-plan-history-"));
+  const output = path.join(directory, "recovery-plan.json");
+  const retainedResults = new URL("./results/", import.meta.url);
+  const historicalResults = await mkdtemp(path.join(tmpdir(), "oddspark-plan-history-results-"));
+  const historicalPrefixes = [
+    "2026-08-22-e848e2bd-d072356c9de6a906-c43fb299-6891-4f10-aebe-e49cbf3f770c",
+    "2026-08-24-7c2c3860-cec14a30a3411043-3f980f8c-8e1d-45ba-bd87-ef961d1a808c",
+  ];
+  const historicalSuffixes = ["-qualification.json", "-v2.complete.json", "-v2.json", "-v2.md"];
+  for (const prefix of historicalPrefixes) {
+    for (const suffix of historicalSuffixes) {
+      const name = `${prefix}${suffix}`;
+      await writeFile(path.join(historicalResults, name), await readFile(new URL(name, retainedResults)));
+    }
+  }
+  await planCommand(
+    { output, account_profile: "test-profile", plan: "paid", approval_run_id: "history-run" },
+    { resultsDir: historicalResults },
+  );
+  await access(output);
+
+  // The current real 42-call cycle remains authoritative and blocks successor planning.
+  await assert.rejects(
+    planCommand({ output: path.join(directory, "real-spend-plan.json"), account_profile: "test-profile", plan: "paid", approval_run_id: "real-spend-run" }),
+    /prior operational recovery already retained/,
+  );
+
+  // An unreviewed receipt proving (or unable to disprove) provider invocation still blocks.
+  const blockedResults = await mkdtemp(path.join(tmpdir(), "oddspark-plan-blocked-"));
+  await writeFile(path.join(blockedResults, ".judge-llama-cycle-spend.json"), `${JSON.stringify({
+    schema_version: "oddspark.judge-cycle-spend/v2",
+    attempt_id: "00000000-0000-4000-8000-000000000001",
+    approval_run_id: "00000000-0000-4000-8000-000000000002",
+    created_at: "2026-08-22T00:00:00.000Z",
+    updated_at: "2026-08-22T00:00:00.000Z",
+    state: "calls-started",
+    calls_started: 1,
+    last_call: { sequence: 1, kind: "probe", model: MODELS[0], index: 1, marked_at: "2026-08-22T00:00:00.000Z" },
+  }, null, 2)}\n`);
+  await assert.rejects(
+    planCommand({ output: path.join(directory, "blocked-plan.json"), account_profile: "test-profile", plan: "paid", approval_run_id: "blocked-run" }, { resultsDir: blockedResults }),
+    /prior operational recovery already retained/,
+  );
+});
+
+test("reservation archives only the owner-reviewed completed-spend receipt and refuses any other", async () => {
+  const reviewed = {
+    schema_version: "oddspark.judge-cycle-spend/v2",
+    attempt_id: "c43fb299-6891-4f10-aebe-e49cbf3f770c",
+    approval_run_id: "e848e2bd-dc86-40e0-90da-45bee83fcc6d",
+    created_at: "2026-08-22T18:03:29.324Z",
+    updated_at: "2026-08-22T18:05:22.417Z",
+    state: "completed-spent",
+    calls_started: 42,
+    last_call: { sequence: 42, kind: "trial", model: MODELS[1], index: 20, marked_at: "2026-08-22T18:05:20.185Z" },
+  };
+  const directory = await mkdtemp(path.join(tmpdir(), "oddspark-reserve-"));
+  await writeFile(path.join(directory, ".judge-llama-cycle-spend.json"), `${JSON.stringify(reviewed, null, 2)}\n`);
+  const receipt = await reserveRecoveryAttempt(directory, "00000000-0000-4000-8000-000000000009", "new-run", new Date("2026-08-22T19:00:00.000Z"));
+  assert.equal(receipt.state, "reserved");
+  const archived = JSON.parse(await readFile(path.join(directory, "2026-08-22-e848e2bd-c43fb299.spend-receipt.json"), "utf8"));
+  assert.deepEqual(archived, reviewed);
+
+  // Any other existing receipt still requires manual recovery.
+  const other = await mkdtemp(path.join(tmpdir(), "oddspark-reserve-blocked-"));
+  await writeFile(path.join(other, ".judge-llama-cycle-spend.json"), `${JSON.stringify({ ...reviewed, calls_started: 1 }, null, 2)}\n`);
+  await assert.rejects(
+    reserveRecoveryAttempt(other, "00000000-0000-4000-8000-000000000010", "new-run", new Date("2026-08-22T19:00:00.000Z")),
+    /requires manual recovery/,
+  );
 });
 
 test("runLive accepts the completed immutable on-disk disclosure and distinct canonical approval without network activity", async () => {
@@ -1065,7 +1313,7 @@ test("runLive accepts the completed immutable on-disk disclosure and distinct ca
       calls += 1;
       const started_at = new Date(setup.now.getTime() + calls * 2).toISOString();
       const ended_at = new Date(setup.now.getTime() + calls * 2 + 1).toISOString();
-      return { call_state: "received", started_at, ended_at, envelope: { response: { candidate_ref: request_body.candidate_ref, verdict: clone(fixtures.valid_verdict) } }, usage: null };
+      return { call_state: "received", started_at, ended_at, envelope: { response: { candidate_ref: request_body.candidate_ref, verdict: clone(fixtures.wire_valid_verdict) } }, usage: null };
     },
     async writeArtifacts(evidence) { retained = clone(evidence); return { jsonPath: "disk.json", markdownPath: "disk.md", qualificationPath: "disk-qualification.json" }; },
   });
@@ -1580,7 +1828,7 @@ test("exclusive recovery locking prevents concurrent live attempts from both inv
       const started_at = new Date(tick).toISOString(); tick += 10;
       const ended_at = new Date(tick).toISOString(); tick += 10;
       if (firstCalls === 1) return { call_state: "timeout", started_at, ended_at };
-      return { call_state: "received", started_at, ended_at, envelope: { response: { candidate_ref: request_body.candidate_ref, verdict: clone(fixtures.valid_verdict) } }, usage: null };
+      return { call_state: "received", started_at, ended_at, envelope: { response: { candidate_ref: request_body.candidate_ref, verdict: clone(fixtures.wire_valid_verdict) } }, usage: null };
     },
   });
   await firstMarked;
@@ -1711,7 +1959,7 @@ test("a successful filesystem-governed run reports verified evidence and refs de
       calls += 1;
       const started_at = new Date(tick).toISOString(); tick += 10;
       const ended_at = new Date(tick).toISOString(); tick += 10;
-      return { call_state: "received", started_at, ended_at, envelope: { response: { candidate_ref: request_body.candidate_ref, verdict: clone(fixtures.valid_verdict) } }, usage: null };
+      return { call_state: "received", started_at, ended_at, envelope: { response: { candidate_ref: request_body.candidate_ref, verdict: clone(fixtures.wire_valid_verdict) } }, usage: null };
     },
   }), "GO");
   assert.equal(calls, 42);
@@ -1910,7 +2158,7 @@ test("blocked and corrected attempts with one approval run id publish without co
       calls += 1;
       const started_at = new Date(tick).toISOString(); tick += 10;
       const ended_at = new Date(tick).toISOString(); tick += 10;
-      return { call_state: "received", started_at, ended_at, envelope: { response: { candidate_ref: request_body.candidate_ref, verdict: clone(fixtures.valid_verdict) } }, usage: null };
+      return { call_state: "received", started_at, ended_at, envelope: { response: { candidate_ref: request_body.candidate_ref, verdict: clone(fixtures.wire_valid_verdict) } }, usage: null };
     },
   }), "GO");
   assert.equal(calls, 42);
@@ -1949,7 +2197,7 @@ test("a rejected probe does not block the accepted peer or emit a failed configu
       const started_at = new Date(tick).toISOString(); tick += 10;
       const ended_at = new Date(tick).toISOString(); tick += 10;
       if (calls === 1) return { call_state: "timeout", started_at, ended_at };
-      return { call_state: "received", started_at, ended_at, envelope: { response: { candidate_ref: request_body.candidate_ref, verdict: clone(fixtures.valid_verdict) } }, usage: null };
+      return { call_state: "received", started_at, ended_at, envelope: { response: { candidate_ref: request_body.candidate_ref, verdict: clone(fixtures.wire_valid_verdict) } }, usage: null };
     },
     async retainInvalidEvidence() { throw new Error("unexpected invalid probe-stop evidence"); },
     async writeArtifacts(evidence, qualification) { retained = clone(evidence); bundle = clone(qualification); return { jsonPath: "probe.json", markdownPath: "probe.md", qualificationPath: "probe-qualification.json" }; },
@@ -1983,7 +2231,7 @@ test("exact fresh approval runs the full matrix and emits independently verified
       calls += 1;
       const started_at = new Date(tick).toISOString(); tick += 10;
       const ended_at = new Date(tick).toISOString(); tick += 10;
-      return { call_state: "received", started_at, ended_at, envelope: { response: { candidate_ref: request_body.candidate_ref, verdict: clone(fixtures.valid_verdict) } }, usage: { prompt_tokens: 1, completion_tokens: 2, total_tokens: 3 } };
+      return { call_state: "received", started_at, ended_at, envelope: { response: { candidate_ref: request_body.candidate_ref, verdict: clone(fixtures.wire_valid_verdict) } }, usage: { prompt_tokens: 1, completion_tokens: 2, total_tokens: 3 } };
     },
     async retainInvalidEvidence() { throw new Error("unexpected invalid evidence in full live fixture"); },
     async writeArtifacts(evidence, qualification) { retained = clone(evidence); bundle = clone(qualification); return { jsonPath: "full.json", markdownPath: "full.md", qualificationPath: "full-qualification.json" }; },
@@ -2015,7 +2263,7 @@ test("post-call verification failure retains the evidence file before failing cl
     async invoke({ request_body }) {
       const started_at = new Date(tick).toISOString(); tick += 10;
       const ended_at = new Date(tick).toISOString(); tick += 10;
-      return { call_state: "received", started_at, ended_at, envelope: { response: { candidate_ref: request_body.candidate_ref, verdict: clone(fixtures.valid_verdict) } }, usage: null };
+      return { call_state: "received", started_at, ended_at, envelope: { response: { candidate_ref: request_body.candidate_ref, verdict: clone(fixtures.wire_valid_verdict) } }, usage: null };
     },
     evidenceDependencies: { executeFixtures: async () => ({ declared_ids: ["post-call-drift"], passing_ids: [], failures: ["post-call-drift: failed"] }) },
     async retainInvalidEvidence(evidence) {
@@ -2055,7 +2303,7 @@ test("post-call source, runtime, and request identities are freshly re-read befo
       calls += 1;
       const started_at = new Date(tick).toISOString(); tick += 10;
       const ended_at = new Date(tick).toISOString(); tick += 10;
-      return { call_state: "received", started_at, ended_at, envelope: { response: { candidate_ref: request_body.candidate_ref, verdict: clone(fixtures.valid_verdict) } }, usage: null };
+      return { call_state: "received", started_at, ended_at, envelope: { response: { candidate_ref: request_body.candidate_ref, verdict: clone(fixtures.wire_valid_verdict) } }, usage: null };
     },
     async retainInvalidEvidence(evidence) { retained = clone(evidence); return "post-call-identity-invalid.json"; },
   }), /retained evidence failed verification/);
@@ -2088,7 +2336,7 @@ test("qualification and publication failures after calls retain discoverable evi
         const started_at = new Date(tick).toISOString(); tick += 10;
         const ended_at = new Date(tick).toISOString(); tick += 10;
         if (calls === 1) return { call_state: "timeout", started_at, ended_at };
-        return { call_state: "received", started_at, ended_at, envelope: { response: { candidate_ref: request_body.candidate_ref, verdict: clone(fixtures.valid_verdict) } }, usage: null };
+        return { call_state: "received", started_at, ended_at, envelope: { response: { candidate_ref: request_body.candidate_ref, verdict: clone(fixtures.wire_valid_verdict) } }, usage: null };
       },
     };
     if (failureMode === "qualification") dependencies.buildQualificationBundle = async () => { throw new Error("qualification construction failed"); };

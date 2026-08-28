@@ -25,6 +25,41 @@ const same = (a, b) => JSON.stringify(a, Object.keys(a).sort()) === JSON.stringi
 const plain = (value) => value !== null && typeof value === "object" && !Array.isArray(value);
 const exact = (value, keys) => plain(value) && Object.keys(value).length === keys.length && keys.every((key) => Object.hasOwn(value, key));
 const zeroRate = (rate) => exact(rate, ["numerator", "denominator", "percent"]) && rate.numerator === 0 && rate.denominator === 0 && rate.percent === 0;
+
+// Owner-reviewed completed cycles (spec-1-4 Llama cycle change log, 2026-08-22):
+// after fully-published, independently verified NO-GO cycles, Justin granted successor
+// matrices (wire-schema flattening; then the adapter single-representation fix).
+// These exact sets are immutable history; they no longer block plan generation, but
+// any new artifact outside this list remains blocking. Verification below re-checks
+// marker bytes, bundle/evidence bindings, NO-GO outcome, and zero emitted refs.
+const OWNER_REVIEWED_PREFIXES = Object.freeze([
+  "2026-08-22-e848e2bd-ecd55b947f985a3e-9047f82c-9e53-4db1-8d8b-744f4b92b1e4",
+  "2026-08-22-e848e2bd-f5582e1bc9bfec5a-50e5102a-85d8-415a-9715-aa5e79666361",
+  "2026-08-22-e848e2bd-d072356c9de6a906-c43fb299-6891-4f10-aebe-e49cbf3f770c",
+  "2026-08-22-c0b94e4a-819dd1f7ed29e093-286bd0b2-4e62-4e1b-83c4-6b69653f2a31",
+  "2026-08-22-c0b94e4a-d2a2402b331a4487-ee3dbc1c-50dc-48f4-9017-7790a0b6d29a",
+  "2026-08-22-467ba931-9be44152aeb9a440-20d88746-a496-4b34-b0a5-8a694a4989d2",
+  "2026-08-23-a0ed5363-5808d7c90aa1d93f-fd8c9785-69d0-4548-b773-d679452dc6f9",
+  "2026-08-23-a0ed5363-c024fbc0a91b9098-4b10ebef-9df3-4043-a728-b508445aa67c",
+  "2026-08-23-a0ed5363-e7a552940fd217c6-c1cb098e-e33a-4341-b72e-87d02d2a185c",
+  "2026-08-23-a64f9601-bc745f5e28b4fd21-e2e70ad6-4b1f-4777-8f91-2d33c072ab70",
+]);
+// Sprint Change Proposal 2026-08-24 superseded this exact completed GO identity
+// after the independently retained Story 1.18 semantic NO-GO. Its refs remain
+// immutable history but cannot authorize Decision protocol v2.
+const OWNER_SUPERSEDED_GO_PREFIXES = Object.freeze([
+  "2026-08-23-a0ed5363-01e3976da21ab40e-620e2f14-8f42-47a2-8f83-854c41f017e6",
+  "2026-08-24-7c2c3860-cec14a30a3411043-3f980f8c-8e1d-45ba-bd87-ef961d1a808c",
+]);
+// When a successor cycle is granted, the owner-reviewed completed-spend receipt is
+// archived (bytes preserved, renamed aside) so the single-file receipt slot is reusable.
+export const OWNER_REVIEWED_SPENDS = Object.freeze([
+  Object.freeze({ attempt_id: "c43fb299-6891-4f10-aebe-e49cbf3f770c", approval_run_id: "e848e2bd-dc86-40e0-90da-45bee83fcc6d", calls_started: 42, archive: "2026-08-22-e848e2bd-c43fb299.spend-receipt.json" }),
+  Object.freeze({ attempt_id: "20d88746-a496-4b34-b0a5-8a694a4989d2", approval_run_id: "467ba931-4e31-450a-93ce-f05f62e4db73", calls_started: 42, archive: "2026-08-22-467ba931-20d88746.spend-receipt.json" }),
+  Object.freeze({ attempt_id: "620e2f14-8f42-47a2-8f83-854c41f017e6", approval_run_id: "a0ed5363-a126-4b2e-bd63-4bd4974b1c8b", calls_started: 42, archive: "2026-08-23-a0ed5363-620e2f14.spend-receipt.json" }),
+  Object.freeze({ attempt_id: "3f980f8c-8e1d-45ba-bd87-ef961d1a808c", approval_run_id: "7c2c3860-77da-4b9b-aad1-3313f9704c6b", calls_started: 42, archive: "2026-08-24-7c2c3860-3f980f8c.spend-receipt.json" }),
+]);
+export const OWNER_REVIEWED_RECEIPT_ARCHIVES = Object.freeze(OWNER_REVIEWED_SPENDS.map((spend) => spend.archive));
 async function classifyHistoricalArtifacts(resultsDir, entries) {
   const historical = new Set();
   const legacyModels = (evidence) => stableStringify(evidence?.run?.models) === stableStringify(LEGACY_MODEL_IDS);
@@ -47,7 +82,7 @@ async function classifyHistoricalArtifacts(resultsDir, entries) {
       const marker = JSON.parse(markerBytes.toString("utf8"));
       const expectedBase = markerName.slice(0, -".complete.json".length);
       const expected = [`${expectedBase}.json`, `${expectedBase}.md`, `${expectedBase.replace(/-v2$/, "")}-qualification.json`];
-      if (!exact(marker, ["schema_version", "basename", "files"]) || marker.schema_version !== "oddspark.judge-recovery-completion/v1"
+      if (!exact(marker, ["schema_version", "basename", "files"]) || !["oddspark.judge-recovery-completion/v1", "oddspark.judge-cycle-completion/v2"].includes(marker.schema_version)
         || marker.basename !== expectedBase || !Array.isArray(marker.files) || stableStringify(marker.files.map(({ name }) => name)) !== stableStringify(expected)) continue;
       const bytes = new Map();
       let valid = true;
@@ -59,9 +94,21 @@ async function classifyHistoricalArtifacts(resultsDir, entries) {
       if (!valid) continue;
       const evidence = JSON.parse(bytes.get(expected[0]).toString("utf8"));
       const bundle = JSON.parse(bytes.get(expected[2]).toString("utf8"));
-      if (!legacyModels(evidence) || bundle?.schema_version !== "oddspark.judge-qualification-bundle/v1"
-        || bundle?.evidence?.file !== expected[0] || bundle.evidence.sha256 !== hash(bytes.get(expected[0]))
-        || bundle.evidence.run_id !== evidence?.run?.id || bytes.get(expected[1]).toString("utf8") !== evidence?.report) continue;
+      const bindingOk = bundle?.evidence?.file === expected[0] && bundle.evidence.sha256 === hash(bytes.get(expected[0]))
+        && bundle.evidence.run_id === evidence?.run?.id && bytes.get(expected[1]).toString("utf8") === evidence?.report;
+      const legacyOk = legacyModels(evidence) && bundle?.schema_version === "oddspark.judge-qualification-bundle/v1";
+      const ownerReviewed = OWNER_REVIEWED_PREFIXES.some((prefix) => expectedBase.startsWith(prefix));
+      const reviewedOk = ownerReviewed && bundle?.schema_version === "oddspark.judge-qualification-bundle/v2"
+        && bundle?.outcome?.decision === "NO-GO"
+        && Array.isArray(bundle?.qualification_refs) && bundle.qualification_refs.length === 0
+        && (bundle?.role_qualification_ref ?? null) === null;
+      const ownerSupersededGo = OWNER_SUPERSEDED_GO_PREFIXES.some((prefix) => expectedBase.startsWith(prefix));
+      const supersededGoOk = ownerSupersededGo && bundle?.schema_version === "oddspark.judge-qualification-bundle/v2"
+        && bundle?.outcome?.decision === "GO"
+        && Array.isArray(bundle?.qualification_refs) && bundle.qualification_refs.length === MODEL_IDS.length
+        && bundle.qualification_refs.every((item, index) => item?.model === MODEL_IDS[index] && hex(item?.qualification_ref))
+        && hex(bundle?.role_qualification_ref);
+      if (!bindingOk || (!legacyOk && !reviewedOk && !supersededGoOk)) continue;
       [markerName, ...expected].forEach((entry) => historical.add(entry));
     } catch { /* incomplete historical-looking set remains blocking unless evidence identity classified it */ }
   }
@@ -175,6 +222,19 @@ export async function findPriorOperationalRecovery(resultsDir, options = {}) {
   let reservedReceipt = null;
   let receiptFallback = null;
   const historicalArtifacts = await classifyHistoricalArtifacts(resultsDir, entries);
+  for (const member of options.closedHistoricalMembers ?? []) historicalArtifacts.add(member);
+
+  // --- Archived owner-reviewed receipts (renamed aside when successor cycles were granted) ---
+  for (const spend of OWNER_REVIEWED_SPENDS) {
+    if (!entries.includes(spend.archive)) continue;
+    try {
+      const archived = JSON.parse(await readFile(path.join(resultsDir, spend.archive), "utf8"));
+      if (validSpendReceipt(archived, APPROVED_CALL_CAP) && archived.state === "completed-spent"
+        && archived.attempt_id === spend.attempt_id
+        && archived.approval_run_id === spend.approval_run_id
+        && archived.calls_started === spend.calls_started) historicalArtifacts.add(spend.archive);
+    } catch { /* unverifiable archive is simply not classified */ }
+  }
 
   // --- Spend receipt analysis ---
   if (entries.includes(RECOVERY_RECEIPT_FILE)) {
@@ -187,7 +247,14 @@ export async function findPriorOperationalRecovery(resultsDir, options = {}) {
     if (!validSpendReceipt(receipt, APPROVED_CALL_CAP)) {
       return { evidence_file: null, qualification_file: null, qualification_refs: [], malformed: true, receipt_file: RECOVERY_RECEIPT_FILE, blocking_reason: "spend receipt proves or cannot disprove provider invocation" };
     }
-    if (receipt.calls_started > 0 || receipt.state !== "reserved") {
+    const ownerReviewedSpend = receipt.state === "completed-spent"
+      && OWNER_REVIEWED_SPENDS.some((spend) => receipt.attempt_id === spend.attempt_id
+        && receipt.approval_run_id === spend.approval_run_id
+        && receipt.calls_started === spend.calls_started
+        && [...OWNER_REVIEWED_PREFIXES, ...OWNER_SUPERSEDED_GO_PREFIXES].some((prefix) => entries.some((entry) => entry.startsWith(prefix) && entry.endsWith("-v2.complete.json"))));
+    if (ownerReviewedSpend) {
+      historicalArtifacts.add(RECOVERY_RECEIPT_FILE);
+    } else if (receipt.calls_started > 0 || receipt.state !== "reserved") {
       spentReceipt = receipt;
       receiptFallback = { evidence_file: null, qualification_file: null, qualification_refs: [], malformed: false, receipt_file: RECOVERY_RECEIPT_FILE, blocking_reason: "spend receipt proves or cannot disprove provider invocation" };
     } else {

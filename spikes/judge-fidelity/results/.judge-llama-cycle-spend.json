@@ -1,0 +1,16 @@
+{
+  "schema_version": "oddspark.judge-cycle-spend/v2",
+  "attempt_id": "f543d3d5-80d4-44f6-b7bf-41083197fcc9",
+  "approval_run_id": "ba52ec91-fe85-4987-954d-71054a0acc3d",
+  "created_at": "2026-08-24T17:49:41.911Z",
+  "updated_at": "2026-08-24T17:56:52.040Z",
+  "state": "completed-spent",
+  "calls_started": 42,
+  "last_call": {
+    "sequence": 42,
+    "kind": "trial",
+    "model": "@cf/meta/llama-3.1-8b-instruct-fast",
+    "index": 20,
+    "marked_at": "2026-08-24T17:56:45.575Z"
+  }
+}

@@ -205,3 +205,114 @@ The assembled inactive-domain writer and its activation port read the
 `PIPELINE_*`/`ACTIVATION_MANIFEST` bindings from the Worker's environment;
 production wiring of those bindings is deferred to Stories 1.25/1.26, and
 offline fixtures for them create test authority only.
+
+## Inactive-writer deployment gate (Story 1.25)
+
+Story 1.25 wires the production pipeline env in code while the writer stays
+inactive: `src/pipeline/production-ports.mjs` constructs the `PIPELINE_*`
+content and provider ports from **bundled content** — the owner-governed
+priors, house catalog, and voice corpus are imported as modules
+(`content/local-priors/v1/`, `content/house-briefs/v1/`,
+`semantic/voice/v1/`), verified at construction by the real closed verifiers
+(`verifyLocalPriors`, house `verifyApproval`, `validateCorpus`), with any
+failure returning null and never a partial env. Nothing is var-bound, so
+`wrangler.toml` carries zero Story 1.25 delta and the 1.24 reader-config
+assertion keeps passing. The provider ports wrap `env.AI.run` through the
+closed generation/judge adapters (frozen prompt/parameters/wire schema,
+exactly one JSON value decoded from the frozen response location, no repair)
+against `env.AI_MODEL`; `AI_MODEL_FALLBACK` is a presence-only misconfig
+guard (fallback wiring is a Story 1.11 qualification product).
+`PIPELINE_JUDGE` stays absent — its qualification refs do not exist yet and
+are never fabricated. `ACTIVATION_MANIFEST` remains absent, so
+`createInactiveDomainWriter` returns null before any port validation and
+production strike/read behavior is byte-identical to the 1.24 artifact.
+
+Note: `content/local-priors/v1/approval.json` is still
+`pending_owner_approval`, so the bundled priors currently fail construction
+(`productionPipelineEnv` returns null). That is fail-closed by design and
+gates nothing while the manifest is absent; it must be revisited when exact
+owner approval of the priors catalog lands.
+
+`npm run writer:preflight` (`scripts/writer-preflight.mjs`) is the current
+release gate for the inactive-writer deploy (`reader:preflight` remains the
+1.24 lineage gate). It is fully offline, creates/mutates nothing, emits one
+pass/fail line per check (crash-safe: malformed input yields a FAIL line,
+never a stack trace), and exits non-zero on any failure:
+
+1. runtime-baseline verify;
+2. wrangler config dry runs (zero warnings = dry-run cleanliness);
+3. `assembly:verify`;
+4. entrypoint-bound import-closure identity — the deployed entrypoint and its
+   parsed transitive closure (now including `production-ports.mjs` and the
+   bundled content JSON) must hash byte-identical to the frozen assembly;
+5. bundled-content verification, one line per content family: content bytes
+   are pinned by **hash constants in the preflight script** (any drift
+   FAILs) and approvals are re-verified by the real closed verifiers — this
+   pinning is independent of the frozen assembly identity, which covers
+   module sources only; a family still `pending_owner_approval` is reported
+   as such, never silently treated as wireable;
+6. inactive-posture config assertion — no `ACTIVATION_MANIFEST` or
+   `PIPELINE_*`/`INACTIVE_DOMAIN_WRITER` vars/bindings, no `[env.*]`
+   sections, `main` pinned, legacy AI/KV/DO bindings intact (section-parsed,
+   key-order insensitive);
+7. offline assembly smoke — the pipeline env is constructed through the
+   module's offline content seam with a fully-approved content set and its
+   ports asserted present (proving wireability), then absent and malformed
+   manifests must each yield a null writer.
+
+It is deliberately **not** composed into `npm run check`: it is a release
+gate, run explicitly before a separately approved deployment. Deployment
+itself requires separate explicit approval; rollback redeploys the 1.24
+artifact with no data change.
+
+## Atomic local-only activation packet (Story 1.26)
+
+Activation preparation is offline and creates no authority. `npm run
+activation:prepare -- <input.json>` re-runs the retained Story 1.20 verifiers,
+closes the local-only manifest and production target, and emits canonical
+payload bytes plus hashes for an owner-external Ed25519 signing handoff. It
+does not call a provider, sign, deploy, change configuration, or mutate a
+remote resource. The signing request exposes the exact domain-separated bytes
+as base64url (plus their SHA-256), so an owner-controlled signer never has to
+reconstruct or infer the signed message. `npm run activation:verify --
+<input.json> <trust.json>` accepts only the exact prepared object, its hash,
+and the externally produced signature. The separate owner-selected trust file
+must contain exactly `expected_key_id` and `trusted_keys`; no public key in the
+signed candidate is accepted as trust authority. Verification checks the
+signature, validity, local-only shape, target, observation plan, and inactive
+rollback before emitting the final hash-bound packet.
+
+`scripts/activation-controller.mjs` has no production adapter by design. Its
+library entry point requires a separate expiring one-shot authority record
+that names the exact packet hash, target, and operation. It freezes the live
+whole binding, then permits exactly one deadline-bearing compare-and-set from
+that value to the approved replacement. Claim, mutation, and observation are
+each bounded. It rejects target/value drift, reuse, or substitution; a failed
+post-mutation observation is a distinct terminal outcome that explicitly says
+the mutation may already have occurred. Activation observation binds every
+field independently: installed snapshot hash, runtime identity, local
+enablement, effective-local domain posture, and a zero terminal-error window.
+Rollback is separately authorized and compare-and-sets only the exact frozen
+snapshot to the inactive value, then observes inactive posture. Code rollback
+is a different approval and deployment.
+
+Operator authority remains intentionally incomplete and must not be inferred:
+
+- production key id: `oddspark-production-activation-2026-02` (**owner-selected 2026-08-26; rotated from the superseded 2026-01 identity**);
+- production Ed25519 SPKI public key (base64url):
+  `MCowBQYDK2VwAyEAh4GQdgxMP65vNfGmtKRBfb2Z4ayMCnzNvuvtsihM5pY`
+  (**owner-selected 2026-08-26**; DER SHA-256
+  `8e2f2502d2ab783de6fb558663aa86ffd69c2d7f4a3fa98c2f2108358a047e6b`);
+- source-pinning code/config deployment approval: **granted by owner 2026-08-26**
+  for the superseded 2026-01 single-key trust map, with
+  `ACTIVATION_SNAPSHOT` absent; the 2026-02 rotation is source-pinned only and
+  remains undeployed;
+- external signing approval for exact payload bytes: **not granted**;
+- one-shot activation approval for an exact packet/target: **not granted**;
+- one-shot rollback approval: **not granted**.
+
+The source-pinned production trust map contains only the selected public key,
+but `ACTIVATION_SNAPSHOT` must remain absent until the remaining approvals are
+explicitly supplied. Activation and rollback execution remain blocked. No private key
+material belongs in this repository, command output, packet, or operator
+record.

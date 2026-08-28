@@ -8,16 +8,20 @@ export const PROVIDER = "cloudflare-workers-ai";
 export const LEGACY_ROLE_IDENTITIES = Object.freeze([
   Object.freeze({ role: "primary", resolved_model: "@cf/openai/gpt-oss-120b" }),
   Object.freeze({ role: "fallback", resolved_model: "@cf/openai/gpt-oss-20b" }),
-]);
-export const ROLE_IDENTITIES = Object.freeze([
   Object.freeze({ role: "primary", resolved_model: "@cf/meta/llama-3.3-70b-instruct-fp8-fast" }),
   Object.freeze({ role: "fallback", resolved_model: "@cf/meta/llama-3.1-8b-instruct-fast" }),
 ]);
+export const ROLE_IDENTITIES = Object.freeze([
+  Object.freeze({ role: "primary", resolved_model: "@cf/meta/llama-3.3-70b-instruct-fp8-fast" }),
+  Object.freeze({ role: "fallback", resolved_model: "@cf/openai/gpt-oss-20b" }),
+]);
 export const PARAMETERS = Object.freeze({ temperature: 0, max_tokens: 2048 });
-export const TIMEOUT_POLICY = Object.freeze({ adapter_timeout_ms: 120000, preflight_timeout_ms: 10000, probes_must_complete_before_trials: true, execution: "sequential", retries: 0, replacements: 0 });
+export const TIMEOUT_POLICY = Object.freeze({ adapter_timeout_ms: 120000, preflight_timeout_ms: 10000, probes_must_complete_before_trials: true, execution: "sequential", transient_retries: 1, retry_states: Object.freeze(["provider_error", "timeout"]), replacements: 0 });
+export const LEGACY_TIMEOUT_POLICY = Object.freeze({ adapter_timeout_ms: 120000, preflight_timeout_ms: 10000, probes_must_complete_before_trials: true, execution: "sequential", retries: 0, replacements: 0 });
 export const TRIALS_PER_ROLE = 20;
 export const PROBES_PER_ROLE = 1;
-export const CALL_CAP = 42;
+export const CALL_CAP = 63;
+export const LEGACY_CALL_CAP = 42;
 export const DIRECT_VALID_THRESHOLD = 19;
 export const MAX_RETAINED_OUTPUT_BYTES = 64 * 1024;
 export const TAXONOMY = Object.freeze(["direct_valid", "invalid_output", "output_too_large", "provider_error", "timeout"]);
@@ -26,9 +30,19 @@ export const STORY_1_3_ORACLE_HASH = PREDICATE_ORACLE_HASH;
 export const STORY_1_3_PREDICATES = Object.freeze(PREDICATE_ORACLE.map(({ id }) => id));
 export const GENERATION_PREDICATES = Object.freeze([
   ...STORY_1_3_PREDICATES,
-  "roles.independent", "output.direct_candidate", "schedule.zero_retry", "cost.recomputed", "manifest.independent",
+  "roles.independent", "output.direct_candidate", "schedule.transient_retry_only", "cost.recomputed", "manifest.independent",
 ]);
-export const PROMPT = `Return exactly one JSON Candidate object matching the supplied JSON Schema. Do not wrap it, explain it, fence it, repair it, or include a candidate_ref. Preserve the supplied Evidence faithfully and produce only a closed Story 1.7 Candidate.`;
+export const LEGACY_GENERATION_PREDICATES = Object.freeze(GENERATION_PREDICATES.map((id) => (id === "schedule.transient_retry_only" ? "schedule.zero_retry" : id)));
+export const PROMPT = `You are a product strategist for small local businesses. The user message contains generation inputs (an evidence object — region, season, situation, capability_bundle — and a random seed). Your task: INVENT one new, practical improvement the business could make using software or workflow automation, and return it as exactly one JSON Candidate object matching the supplied JSON Schema.
+
+Rules:
+- The user message is input only. NEVER copy, echo, or reshape it into the output. The output is a new object describing your invented idea.
+- Use these exact nested object shapes: why_fits is an object {"text": "..."} (never a dotted key, never a breadcrumb field); before_after is {"before": "...", "after": "..."}; change_level is {"time_range": "...", "steps_changed": 0, "steps_removed": 0, "preliminary": true} with non-negative integer step counts; stays_same is {"tools": [...], "authority": [...], "steps": [...]}.
+- version is exactly 1; mode is exactly "local"; title, plan, what_gets_better, invitation are nonblank strings.
+- grounded_numbers MUST be an empty array [] in local mode. Write every narrative field qualitatively: no digits or numeric tokens anywhere outside change_level's integer fields (use words like "one afternoon" instead).
+- Never mention prices or costs: no currency symbols and none of the words price, pricing, cost, fee, subscription, per month, per year.
+- invitation must contain the word "Spark" and be a confident, bounded next step addressed to the owner — a statement, not a question. Never hedge ("if it is worth", "if it sounds useful", "not worth changing", "call it off") and never use pitch language ("act now", "book now", "limited time", "schedule a call", "don't miss", "last chance").
+- Do not include a candidate_ref. Do not wrap, fence, explain, or add any text outside the JSON object.`;
 
 export const CANDIDATE_RESPONSE_FORMAT = Object.freeze({
   type: "json_schema",

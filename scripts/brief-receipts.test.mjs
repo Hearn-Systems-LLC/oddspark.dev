@@ -4,6 +4,7 @@ import { CANDIDATE_SCHEMA_VERSION, deriveCandidateRef } from "./brief-contracts.
 import {
   canonicalScopeKey, classifyCompatibleArtifact, defensiveFreeze, parseReceipt, parseRequestScope, validateCommitPayload,
 } from "./brief-receipts.mjs";
+import { LOCAL_RETENTION_MS } from "../src/pipeline/retention.mjs";
 
 const brief = () => ({
   version: 1, mode: "local", title: "A calmer inquiry handoff", plan: "Route repeated questions into one reviewed response.",
@@ -83,6 +84,7 @@ test("v1 CommittedBrief classification and receipt parsing are lossless, frozen,
     const receipt = parseReceipt({ status: "committed", scope, artifact, artifact_kind: "committed_brief", committed_at: 123 }, scope);
     assert.deepEqual(receipt.artifact, artifact);
     assert.ok(Object.isFrozen(receipt) && Object.isFrozen(receipt.artifact.provenance));
+    if (mode === "local") assert.equal(receipt.expires_at, 123 + LOCAL_RETENTION_MS);
     assert.equal(parseReceipt({ status: "committed", scope, artifact, artifact_kind: "committed_brief", committed_at: 123 }, wrongScope), null);
   }
 });
@@ -121,4 +123,16 @@ test("malformed legacy fields and receipts fail closed", () => {
     assert.equal(parseReceipt({ status: "committed", scope, artifact, artifact_kind: "legacy_local", committed_at }, scope), null);
   }
   assert.equal(parseReceipt({ status: "committed", scope, artifact, artifact_kind: "legacy_local", committed_at: 1, extra: true }, scope), null);
+});
+
+test("local receipt expiry is exact and legacy migration derives only from committed time", () => {
+  const scope = { kind: "local", round: 1200 }; const artifact = legacy();
+  const base = { status: "committed", scope, artifact, artifact_kind: "legacy_local", committed_at: 1000 };
+  const expected = 1000 + LOCAL_RETENTION_MS;
+  assert.equal(parseReceipt(base, scope)?.expires_at, expected);
+  assert.equal(parseReceipt({ ...base, expires_at: expected }, scope)?.expires_at, expected);
+  for (const expires_at of [expected - 1, expected + 1, -1, 1.5, Number.MAX_SAFE_INTEGER + 1]) {
+    assert.equal(parseReceipt({ ...base, expires_at }, scope), null);
+  }
+  assert.equal(parseReceipt({ ...base, committed_at: Number.MAX_SAFE_INTEGER }, scope), null);
 });

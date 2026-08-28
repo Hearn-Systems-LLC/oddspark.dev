@@ -1,0 +1,56 @@
+{
+  "schema_version": "oddspark.judge-historical-spend-closure/v1",
+  "closure_ref": "e827240fbc244ac2f526d32eef3cc01e785ddda40a79fe5d2d9f0b251f22d066",
+  "state": "terminal-closed",
+  "invocation": {
+    "attempt_id": "f543d3d5-80d4-44f6-b7bf-41083197fcc9",
+    "approval_run_id": "ba52ec91-fe85-4987-954d-71054a0acc3d",
+    "calls_started": 42,
+    "runner_invocations": 1,
+    "retries": 0,
+    "replacements": 0
+  },
+  "accounting": {
+    "cumulative_historical_calls": 42,
+    "exact_observed_priced_usd": 0.032631059999999996,
+    "unpriced_models": [
+      "@cf/meta/llama-3.1-8b-instruct-fast"
+    ],
+    "conservative_historical_cap_usd": 0.3054702,
+    "conservative_historical_cap_neurons": 27770.018181818185,
+    "reset_permitted": false
+  },
+  "identities": {
+    "source_identity_sha256": "76ff7f8a39d4552239b34c180fe9db0fcfc53b26f8d2e548795600c94b9ccec1",
+    "runtime_identity_sha256": "a3d5ae76d31669bc1f008f7ef3d0fdde14d4a5b1fcb0fc63e70d290cdae32feb",
+    "plan_ref": "f60cd95a2f5c52b832665bb21d9631612cd5c1eed14e2613909b9b37d75ede1f",
+    "evidence_sha256": "051d5c7072d99a31de583b854cff6f1d3639b4ab113d472727d38d50c46abf75"
+  },
+  "members": [
+    {
+      "name": ".judge-llama-cycle-spend.json",
+      "bytes": 490,
+      "sha256": "1047984cea40d0432df2e2e2d3fd98f8ddda7788e24ea88889f5bc5f4993312e"
+    },
+    {
+      "name": "2026-08-24-ba52ec91-051d5c7072d99a31-f543d3d5-80d4-44f6-b7bf-41083197fcc9-v2.json",
+      "bytes": 242317,
+      "sha256": "051d5c7072d99a31de583b854cff6f1d3639b4ab113d472727d38d50c46abf75"
+    },
+    {
+      "name": "2026-08-24-ba52ec91-051d5c7072d99a31-f543d3d5-80d4-44f6-b7bf-41083197fcc9-v2.md",
+      "bytes": 3387,
+      "sha256": "6e473cedd57f67078e95e3923edb6880e0aa5e231acf3a52eeffa6bb9e2ab259"
+    },
+    {
+      "name": "2026-08-24-ba52ec91-051d5c7072d99a31-f543d3d5-80d4-44f6-b7bf-41083197fcc9-qualification.json",
+      "bytes": 84028,
+      "sha256": "5456d91ae2154e7edf0dc1b48576cbdc59433dd106351478fdd9ff3243b1549b"
+    },
+    {
+      "name": "2026-08-24-ba52ec91-051d5c7072d99a31-f543d3d5-80d4-44f6-b7bf-41083197fcc9-v2.complete.json",
+      "bytes": 832,
+      "sha256": "80b6bddf3dc844494c8f19f93c293379c198ce032331a95ff77369eeb58e7d31"
+    }
+  ]
+}

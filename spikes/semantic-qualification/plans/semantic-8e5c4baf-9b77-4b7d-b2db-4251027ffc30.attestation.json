@@ -1,0 +1,14 @@
+{
+  "schema_version": "oddspark.semantic-qualification-loss-attestation/v1",
+  "run_id": "semantic-8e5c4baf-9b77-4b7d-b2db-4251027ffc30",
+  "plan_ref": "863a1acd48a72df7955a2cf94193c55c86413f149acea36296e2f592edbf80ef",
+  "request_set_sha256": "6bc8377184c464861cf9e39d2ca97810f5a9ddf0830f257db51920e4f3b9934c",
+  "attested_at": "2026-08-24T05:36:27.222Z",
+  "attested_by": "Justin",
+  "observed_authorized_http_200_completions": 38,
+  "terminal_code": "semantic_not_qualified",
+  "raw_responses_available": false,
+  "evidence_gap": "raw responses unavailable because terminal publication preceded retention",
+  "semantic_ref": null,
+  "retry_authorized": false
+}

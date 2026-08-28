@@ -1,0 +1,7 @@
+{
+  "schema_version": "oddspark.semantic-qualification-spend/v1",
+  "run_id": "semantic-8e5c4baf-9b77-4b7d-b2db-4251027ffc30",
+  "plan_ref": "863a1acd48a72df7955a2cf94193c55c86413f149acea36296e2f592edbf80ef",
+  "state": "reserved",
+  "calls_started": 0
+}

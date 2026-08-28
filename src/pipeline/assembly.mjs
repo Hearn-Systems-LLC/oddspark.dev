@@ -34,15 +34,17 @@ import { generateCandidate } from "./generation.mjs";
 import { runCompositeGate } from "./gate.mjs";
 import { validateCorpus } from "./corpus.mjs";
 import { STRIKE_CODES, runStrikeOrchestrator } from "./strike.mjs";
-import { evaluateProductionActivation } from "./activation.mjs";
+import { ACTIVATION_TRUST_KEYS_TEST_PORT, evaluateActivationSnapshot, SNAPSHOT_REASON_CODES } from "./release-decision.mjs";
 
 const WRITER_ERROR = "inactive domain writer unavailable";
-const STRIKE_DEADLINE_BUDGET_MS = 15000;
+export const DEFAULT_STRIKE_DEADLINE_BUDGET_MS = 15000;
+export const MAX_STRIKE_DEADLINE_BUDGET_MS = 120000;
 const MINIMUM_CALL_TIME_MS = 1000;
 // One full coordinator lease horizon plus takeover margin: a competitor's live
 // lease is waited out against its real lease_until (with jitter), never
 // truncated by a fixed short cap.
 const CLAIM_WAIT_BUDGET_MS = 30000;
+const PROVIDER_RESERVE_MS = 250;
 
 const DISPATCH_KEYS = [
   "contract", "request_scope", "effective_mode", "claim_key", "notice_identity",
@@ -74,14 +76,38 @@ function randomOwner() {
   return `writer-${[...bytes].map((byte) => byte.toString(16).padStart(2, "0")).join("")}`;
 }
 
+function activationIdentitiesMatch(manifest, identities) {
+  const keys = ["deployed_source_identity", "generation_ref", "judge_ref", "house_catalog_ref", "local_full_request_ref", "domain_evidence_ref", "domain_full_request_ref", "receiver_ref", "receipt_claim_ref"];
+  if (identities === null || typeof identities !== "object" || Array.isArray(identities)
+      || Object.getPrototypeOf(identities) !== Object.prototype || Reflect.ownKeys(identities).length !== keys.length
+      || !keys.every((key) => Object.hasOwn(identities, key))) return false;
+  return manifest.deployed_source_identity === identities.deployed_source_identity
+    && manifest.generation_ref === identities.generation_ref
+    && manifest.judge_ref === identities.judge_ref
+    && manifest.house_catalog_ref === identities.house_catalog_ref
+    && manifest.local.full_request_ref === identities.local_full_request_ref
+    && manifest.domain.evidence_ref === identities.domain_evidence_ref
+    && manifest.domain.full_request_ref === identities.domain_full_request_ref
+    && manifest.receiver_ref === identities.receiver_ref
+    && manifest.receipt_claim_ref === identities.receipt_claim_ref;
+}
+
 // Assemble the inactive-domain writer port from the environment. Returns null
 // only when activation is absent or invalid (port-absent posture); a valid
 // manifest that is out of phase for this writer (not local-enabled/
 // domain-disabled) or that meets a missing/unverified pipeline port yields a
 // fail-closed port instead — never a silent legacy fallthrough.
-export function createInactiveDomainWriter(env, deps) {
-  const activation = evaluateProductionActivation(env?.ACTIVATION_MANIFEST);
-  if (!activation.enabled) return null;
+async function evaluateRuntimeActivation(env, injectedTrustedKeys) {
+  if (env !== null && typeof env === "object" && Object.hasOwn(env, "ACTIVATION_MANIFEST")) {
+    return deepFreeze({ ready: false, reason: SNAPSHOT_REASON_CODES.NOT_CLOSED, manifest: null });
+  }
+  const trustedKeys = injectedTrustedKeys ?? env?.[ACTIVATION_TRUST_KEYS_TEST_PORT];
+  return evaluateActivationSnapshot(env?.ACTIVATION_SNAPSHOT, trustedKeys === undefined ? undefined : { trustedKeys });
+}
+
+export async function createInactiveDomainWriter(env, deps) {
+  const activation = await evaluateRuntimeActivation(env, deps?.activationTrustedKeys);
+  if (!activation.ready) return null;
 
   const failClosed = deepFreeze({
     write: async () => { throw new Error(WRITER_ERROR); },
@@ -89,12 +115,23 @@ export function createInactiveDomainWriter(env, deps) {
 
   const manifest = activation.manifest;
   if (manifest.local.enabled !== true || manifest.domain.enabled !== false) return failClosed;
+  if (!activationIdentitiesMatch(manifest, env?.PIPELINE_ACTIVATION_IDENTITIES)) return failClosed;
+  const activationIdentities = deepFreeze(structuredClone(env.PIPELINE_ACTIVATION_IDENTITIES));
 
   const coordPost = deps?.coordPost;
-  const priorsInput = env.PIPELINE_PRIORS;
-  const house = env.PIPELINE_HOUSE;
-  const corpus = env.PIPELINE_CORPUS;
-  const judge = env.PIPELINE_JUDGE;
+  const strikeObserver = deps?.onStrikeResult;
+  if (strikeObserver !== undefined && typeof strikeObserver !== "function") return failClosed;
+  const configuredStrikeBudget = env?.PIPELINE_STRIKE_DEADLINE_BUDGET_MS;
+  const strikeDeadlineBudgetMs = configuredStrikeBudget === undefined ? DEFAULT_STRIKE_DEADLINE_BUDGET_MS : configuredStrikeBudget;
+  if (!Number.isSafeInteger(strikeDeadlineBudgetMs) || strikeDeadlineBudgetMs <= 0
+      || strikeDeadlineBudgetMs > MAX_STRIKE_DEADLINE_BUDGET_MS) return failClosed;
+  let priorsInput; let house; let corpus; let judge;
+  try {
+    priorsInput = deepFreeze(structuredClone(env.PIPELINE_PRIORS));
+    house = deepFreeze(structuredClone(env.PIPELINE_HOUSE));
+    corpus = deepFreeze(structuredClone(env.PIPELINE_CORPUS));
+    judge = deepFreeze(structuredClone(env.PIPELINE_JUDGE));
+  } catch { return failClosed; }
   const generateProvider = env.PIPELINE_GENERATE_PROVIDER;
   const judgeProvider = env.PIPELINE_JUDGE_PROVIDER;
   if (typeof coordPost !== "function" || !priorsInput || !house || !corpus || !judge
@@ -159,8 +196,8 @@ export function createInactiveDomainWriter(env, deps) {
     }
   }
 
-  async function commit(scope, owner, artifact) {
-    const result = await coordPost("/commit", { scope, owner, artifact });
+  async function commit(scope, owner, artifact, terminalDeadlineMs) {
+    const result = await coordPost("/terminal-commit", { scope, owner, artifact, terminal_deadline_ms: terminalDeadlineMs });
     if (result?.status === "committed") {
       const receipt = parseReceipt(result, scope);
       if (!receipt) throw new Error(WRITER_ERROR);
@@ -196,27 +233,38 @@ export function createInactiveDomainWriter(env, deps) {
     return { situation_id: situation.id, capability_bundle_id };
   }
 
-  async function write(dispatchValue) {
+  async function write(dispatchValue, terminal = {}) {
+    const signal = terminal?.signal;
+    const terminalDeadlineMs = terminal?.deadline_ms;
+    const assertLive = () => {
+      if (signal?.aborted) throw new Error(WRITER_ERROR);
+    };
+    if (signal !== undefined && !(signal instanceof AbortSignal)) throw new Error(WRITER_ERROR);
+    if (!Number.isSafeInteger(terminalDeadlineMs) || terminalDeadlineMs <= Date.now()) throw new Error(WRITER_ERROR);
+    assertLive();
     const scope = validateDispatch(dispatchValue);
     const dispatch = dispatchValue;
 
     // Defense in depth: the writer re-evaluates the activation port on every
     // dispatch and fails closed; a lapsed manifest can never fall through to
     // any generator.
-    const current = evaluateProductionActivation(env.ACTIVATION_MANIFEST);
-    if (!current.enabled || current.manifest.local.enabled !== true || current.manifest.domain.enabled !== false) {
+    const current = await evaluateRuntimeActivation(env, deps?.activationTrustedKeys);
+    if (!current.ready || current.manifest.local.enabled !== true || current.manifest.domain.enabled !== false) {
       throw new Error(WRITER_ERROR);
     }
+    if (!activationIdentitiesMatch(current.manifest, activationIdentities)) throw new Error(WRITER_ERROR);
 
     // Resubmission reads the authority: a committed receipt ends the request
     // with no generation and no replacement.
     const existing = await readAuthority(scope);
+    assertLive();
     if (existing) return { status: "committed", scope, artifact: existing.artifact };
 
     const owner = randomOwner();
     let claimHeld = false;
     try {
       const claimOutcome = await claim(scope, owner);
+      assertLive();
       if (claimOutcome.committed) return { status: "committed", scope, artifact: claimOutcome.committed.artifact };
       claimHeld = true;
 
@@ -233,9 +281,29 @@ export function createInactiveDomainWriter(env, deps) {
       });
       const seasonId = resolveSeason(deriveDetroitDate(strikeTimestamp), priors).id;
       const seed = sha256Hex(`oddspark-inactive-domain-writer/v1\n${dispatch.claim_key}`);
+      const boundedProvider = (provider) => async (request) => {
+        assertLive();
+        const remaining = startedMs + strikeDeadlineBudgetMs - clock() - PROVIDER_RESERVE_MS;
+        if (!Number.isFinite(remaining) || remaining <= 0) throw new Error(WRITER_ERROR);
+        let timeout; let abortHandler;
+        const aborted = signal ? new Promise((_, reject) => {
+          abortHandler = () => reject(new Error(WRITER_ERROR));
+          signal.addEventListener("abort", abortHandler, { once: true });
+        }) : new Promise(() => {});
+        try {
+          return await Promise.race([
+            Promise.resolve(provider(request, { signal, deadline_ms: startedMs + strikeDeadlineBudgetMs })),
+            new Promise((_, reject) => { timeout = setTimeout(() => reject(new Error(WRITER_ERROR)), remaining); }),
+            aborted,
+          ]);
+        } finally {
+          clearTimeout(timeout);
+          if (abortHandler) signal.removeEventListener("abort", abortHandler);
+        }
+      };
       const roleDependencies = () => ({
-        generation: { provider: generateProvider },
-        gate: { judge_provider: judgeProvider, judge, rubric: corpus },
+        generation: { provider: boundedProvider(generateProvider) },
+        gate: { judge_provider: boundedProvider(judgeProvider), judge, rubric: corpus },
       });
       const strike = await runStrikeOrchestrator({
         evidence: assembled.evidence,
@@ -244,7 +312,7 @@ export function createInactiveDomainWriter(env, deps) {
         seed,
         season_id: seasonId,
         selection_key: dispatch.claim_key,
-        deadline_ms: startedMs + STRIKE_DEADLINE_BUDGET_MS,
+        deadline_ms: startedMs + strikeDeadlineBudgetMs,
         minimum_call_time_ms: MINIMUM_CALL_TIME_MS,
       }, {
         // Adjudication ordering: the fixed pre-activation notice is bound into
@@ -263,6 +331,11 @@ export function createInactiveDomainWriter(env, deps) {
         coordinator: () => coordinatorStatus(scope),
         now: clock,
       });
+      if (strikeObserver) {
+        try {
+          strikeObserver(deepFreeze({ code: strike.code, model_calls: strike.model_calls, ledger: structuredClone(strike.ledger) }));
+        } catch { /* qualification observability can never change writer behavior */ }
+      }
       if (strike.code !== STRIKE_CODES.ACCEPTED && strike.code !== STRIKE_CODES.HOUSE_ACCEPTED) {
         throw new Error(WRITER_ERROR);
       }
@@ -310,7 +383,11 @@ export function createInactiveDomainWriter(env, deps) {
         },
       });
 
-      const receipt = await commit(scope, owner, committed);
+      assertLive();
+      const receipt = await commit(scope, owner, committed, terminalDeadlineMs);
+      // A deadline that races an in-flight commit is terminally reconciled:
+      // the response may not serve the committed value after cancellation.
+      assertLive();
       claimHeld = false;
       // Concurrent cold requests converge on one authoritative receipt: every
       // success resolves the artifact the coordinator committed first.
@@ -336,7 +413,7 @@ export function createInactiveDomainWriter(env, deps) {
 }
 
 // Redacted activation posture for observability: the stable reason code only.
-export function activationPosture(env) {
-  const evaluation = evaluateProductionActivation(env?.ACTIVATION_MANIFEST);
-  return deepFreeze({ enabled: evaluation.enabled, reason: evaluation.reason });
+export async function activationPosture(env) {
+  const evaluation = await evaluateRuntimeActivation(env);
+  return deepFreeze({ enabled: evaluation.ready, reason: evaluation.reason });
 }

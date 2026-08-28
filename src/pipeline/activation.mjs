@@ -1,11 +1,13 @@
-// Minimal closed ProductionActivationManifest validator (AD-11), scoped to
-// what Story 1.23 assembles: shape, nullability, and ref derivation. A missing
-// or invalid manifest disables model roles and the assembled writer; callers
-// observe only the stable redacted reason code — never manifest internals.
+// Minimal closed ProductionActivationManifest validator (AD-11 as amended by
+// the approved 2026-08-24 Direct-Path Activation Authority override), scoped
+// to what Story 1.23 assembles: shape, nullability, and ref derivation. A
+// missing or invalid manifest disables model roles and the assembled writer;
+// callers observe only the stable redacted reason code — never manifest
+// internals.
 
 import { canonicalJson, deepFreeze, sha256Hex } from "./contracts.mjs";
 
-export const PRODUCTION_ACTIVATION_VERSION = 1;
+export const PRODUCTION_ACTIVATION_VERSION = 2;
 
 export const ACTIVATION_REASON_CODES = deepFreeze({
   MISSING: "activation_manifest_missing",
@@ -32,7 +34,7 @@ function closed(value, keys) {
 
 export function validateProductionActivationManifest(value) {
   const keys = [
-    "version", "deployed_source_identity", "generation_ref", "judge_ref", "semantic_ref",
+    "version", "deployed_source_identity", "generation_ref", "judge_ref",
     "local", "domain", "house_catalog_ref", "receiver_ref", "receipt_claim_ref", "outcome",
   ];
   if (!closed(value, keys)) return { valid: false, reason: ACTIVATION_REASON_CODES.NOT_CLOSED };
@@ -48,7 +50,7 @@ export function validateProductionActivationManifest(value) {
     return { valid: false, reason: ACTIVATION_REASON_CODES.NOT_CLOSED };
   }
   if (!SHA256.test(value.generation_ref ?? "") || !SHA256.test(value.judge_ref ?? "")
-      || !SHA256.test(value.semantic_ref ?? "") || !SHA256.test(value.house_catalog_ref ?? "")) {
+      || !SHA256.test(value.house_catalog_ref ?? "")) {
     return { valid: false, reason: ACTIVATION_REASON_CODES.REF_MALFORMED };
   }
   if (!refOrNull(value.receiver_ref) || !refOrNull(value.receipt_claim_ref)) {
@@ -73,7 +75,7 @@ export function validateProductionActivationManifest(value) {
 export function deriveActivationRef(manifest) {
   const validation = validateProductionActivationManifest(manifest);
   if (!validation.valid) throw new TypeError(`cannot derive an activation ref: ${validation.reason}`);
-  return sha256Hex(`oddspark-production-activation/v1\n${canonicalJson(manifest)}`);
+  return sha256Hex(`oddspark-production-activation/v2\n${canonicalJson(manifest)}`);
 }
 
 // The activation port. `enabled` is the only authority the writer consumes;

@@ -10,14 +10,25 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          # The retained ba52ec91 STRUCT-JUDGE evidence binds the exact
+          # executing Node identity. Keep CI on that recorded runtime so the
+          # independent verifier checks the evidence rather than failing on
+          # runner drift before it reaches the qualified predicates.
+          node-version: 24.18.0
           cache: npm
-      # `npm run check` = test.mjs + baseline tests + generated-type check +
-      # wrangler config validation (dry run only) + runtime baseline verify.
-      # Every step is non-mutating and needs no Cloudflare credentials.
+      # `.github/check-ci.mjs` runs every `npm run check` component plus the
+      # extra governed suites. Current-source checks and historical
+      # STRUCT-JUDGE authority are separate gates. Every step is non-mutating
+      # and needs no Cloudflare credentials.
       - run: npm ci
-      - run: npm run check
+      - run: node .github/check-ci.mjs
         env:
           WRANGLER_SEND_METRICS: "false"
+      - name: STRUCT-JUDGE identity (ba52ec91)
+        run: |
+          node --test .github/verify-struct-judge-history.test.mjs
+          node .github/verify-struct-judge-history.mjs

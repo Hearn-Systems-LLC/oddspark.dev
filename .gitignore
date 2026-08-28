@@ -10,7 +10,8 @@ screenshot-*.png
 
 # Agent CLI state, generated skills, hooks, and machine-local BMAD Loop policy
 .agent/
-.agents/
+.agents/*
+!.agents/skills/
 .claude/
 .codex/
 .bmad-loop/

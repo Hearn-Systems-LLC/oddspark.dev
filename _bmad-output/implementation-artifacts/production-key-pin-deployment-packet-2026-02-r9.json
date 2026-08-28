@@ -1,0 +1,628 @@
+{
+  "packet_contract": "oddspark-production-public-key-pin-deployment-packet/v1",
+  "status": "unapproved",
+  "successor_of": {
+    "consumed_packet": "_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r8.json",
+    "consumed_packet_sha256": "00093a70bb1b0c2a5a3c60617d02f80641a6d8986c2d741b6b92e137a8eedc51",
+    "reason": "r8 passed independent review and the owner approved the exact r8 packet SHA-256 00093a70bb1b0c2a5a3c60617d02f80641a6d8986c2d741b6b92e137a8eedc51, but no retained r8 command or live operation was launched; that r8 approval remains unconsumed and non-transferable and does not authorize r9. r9 corrects r8's stale r7 authority templates and stop conditions plus its stale 22-path claim while preserving the reviewed 21-command order, parser depth, r6 operational parity, caps, and forbidden boundaries.",
+    "inherited_artifact_sha256": {
+      "_bmad-output/implementation-artifacts/handoff-production-key-pin-deployment-packet-2026-02-review.md": "f4803deb7541a180ec343ed668477238871c701185e0cee14576cb9c27581009",
+      "_bmad-output/implementation-artifacts/handoff-production-key-pin-deployment-packet-2026-02.md": "74e2e3f16943e0766dd54262228d5b16ecfffac4c51908529736b8b370fb7814",
+      "_bmad-output/implementation-artifacts/production-key-pin-deployment-execution-2026-02-evidence.md": "8e54b4528db861d6e8f86f49192560f4ec725bcddfa083b10e81f5d57b8e5265",
+      "_bmad-output/implementation-artifacts/production-key-pin-deployment-execution-2026-02-handoff.md": "c12ad994ffd52dfba4d5ece543525a602fe70515ecf58a3c4f09d22294d3ba62",
+      "_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r2-handoff.md": "4c6df360a63f9e76935c811afe33935c6fb2d1f5d3c204cc6a1173a1ee5fd27f",
+      "_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r2-review.md": "6b9f8b237150ac0b7ec4e73eab0d463adb0314c07d0ac64362e85fd8d0c87370",
+      "_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r2.json": "d26d8d40dc220c260ed7d1618d1d0a83b4524f72cca7317710cf170395528282",
+      "_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r3-handoff.md": "c30795a71664cb99599a8d5c3079859cb1c0bcd033982d6bab4c8f8d2cab76c4",
+      "_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r3-review.md": "0b7fc155214307ff28d838f343d44dba5579983bf868c297c8e41962686f1760",
+      "_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r3.json": "536d84583232e8ca926843d5450c155113bf054dab6c470daabf9d366f691e08",
+      "_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r4-handoff.md": "e3855863e6c53e323bad346a9427674a2ebb6f4fa8cbd6b4e788b6e18e3c177f",
+      "_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r4-review.md": "f2a6ab66b65a5c29108859029861c732d490992bdd441b5a967c4fc583805030",
+      "_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r4.json": "4a45319b5ad07b756b55187e9f34c7f5b75ac03f9c867cd20990d3505232933d",
+      "_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r5-handoff.md": "b39cef87ae254f83560eabaee4e872503dec5b76b0ae11cd2eb9d90909a3ea38",
+      "_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r5-review.md": "17578f04251f7fe37f5cc5d5538bd515f9daa13c1f488f93f88ff2f3fab6d653",
+      "_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r5.json": "3bdbe828fa5330a5358bd54a2a9565e96d20d75b22cfd3060034eb4dd2a8666f",
+      "_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02.json": "2215f584154fc592dae2c3d9d7ec243c34f3f226676c7c9d64256b827cad1f70",
+      "_bmad-output/implementation-artifacts/production-key-pin-deployment-r3-execution-2026-02-evidence.md": "2c21f5e7becc2462569d11239a2e62855a47e0b88c74923c5dfb0a87dad7f07c",
+      "_bmad-output/implementation-artifacts/production-key-pin-deployment-r3-execution-2026-02-handoff.md": "8b3e26ef4aeba21279abd56692fcaa4091570b67c9e9112ec83f16c481465188",
+      "_bmad/memory/agent-project-governor/harness-sessions/production-key-pin-deployment-r5-execution-attempt2-evidence.md": "20739ecc3c3f34885bcfd19d39df95cc1df49d7ed6c9a96da7123aec44059a96",
+      "_bmad/memory/agent-project-governor/harness-sessions/production-key-pin-deployment-r5-execution-attempt2-handoff.md": "714522f96faefba8a57ce8396f3783c5e8eb00f6e515d8d576d36a6018930dae",
+      "_bmad/memory/agent-project-governor/harness-sessions/production-key-pin-deployment-r5-execution-evidence.md": "80ff4e28baa19c6f68399692051f3c4de2c348235827eb54bef80f0b707cf75e",
+      "_bmad/memory/agent-project-governor/harness-sessions/production-key-pin-deployment-r5-execution-handoff.md": "90e39896fafa666c05b0eb67c6c3def92e5c8bbd2f4964c66e78185aa6e16660",
+      "_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r6.json": "91abb9ad5783e9fe7051b1ea8d39a197387140eb6dfa8e3835f4a4da9af7ab34",
+      "_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r6-handoff.md": "75eba4fad25ed60e419c2f5be0d3bdc284698966764eed9c28172e8f31cd2bf4",
+      "_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r6-review.md": "fd28fab0b52ff3cbdf194fbb9dbe8db01425d412f101e34aa221be13a583a5db",
+      "_bmad/memory/agent-project-governor/harness-sessions/production-key-pin-deployment-r6-approval.txt": "35a7c04db7cbc916d1210edbcc60b9ff190600efb771a88c648c10dba47b85f5",
+      "_bmad/memory/agent-project-governor/harness-sessions/production-key-pin-deployment-r6-execution-evidence.md": "37303157da8fae29abb9546daf29658c31c51a51b48090e3b107e41ac2c94141",
+      "_bmad/memory/agent-project-governor/harness-sessions/production-key-pin-deployment-r6-execution-handoff.md": "df750d27cc216c1239754478f5e55f9b0badf2766c9c8c669f5bbb20ef9c21d3",
+      "_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r7.json": "b5186ff64c87057ee896339bacd06cd7704aef0889283ece4a53c9b02b26023d",
+      "_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r7-handoff.md": "ac5b3d056e5e9d89ab06ea956d49eb12da546dc2c14c88f998f53131304a5472",
+      "_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r7-review.md": "cfb200c90d7cc0774b3b54b84a429b4ece939bb60b6333a98aaa86df7cbd14b1",
+      "_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r8.json": "00093a70bb1b0c2a5a3c60617d02f80641a6d8986c2d741b6b92e137a8eedc51",
+      "_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r8-handoff.md": "55c13f97a369e138a4dbf478ab8506b1c465608cd791a228eaf0af914c0e9a0e",
+      "_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r8-review.md": "c85eaee8794a37106671b21e69ab5b06c2cfe944cb2a5790d9a61f886b857e38"
+    },
+    "ignored_execution_evidence_rule": "Ignored r5 and r6 governor-session execution records are retained and SHA-bound. They must remain absent from git ls-files --others --exclude-standard and do not contribute to the 31-path project-artifact allowlist."
+  },
+  "authorization_scope": {
+    "allowed_deploy_invocations": 1,
+    "approval_requirement": "A real independent review must accept the exact external SHA-256 of these r9 bytes by emitting the prescribed single machine-readable verdict line, then fresh owner approval must use the prescribed exact sentence naming that same SHA-256. No prior approval authorizes r9.",
+    "authorized_operation": "Deploy the exact reviewed source-pinned 2026-02 public-key trust map while preserving inactive production posture, then perform only the retained read-only observations and three smoke GETs.",
+    "forbidden": [
+      "POST requests or strike creation during verification",
+      "ACTIVATION_SNAPSHOT creation or mutation",
+      "ACTIVATION_MANIFEST creation or mutation",
+      "activation",
+      "signing or private-key access",
+      "provider calls or live qualification",
+      "retry, substitution, replacement, or a second invocation where one is authorized",
+      "rollback without a separate reviewed packet and fresh approval",
+      "traffic, route, resource, var, secret, or binding mutation outside the single deploy",
+      "verification side effects beyond two served-metric writes and two KV projection-repair writes total"
+    ]
+  },
+  "source_identity": {
+    "branch": "develop",
+    "commit": "0e624016edd15a2308183f3ad0f045da05f5b728",
+    "origin_develop": "0e624016edd15a2308183f3ad0f045da05f5b728",
+    "rotation_implementation_commit": "e97f863912b2fc0cdfa17d58d6a50e4b68898fd5",
+    "runtime_assembly_identity_sha256": "0eca7833bf857403949928960f2975116445e593471d5c84c9e47499657318e6",
+    "expected_file_sha256": {
+      "package-lock.json": "c5c31aa5474ec9d04a96a4744c5f41c4ffb2e644cbb0ec28950041edc60301ba",
+      "runtime-assembly.json": "18342d357658d8b4e6eee480d5a9155c7f561be7973386691f2fd74e40fbe866",
+      "src/pipeline/release-decision.mjs": "b3f4fdfbf5af2c329a8cc994d7068656e7e2fb3dee43dea02a279a957c3e23ae",
+      "src/worker.js": "59d4db078fbc61809fe43902b98ab338dbf338ad2f441ee794fdd1f4af2ab657",
+      "wrangler.toml": "dccc172215d1e99b730ffc61c027966b768fe70e55a988d8f667c0d959e2178f"
+    }
+  },
+  "target": {
+    "account_id": "e72c232411bedeed357f3c73e4f4f0aa",
+    "worker_script": "oddspark",
+    "environment": "production",
+    "custom_domain": "oddspark.dev",
+    "config_absolute_path": "/Volumes/fast/Github/oddspark/wrangler.toml"
+  },
+  "binding_invariants": {
+    "expected_bindings_sorted": [
+      "AI",
+      "AI_MODEL",
+      "AI_MODEL_FALLBACK",
+      "COORD",
+      "METER",
+      "SPARKS"
+    ],
+    "expected_binding_count": 6,
+    "unexpected_binding_count": 0,
+    "activation_authority_absent": [
+      "ACTIVATION_MANIFEST",
+      "ACTIVATION_SNAPSHOT"
+    ]
+  },
+  "execution_time_untracked_allowlist": [
+    "_bmad-output/implementation-artifacts/handoff-production-key-pin-deployment-packet-2026-02-review.md",
+    "_bmad-output/implementation-artifacts/handoff-production-key-pin-deployment-packet-2026-02.md",
+    "_bmad-output/implementation-artifacts/production-key-pin-deployment-execution-2026-02-evidence.md",
+    "_bmad-output/implementation-artifacts/production-key-pin-deployment-execution-2026-02-handoff.md",
+    "_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r2-handoff.md",
+    "_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r2-review.md",
+    "_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r2.json",
+    "_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r3-handoff.md",
+    "_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r3-review.md",
+    "_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r3.json",
+    "_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r4-handoff.md",
+    "_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r4-review.md",
+    "_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r4.json",
+    "_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r5-handoff.md",
+    "_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r5-review.md",
+    "_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r5.json",
+    "_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r6-handoff.md",
+    "_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r6-review.md",
+    "_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r6.json",
+    "_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r7-handoff.md",
+    "_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r7-review.md",
+    "_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r7.json",
+    "_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r8-handoff.md",
+    "_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r8-review.md",
+    "_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r8.json",
+    "_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r9-handoff.md",
+    "_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r9-review.md",
+    "_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r9.json",
+    "_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02.json",
+    "_bmad-output/implementation-artifacts/production-key-pin-deployment-r3-execution-2026-02-evidence.md",
+    "_bmad-output/implementation-artifacts/production-key-pin-deployment-r3-execution-2026-02-handoff.md"
+  ],
+  "process_completion_semantics": {
+    "scope": "Every ordered retained authority command, offline prerequisite, Cloudflare observation, deploy, metadata check, GET, and continuous observation command.",
+    "single_invocation_rule": "Start each literal command exactly once. A yielded cell/session/process ID remains that same invocation.",
+    "continuation_rule": "Continue only by wait/poll/resume on the exact yielded ID until exactly one terminal exit status and complete stdout/stderr are retained. Same-ID continuation is not a retry.",
+    "accounting_rule": "For every ordered command record ordinal, command_name, literal_command, invocation_count=1, wait_poll_count>=0, started_at, ended_at, terminal_exit, stdout_sha256, and stderr_sha256. Authority commands require empty streams; operations retain complete streams and files required by their packet parser.",
+    "terminal_ambiguity": "Lost or inaccessible ID; replacement process; incomplete stdout/stderr; missing or multiple terminal exits; parser input not byte-identical to retained output; or inability to establish the command-specific schema. Stop without retry or substitution."
+  },
+  "literal_prerequisites": [
+    {
+      "name": "offline_10_repository_gates",
+      "command": "npm run writer:preflight && npm run assembly:verify && WRANGLER_LOG_PATH=/tmp/oddspark-production-key-pin-check.log npm run check",
+      "invocation_count": 1,
+      "expected_exit": 0,
+      "output_schema": "complete npm transcript containing successful writer preflight, assembly identity 0eca7833bf857403949928960f2975116445e593471d5c84c9e47499657318e6, and complete check success; no warning/error line",
+      "parser": "Require terminal exit 0, exact assembly identity once or more, all three command stages present, and reject case-insensitive lines matching warning, error, fail, provider request, or remote upload except expected test names explicitly marked pass.",
+      "same_id_polling": "Required under process_completion_semantics if yielded.",
+      "terminal_ambiguity": "Any stage absent, parser rejection, nonzero/missing exit, lost ID, or incomplete transcript."
+    },
+    {
+      "name": "offline_11_exact_wrangler_dry_run",
+      "command": "CLOUDFLARE_ACCOUNT_ID=e72c232411bedeed357f3c73e4f4f0aa WRANGLER_LOG_PATH=/tmp/oddspark-production-key-pin-dry-run.log npx --no-install wrangler deploy --dry-run --config /Volumes/fast/Github/oddspark/wrangler.toml --name oddspark --strict",
+      "invocation_count": 1,
+      "expected_exit": 0,
+      "output_schema": "Wrangler dry-run text; exactly six printed bindings named AI, AI_MODEL, AI_MODEL_FALLBACK, COORD, METER, SPARKS; no upload/version ID; no warning",
+      "parser": "Extract binding names only from the 'Your Worker has access to the following bindings' block, sort bytewise, require exact equality to binding_invariants.expected_bindings_sorted; reject ACTIVATION_SNAPSHOT, ACTIVATION_MANIFEST, warning, upload, deployed, or Current Version ID.",
+      "same_id_polling": "Required under process_completion_semantics if yielded.",
+      "terminal_ambiguity": "Binding block missing/unparseable, mismatch, warning, nonzero/missing exit, lost ID, or incomplete transcript."
+    }
+  ],
+  "workers_builds_conflict_gate": {
+    "claim_removed": "No truthful Wrangler 4.123.0 read-only command or cited Cloudflare read-only API was found that reports pending/running Workers Builds activity. r5 does not claim to observe that activity and does not claim dashboard freshness.",
+    "retained_owner_observation": "The pinned inherited r1 packet/handoff/review historically record repository Hearn-Systems-LLC/oddspark.dev, production branch main, production command npx wrangler deploy, non-production command npx wrangler versions upload, root /, and no deploy hooks. Their exact hashes prove only what was retained, not current Cloudflare state.",
+    "strongest_executable_invariant": "Run the literal deployment-status snapshot immediately before deploy, then the literal versions inventory immediately before deploy, permit no intervening operation, and invoke the preserved deploy command with --strict. --strict must reject conflicting remote changes.",
+    "unobservable_residual": "A pending or running Workers Build that has not yet created a version/deployment is invisible to this packet. A build may begin after the snapshots. If it creates conflicting remote state before upload, --strict is the executable guard; activity not producing such a conflict remains unobservable."
+  },
+  "pre_deploy_cloudflare_observations": [
+    {
+      "name": "immediate_current_production_deployment",
+      "command": "CLOUDFLARE_ACCOUNT_ID=e72c232411bedeed357f3c73e4f4f0aa WRANGLER_LOG_PATH=/tmp/oddspark-r9-pre-deployment.log npx --no-install wrangler deployments status --config /Volumes/fast/Github/oddspark/wrangler.toml --name oddspark --json",
+      "invocation_count": 1,
+      "expected_exit": 0,
+      "output_schema": "one JSON object with string id, RFC3339 created_on, versions array, and no non-JSON stdout",
+      "parser": "jq -e 'type==\"object\" and (.id|type==\"string\") and (.created_on|type==\"string\") and ((.versions|type)==\"array\") and ((.versions|length)==1) and (.versions[0].version_id==\"d7bdc546-04a5-4ee5-bd4a-9406b03c255e\") and (.versions[0].percentage==100)'",
+      "same_id_polling": "Required under process_completion_semantics if yielded.",
+      "terminal_ambiguity": "Malformed/additional stdout, absent fields, non-sole version, percentage not numeric 100, different version, or incomplete terminal result."
+    },
+    {
+      "name": "immediate_versions_inventory",
+      "command": "CLOUDFLARE_ACCOUNT_ID=e72c232411bedeed357f3c73e4f4f0aa WRANGLER_LOG_PATH=/tmp/oddspark-r9-pre-versions.log npx --no-install wrangler versions list --config /Volumes/fast/Github/oddspark/wrangler.toml --name oddspark --json",
+      "invocation_count": 1,
+      "expected_exit": 0,
+      "output_schema": "JSON array of at most the 10 most recent deployable versions; each item has string id, metadata.created_on/author_email/source, resources, and optional annotations",
+      "parser": "jq -e 'type==\"array\" and length>0 and length<=10 and all(.[]; (.id|type==\"string\") and (.metadata.created_on|type==\"string\") and (.metadata.source|type==\"string\")) and any(.[]; .id==\"d7bdc546-04a5-4ee5-bd4a-9406b03c255e\")'; retain canonical jq -S bytes and SHA-256 as the closed pre-deploy inventory",
+      "same_id_polling": "Required under process_completion_semantics if yielded.",
+      "terminal_ambiguity": "Malformed/additional stdout, more than 10 items, missing current production version, duplicate IDs, incomplete result, or any version/deployment observation between this command and deploy not retained as an abort."
+    }
+  ],
+  "deployment": {
+    "command": "CLOUDFLARE_ACCOUNT_ID=e72c232411bedeed357f3c73e4f4f0aa WRANGLER_LOG_PATH=/tmp/oddspark-production-key-pin-2026-02.log npx --no-install wrangler deploy --config /Volumes/fast/Github/oddspark/wrangler.toml --name oddspark --strict --message 'production key pin 2026-02; source 0e624016edd15a2308183f3ad0f045da05f5b728; assembly 0eca7833bf857403949928960f2975116445e593471d5c84c9e47499657318e6'",
+    "invocation_count": 1,
+    "expected_exit": 0,
+    "output_schema": "complete Wrangler deploy transcript with exactly one line 'Current Version ID: <lowercase UUID>' and successful deployed target; no warning/error",
+    "parser": "Extract with anchored regex '^Current Version ID: ([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$'; require exactly one match and call it NEW_VERSION_ID; reject NEW_VERSION_ID=d7bdc546-04a5-4ee5-bd4a-9406b03c255e, warning, error, or any second version ID.",
+    "same_id_polling": "Required under process_completion_semantics if yielded; never restart.",
+    "terminal_ambiguity": "Version ID absent/duplicate/unparseable, warning/error, nonzero/missing exit, lost ID, or incomplete transcript.",
+    "pinned_wrangler_version": "4.123.0"
+  },
+  "post_deploy_cloudflare_observations": [
+    {
+      "name": "sole_100_percent_new_deployment",
+      "command_template": "CLOUDFLARE_ACCOUNT_ID=e72c232411bedeed357f3c73e4f4f0aa WRANGLER_LOG_PATH=/tmp/oddspark-r9-post-deployment.log npx --no-install wrangler deployments status --config /Volumes/fast/Github/oddspark/wrangler.toml --name oddspark --json",
+      "invocation_count": 1,
+      "expected_exit": 0,
+      "output_schema": "one JSON deployment object with exactly one versions element",
+      "parser": "jq --arg id \"$NEW_VERSION_ID\" -e 'type==\"object\" and (.id|type==\"string\") and (.created_on|type==\"string\") and (.versions|length==1) and (.versions[0].version_id==$id) and (.versions[0].percentage==100)'",
+      "same_id_polling": "Required under process_completion_semantics if yielded.",
+      "terminal_ambiguity": "NEW_VERSION_ID missing, output non-JSON, split traffic, percentage not numeric 100, different ID, or incomplete terminal result."
+    },
+    {
+      "name": "new_version_metadata_message_and_bindings",
+      "command_template": "CLOUDFLARE_ACCOUNT_ID=e72c232411bedeed357f3c73e4f4f0aa WRANGLER_LOG_PATH=/tmp/oddspark-r9-version-view.log npx --no-install wrangler versions view \"$NEW_VERSION_ID\" --config /Volumes/fast/Github/oddspark/wrangler.toml --name oddspark --json",
+      "invocation_count": 1,
+      "expected_exit": 0,
+      "output_schema": "one JSON version object with id, metadata, annotations, and resources.bindings array",
+      "parser": "Require .id==$NEW_VERSION_ID; .metadata.source==\"wrangler\"; .annotations[\"workers/message\"]==\"production key pin 2026-02; source 0e624016edd15a2308183f3ad0f045da05f5b728; assembly 0eca7833bf857403949928960f2975116445e593471d5c84c9e47499657318e6\"; derive [ .resources.bindings[].name ] | unique | sort and require exact [\"AI\",\"AI_MODEL\",\"AI_MODEL_FALLBACK\",\"COORD\",\"METER\",\"SPARKS\"]; require binding array length 6; require no binding name ACTIVATION_MANIFEST or ACTIVATION_SNAPSHOT; require AI_MODEL text equals @cf/openai/gpt-oss-120b and AI_MODEL_FALLBACK text equals @cf/openai/gpt-oss-20b; reject malformed, duplicate, secret, or additional binding.",
+      "same_id_polling": "Required under process_completion_semantics if yielded.",
+      "terminal_ambiguity": "Any required field absent, unknown binding representation prevents exact extraction, mismatch, additional/duplicate binding, or incomplete terminal result."
+    },
+    {
+      "name": "custom_domain_state",
+      "command_template": "curl --fail-with-body --silent --show-error --request GET --header \"Authorization: Bearer $CLOUDFLARE_API_TOKEN\" --get --data-urlencode 'hostname=oddspark.dev' --data-urlencode 'service=oddspark' 'https://api.cloudflare.com/client/v4/accounts/e72c232411bedeed357f3c73e4f4f0aa/workers/domains'",
+      "invocation_count": 1,
+      "expected_exit": 0,
+      "output_schema": "Cloudflare v4 JSON envelope: success true, errors [], result array, result_info",
+      "parser": "jq -e '.success==true and .errors==[] and ((.result|type)==\"array\") and ((.result|length)==1) and (.result[0].hostname==\"oddspark.dev\") and (.result[0].service==\"oddspark\") and ((.result[0].environment // \"production\")==\"production\") and (.result[0].id|type==\"string\") and (.result[0].zone_id|type==\"string\")'",
+      "same_id_polling": "Required under process_completion_semantics if yielded.",
+      "credential_rule": "Use only an already-authorized ambient CLOUDFLARE_API_TOKEN with Workers Scripts Read or Write. Never print, hash, retain, inspect, or source the token. Absence is terminal; do not substitute another credential surface.",
+      "route_scope": "wrangler.toml config hash and dry-run prove the intended custom-domain route; this API command proves the current account-level custom domain maps oddspark.dev to oddspark. It does not prove ordinary zone Worker routes absent account-wide.",
+      "terminal_ambiguity": "Credential absent, non-JSON/additional output, pagination/filter mismatch, zero/multiple result, hostname/service/environment mismatch, or incomplete terminal result."
+    }
+  ],
+  "smoke_gets": [
+    {
+      "name": "root_html",
+      "command": "curl --fail-with-body --silent --show-error --request GET --header 'Accept: text/html' --dump-header /tmp/oddspark-r9-root.headers --output /tmp/oddspark-r9-root.body --write-out '%{http_code}\\n%{content_type}\\n' https://oddspark.dev/",
+      "invocation_count": 1,
+      "expected_exit": 0,
+      "output_schema": "stdout exactly '200\\ntext/html; charset=utf-8\\n'; retained headers and non-empty body",
+      "parser": "Require stdout exact; final HTTP header block status exactly 200 and Content-Type media type text/html with charset=utf-8 case-insensitively; body non-empty and contains an HTML doctype or html element plus visible Oddspark marker; reject redirect status/block, duplicate final content-type, or parser ambiguity.",
+      "same_id_polling": "Required under process_completion_semantics if yielded.",
+      "terminal_ambiguity": "Any status/header/body mismatch, redirect ambiguity, nonzero/missing exit, lost ID, or incomplete retained files.",
+      "maximum_served_metric_writes": 0,
+      "maximum_kv_projection_repair_writes": 0
+    },
+    {
+      "name": "legacy_text_permalink",
+      "command": "curl --fail-with-body --silent --show-error --request GET --header 'Accept: text/plain' --user-agent 'curl/oddspark-key-pin-verifier' --dump-header /tmp/oddspark-r9-text.headers --output /tmp/oddspark-r9-text.body --write-out '%{http_code}\\n%{content_type}\\n' https://oddspark.dev/s/632dcc0b",
+      "invocation_count": 1,
+      "expected_exit": 0,
+      "output_schema": "stdout exactly '200\\ntext/plain; charset=utf-8\\n'; retained headers and UTF-8 text body",
+      "parser": "Require stdout exact and final header status/content-type exact as above; decode body as UTF-8; require non-empty headline, premise, question, provenance rows, and seed formula sections already defined by the retained legacy 632dcc0b contract; retain body SHA-256 for cross-check; any missing/duplicate section is terminal.",
+      "same_id_polling": "Required under process_completion_semantics if yielded.",
+      "terminal_ambiguity": "Any status/header/body/UTF-8/section mismatch, nonzero/missing exit, lost ID, or incomplete retained files.",
+      "maximum_served_metric_writes": 1,
+      "maximum_kv_projection_repair_writes": 1
+    },
+    {
+      "name": "legacy_json_view",
+      "command": "curl --fail-with-body --silent --show-error --request GET --header 'Accept: application/json' --dump-header /tmp/oddspark-r9-json.headers --output /tmp/oddspark-r9-json.body --write-out '%{http_code}\\n%{content_type}\\n' https://oddspark.dev/api/spark/632dcc0b",
+      "invocation_count": 1,
+      "expected_exit": 0,
+      "output_schema": "stdout exactly '200\\napplication/json; charset=utf-8\\n'; retained headers and one JSON object body",
+      "parser": "Require stdout exact and final header status/content-type exact; jq -e object parse; require retained artifact identity 632dcc0b at the contract-defined identity field and lossless equality of headline, premise, question, provenance rows, and seed formula to values extracted from /tmp/oddspark-r9-text.body; unknown field names or inability to establish lossless equality is terminal.",
+      "same_id_polling": "Required under process_completion_semantics if yielded.",
+      "terminal_ambiguity": "Any status/header/JSON/cross-view mismatch, nonzero/missing exit, lost ID, or incomplete retained files.",
+      "maximum_served_metric_writes": 1,
+      "maximum_kv_projection_repair_writes": 1
+    }
+  ],
+  "continuous_observation": {
+    "name": "version_bound_300_second_tail",
+    "window_seconds": 300,
+    "command_template": "set -eu; : \"${NEW_VERSION_ID:?missing NEW_VERSION_ID}\"; : > /tmp/oddspark-r9-tail.ndjson; : > /tmp/oddspark-r9-tail.stderr; CLOUDFLARE_ACCOUNT_ID=e72c232411bedeed357f3c73e4f4f0aa WRANGLER_LOG_PATH=/tmp/oddspark-r9-tail-wrangler.log npx --no-install wrangler tail oddspark --config /Volumes/fast/Github/oddspark/wrangler.toml --format json --status ok --status error --status canceled --version-id \"$NEW_VERSION_ID\" > /tmp/oddspark-r9-tail.ndjson 2> /tmp/oddspark-r9-tail.stderr & tail_pid=$!; trap 'kill -INT \"$tail_pid\" 2>/dev/null || true' INT TERM HUP; i=0; while test \"$i\" -lt 300; do kill -0 \"$tail_pid\" 2>/dev/null || { wait \"$tail_pid\" || true; exit 74; }; sleep 1; i=$((i+1)); done; kill -INT \"$tail_pid\"; set +e; wait \"$tail_pid\"; tail_rc=$?; set -e; test \"$tail_rc\" -eq 0 -o \"$tail_rc\" -eq 130; ! grep -Eqi 'unauthorized|forbidden|failed to create tail|connection.*(closed|failed)' /tmp/oddspark-r9-tail.stderr; jq -c . /tmp/oddspark-r9-tail.ndjson >/dev/null",
+    "invocation_count": 1,
+    "wrangler_tail_invocation_count": 1,
+    "expected_exit": 0,
+    "output_schema": "one continuous 300-second parent process; Wrangler tail remains alive until the commanded interrupt; stderr may be empty but contains no connection/auth failure; stdout file is zero or more newline-delimited JSON objects; every nonblank line independently parses as JSON",
+    "parser": "For each NDJSON event require outcome in [ok,error,canceled], exceptions array, logs array, eventTimestamp numeric, and no malformed line. Count outcomes exactly. Require error_count=0, canceled_count=0, and total exception objects=0. Bind comes from Wrangler --version-id NEW_VERSION_ID; retain NEW_VERSION_ID, start/end monotonic timestamps, both files and hashes. Zero events is valid only as 'no invocation observed', never as proof of traffic or provider inactivity.",
+    "same_id_polling": "If the outer command yields, continue the exact outer ID. The internal tail PID must never be recreated. The 300-second sleep is one uninterrupted interval; interruption, early tail exit, or missing terminal result is ambiguous.",
+    "terminal_ambiguity": "NEW_VERSION_ID missing; tail exits before 300 seconds; kill/wait state unrecognized; malformed NDJSON; connection/auth failure; lost outer ID; recreated tail PID; interrupted window; or incomplete retained files/terminal result.",
+    "honest_contract": "This proves only the outcomes/exceptions of invocations observed by a version-filtered real-time tail during the retained interval. Invocation status is not HTTP response status. It cannot support a zero-5xx claim. The three smoke GETs separately prove their exact HTTP statuses and content contracts.",
+    "provider_and_inactive_claim": "Absence of ACTIVATION_MANIFEST and ACTIVATION_SNAPSHOT in versions view proves only absence of those activation-authority bindings. Tail has no provider-call identity field. Zero provider calls is therefore not remotely proved by this observation; it remains an authorized side-effect cap and residual risk. Do not infer provider inactivity from zero matching log lines or zero events."
+  },
+  "side_effect_budget": {
+    "served_metric_writes_maximum": 2,
+    "kv_projection_repair_writes_maximum": 2,
+    "other_kv_writes": 0,
+    "durable_object_writes_other_than_served_metric": 0,
+    "post_requests": 0,
+    "strike_creations": 0,
+    "provider_calls": 0,
+    "signing_operations": 0,
+    "activation_operations": 0,
+    "rollback_operations": 0
+  },
+  "rollback_boundary": {
+    "authorization": "not_authorized",
+    "candidate_version_id": "d7bdc546-04a5-4ee5-bd4a-9406b03c255e",
+    "failure_rule": "A failed post-deploy check never authorizes rollback. Preserve terminal evidence and obtain a separate reviewed rollback packet and fresh approval."
+  },
+  "stop_and_abort_conditions": [
+    "Any external approval binding input is absent, malformed, does not match the exact approval bytes, or does not bind the independently reviewed r9 packet SHA-256.",
+    "Real independent r9 review absent/non-accepting or fresh approval does not name the exact r9 SHA-256.",
+    "Any inherited hash, source hash, Git pin, assembly identity, Wrangler version, exact 31-path allowlist, six-binding invariant, target, command byte, or parser differs.",
+    "Any literal command/parser/output schema is missing or cannot be applied mechanically.",
+    "Any prerequisite, Cloudflare observation, deploy, GET, metadata check, or continuous observation fails, warns, drifts, or becomes ambiguous.",
+    "Any operation occurs between the immediate deployment/version snapshots and deploy, or --strict reports conflicting remote changes.",
+    "Any invocation count differs from one; same-ID waits/polls are separately counted and never authorize restart.",
+    "Workers Builds activity is asserted as observed despite the declared unobservable residual.",
+    "HTTP 5xx absence, provider inactivity, or inactive posture beyond absent activation bindings is inferred from tail.",
+    "Any retained side-effect cap would be exceeded or any forbidden operation would occur."
+  ],
+  "external_authority_binding": {
+    "non_self_referential_packet_hash": "The JSON intentionally contains no expected hash of itself. After these bytes are final, compute SHA-256 externally, require the independent review verdict and owner approval to name it, place the exact one-line approval bytes in an ignored/outside-project execution record, and export only the three runner inputs below.",
+    "runner_inputs": {
+      "APPROVED_PACKET_SHA256": "64 lowercase hex bytes copied from the fresh owner approval and independently recomputed packet SHA-256",
+      "APPROVAL_RECORD_PATH": "absolute path to an ignored/outside-project file containing only the exact approval sentence plus one LF",
+      "APPROVAL_TEXT_SHA256": "lowercase SHA-256 of the exact approval-record bytes"
+    },
+    "approval_record_exclusion": "APPROVAL_RECORD_PATH must not be inside a non-ignored project path. It is execution evidence, not a project artifact.",
+    "fresh_approval_sentence_template": "I approve exactly the independently reviewed Oddspark production key-pin deployment packet r9 with SHA-256 <R9_SHA256> for one execution under its retained command list and side-effect caps; no prior packet approval is reused.\n",
+    "review_machine_line_template": "ODDSPARK_R9_REVIEW_VERDICT=APPROVE packet_sha256=<R9_SHA256>"
+  },
+  "authority_commands": [
+    {
+      "name": "authority_01_exact_external_packet_sha256",
+      "command": "test -n \"$APPROVED_PACKET_SHA256\" && test \"$(printf '%s' \"$APPROVED_PACKET_SHA256\" | LC_ALL=C grep -E '^[0-9a-f]{64}$')\" = \"$APPROVED_PACKET_SHA256\" && test \"$(shasum -a 256 _bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r9.json | awk '{print $1}')\" = \"$APPROVED_PACKET_SHA256\"",
+      "invocation_count": 1,
+      "expected_exit": 0,
+      "output_schema": "stdout empty; stderr empty",
+      "parser": "Require terminal exit 0, stdout byte length 0, and stderr byte length 0.",
+      "same_id_polling": "If yielded, wait/poll/resume only the exact yielded process ID until one terminal result.",
+      "terminal_ambiguity": "Nonzero or missing terminal exit, any stdout/stderr byte, lost/inaccessible ID, replacement process, or incomplete streams."
+    },
+    {
+      "name": "authority_02_exact_independent_review_verdict",
+      "command": "test \"$(LC_ALL=C grep -Fxc \"ODDSPARK_R9_REVIEW_VERDICT=APPROVE packet_sha256=$APPROVED_PACKET_SHA256\" _bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r9-review.md)\" -eq 1 && test \"$(LC_ALL=C grep -Ec '^ODDSPARK_R9_REVIEW_VERDICT=' _bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r9-review.md)\" -eq 1",
+      "invocation_count": 1,
+      "expected_exit": 0,
+      "output_schema": "stdout empty; stderr empty",
+      "parser": "Require terminal exit 0, stdout byte length 0, and stderr byte length 0.",
+      "same_id_polling": "If yielded, wait/poll/resume only the exact yielded process ID until one terminal result.",
+      "terminal_ambiguity": "Nonzero or missing terminal exit, any stdout/stderr byte, lost/inaccessible ID, replacement process, or incomplete streams."
+    },
+    {
+      "name": "authority_03_exact_approval_bytes_and_hash_binding",
+      "command": "test -n \"$APPROVAL_RECORD_PATH\" && test -n \"$APPROVAL_TEXT_SHA256\" && test \"$(printf '%s' \"$APPROVAL_TEXT_SHA256\" | LC_ALL=C grep -E '^[0-9a-f]{64}$')\" = \"$APPROVAL_TEXT_SHA256\" && test \"$(shasum -a 256 \"$APPROVAL_RECORD_PATH\" | awk '{print $1}')\" = \"$APPROVAL_TEXT_SHA256\" && printf 'I approve exactly the independently reviewed Oddspark production key-pin deployment packet r9 with SHA-256 %s for one execution under its retained command list and side-effect caps; no prior packet approval is reused.\\n' \"$APPROVED_PACKET_SHA256\" | cmp -s - \"$APPROVAL_RECORD_PATH\"",
+      "invocation_count": 1,
+      "expected_exit": 0,
+      "output_schema": "stdout empty; stderr empty",
+      "parser": "Require terminal exit 0, stdout byte length 0, and stderr byte length 0.",
+      "same_id_polling": "If yielded, wait/poll/resume only the exact yielded process ID until one terminal result.",
+      "terminal_ambiguity": "Nonzero or missing terminal exit, any stdout/stderr byte, lost/inaccessible ID, replacement process, or incomplete streams."
+    },
+    {
+      "name": "authority_04_exact_31_path_untracked_allowlist",
+      "command": "test \"$(git ls-files --others --exclude-standard | LC_ALL=C sort)\" = \"$(printf '%s\\n' '_bmad-output/implementation-artifacts/handoff-production-key-pin-deployment-packet-2026-02-review.md' '_bmad-output/implementation-artifacts/handoff-production-key-pin-deployment-packet-2026-02.md' '_bmad-output/implementation-artifacts/production-key-pin-deployment-execution-2026-02-evidence.md' '_bmad-output/implementation-artifacts/production-key-pin-deployment-execution-2026-02-handoff.md' '_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r2-handoff.md' '_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r2-review.md' '_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r2.json' '_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r3-handoff.md' '_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r3-review.md' '_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r3.json' '_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r4-handoff.md' '_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r4-review.md' '_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r4.json' '_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r5-handoff.md' '_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r5-review.md' '_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r5.json' '_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r6-handoff.md' '_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r6-review.md' '_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r6.json' '_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r7-handoff.md' '_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r7-review.md' '_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r7.json' '_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r8-handoff.md' '_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r8-review.md' '_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r8.json' '_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r9-handoff.md' '_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r9-review.md' '_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r9.json' '_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02.json' '_bmad-output/implementation-artifacts/production-key-pin-deployment-r3-execution-2026-02-evidence.md' '_bmad-output/implementation-artifacts/production-key-pin-deployment-r3-execution-2026-02-handoff.md')\"",
+      "invocation_count": 1,
+      "expected_exit": 0,
+      "output_schema": "stdout empty; stderr empty",
+      "parser": "Require terminal exit 0, stdout byte length 0, and stderr byte length 0.",
+      "same_id_polling": "If yielded, wait/poll/resume only the exact yielded process ID until one terminal result.",
+      "terminal_ambiguity": "Nonzero or missing terminal exit, any stdout/stderr byte, lost/inaccessible ID, replacement process, or incomplete streams."
+    },
+    {
+      "name": "authority_05_all_35_inherited_hashes",
+      "command": "printf '%s  %s\\n' 'f4803deb7541a180ec343ed668477238871c701185e0cee14576cb9c27581009' '_bmad-output/implementation-artifacts/handoff-production-key-pin-deployment-packet-2026-02-review.md' '74e2e3f16943e0766dd54262228d5b16ecfffac4c51908529736b8b370fb7814' '_bmad-output/implementation-artifacts/handoff-production-key-pin-deployment-packet-2026-02.md' '8e54b4528db861d6e8f86f49192560f4ec725bcddfa083b10e81f5d57b8e5265' '_bmad-output/implementation-artifacts/production-key-pin-deployment-execution-2026-02-evidence.md' 'c12ad994ffd52dfba4d5ece543525a602fe70515ecf58a3c4f09d22294d3ba62' '_bmad-output/implementation-artifacts/production-key-pin-deployment-execution-2026-02-handoff.md' '4c6df360a63f9e76935c811afe33935c6fb2d1f5d3c204cc6a1173a1ee5fd27f' '_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r2-handoff.md' '6b9f8b237150ac0b7ec4e73eab0d463adb0314c07d0ac64362e85fd8d0c87370' '_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r2-review.md' 'd26d8d40dc220c260ed7d1618d1d0a83b4524f72cca7317710cf170395528282' '_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r2.json' 'c30795a71664cb99599a8d5c3079859cb1c0bcd033982d6bab4c8f8d2cab76c4' '_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r3-handoff.md' '0b7fc155214307ff28d838f343d44dba5579983bf868c297c8e41962686f1760' '_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r3-review.md' '536d84583232e8ca926843d5450c155113bf054dab6c470daabf9d366f691e08' '_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r3.json' 'e3855863e6c53e323bad346a9427674a2ebb6f4fa8cbd6b4e788b6e18e3c177f' '_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r4-handoff.md' 'f2a6ab66b65a5c29108859029861c732d490992bdd441b5a967c4fc583805030' '_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r4-review.md' '4a45319b5ad07b756b55187e9f34c7f5b75ac03f9c867cd20990d3505232933d' '_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r4.json' 'b39cef87ae254f83560eabaee4e872503dec5b76b0ae11cd2eb9d90909a3ea38' '_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r5-handoff.md' '17578f04251f7fe37f5cc5d5538bd515f9daa13c1f488f93f88ff2f3fab6d653' '_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r5-review.md' '3bdbe828fa5330a5358bd54a2a9565e96d20d75b22cfd3060034eb4dd2a8666f' '_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r5.json' '2215f584154fc592dae2c3d9d7ec243c34f3f226676c7c9d64256b827cad1f70' '_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02.json' '2c21f5e7becc2462569d11239a2e62855a47e0b88c74923c5dfb0a87dad7f07c' '_bmad-output/implementation-artifacts/production-key-pin-deployment-r3-execution-2026-02-evidence.md' '8b3e26ef4aeba21279abd56692fcaa4091570b67c9e9112ec83f16c481465188' '_bmad-output/implementation-artifacts/production-key-pin-deployment-r3-execution-2026-02-handoff.md' '20739ecc3c3f34885bcfd19d39df95cc1df49d7ed6c9a96da7123aec44059a96' '_bmad/memory/agent-project-governor/harness-sessions/production-key-pin-deployment-r5-execution-attempt2-evidence.md' '714522f96faefba8a57ce8396f3783c5e8eb00f6e515d8d576d36a6018930dae' '_bmad/memory/agent-project-governor/harness-sessions/production-key-pin-deployment-r5-execution-attempt2-handoff.md' '80ff4e28baa19c6f68399692051f3c4de2c348235827eb54bef80f0b707cf75e' '_bmad/memory/agent-project-governor/harness-sessions/production-key-pin-deployment-r5-execution-evidence.md' '90e39896fafa666c05b0eb67c6c3def92e5c8bbd2f4964c66e78185aa6e16660' '_bmad/memory/agent-project-governor/harness-sessions/production-key-pin-deployment-r5-execution-handoff.md' '91abb9ad5783e9fe7051b1ea8d39a197387140eb6dfa8e3835f4a4da9af7ab34' '_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r6.json' '75eba4fad25ed60e419c2f5be0d3bdc284698966764eed9c28172e8f31cd2bf4' '_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r6-handoff.md' 'fd28fab0b52ff3cbdf194fbb9dbe8db01425d412f101e34aa221be13a583a5db' '_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r6-review.md' '35a7c04db7cbc916d1210edbcc60b9ff190600efb771a88c648c10dba47b85f5' '_bmad/memory/agent-project-governor/harness-sessions/production-key-pin-deployment-r6-approval.txt' '37303157da8fae29abb9546daf29658c31c51a51b48090e3b107e41ac2c94141' '_bmad/memory/agent-project-governor/harness-sessions/production-key-pin-deployment-r6-execution-evidence.md' 'df750d27cc216c1239754478f5e55f9b0badf2766c9c8c669f5bbb20ef9c21d3' '_bmad/memory/agent-project-governor/harness-sessions/production-key-pin-deployment-r6-execution-handoff.md' 'b5186ff64c87057ee896339bacd06cd7704aef0889283ece4a53c9b02b26023d' '_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r7.json' 'ac5b3d056e5e9d89ab06ea956d49eb12da546dc2c14c88f998f53131304a5472' '_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r7-handoff.md' 'cfb200c90d7cc0774b3b54b84a429b4ece939bb60b6333a98aaa86df7cbd14b1' '_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r7-review.md' '00093a70bb1b0c2a5a3c60617d02f80641a6d8986c2d741b6b92e137a8eedc51' '_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r8.json' '55c13f97a369e138a4dbf478ab8506b1c465608cd791a228eaf0af914c0e9a0e' '_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r8-handoff.md' 'c85eaee8794a37106671b21e69ab5b06c2cfe944cb2a5790d9a61f886b857e38' '_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r8-review.md' | shasum -a 256 -c - >/dev/null",
+      "invocation_count": 1,
+      "expected_exit": 0,
+      "output_schema": "stdout empty; stderr empty",
+      "parser": "Require terminal exit 0, stdout byte length 0, and stderr byte length 0.",
+      "same_id_polling": "If yielded, wait/poll/resume only the exact yielded process ID until one terminal result.",
+      "terminal_ambiguity": "Nonzero or missing terminal exit, any stdout/stderr byte, lost/inaccessible ID, replacement process, or incomplete streams."
+    },
+    {
+      "name": "authority_06_git_source_index_and_rotation_identity",
+      "command": "test \"$(git branch --show-current)\" = develop && test \"$(git rev-parse HEAD)\" = 0e624016edd15a2308183f3ad0f045da05f5b728 && test \"$(git rev-parse origin/develop)\" = 0e624016edd15a2308183f3ad0f045da05f5b728 && git merge-base --is-ancestor e97f863912b2fc0cdfa17d58d6a50e4b68898fd5 HEAD && git diff --quiet -- && git diff --cached --quiet --",
+      "invocation_count": 1,
+      "expected_exit": 0,
+      "output_schema": "stdout empty; stderr empty",
+      "parser": "Require terminal exit 0, stdout byte length 0, and stderr byte length 0.",
+      "same_id_polling": "If yielded, wait/poll/resume only the exact yielded process ID until one terminal result.",
+      "terminal_ambiguity": "Nonzero or missing terminal exit, any stdout/stderr byte, lost/inaccessible ID, replacement process, or incomplete streams."
+    },
+    {
+      "name": "authority_07_exact_source_file_hashes",
+      "command": "printf '%s  %s\\n' 'c5c31aa5474ec9d04a96a4744c5f41c4ffb2e644cbb0ec28950041edc60301ba' 'package-lock.json' '18342d357658d8b4e6eee480d5a9155c7f561be7973386691f2fd74e40fbe866' 'runtime-assembly.json' 'b3f4fdfbf5af2c329a8cc994d7068656e7e2fb3dee43dea02a279a957c3e23ae' 'src/pipeline/release-decision.mjs' '59d4db078fbc61809fe43902b98ab338dbf338ad2f441ee794fdd1f4af2ab657' 'src/worker.js' 'dccc172215d1e99b730ffc61c027966b768fe70e55a988d8f667c0d959e2178f' 'wrangler.toml' | shasum -a 256 -c - >/dev/null",
+      "invocation_count": 1,
+      "expected_exit": 0,
+      "output_schema": "stdout empty; stderr empty",
+      "parser": "Require terminal exit 0, stdout byte length 0, and stderr byte length 0.",
+      "same_id_polling": "If yielded, wait/poll/resume only the exact yielded process ID until one terminal result.",
+      "terminal_ambiguity": "Nonzero or missing terminal exit, any stdout/stderr byte, lost/inaccessible ID, replacement process, or incomplete streams."
+    },
+    {
+      "name": "authority_08_exact_runtime_assembly_identity",
+      "command": "test \"$(jq -r '.assembly_identity_sha256' runtime-assembly.json)\" = 0eca7833bf857403949928960f2975116445e593471d5c84c9e47499657318e6",
+      "invocation_count": 1,
+      "expected_exit": 0,
+      "output_schema": "stdout empty; stderr empty",
+      "parser": "Require terminal exit 0, stdout byte length 0, and stderr byte length 0.",
+      "same_id_polling": "If yielded, wait/poll/resume only the exact yielded process ID until one terminal result.",
+      "terminal_ambiguity": "Nonzero or missing terminal exit, any stdout/stderr byte, lost/inaccessible ID, replacement process, or incomplete streams."
+    },
+    {
+      "name": "authority_09_exact_pinned_wrangler_identity",
+      "command": "test \"$(WRANGLER_LOG_PATH=/tmp/oddspark-r9-wrangler-version.log npx --no-install wrangler --version)\" = 4.123.0",
+      "invocation_count": 1,
+      "expected_exit": 0,
+      "output_schema": "stdout empty; stderr empty",
+      "parser": "Require terminal exit 0, stdout byte length 0, and stderr byte length 0.",
+      "same_id_polling": "If yielded, wait/poll/resume only the exact yielded process ID until one terminal result.",
+      "terminal_ambiguity": "Nonzero or missing terminal exit, any stdout/stderr byte, lost/inaccessible ID, replacement process, or incomplete streams."
+    }
+  ],
+  "ordered_retained_command_inventory": [
+    {
+      "ordinal": 1,
+      "section": "authority_commands",
+      "name": "authority_01_exact_external_packet_sha256"
+    },
+    {
+      "ordinal": 2,
+      "section": "authority_commands",
+      "name": "authority_02_exact_independent_review_verdict"
+    },
+    {
+      "ordinal": 3,
+      "section": "authority_commands",
+      "name": "authority_03_exact_approval_bytes_and_hash_binding"
+    },
+    {
+      "ordinal": 4,
+      "section": "authority_commands",
+      "name": "authority_04_exact_31_path_untracked_allowlist"
+    },
+    {
+      "ordinal": 5,
+      "section": "authority_commands",
+      "name": "authority_05_all_35_inherited_hashes"
+    },
+    {
+      "ordinal": 6,
+      "section": "authority_commands",
+      "name": "authority_06_git_source_index_and_rotation_identity"
+    },
+    {
+      "ordinal": 7,
+      "section": "authority_commands",
+      "name": "authority_07_exact_source_file_hashes"
+    },
+    {
+      "ordinal": 8,
+      "section": "authority_commands",
+      "name": "authority_08_exact_runtime_assembly_identity"
+    },
+    {
+      "ordinal": 9,
+      "section": "authority_commands",
+      "name": "authority_09_exact_pinned_wrangler_identity"
+    },
+    {
+      "ordinal": 10,
+      "section": "literal_prerequisites",
+      "name": "offline_10_repository_gates"
+    },
+    {
+      "ordinal": 11,
+      "section": "literal_prerequisites",
+      "name": "offline_11_exact_wrangler_dry_run"
+    },
+    {
+      "ordinal": 12,
+      "section": "pre_deploy_cloudflare_observations",
+      "name": "immediate_current_production_deployment"
+    },
+    {
+      "ordinal": 13,
+      "section": "pre_deploy_cloudflare_observations",
+      "name": "immediate_versions_inventory"
+    },
+    {
+      "ordinal": 14,
+      "section": "deployment",
+      "name": "deploy_exact_reviewed_source"
+    },
+    {
+      "ordinal": 15,
+      "section": "post_deploy_cloudflare_observations",
+      "name": "sole_100_percent_new_deployment"
+    },
+    {
+      "ordinal": 16,
+      "section": "post_deploy_cloudflare_observations",
+      "name": "new_version_metadata_message_and_bindings"
+    },
+    {
+      "ordinal": 17,
+      "section": "post_deploy_cloudflare_observations",
+      "name": "custom_domain_state"
+    },
+    {
+      "ordinal": 18,
+      "section": "smoke_gets",
+      "name": "root_html"
+    },
+    {
+      "ordinal": 19,
+      "section": "smoke_gets",
+      "name": "legacy_text_permalink"
+    },
+    {
+      "ordinal": 20,
+      "section": "smoke_gets",
+      "name": "legacy_json_view"
+    },
+    {
+      "ordinal": 21,
+      "section": "continuous_observation",
+      "name": "version_bound_300_second_tail"
+    }
+  ],
+  "runner_algorithm": [
+    "Before ordinal 1, the unrestricted root/operator shell exports APPROVED_PACKET_SHA256, APPROVAL_RECORD_PATH, and APPROVAL_TEXT_SHA256. Deterministically extract the embedded reviewed runner, verify its exact SHA-256, and launch it in retained tmux. These are preparation/execution mechanics, not an ordinal.",
+    "The embedded runner resolves every inventory entry directly from this packet and invokes its command or command_template exactly once and strictly in order. No agent interprets or independently reconstructs an ordinal during live execution.",
+    "Each ordinal is one child process of the retained runner parent. The runner waits for that same PID to terminate; it never creates a replacement. Ordinal 21 itself preserves exactly one ordinal parent and one Wrangler tail child for 300 seconds.",
+    "The runner captures complete per-command stdout/stderr, timestamps, terminal exit/signal, byte counts and SHA-256 hashes, applies only the retained parser implementation, and writes evidence after every terminal ordinal only to ignored governor-session paths.",
+    "Only ordinal 14 may produce NEW_VERSION_ID, exactly once. The retained runner exports only that parsed lowercase UUID to later templates.",
+    "On any parser failure, nonzero exit, missing output, or ambiguity, the runner stops before every later ordinal; it does not retry, repair, substitute, rollback, or invoke a replacement process."
+  ],
+  "execution_record_schema": {
+    "external_binding": [
+      "approved_packet_sha256",
+      "approval_record_path",
+      "approval_text_sha256",
+      "packet_sha256_recomputed_before_ordinal_1"
+    ],
+    "per_command": [
+      "ordinal",
+      "section",
+      "command_name",
+      "literal_command",
+      "parser",
+      "invocation_count",
+      "wait_poll_count",
+      "started_at",
+      "ended_at",
+      "terminal_exit",
+      "stdout_sha256",
+      "stderr_sha256",
+      "retained_file_paths_and_sha256",
+      "parser_result"
+    ],
+    "deployment_result": [
+      "new_version_id_or_null",
+      "deploy_invocation_count"
+    ],
+    "boundary_counts": [
+      "cloudflare_observation_invocations",
+      "smoke_get_invocations",
+      "tail_parent_invocations",
+      "tail_child_invocations",
+      "served_metric_writes_upper_bound",
+      "kv_projection_repair_writes_upper_bound",
+      "provider_calls",
+      "signing_operations",
+      "activation_operations",
+      "rollback_operations"
+    ],
+    "terminal": [
+      "status",
+      "failed_or_ambiguous_ordinal_or_null",
+      "later_ordinals_invoked_must_be_zero",
+      "limitations"
+    ]
+  },
+  "machine_runner": {
+    "format": "embedded-utf8-node-esm/v1",
+    "embedded_script": "#!/usr/bin/env node\nimport { spawn } from 'node:child_process';\nimport { createHash } from 'node:crypto';\nimport { readFile, writeFile } from 'node:fs/promises';\nimport { performance } from 'node:perf_hooks';\n\nconst ROOT='/Volumes/fast/Github/oddspark';\nconst PACKET=`${ROOT}/_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r9.json`;\nconst EVIDENCE=`${ROOT}/_bmad/memory/agent-project-governor/harness-sessions/production-key-pin-deployment-r9-execution-evidence.json`;\nconst HANDOFF=`${ROOT}/_bmad/memory/agent-project-governor/harness-sessions/production-key-pin-deployment-r9-execution-handoff.md`;\nconst sha=b=>createHash('sha256').update(b).digest('hex'); const now=()=>new Date().toISOString();\nconst packetBytes=await readFile(PACKET); const packet=JSON.parse(packetBytes); const scriptBytes=Buffer.from(packet.machine_runner.embedded_script,'utf8');\nif(sha(scriptBytes)!==packet.machine_runner.embedded_script_sha256)throw new Error('embedded runner hash mismatch');\nfor(const key of ['APPROVED_PACKET_SHA256','APPROVAL_RECORD_PATH','APPROVAL_TEXT_SHA256','CLOUDFLARE_API_TOKEN','CLOUDFLARE_ACCOUNT_ID'])if(!process.env[key])throw new Error(`missing ${key}`);\nif(process.env.CLOUDFLARE_ACCOUNT_ID!==packet.target.account_id)throw new Error('ambient Cloudflare account mismatch');\nconst resolveEntry=item=>{const section=packet[item.section];const entry=Array.isArray(section)?section.find(x=>x?.name===item.name):section;if(!entry)throw new Error(`unresolved ordinal ${item.ordinal}`);return entry;};\nconst record={status:'RUNNING',initialized_at:now(),external_binding:{approved_packet_sha256:process.env.APPROVED_PACKET_SHA256,approval_record_path:process.env.APPROVAL_RECORD_PATH,approval_text_sha256:process.env.APPROVAL_TEXT_SHA256,packet_sha256_recomputed_before_ordinal_1:sha(packetBytes)},commands:[],new_version_id_or_null:null,boundary_counts:{cloudflare_observation_invocations:0,smoke_get_invocations:0,tail_parent_invocations:0,tail_child_invocations:0,served_metric_writes_upper_bound:0,kv_projection_repair_writes_upper_bound:0,provider_calls:0,signing_operations:0,activation_operations:0,rollback_operations:0}};\nawait writeFile(EVIDENCE,JSON.stringify(record,null,2)+'\\n',{mode:0o600});\nconst run=(command,env)=>new Promise((resolve,reject)=>{const child=spawn('/bin/bash',['-c',command],{cwd:ROOT,env,stdio:['ignore','pipe','pipe']});const out=[],err=[];child.stdout.on('data',b=>out.push(b));child.stderr.on('data',b=>err.push(b));child.on('error',reject);child.on('close',(code,signal)=>resolve({code,signal,stdout:Buffer.concat(out),stderr:Buffer.concat(err)}));});\nconst exactEmpty=r=>r.code===0&&r.stdout.length===0&&r.stderr.length===0;\nconst plainObject=x=>x!==null&&typeof x==='object'&&!Array.isArray(x);\nconst jsonExact=b=>{try{return JSON.parse(b.toString('utf8'));}catch{return undefined;}};\nconst uuid=x=>typeof x==='string'&&/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/.test(x);\nconst oneHeader=bytes=>{const text=bytes.toString('utf8');const blocks=text.trim().split(/\\r?\\n\\r?\\n/).filter(Boolean);if(!blocks.length)return null;const lines=blocks.at(-1).split(/\\r?\\n/);const m=/^HTTP\\/\\S+ (\\d{3})(?: |$)/.exec(lines.shift()||'');if(!m)return null;const headers=new Map();for(const line of lines){const i=line.indexOf(':');if(i<1)return null;const k=line.slice(0,i).trim().toLowerCase(),v=line.slice(i+1).trim();if(headers.has(k))headers.set(k,null);else headers.set(k,v);}return {status:Number(m[1]),headers};};\nconst readHttp=async(kind)=>{const prefix=`/tmp/oddspark-r9-${kind}`;return {headers:await readFile(prefix+'.headers'),body:await readFile(prefix+'.body')};};\nconst contentType=(h,want)=>h&&h.status===200&&typeof h.headers.get('content-type')==='string'&&h.headers.get('content-type').toLowerCase()===want;\nconst parseText=bytes=>{let s;try{s=new TextDecoder('utf-8',{fatal:true}).decode(bytes);}catch{return null;}const lines=s.replace(/\\r\\n/g,'\\n').split('\\n');const prov=lines.indexOf('  PROVENANCE');const formula=lines.indexOf('  seed = SHA256(randomness : round : flux : time_tag)');if(prov<8||formula<=prov)return null;const nonempty=lines.slice(2,prov-1).filter(x=>x.trim());const q=nonempty.findIndex(x=>x.trimStart().startsWith('? '));if(q<2)return null;const headline=nonempty[0].trim();const premise=nonempty.slice(1,q).map(x=>x.trim()).join(' ');const question=nonempty.slice(q).map(x=>x.trim()).join(' ').replace(/^\\? /,'');const rows={};for(const line of lines.slice(prov+1,formula-1)){const m=/^    (.{1,15}?)\\s{2,}(.+)$/.exec(line);if(!m||rows[m[1].trim()]!==undefined)return null;rows[m[1].trim()]=m[2];}if(!headline||!premise||!question||!Object.keys(rows).length)return null;return {headline,premise,question,rows,formula:'SHA256(randomness : round : flux : time_tag)'};};\nconst parseJsonView=(obj,text)=>{if(!plainObject(obj)||obj.id!=='632dcc0b'||!plainObject(obj.idea)||typeof obj.idea.headline!=='string'||typeof obj.idea.premise!=='string'||typeof obj.idea.question!=='string'||!plainObject(obj.entropy)||!plainObject(obj.solar)||!plainObject(obj.seed))return false;if(obj.idea.headline.toUpperCase()!==text.headline||obj.idea.premise!==text.premise||obj.idea.question!==text.question)return false;const expected={'drand round':String(obj.entropy.round),'seed':String(obj.seed.hash),'observed':String(obj.solar.time_tag)};for(const [k,v] of Object.entries(expected))if(text.rows[k]!==v)return false;return text.formula==='SHA256(randomness : round : flux : time_tag)';};\nconst parse=async(ordinal,entry,result,elapsedMs)=>{const text=result.stdout.toString('utf8'),err=result.stderr.toString('utf8');if(ordinal<=9)return exactEmpty(result);if(result.code!==0)return false;\n if(ordinal===10)return text.includes('writer preflight passed')&&text.includes('assembly:verify')&&text.includes(packet.source_identity.runtime_assembly_identity_sha256)&&!/warning|error|fail|provider request|remote upload/i.test(text+err);\n if(ordinal===11){const block=/Your Worker has access to the following bindings[\\s\\S]*?(?=\\n\\S|$)/.exec(text)?.[0]??'';const names=[...block.matchAll(/^\\s*-\\s+([A-Z][A-Z0-9_]*)\\b/gm)].map(m=>m[1]).sort();return JSON.stringify(names)===JSON.stringify(packet.binding_invariants.expected_bindings_sorted)&&!/ACTIVATION_(SNAPSHOT|MANIFEST)|Current Version ID|Uploaded|Deployed|warning/i.test(text+err);}\n const obj=[12,13,15,16,17].includes(ordinal)?jsonExact(result.stdout):undefined;\n if(ordinal===12)return plainObject(obj)&&typeof obj.id==='string'&&typeof obj.created_on==='string'&&Array.isArray(obj.versions)&&obj.versions.length===1&&obj.versions[0]?.version_id===packet.rollback_boundary.candidate_version_id&&obj.versions[0]?.percentage===100;\n if(ordinal===13)return Array.isArray(obj)&&obj.length>0&&obj.length<=10&&new Set(obj.map(x=>x?.id)).size===obj.length&&obj.every(x=>uuid(x?.id)&&typeof x?.metadata?.created_on==='string'&&typeof x?.metadata?.source==='string')&&obj.some(x=>x.id===packet.rollback_boundary.candidate_version_id);\n if(ordinal===14){const ids=[...text.matchAll(/^Current Version ID: ([0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12})$/gm)].map(m=>m[1]);if(ids.length!==1||ids[0]===packet.rollback_boundary.candidate_version_id||/warning|error/i.test(text+err))return false;record.new_version_id_or_null=ids[0];return true;}\n if(ordinal===15)return plainObject(obj)&&typeof obj.id==='string'&&typeof obj.created_on==='string'&&Array.isArray(obj.versions)&&obj.versions.length===1&&obj.versions[0]?.version_id===record.new_version_id_or_null&&obj.versions[0]?.percentage===100;\n if(ordinal===16){const b=obj?.resources?.bindings;if(!plainObject(obj)||obj.id!==record.new_version_id_or_null||obj.metadata?.source!=='wrangler'||obj.annotations?.['workers/message']!==packet.deployment.command.match(/--message '([^']+)'/)?.[1]||!Array.isArray(b)||b.length!==6)return false;const names=b.map(x=>x?.name);if(new Set(names).size!==6||JSON.stringify([...names].sort())!==JSON.stringify(packet.binding_invariants.expected_bindings_sorted)||names.some(x=>packet.binding_invariants.activation_authority_absent.includes(x)))return false;const values=new Map(b.map(x=>[x.name,x.text]));return values.get('AI_MODEL')==='@cf/openai/gpt-oss-120b'&&values.get('AI_MODEL_FALLBACK')==='@cf/openai/gpt-oss-20b';}\n if(ordinal===17)return plainObject(obj)&&obj.success===true&&Array.isArray(obj.errors)&&obj.errors.length===0&&Array.isArray(obj.result)&&obj.result.length===1&&obj.result[0]?.hostname==='oddspark.dev'&&obj.result[0]?.service==='oddspark'&&(obj.result[0]?.environment??'production')==='production'&&typeof obj.result[0]?.id==='string'&&typeof obj.result[0]?.zone_id==='string';\n if(ordinal===18){const f=await readHttp('root'),h=oneHeader(f.headers);return text==='200\\ntext/html; charset=utf-8\\n'&&contentType(h,'text/html; charset=utf-8')&&f.body.length>0&&/(?:<!doctype html|<html\\b)/i.test(f.body.toString('utf8'))&&/oddspark/i.test(f.body.toString('utf8'));}\n if(ordinal===19){const f=await readHttp('text'),h=oneHeader(f.headers),v=parseText(f.body);if(!(text==='200\\ntext/plain; charset=utf-8\\n'&&contentType(h,'text/plain; charset=utf-8')&&v))return false;record.legacy_text_contract=v;return true;}\n if(ordinal===20){const f=await readHttp('json'),h=oneHeader(f.headers),obj=jsonExact(f.body);return text==='200\\napplication/json; charset=utf-8\\n'&&contentType(h,'application/json; charset=utf-8')&&record.legacy_text_contract&&parseJsonView(obj,record.legacy_text_contract);}\n if(ordinal===21){if(elapsedMs<299000||/unauthorized|forbidden|failed to create tail|connection.*(?:closed|failed)/i.test(err))return false;const nd=await readFile('/tmp/oddspark-r9-tail.ndjson'),te=await readFile('/tmp/oddspark-r9-tail.stderr');if(/unauthorized|forbidden|failed to create tail|connection.*(?:closed|failed)/i.test(te.toString('utf8')))return false;let total=0,errors=0,canceled=0,exceptions=0;for(const line of nd.toString('utf8').split(/\\r?\\n/)){if(!line.trim())continue;const e=jsonExact(Buffer.from(line));if(!plainObject(e)||!['ok','error','canceled'].includes(e.outcome)||!Array.isArray(e.exceptions)||!Array.isArray(e.logs)||typeof e.eventTimestamp!=='number')return false;total++;errors+=e.outcome==='error';canceled+=e.outcome==='canceled';exceptions+=e.exceptions.length;}record.tail_summary={total_events:total,error_count:errors,canceled_count:canceled,exception_count:exceptions,zero_event_semantics:total===0?'no invocation observed; not proof of traffic or provider inactivity':null};return errors===0&&canceled===0&&exceptions===0;}\n return false;};\nlet failed=null;for(const item of packet.ordered_retained_command_inventory){const entry=resolveEntry(item);let command=entry.command??entry.command_template;if(command.includes('$NEW_VERSION_ID')&&!record.new_version_id_or_null)throw new Error(`ordinal ${item.ordinal} missing NEW_VERSION_ID`);const env={...process.env,NEW_VERSION_ID:record.new_version_id_or_null??''};const started=now(),mono=performance.now();const result=await run(command,env);const elapsedMs=performance.now()-mono,ended=now();const row={ordinal:item.ordinal,section:item.section,command_name:item.name,literal_command:command,parser:entry.parser,invocation_count:1,wait_poll_count:0,started_at:started,ended_at:ended,elapsed_ms:elapsedMs,terminal_exit:result.code,terminal_signal:result.signal,stdout_sha256:sha(result.stdout),stderr_sha256:sha(result.stderr),stdout_bytes:result.stdout.length,stderr_bytes:result.stderr.length,stdout_utf8:result.stdout.toString('utf8'),stderr_utf8:result.stderr.toString('utf8'),retained_file_paths_and_sha256:[],parser_result:'FAIL'};if([12,13,15,16,17].includes(item.ordinal))record.boundary_counts.cloudflare_observation_invocations++;if([18,19,20].includes(item.ordinal))record.boundary_counts.smoke_get_invocations++;if(item.ordinal===21){record.boundary_counts.tail_parent_invocations=1;record.boundary_counts.tail_child_invocations=1;}row.parser_result=await parse(item.ordinal,entry,result,elapsedMs)?'PASS':'FAIL';record.commands.push(row);await writeFile(EVIDENCE,JSON.stringify(record,null,2)+'\\n',{mode:0o600});if(row.parser_result!=='PASS'){failed=item.ordinal;break;}}\ndelete record.legacy_text_contract;record.status=failed===null?'COMPLETE':'STOPPED_ON_RETAINED_COMMAND_FAILURE';record.failed_or_ambiguous_ordinal_or_null=failed;record.later_ordinals_invoked_must_be_zero=failed===null?0:21-failed;await writeFile(EVIDENCE,JSON.stringify(record,null,2)+'\\n',{mode:0o600});await writeFile(HANDOFF,`# Oddspark production key-pin deployment r9 execution handoff\\n\\n- status: ${record.status}\\n- failed_or_ambiguous_ordinal: ${failed??'null'}\\n- last_invoked_ordinal: ${record.commands.at(-1)?.ordinal??0}\\n- evidence: ${EVIDENCE}\\n`,{mode:0o600});process.exit(failed===null?0:1);\n",
+    "embedded_script_sha256": "3da811f2c3fa356b73d1543032d4eb306a0d0cb88020469c6a925364049f4e52",
+    "deterministic_extraction_command": "umask 077 && jq -rj '.machine_runner.embedded_script' /Volumes/fast/Github/oddspark/_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r9.json > /Volumes/fast/Github/oddspark/_bmad/memory/agent-project-governor/harness-sessions/production-key-pin-deployment-r9-runner.mjs && test \"$(shasum -a 256 /Volumes/fast/Github/oddspark/_bmad/memory/agent-project-governor/harness-sessions/production-key-pin-deployment-r9-runner.mjs | awk '{print $1}')\" = \"$(jq -r '.machine_runner.embedded_script_sha256' /Volumes/fast/Github/oddspark/_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r9.json)\"",
+    "operator_environment_requirement": "Run from an unrestricted root/operator shell with local loopback permitted, cwd /Volumes/fast/Github/oddspark, Node and jq available, installed Wrangler exactly 4.123.0, and ambient CLOUDFLARE_API_TOKEN plus exact CLOUDFLARE_ACCOUNT_ID already exported. The isolated tmux server inherits the launching process environment; no secret value is interpolated into its command string or retained artifact. Missing or mismatched ambient authority fails before session creation. Never run through a sandboxed model command tool.",
+    "tmux_session": "oddspark-production-key-pin-r9",
+    "tmux_launch_command": "test -n \"$APPROVED_PACKET_SHA256\" && test -n \"$APPROVAL_RECORD_PATH\" && test -n \"$APPROVAL_TEXT_SHA256\" && test -n \"$CLOUDFLARE_API_TOKEN\" && test \"$CLOUDFLARE_ACCOUNT_ID\" = e72c232411bedeed357f3c73e4f4f0aa && ! tmux -L oddspark-production-key-pin-r9 has-session 2>/dev/null && tmux -L oddspark-production-key-pin-r9 new-session -d -s oddspark-production-key-pin-r9 \"cd /Volumes/fast/Github/oddspark && exec node /Volumes/fast/Github/oddspark/_bmad/memory/agent-project-governor/harness-sessions/production-key-pin-deployment-r9-runner.mjs\"",
+    "tmux_watch_command": "tmux -L oddspark-production-key-pin-r9 attach-session -r -t oddspark-production-key-pin-r9",
+    "evidence_path": "/Volumes/fast/Github/oddspark/_bmad/memory/agent-project-governor/harness-sessions/production-key-pin-deployment-r9-execution-evidence.json",
+    "handoff_path": "/Volumes/fast/Github/oddspark/_bmad/memory/agent-project-governor/harness-sessions/production-key-pin-deployment-r9-execution-handoff.md",
+    "live_byte_rule": "The extracted runner must hash exactly as embedded. Live runner bytes may not be patched, wrapped, interpreted, or fixture-substituted.",
+    "tmux_environment_semantics": "A dedicated absent tmux server socket is required. tmux starts that server from the unrestricted operator process and copies its ambient environment into the new session; the child inherits it. The retained command contains variable names only and never expands or stores secret values. An existing same-label server, absent token, or wrong/absent account ID fails closed before runner launch."
+  },
+  "preparation_validation": {
+    "remote_operations_invoked": 0,
+    "fixture_rule": "A separate temporary preparation-only harness copies parser semantics but never imports, executes, patches, or supplies bytes to the live runner. It exercises success and adversarial failure for every parser class, predecessor rejection, duplicate/missing allowlist, malformed and semantically wrong JSON, headers/bodies/cross-view identity, tail outcomes/exceptions/malformed events, lost/early child, and later-ordinal non-invocation.",
+    "required_checks": [
+      "JSON parse",
+      "all inherited hashes",
+      "literal bash syntax",
+      "embedded runner syntax",
+      "deterministic extraction hash parity",
+      "offline fixture rehearsal through all 21 ordinals",
+      "Wrangler 4.123.0 help syntax",
+      "deploy parity with r6",
+      "boundary counts",
+      "secret absence",
+      "git diff --check",
+      "all full parser-class success and adversarial fixtures",
+      "actual current/future allowlist equality and uniqueness",
+      "runner same-PID and early-child process semantics",
+      "tmux isolated inherited-environment semantics"
+    ],
+    "fixture_matrix": [
+      "authority empty-stream success/failure",
+      "allowlist exact success plus duplicate and missing rejection",
+      "repository transcript success plus warning/error rejection",
+      "dry-run binding success plus missing/extra/activation rejection",
+      "all JSON observation success plus malformed and every semantic invariant failure",
+      "deploy success plus predecessor/duplicate/missing ID rejection",
+      "root/text/JSON GET success plus status/header/body/schema/section/identity/cross-view failures",
+      "tail success including honest zero-event semantics plus error/canceled/exception/malformed/early-child rejection",
+      "orchestrator success 1..21 plus lost-child and failure-stop later-ordinal non-invocation"
+    ],
+    "anticipated_future_untracked_count": 31,
+    "review_path": "/Volumes/fast/Github/oddspark/_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r9-review.md"
+  }
+}

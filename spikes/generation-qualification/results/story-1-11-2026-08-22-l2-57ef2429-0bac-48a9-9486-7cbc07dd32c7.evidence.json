@@ -1,0 +1,1770 @@
+{
+  "schema_version": "oddspark.generation-qualification-evidence/v2",
+  "run": {
+    "id": "57ef2429-0bac-48a9-9486-7cbc07dd32c7",
+    "started_at": "2026-08-22T13:14:30.972Z",
+    "ended_at": "2026-08-22T13:14:33.983Z",
+    "call_cap": 42,
+    "calls_made": 2
+  },
+  "plan": {
+    "schema_version": "oddspark.generation-qualification-plan/v2",
+    "plan_ref": "686e93d98b8f3cdf7f12ab5a145c51836dea806aeafd2666ca666ca8f1981d3a",
+    "approval_run_id": "story-1-11-2026-08-22-l2",
+    "created_at": "2026-08-22T13:10:54.884Z",
+    "provider": "cloudflare-workers-ai",
+    "authority": {
+      "account_profile": "operator-reviewed-profile",
+      "credential_path": "wrangler-remote-binding",
+      "headroom_confirmed": true
+    },
+    "roles": [
+      {
+        "role": "primary",
+        "resolved_model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+      },
+      {
+        "role": "fallback",
+        "resolved_model": "@cf/meta/llama-3.1-8b-instruct-fast"
+      }
+    ],
+    "parameters": {
+      "temperature": 0,
+      "max_tokens": 2048
+    },
+    "timeout_policy": {
+      "adapter_timeout_ms": 120000,
+      "preflight_timeout_ms": 10000,
+      "probes_must_complete_before_trials": true,
+      "execution": "sequential",
+      "retries": 0,
+      "replacements": 0
+    },
+    "input": {
+      "evidence": {
+        "version": 1,
+        "mode": "local",
+        "priors": {
+          "region": "Blue Water Area",
+          "season": "summer",
+          "date": "2026-08-18",
+          "situation": "repeated inquiries",
+          "capability_bundle": [
+            "software",
+            "workflow automation"
+          ]
+        }
+      },
+      "seed": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "requests": [
+      {
+        "role": "primary",
+        "resolved_model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+        "body": {
+          "role": "primary",
+          "model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+          "messages": [
+            {
+              "role": "system",
+              "content": "Return exactly one JSON Candidate object matching the supplied JSON Schema. Do not wrap it, explain it, fence it, repair it, or include a candidate_ref. Preserve the supplied Evidence faithfully and produce only a closed Story 1.7 Candidate."
+            },
+            {
+              "role": "user",
+              "content": "{\"evidence\":{\"mode\":\"local\",\"priors\":{\"capability_bundle\":[\"software\",\"workflow automation\"],\"date\":\"2026-08-18\",\"region\":\"Blue Water Area\",\"season\":\"summer\",\"situation\":\"repeated inquiries\"},\"version\":1},\"seed\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}"
+            }
+          ],
+          "temperature": 0,
+          "max_tokens": 2048,
+          "response_format": {
+            "type": "json_schema",
+            "json_schema": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "version",
+                "mode",
+                "title",
+                "plan",
+                "why_fits",
+                "what_gets_better",
+                "before_after",
+                "change_level",
+                "stays_same",
+                "invitation",
+                "grounded_numbers"
+              ],
+              "properties": {
+                "version": {
+                  "const": 1
+                },
+                "mode": {
+                  "enum": [
+                    "local",
+                    "domain"
+                  ]
+                },
+                "title": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "plan": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "why_fits": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "text"
+                  ],
+                  "properties": {
+                    "text": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "breadcrumb": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  }
+                },
+                "what_gets_better": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "before_after": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "before",
+                    "after"
+                  ],
+                  "properties": {
+                    "before": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "after": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  }
+                },
+                "change_level": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "time_range",
+                    "steps_changed",
+                    "steps_removed",
+                    "preliminary"
+                  ],
+                  "properties": {
+                    "time_range": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "steps_changed": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "steps_removed": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "preliminary": {
+                      "const": true
+                    }
+                  }
+                },
+                "stays_same": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "tools",
+                    "authority",
+                    "steps"
+                  ],
+                  "properties": {
+                    "tools": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "authority": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "steps": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    }
+                  }
+                },
+                "invitation": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "grounded_numbers": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "notice": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "allOf": [
+                {
+                  "if": {
+                    "properties": {
+                      "mode": {
+                        "const": "domain"
+                      }
+                    }
+                  },
+                  "then": {
+                    "properties": {
+                      "why_fits": {
+                        "required": [
+                          "text",
+                          "breadcrumb"
+                        ]
+                      }
+                    }
+                  },
+                  "else": {
+                    "properties": {
+                      "why_fits": {
+                        "not": {
+                          "required": [
+                            "breadcrumb"
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        },
+        "request_sha256": "1f6cb195c320eb9f6f3b512ae9fd0c3dc18660a81c11067e73609ee9c1f0850f",
+        "adapter_input_sha256": "5651ef53a9c4bcf76aa8a2353a11917fced33344c6b6a6330664d913efc7fa8e"
+      },
+      {
+        "role": "fallback",
+        "resolved_model": "@cf/meta/llama-3.1-8b-instruct-fast",
+        "body": {
+          "role": "fallback",
+          "model": "@cf/meta/llama-3.1-8b-instruct-fast",
+          "messages": [
+            {
+              "role": "system",
+              "content": "Return exactly one JSON Candidate object matching the supplied JSON Schema. Do not wrap it, explain it, fence it, repair it, or include a candidate_ref. Preserve the supplied Evidence faithfully and produce only a closed Story 1.7 Candidate."
+            },
+            {
+              "role": "user",
+              "content": "{\"evidence\":{\"mode\":\"local\",\"priors\":{\"capability_bundle\":[\"software\",\"workflow automation\"],\"date\":\"2026-08-18\",\"region\":\"Blue Water Area\",\"season\":\"summer\",\"situation\":\"repeated inquiries\"},\"version\":1},\"seed\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}"
+            }
+          ],
+          "temperature": 0,
+          "max_tokens": 2048,
+          "response_format": {
+            "type": "json_schema",
+            "json_schema": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "version",
+                "mode",
+                "title",
+                "plan",
+                "why_fits",
+                "what_gets_better",
+                "before_after",
+                "change_level",
+                "stays_same",
+                "invitation",
+                "grounded_numbers"
+              ],
+              "properties": {
+                "version": {
+                  "const": 1
+                },
+                "mode": {
+                  "enum": [
+                    "local",
+                    "domain"
+                  ]
+                },
+                "title": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "plan": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "why_fits": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "text"
+                  ],
+                  "properties": {
+                    "text": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "breadcrumb": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  }
+                },
+                "what_gets_better": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "before_after": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "before",
+                    "after"
+                  ],
+                  "properties": {
+                    "before": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "after": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  }
+                },
+                "change_level": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "time_range",
+                    "steps_changed",
+                    "steps_removed",
+                    "preliminary"
+                  ],
+                  "properties": {
+                    "time_range": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "steps_changed": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "steps_removed": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "preliminary": {
+                      "const": true
+                    }
+                  }
+                },
+                "stays_same": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "tools",
+                    "authority",
+                    "steps"
+                  ],
+                  "properties": {
+                    "tools": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "authority": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "steps": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    }
+                  }
+                },
+                "invitation": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "grounded_numbers": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "notice": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "allOf": [
+                {
+                  "if": {
+                    "properties": {
+                      "mode": {
+                        "const": "domain"
+                      }
+                    }
+                  },
+                  "then": {
+                    "properties": {
+                      "why_fits": {
+                        "required": [
+                          "text",
+                          "breadcrumb"
+                        ]
+                      }
+                    }
+                  },
+                  "else": {
+                    "properties": {
+                      "why_fits": {
+                        "not": {
+                          "required": [
+                            "breadcrumb"
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        },
+        "request_sha256": "48e2e48d2969cb5563f935aeb7253c9b6b82f3420b24bb824f034696716f49dc",
+        "adapter_input_sha256": "5651ef53a9c4bcf76aa8a2353a11917fced33344c6b6a6330664d913efc7fa8e"
+      }
+    ],
+    "sources": [
+      {
+        "path": "package.json",
+        "bytes": 3801,
+        "sha256": "bbe7d7c9512bf6944c684867fe03052976349c07c5a0c444106c09b9c70ca7d1"
+      },
+      {
+        "path": "runtime-baseline.json",
+        "bytes": 2900,
+        "sha256": "3faf6a613b22be43f65580346ed6955c2c84ccaece90d13dbe39a92ff73b7abb"
+      },
+      {
+        "path": "scripts/generation.mjs",
+        "bytes": 247,
+        "sha256": "616b68cb4b9e51014732dd60daca9207577d1ac1a73004b53291683c04af6f84"
+      },
+      {
+        "path": "scripts/brief-contracts.mjs",
+        "bytes": 245,
+        "sha256": "25b0ec6859bad24c938b0bded7ca45874c8c74d09e6bed9090f65d3ae68346d1"
+      },
+      {
+        "path": "spikes/judge-fidelity/contract.mjs",
+        "bytes": 28345,
+        "sha256": "c124dfbf2cb56727bb5fdc8b01622509867460304b3bbf3a635b8f004cc8d8f2"
+      },
+      {
+        "path": "spikes/generation-qualification/contract.mjs",
+        "bytes": 8333,
+        "sha256": "b5165124d40c824f6633f37be11573491dcc67dcc879fdf22a824ccd7092cf46"
+      },
+      {
+        "path": "spikes/generation-qualification/evidence-v2.mjs",
+        "bytes": 18601,
+        "sha256": "4e4b66f4208e5da004f724ee2db57974dd01e3b51a0a9f2119b1130ff220e7e0"
+      },
+      {
+        "path": "spikes/generation-qualification/fixture-executor.mjs",
+        "bytes": 2890,
+        "sha256": "60f950c422a0bd567b4753a645b754e3b67b514547241a72a13af52b00a90ab5"
+      },
+      {
+        "path": "spikes/generation-qualification/fixtures.json",
+        "bytes": 1147,
+        "sha256": "bc7a49026898e60c0717590ee6b2575b0f4dc32363322c2e06326b05f2ede9a3"
+      },
+      {
+        "path": "spikes/generation-qualification/pricing.mjs",
+        "bytes": 953,
+        "sha256": "b920f5f408f7f5aa368b48f612ef2de1ab52b2d3c1f3dd749169b7d8c2dd6b8d"
+      },
+      {
+        "path": "spikes/generation-qualification/qualification.mjs",
+        "bytes": 10391,
+        "sha256": "ecaebe9b3ea59b760e7e3bfddddb2ff6b0fc599ec0ea7dfc8826a5e2ceb42908"
+      },
+      {
+        "path": "spikes/generation-qualification/recovery-finder.mjs",
+        "bytes": 11599,
+        "sha256": "2024a74b0a241accfbe6a3ebcd676b1e8ebf4751467fcb63f269ae3684fb7b02"
+      },
+      {
+        "path": "spikes/generation-qualification/run.mjs",
+        "bytes": 19038,
+        "sha256": "9bd63b3783efecd6095b77774df4b164eb2a1a75af944a96f66c7b4e1a70d5c3"
+      },
+      {
+        "path": "spikes/generation-qualification/start-adapter.mjs",
+        "bytes": 3647,
+        "sha256": "d3c11c52a66c6b0271d194529834b892a80beb7992421bfceff6ad4b5fe7518e"
+      },
+      {
+        "path": "spikes/generation-qualification/test.mjs",
+        "bytes": 32179,
+        "sha256": "949727af4fef9cf111494793b37175d2f65425b852c01549aad6b0a1cfbb01e1"
+      },
+      {
+        "path": "spikes/generation-qualification/verify-v2.mjs",
+        "bytes": 805,
+        "sha256": "ae223fa409035d9efa535b2af9efd42f0f367980b3dc896c27167621c66d857c"
+      },
+      {
+        "path": "spikes/generation-qualification/worker.mjs",
+        "bytes": 5524,
+        "sha256": "d86af9f6665bede67cdb6f13564f83d13224c05b3744f68bc9714971aa6aa812"
+      },
+      {
+        "path": "spikes/generation-qualification/wrangler.toml",
+        "bytes": 311,
+        "sha256": "9ba2abe917d0e52d1338fe1ae2f27755f772d8b62cb9b35d8663746295c24777"
+      }
+    ],
+    "runtime": {
+      "path": "runtime-baseline.json",
+      "bytes": 2900,
+      "sha256": "3faf6a613b22be43f65580346ed6955c2c84ccaece90d13dbe39a92ff73b7abb",
+      "runtime_identity_sha256": "b5f2d4b994ab5440dcab711eaf7ec9ac0543cfe7e9ca783b31a734366adbb3be",
+      "node": "v24.18.0",
+      "wrangler": "4.123.0"
+    },
+    "expected_health": {
+      "ok": true,
+      "inference": false,
+      "schema_version": "oddspark.generation-adapter-health/v1",
+      "provider": "cloudflare-workers-ai",
+      "roles": [
+        {
+          "role": "primary",
+          "resolved_model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+        },
+        {
+          "role": "fallback",
+          "resolved_model": "@cf/meta/llama-3.1-8b-instruct-fast"
+        }
+      ],
+      "parameters": {
+        "temperature": 0,
+        "max_tokens": 2048
+      },
+      "binding": "AI",
+      "worker_sha256": "d86af9f6665bede67cdb6f13564f83d13224c05b3744f68bc9714971aa6aa812",
+      "config_sha256": "9ba2abe917d0e52d1338fe1ae2f27755f772d8b62cb9b35d8663746295c24777",
+      "runtime_sha256": "b5f2d4b994ab5440dcab711eaf7ec9ac0543cfe7e9ca783b31a734366adbb3be"
+    },
+    "estimate": {
+      "pricing": {
+        "as_of": "2026-08-19",
+        "source": "https://developers.cloudflare.com/workers-ai/platform/pricing/",
+        "disclosure": "Cloudflare publishes $0.29/M input and $2.25/M output for the selected 70B endpoint. No exact price binding was found for the selected 8B fast endpoint, so its maximum is conservatively budgeted at the documented 70B rate; this is not observed 8B pricing.",
+        "currency": "USD",
+        "observed": {
+          "@cf/meta/llama-3.3-70b-instruct-fp8-fast": {
+            "input_per_million_usd": 0.29,
+            "output_per_million_usd": 2.25,
+            "exact": true
+          },
+          "@cf/meta/llama-3.1-8b-instruct-fast": null
+        },
+        "budget": {
+          "@cf/meta/llama-3.3-70b-instruct-fp8-fast": {
+            "input_per_million_usd": 0.29,
+            "output_per_million_usd": 2.25,
+            "exact": true
+          },
+          "@cf/meta/llama-3.1-8b-instruct-fast": {
+            "input_per_million_usd": 0.29,
+            "output_per_million_usd": 2.25,
+            "exact": false
+          }
+        }
+      },
+      "roles": [
+        {
+          "role": "primary",
+          "resolved_model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+          "calls": 21,
+          "input_tokens_upper_bound": 2546,
+          "max_output_tokens_per_call": 2048,
+          "pricing_exact": true,
+          "input_usd": 0.015505139999999999,
+          "output_usd": 0.096768,
+          "maximum_usd": 0.11227314000000001
+        },
+        {
+          "role": "fallback",
+          "resolved_model": "@cf/meta/llama-3.1-8b-instruct-fast",
+          "calls": 21,
+          "input_tokens_upper_bound": 2542,
+          "max_output_tokens_per_call": 2048,
+          "pricing_exact": false,
+          "input_usd": 0.01548078,
+          "output_usd": 0.096768,
+          "maximum_usd": 0.11224878
+        }
+      ],
+      "call_cap": 42,
+      "maximum_usd": 0.22452192
+    },
+    "retention": {
+      "provider_retention_disclosed": true,
+      "retained_locally": [
+        "plan",
+        "approval",
+        "records",
+        "bounded output envelopes",
+        "usage",
+        "latency",
+        "cost",
+        "source/runtime/adapter identities",
+        "predicate results",
+        "manifests",
+        "completion marker"
+      ],
+      "forbidden": [
+        "credentials",
+        "account identifiers",
+        "provider reasoning",
+        "unbounded raw output"
+      ]
+    },
+    "schedule": [
+      {
+        "role": "primary",
+        "probe": 1,
+        "trials_after_successful_probe": 20,
+        "sequential": true,
+        "retries": 0,
+        "replacements": 0
+      },
+      {
+        "role": "fallback",
+        "probe": 1,
+        "trials_after_successful_probe": 20,
+        "sequential": true,
+        "retries": 0,
+        "replacements": 0
+      }
+    ],
+    "call_cap": 42,
+    "predicate_ids": [
+      "evidence.shape",
+      "oracle.identity",
+      "legacy.immutable",
+      "runtime.identity",
+      "source.identity",
+      "adapter.identity",
+      "candidate.binding",
+      "fixtures.executed",
+      "records.classified",
+      "records.closed",
+      "run.authorization",
+      "run.cardinality",
+      "run.ordering",
+      "run.common_request",
+      "summary.rates",
+      "outcome.deterministic",
+      "predicates.retained",
+      "report.deterministic",
+      "roles.independent",
+      "output.direct_candidate",
+      "schedule.zero_retry",
+      "cost.recomputed",
+      "manifest.independent"
+    ]
+  },
+  "input": {
+    "evidence": {
+      "version": 1,
+      "mode": "local",
+      "priors": {
+        "region": "Blue Water Area",
+        "season": "summer",
+        "date": "2026-08-18",
+        "situation": "repeated inquiries",
+        "capability_bundle": [
+          "software",
+          "workflow automation"
+        ]
+      }
+    },
+    "seed": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  "requests": [
+    {
+      "role": "primary",
+      "resolved_model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+      "body": {
+        "role": "primary",
+        "model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+        "messages": [
+          {
+            "role": "system",
+            "content": "Return exactly one JSON Candidate object matching the supplied JSON Schema. Do not wrap it, explain it, fence it, repair it, or include a candidate_ref. Preserve the supplied Evidence faithfully and produce only a closed Story 1.7 Candidate."
+          },
+          {
+            "role": "user",
+            "content": "{\"evidence\":{\"mode\":\"local\",\"priors\":{\"capability_bundle\":[\"software\",\"workflow automation\"],\"date\":\"2026-08-18\",\"region\":\"Blue Water Area\",\"season\":\"summer\",\"situation\":\"repeated inquiries\"},\"version\":1},\"seed\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}"
+          }
+        ],
+        "temperature": 0,
+        "max_tokens": 2048,
+        "response_format": {
+          "type": "json_schema",
+          "json_schema": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "version",
+              "mode",
+              "title",
+              "plan",
+              "why_fits",
+              "what_gets_better",
+              "before_after",
+              "change_level",
+              "stays_same",
+              "invitation",
+              "grounded_numbers"
+            ],
+            "properties": {
+              "version": {
+                "const": 1
+              },
+              "mode": {
+                "enum": [
+                  "local",
+                  "domain"
+                ]
+              },
+              "title": {
+                "type": "string",
+                "minLength": 1
+              },
+              "plan": {
+                "type": "string",
+                "minLength": 1
+              },
+              "why_fits": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "text"
+                ],
+                "properties": {
+                  "text": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "breadcrumb": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
+              },
+              "what_gets_better": {
+                "type": "string",
+                "minLength": 1
+              },
+              "before_after": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "before",
+                  "after"
+                ],
+                "properties": {
+                  "before": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "after": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
+              },
+              "change_level": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "time_range",
+                  "steps_changed",
+                  "steps_removed",
+                  "preliminary"
+                ],
+                "properties": {
+                  "time_range": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "steps_changed": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "steps_removed": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "preliminary": {
+                    "const": true
+                  }
+                }
+              },
+              "stays_same": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "tools",
+                  "authority",
+                  "steps"
+                ],
+                "properties": {
+                  "tools": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "authority": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "steps": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  }
+                }
+              },
+              "invitation": {
+                "type": "string",
+                "minLength": 1
+              },
+              "grounded_numbers": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "notice": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "allOf": [
+              {
+                "if": {
+                  "properties": {
+                    "mode": {
+                      "const": "domain"
+                    }
+                  }
+                },
+                "then": {
+                  "properties": {
+                    "why_fits": {
+                      "required": [
+                        "text",
+                        "breadcrumb"
+                      ]
+                    }
+                  }
+                },
+                "else": {
+                  "properties": {
+                    "why_fits": {
+                      "not": {
+                        "required": [
+                          "breadcrumb"
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "request_sha256": "1f6cb195c320eb9f6f3b512ae9fd0c3dc18660a81c11067e73609ee9c1f0850f",
+      "adapter_input_sha256": "5651ef53a9c4bcf76aa8a2353a11917fced33344c6b6a6330664d913efc7fa8e"
+    },
+    {
+      "role": "fallback",
+      "resolved_model": "@cf/meta/llama-3.1-8b-instruct-fast",
+      "body": {
+        "role": "fallback",
+        "model": "@cf/meta/llama-3.1-8b-instruct-fast",
+        "messages": [
+          {
+            "role": "system",
+            "content": "Return exactly one JSON Candidate object matching the supplied JSON Schema. Do not wrap it, explain it, fence it, repair it, or include a candidate_ref. Preserve the supplied Evidence faithfully and produce only a closed Story 1.7 Candidate."
+          },
+          {
+            "role": "user",
+            "content": "{\"evidence\":{\"mode\":\"local\",\"priors\":{\"capability_bundle\":[\"software\",\"workflow automation\"],\"date\":\"2026-08-18\",\"region\":\"Blue Water Area\",\"season\":\"summer\",\"situation\":\"repeated inquiries\"},\"version\":1},\"seed\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}"
+          }
+        ],
+        "temperature": 0,
+        "max_tokens": 2048,
+        "response_format": {
+          "type": "json_schema",
+          "json_schema": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "version",
+              "mode",
+              "title",
+              "plan",
+              "why_fits",
+              "what_gets_better",
+              "before_after",
+              "change_level",
+              "stays_same",
+              "invitation",
+              "grounded_numbers"
+            ],
+            "properties": {
+              "version": {
+                "const": 1
+              },
+              "mode": {
+                "enum": [
+                  "local",
+                  "domain"
+                ]
+              },
+              "title": {
+                "type": "string",
+                "minLength": 1
+              },
+              "plan": {
+                "type": "string",
+                "minLength": 1
+              },
+              "why_fits": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "text"
+                ],
+                "properties": {
+                  "text": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "breadcrumb": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
+              },
+              "what_gets_better": {
+                "type": "string",
+                "minLength": 1
+              },
+              "before_after": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "before",
+                  "after"
+                ],
+                "properties": {
+                  "before": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "after": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
+              },
+              "change_level": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "time_range",
+                  "steps_changed",
+                  "steps_removed",
+                  "preliminary"
+                ],
+                "properties": {
+                  "time_range": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "steps_changed": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "steps_removed": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "preliminary": {
+                    "const": true
+                  }
+                }
+              },
+              "stays_same": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "tools",
+                  "authority",
+                  "steps"
+                ],
+                "properties": {
+                  "tools": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "authority": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "steps": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  }
+                }
+              },
+              "invitation": {
+                "type": "string",
+                "minLength": 1
+              },
+              "grounded_numbers": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "notice": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "allOf": [
+              {
+                "if": {
+                  "properties": {
+                    "mode": {
+                      "const": "domain"
+                    }
+                  }
+                },
+                "then": {
+                  "properties": {
+                    "why_fits": {
+                      "required": [
+                        "text",
+                        "breadcrumb"
+                      ]
+                    }
+                  }
+                },
+                "else": {
+                  "properties": {
+                    "why_fits": {
+                      "not": {
+                        "required": [
+                          "breadcrumb"
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "request_sha256": "48e2e48d2969cb5563f935aeb7253c9b6b82f3420b24bb824f034696716f49dc",
+      "adapter_input_sha256": "5651ef53a9c4bcf76aa8a2353a11917fced33344c6b6a6330664d913efc7fa8e"
+    }
+  ],
+  "approval": {
+    "schema_version": "oddspark.generation-qualification-approval/v2",
+    "plan_ref": "686e93d98b8f3cdf7f12ab5a145c51836dea806aeafd2666ca666ca8f1981d3a",
+    "approval_run_id": "story-1-11-2026-08-22-l2",
+    "approved_at": "2026-08-22T13:11:02.000Z",
+    "approved_by": "Justin",
+    "approved_call_cap": 42,
+    "approved_maximum_usd": 0.22452192,
+    "authorization": "execute-exact-plan-once"
+  },
+  "pricing": {
+    "pricing": {
+      "as_of": "2026-08-19",
+      "source": "https://developers.cloudflare.com/workers-ai/platform/pricing/",
+      "disclosure": "Cloudflare publishes $0.29/M input and $2.25/M output for the selected 70B endpoint. No exact price binding was found for the selected 8B fast endpoint, so its maximum is conservatively budgeted at the documented 70B rate; this is not observed 8B pricing.",
+      "currency": "USD",
+      "observed": {
+        "@cf/meta/llama-3.3-70b-instruct-fp8-fast": {
+          "input_per_million_usd": 0.29,
+          "output_per_million_usd": 2.25,
+          "exact": true
+        },
+        "@cf/meta/llama-3.1-8b-instruct-fast": null
+      },
+      "budget": {
+        "@cf/meta/llama-3.3-70b-instruct-fp8-fast": {
+          "input_per_million_usd": 0.29,
+          "output_per_million_usd": 2.25,
+          "exact": true
+        },
+        "@cf/meta/llama-3.1-8b-instruct-fast": {
+          "input_per_million_usd": 0.29,
+          "output_per_million_usd": 2.25,
+          "exact": false
+        }
+      }
+    },
+    "roles": [
+      {
+        "role": "primary",
+        "resolved_model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+        "calls": 21,
+        "input_tokens_upper_bound": 2546,
+        "max_output_tokens_per_call": 2048,
+        "pricing_exact": true,
+        "input_usd": 0.015505139999999999,
+        "output_usd": 0.096768,
+        "maximum_usd": 0.11227314000000001
+      },
+      {
+        "role": "fallback",
+        "resolved_model": "@cf/meta/llama-3.1-8b-instruct-fast",
+        "calls": 21,
+        "input_tokens_upper_bound": 2542,
+        "max_output_tokens_per_call": 2048,
+        "pricing_exact": false,
+        "input_usd": 0.01548078,
+        "output_usd": 0.096768,
+        "maximum_usd": 0.11224878
+      }
+    ],
+    "call_cap": 42,
+    "maximum_usd": 0.22452192
+  },
+  "sources": [
+    {
+      "path": "package.json",
+      "bytes": 3801,
+      "sha256": "bbe7d7c9512bf6944c684867fe03052976349c07c5a0c444106c09b9c70ca7d1"
+    },
+    {
+      "path": "runtime-baseline.json",
+      "bytes": 2900,
+      "sha256": "3faf6a613b22be43f65580346ed6955c2c84ccaece90d13dbe39a92ff73b7abb"
+    },
+    {
+      "path": "scripts/generation.mjs",
+      "bytes": 247,
+      "sha256": "616b68cb4b9e51014732dd60daca9207577d1ac1a73004b53291683c04af6f84"
+    },
+    {
+      "path": "scripts/brief-contracts.mjs",
+      "bytes": 245,
+      "sha256": "25b0ec6859bad24c938b0bded7ca45874c8c74d09e6bed9090f65d3ae68346d1"
+    },
+    {
+      "path": "spikes/judge-fidelity/contract.mjs",
+      "bytes": 28345,
+      "sha256": "c124dfbf2cb56727bb5fdc8b01622509867460304b3bbf3a635b8f004cc8d8f2"
+    },
+    {
+      "path": "spikes/generation-qualification/contract.mjs",
+      "bytes": 8333,
+      "sha256": "b5165124d40c824f6633f37be11573491dcc67dcc879fdf22a824ccd7092cf46"
+    },
+    {
+      "path": "spikes/generation-qualification/evidence-v2.mjs",
+      "bytes": 18601,
+      "sha256": "4e4b66f4208e5da004f724ee2db57974dd01e3b51a0a9f2119b1130ff220e7e0"
+    },
+    {
+      "path": "spikes/generation-qualification/fixture-executor.mjs",
+      "bytes": 2890,
+      "sha256": "60f950c422a0bd567b4753a645b754e3b67b514547241a72a13af52b00a90ab5"
+    },
+    {
+      "path": "spikes/generation-qualification/fixtures.json",
+      "bytes": 1147,
+      "sha256": "bc7a49026898e60c0717590ee6b2575b0f4dc32363322c2e06326b05f2ede9a3"
+    },
+    {
+      "path": "spikes/generation-qualification/pricing.mjs",
+      "bytes": 953,
+      "sha256": "b920f5f408f7f5aa368b48f612ef2de1ab52b2d3c1f3dd749169b7d8c2dd6b8d"
+    },
+    {
+      "path": "spikes/generation-qualification/qualification.mjs",
+      "bytes": 10391,
+      "sha256": "ecaebe9b3ea59b760e7e3bfddddb2ff6b0fc599ec0ea7dfc8826a5e2ceb42908"
+    },
+    {
+      "path": "spikes/generation-qualification/recovery-finder.mjs",
+      "bytes": 11599,
+      "sha256": "2024a74b0a241accfbe6a3ebcd676b1e8ebf4751467fcb63f269ae3684fb7b02"
+    },
+    {
+      "path": "spikes/generation-qualification/run.mjs",
+      "bytes": 19038,
+      "sha256": "9bd63b3783efecd6095b77774df4b164eb2a1a75af944a96f66c7b4e1a70d5c3"
+    },
+    {
+      "path": "spikes/generation-qualification/start-adapter.mjs",
+      "bytes": 3647,
+      "sha256": "d3c11c52a66c6b0271d194529834b892a80beb7992421bfceff6ad4b5fe7518e"
+    },
+    {
+      "path": "spikes/generation-qualification/test.mjs",
+      "bytes": 32179,
+      "sha256": "949727af4fef9cf111494793b37175d2f65425b852c01549aad6b0a1cfbb01e1"
+    },
+    {
+      "path": "spikes/generation-qualification/verify-v2.mjs",
+      "bytes": 805,
+      "sha256": "ae223fa409035d9efa535b2af9efd42f0f367980b3dc896c27167621c66d857c"
+    },
+    {
+      "path": "spikes/generation-qualification/worker.mjs",
+      "bytes": 5524,
+      "sha256": "d86af9f6665bede67cdb6f13564f83d13224c05b3744f68bc9714971aa6aa812"
+    },
+    {
+      "path": "spikes/generation-qualification/wrangler.toml",
+      "bytes": 311,
+      "sha256": "9ba2abe917d0e52d1338fe1ae2f27755f772d8b62cb9b35d8663746295c24777"
+    }
+  ],
+  "runtime": {
+    "path": "runtime-baseline.json",
+    "bytes": 2900,
+    "sha256": "3faf6a613b22be43f65580346ed6955c2c84ccaece90d13dbe39a92ff73b7abb",
+    "runtime_identity_sha256": "b5f2d4b994ab5440dcab711eaf7ec9ac0543cfe7e9ca783b31a734366adbb3be",
+    "node": "v24.18.0",
+    "wrangler": "4.123.0"
+  },
+  "legacy": [
+    {
+      "path": "spikes/generation-qualification/results/story-1-11-2026-08-19-r2-ead1cb17-38d7-41ce-8369-7fdc14098b29.complete.json",
+      "sha256": "16fa1e27c35c0b4eb4f3bac4ad3d30b884a908e3c3f435f35a59c6bed857790d",
+      "observed_sha256": "16fa1e27c35c0b4eb4f3bac4ad3d30b884a908e3c3f435f35a59c6bed857790d",
+      "immutable": true,
+      "current_authority": false
+    },
+    {
+      "path": "spikes/generation-qualification/results/story-1-11-2026-08-19-r2-ead1cb17-38d7-41ce-8369-7fdc14098b29.evidence.json",
+      "sha256": "b880864ded0e560d9fea3421f787257eec28aa4225a414b3bc275b97ee82b908",
+      "observed_sha256": "b880864ded0e560d9fea3421f787257eec28aa4225a414b3bc275b97ee82b908",
+      "immutable": true,
+      "current_authority": false
+    },
+    {
+      "path": "spikes/generation-qualification/results/story-1-11-2026-08-19-r2-ead1cb17-38d7-41ce-8369-7fdc14098b29.qualification.json",
+      "sha256": "545016f6e1d12d5dd416b3cda30bc299081e6f96d470cc12fe459e7041987b5d",
+      "observed_sha256": "545016f6e1d12d5dd416b3cda30bc299081e6f96d470cc12fe459e7041987b5d",
+      "immutable": true,
+      "current_authority": false
+    },
+    {
+      "path": "spikes/generation-qualification/results/story-1-11-2026-08-19-r2-ead1cb17-38d7-41ce-8369-7fdc14098b29.report.md",
+      "sha256": "9fcf5544c6bec83a2ee0140c29a54ed579f65bd552038498318784c942b53526",
+      "observed_sha256": "9fcf5544c6bec83a2ee0140c29a54ed579f65bd552038498318784c942b53526",
+      "immutable": true,
+      "current_authority": false
+    },
+    {
+      "path": "spikes/generation-qualification/results/story-1-11-2026-08-19-r2.approval.json",
+      "sha256": "2505dfa12dfb327a86e54b378377d1a0f89644ee83b69dca7075bed08ac10e64",
+      "observed_sha256": "2505dfa12dfb327a86e54b378377d1a0f89644ee83b69dca7075bed08ac10e64",
+      "immutable": true,
+      "current_authority": false
+    },
+    {
+      "path": "spikes/generation-qualification/results/story-1-11-2026-08-19-r2.plan.json",
+      "sha256": "c333d5066df41c45c8e26f846ad84b13edcaa54a58b6c818ae90e6adc0e1783c",
+      "observed_sha256": "c333d5066df41c45c8e26f846ad84b13edcaa54a58b6c818ae90e6adc0e1783c",
+      "immutable": true,
+      "current_authority": false
+    },
+    {
+      "path": "spikes/generation-qualification/results/story-1-11-2026-08-19-r2.spend-receipt.json",
+      "sha256": "1d072bd51470d25ef1e90c3f1f5e90761f52c5758877dfda3dd12954acd59fea",
+      "observed_sha256": "1d072bd51470d25ef1e90c3f1f5e90761f52c5758877dfda3dd12954acd59fea",
+      "immutable": true,
+      "current_authority": false
+    },
+    {
+      "path": "spikes/generation-qualification/results/story-1-11-2026-08-19-r3-f0da0590-4a83-4cf4-8401-6639af524959.complete.json",
+      "sha256": "09a077fd0964bba80aa5d1df786b3bbe8c10a364d2359f6e1c580b109c5ee707",
+      "observed_sha256": "09a077fd0964bba80aa5d1df786b3bbe8c10a364d2359f6e1c580b109c5ee707",
+      "immutable": true,
+      "current_authority": false
+    },
+    {
+      "path": "spikes/generation-qualification/results/story-1-11-2026-08-19-r3-f0da0590-4a83-4cf4-8401-6639af524959.evidence.json",
+      "sha256": "c3b15bf90ecd591e43f72719f6a8c30722e6d73c47b7aa7ec6afc7fbb48c7a9b",
+      "observed_sha256": "c3b15bf90ecd591e43f72719f6a8c30722e6d73c47b7aa7ec6afc7fbb48c7a9b",
+      "immutable": true,
+      "current_authority": false
+    },
+    {
+      "path": "spikes/generation-qualification/results/story-1-11-2026-08-19-r3-f0da0590-4a83-4cf4-8401-6639af524959.qualification.json",
+      "sha256": "a86b1cd1cc51b841c0b78d792e04abf89117edae483bfb29f2a3e2bc1274f8b2",
+      "observed_sha256": "a86b1cd1cc51b841c0b78d792e04abf89117edae483bfb29f2a3e2bc1274f8b2",
+      "immutable": true,
+      "current_authority": false
+    },
+    {
+      "path": "spikes/generation-qualification/results/story-1-11-2026-08-19-r3-f0da0590-4a83-4cf4-8401-6639af524959.report.md",
+      "sha256": "7c60b8a2baf66d4a12936140787ce985114c90dd366cb300aeb214c0d8c9186c",
+      "observed_sha256": "7c60b8a2baf66d4a12936140787ce985114c90dd366cb300aeb214c0d8c9186c",
+      "immutable": true,
+      "current_authority": false
+    },
+    {
+      "path": "spikes/generation-qualification/results/story-1-11-2026-08-19-r3.approval.json",
+      "sha256": "3b9236baefecf890db0d21d10092edf970eebe15ad977f6420cb5bc27b37642b",
+      "observed_sha256": "3b9236baefecf890db0d21d10092edf970eebe15ad977f6420cb5bc27b37642b",
+      "immutable": true,
+      "current_authority": false
+    },
+    {
+      "path": "spikes/generation-qualification/results/story-1-11-2026-08-19-r3.plan.json",
+      "sha256": "f206baef6aad3b18a1851b720b9a6db166219a269d5dd3383635c221268c0c19",
+      "observed_sha256": "f206baef6aad3b18a1851b720b9a6db166219a269d5dd3383635c221268c0c19",
+      "immutable": true,
+      "current_authority": false
+    },
+    {
+      "path": "spikes/generation-qualification/results/story-1-11-2026-08-19-r3.spend-receipt.json",
+      "sha256": "e323396d69b990964ba472662543e2e1ee575505e4ef2faf0dfc866e03a21a0c",
+      "observed_sha256": "e323396d69b990964ba472662543e2e1ee575505e4ef2faf0dfc866e03a21a0c",
+      "immutable": true,
+      "current_authority": false
+    }
+  ],
+  "adapter": {
+    "endpoint": "http://127.0.0.1:8789/",
+    "expected_health": {
+      "ok": true,
+      "inference": false,
+      "schema_version": "oddspark.generation-adapter-health/v1",
+      "provider": "cloudflare-workers-ai",
+      "roles": [
+        {
+          "role": "primary",
+          "resolved_model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+        },
+        {
+          "role": "fallback",
+          "resolved_model": "@cf/meta/llama-3.1-8b-instruct-fast"
+        }
+      ],
+      "parameters": {
+        "temperature": 0,
+        "max_tokens": 2048
+      },
+      "binding": "AI",
+      "worker_sha256": "d86af9f6665bede67cdb6f13564f83d13224c05b3744f68bc9714971aa6aa812",
+      "config_sha256": "9ba2abe917d0e52d1338fe1ae2f27755f772d8b62cb9b35d8663746295c24777",
+      "runtime_sha256": "b5f2d4b994ab5440dcab711eaf7ec9ac0543cfe7e9ca783b31a734366adbb3be"
+    },
+    "observed_health": {
+      "ok": true,
+      "inference": false,
+      "schema_version": "oddspark.generation-adapter-health/v1",
+      "provider": "cloudflare-workers-ai",
+      "roles": [
+        {
+          "role": "primary",
+          "resolved_model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+        },
+        {
+          "role": "fallback",
+          "resolved_model": "@cf/meta/llama-3.1-8b-instruct-fast"
+        }
+      ],
+      "parameters": {
+        "temperature": 0,
+        "max_tokens": 2048
+      },
+      "binding": "AI",
+      "worker_sha256": "d86af9f6665bede67cdb6f13564f83d13224c05b3744f68bc9714971aa6aa812",
+      "config_sha256": "9ba2abe917d0e52d1338fe1ae2f27755f772d8b62cb9b35d8663746295c24777",
+      "runtime_sha256": "b5f2d4b994ab5440dcab711eaf7ec9ac0543cfe7e9ca783b31a734366adbb3be"
+    },
+    "identity_match": true
+  },
+  "fixtures": {
+    "declared_ids": [
+      "direct",
+      "missing",
+      "extra",
+      "mistyped",
+      "wrapped",
+      "text",
+      "fenced",
+      "coerced",
+      "repaired",
+      "ambiguous",
+      "oversized",
+      "provider-error",
+      "timeout"
+    ],
+    "passing_ids": [
+      "direct",
+      "missing",
+      "extra",
+      "mistyped",
+      "wrapped",
+      "text",
+      "fenced",
+      "coerced",
+      "repaired",
+      "ambiguous",
+      "oversized",
+      "provider-error",
+      "timeout"
+    ],
+    "failures": [],
+    "passed": true
+  },
+  "records": [
+    {
+      "kind": "probe",
+      "role": "primary",
+      "resolved_model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+      "index": 1,
+      "started_at": "2026-08-22T13:14:30.998Z",
+      "ended_at": "2026-08-22T13:14:33.139Z",
+      "latency_ms": 2141,
+      "call_state": "received",
+      "classification": "invalid_output",
+      "candidate": null,
+      "candidate_ref": null,
+      "issues": [
+        {
+          "path": "brief",
+          "rule": "closed_schema",
+          "message": "keys differ; missing=[mode, title, plan, why_fits, what_gets_better, before_after, change_level, stays_same, invitation, grounded_numbers], unknown=[capability_bundle, date, region, season, situation, story]"
+        }
+      ],
+      "retained": {
+        "capability_bundle": "software",
+        "date": "2026-08-18",
+        "region": "Blue Water Area",
+        "season": "summer",
+        "situation": "repeated inquiries",
+        "story": "Closed",
+        "version": 1.7
+      },
+      "retained_sha256": "9a2900ec5f78ff156c05c6467294137527242988068e8e7e3c2813fff504b29b",
+      "retained_bytes": 161,
+      "usage": {
+        "input_tokens": 144,
+        "output_tokens": 56
+      },
+      "cost_usd": 0.00016776,
+      "request_sha256": "1f6cb195c320eb9f6f3b512ae9fd0c3dc18660a81c11067e73609ee9c1f0850f"
+    },
+    {
+      "kind": "probe",
+      "role": "fallback",
+      "resolved_model": "@cf/meta/llama-3.1-8b-instruct-fast",
+      "index": 1,
+      "started_at": "2026-08-22T13:14:33.254Z",
+      "ended_at": "2026-08-22T13:14:33.983Z",
+      "latency_ms": 729,
+      "call_state": "received",
+      "classification": "invalid_output",
+      "candidate": null,
+      "candidate_ref": null,
+      "issues": [
+        {
+          "path": "brief",
+          "rule": "closed_schema",
+          "message": "keys differ; missing=[version, mode, title, plan, why_fits, what_gets_better, before_after, change_level, stays_same, invitation, grounded_numbers], unknown=[evidence, seed]"
+        }
+      ],
+      "retained": {
+        "evidence": {
+          "mode": "local",
+          "priors": {
+            "capability_bundle": [
+              "software",
+              "workflow automation"
+            ],
+            "date": "2026-08-18",
+            "region": "Blue Water Area",
+            "season": "summer",
+            "situation": "repeated inquiries"
+          },
+          "version": 1
+        },
+        "seed": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "retained_sha256": "e677c019e4f568c276995dacc09f1c6fc1b67981852db4d680c134102501f7f9",
+      "retained_bytes": 279,
+      "usage": {
+        "input_tokens": 144,
+        "output_tokens": 97
+      },
+      "cost_usd": null,
+      "request_sha256": "48e2e48d2969cb5563f935aeb7253c9b6b82f3420b24bb824f034696716f49dc"
+    }
+  ],
+  "summary": {
+    "by_role": {
+      "primary": {
+        "resolved_model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+        "total": 0,
+        "direct_valid": 0,
+        "invalid_output": 0,
+        "output_too_large": 0,
+        "provider_error": 0,
+        "timeout": 0,
+        "direct_rate": {
+          "numerator": 0,
+          "denominator": 0,
+          "percent": 0
+        },
+        "latency_ms": [],
+        "usage": [],
+        "cost_usd": 0,
+        "cost_known": true,
+        "missing_usage": 0
+      },
+      "fallback": {
+        "resolved_model": "@cf/meta/llama-3.1-8b-instruct-fast",
+        "total": 0,
+        "direct_valid": 0,
+        "invalid_output": 0,
+        "output_too_large": 0,
+        "provider_error": 0,
+        "timeout": 0,
+        "direct_rate": {
+          "numerator": 0,
+          "denominator": 0,
+          "percent": 0
+        },
+        "latency_ms": [],
+        "usage": [],
+        "cost_usd": 0,
+        "cost_known": true,
+        "missing_usage": 0
+      }
+    }
+  },
+  "oracle": {
+    "version": "oddspark-judge-evidence-predicates/v2",
+    "hash": "87e15af7b9ad5477862de03bf9b2b049f68932d41eb1cbbf2eaacee1c9ee7ade",
+    "predicate_ids": [
+      "evidence.shape",
+      "oracle.identity",
+      "legacy.immutable",
+      "runtime.identity",
+      "source.identity",
+      "adapter.identity",
+      "candidate.binding",
+      "fixtures.executed",
+      "records.classified",
+      "records.closed",
+      "run.authorization",
+      "run.cardinality",
+      "run.ordering",
+      "run.common_request",
+      "summary.rates",
+      "outcome.deterministic",
+      "predicates.retained",
+      "report.deterministic",
+      "roles.independent",
+      "output.direct_candidate",
+      "schedule.zero_retry",
+      "cost.recomputed",
+      "manifest.independent"
+    ]
+  },
+  "outcome": {
+    "by_role": {
+      "primary": {
+        "decision": "NO-GO",
+        "reasons": [
+          "probe did not return a direct Candidate",
+          "expected 20 trials, found 0",
+          "direct-valid threshold 19/20 not met"
+        ]
+      },
+      "fallback": {
+        "decision": "NO-GO",
+        "reasons": [
+          "probe did not return a direct Candidate",
+          "expected 20 trials, found 0",
+          "direct-valid threshold 19/20 not met"
+        ]
+      }
+    }
+  },
+  "predicate_results": [
+    {
+      "id": "evidence.shape",
+      "pass": true
+    },
+    {
+      "id": "oracle.identity",
+      "pass": true
+    },
+    {
+      "id": "legacy.immutable",
+      "pass": true
+    },
+    {
+      "id": "runtime.identity",
+      "pass": true
+    },
+    {
+      "id": "source.identity",
+      "pass": true
+    },
+    {
+      "id": "adapter.identity",
+      "pass": true
+    },
+    {
+      "id": "candidate.binding",
+      "pass": true
+    },
+    {
+      "id": "fixtures.executed",
+      "pass": true
+    },
+    {
+      "id": "records.classified",
+      "pass": true
+    },
+    {
+      "id": "records.closed",
+      "pass": true
+    },
+    {
+      "id": "run.authorization",
+      "pass": true
+    },
+    {
+      "id": "run.cardinality",
+      "pass": true
+    },
+    {
+      "id": "run.ordering",
+      "pass": true
+    },
+    {
+      "id": "run.common_request",
+      "pass": true
+    },
+    {
+      "id": "summary.rates",
+      "pass": true
+    },
+    {
+      "id": "outcome.deterministic",
+      "pass": true
+    },
+    {
+      "id": "predicates.retained",
+      "pass": true
+    },
+    {
+      "id": "report.deterministic",
+      "pass": true
+    },
+    {
+      "id": "roles.independent",
+      "pass": true
+    },
+    {
+      "id": "output.direct_candidate",
+      "pass": true
+    },
+    {
+      "id": "schedule.zero_retry",
+      "pass": true
+    },
+    {
+      "id": "cost.recomputed",
+      "pass": true
+    },
+    {
+      "id": "manifest.independent",
+      "pass": true
+    }
+  ],
+  "report": "# Generation Structural Qualification\n\n- Run: `57ef2429-0bac-48a9-9486-7cbc07dd32c7`\n- Calls: 2/42\n\n| Role | Model | Trials | Direct valid | Decision |\n| --- | --- | ---: | ---: | --- |\n| primary | `@cf/meta/llama-3.3-70b-instruct-fp8-fast` | 0 | 0/0 | NO-GO |\n| fallback | `@cf/meta/llama-3.1-8b-instruct-fast` | 0 | 0/0 | NO-GO |\n\nPrimary and fallback results are independent. Failures remain in their role denominator; no retry, replacement, repair, coercion, or prose extraction is allowed.\n\n"
+}

@@ -1,0 +1,43 @@
+{
+  "ready": false,
+  "reason": "activation_preflight_not_ready",
+  "activation_ref": "631755b696d857cb412af478a3d41b9f6a898680779c7188fc366e65cb9f879f",
+  "signing_request": null,
+  "gates": [
+    {
+      "gate_id": "deployed_source",
+      "status": "pass",
+      "approval_expires_at": null
+    },
+    {
+      "gate_id": "generation",
+      "status": "pass",
+      "approval_expires_at": "2026-08-22T18:43:55.000Z"
+    },
+    {
+      "gate_id": "judge",
+      "status": "blocked",
+      "approval_expires_at": "2026-08-24T18:48:21.000Z",
+      "diagnostic": "retained source bytes do not match the current frozen manifest"
+    },
+    {
+      "gate_id": "house_catalog",
+      "status": "pass",
+      "approval_expires_at": null
+    },
+    {
+      "gate_id": "local_full_request",
+      "status": "pass",
+      "approval_expires_at": "2026-08-25T21:18:08.000Z"
+    }
+  ],
+  "required_next_authority": [
+    "fresh generation qualification plan approval and run",
+    "fresh judge qualification plan approval and run against current source bytes",
+    "fresh local full-request qualification plan approval and run against the current assembly",
+    "independent verification of every new retained evidence set",
+    "fresh preparation of exact signing bytes"
+  ],
+  "remote_mutation_performed": false,
+  "provider_calls_performed": 0
+}

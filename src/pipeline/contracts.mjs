@@ -276,17 +276,31 @@ export function validateEvidenceContext(value) {
 }
 export const buildEvidenceContext = (value) => build(value, validateEvidenceContext);
 
+const COMMON_GIVEN_NAMES = Object.freeze([
+  "Alice", "Anne-Marie", "Benjamin", "Charles", "Daniel", "David", "Elizabeth", "Emily", "Emma", "Ethan",
+  "Grace", "Henry", "Isabella", "Jack", "James", "Jane", "Jennifer", "John", "Jordan", "Joseph", "José",
+  "Liam", "Lucas", "Maria", "Mary", "Matthew", "Michael", "Noah", "Olivia", "Robert", "Sarah", "Sophia",
+  "Thomas", "William",
+]);
+
 export function personalNamePolicy(text) {
   if (!nonblank(text)) return deepFreeze({ status: "unknown", reason: "name-policy/v1:input-not-plain-text" });
   const policyText = text.replace(/\bSpark\b/g, "spark");
   const nameWord = String.raw`(?:[\p{Lu}][\p{Ll}\p{M}]+(?:-[\p{Lu}]?[\p{Ll}\p{M}]+)*(?:['’][\p{Lu}]?[\p{Ll}\p{M}]+)*|[\p{Lu}]['’][\p{Lu}][\p{Ll}\p{M}]+)`;
-  const fullName = new RegExp(`(?:^|[^\\p{L}])(${nameWord})\\s+(${nameWord})(?=$|[^\\p{L}])`, "u").exec(policyText);
-  const titledName = new RegExp(`\\b(?:Mr|Mrs|Ms|Miss|Dr|Prof)\\.?\\s+${nameWord}(?=$|[^\\p{L}])`, "u");
-  const sentenceLead = fullName && /^(?:Ask|The|This|That|These|Those|Our|Your|Their|We|They|It|A|An)$/u.test(fullName[1]);
-  if ((fullName && !sentenceLead) || titledName.test(policyText)) return deepFreeze({ status: "fail", reason: "name-policy/v1:personal-name-detected" });
+  const surnameWord = String.raw`(?:${nameWord}|[\p{Lu}][\p{L}\p{M}]*(?:[-'’][\p{L}\p{M}]+)+|[\p{Lu}]{2}[\p{Ll}\p{M}]+|[\p{Lu}][\p{Ll}\p{M}]+[\p{Lu}][\p{L}\p{M}]*)`;
+  const givenName = COMMON_GIVEN_NAMES.map((name) => name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|");
+  const genuineName = new RegExp(`(?:^|[^\\p{L}])(${givenName})\\s+${surnameWord}(?=$|[^\\p{L}])`, "u");
+  const titledName = new RegExp(`\\b(?:Mr|Mrs|Ms|Miss|Dr|Prof)\\.?\\s+${surnameWord}(?=$|[^\\p{L}])`, "u");
+  if (genuineName.test(policyText) || titledName.test(policyText)) return deepFreeze({ status: "fail", reason: "name-policy/v1:personal-name-detected" });
   if (/(?:^|[^\p{L}])\p{Lu}{2,}(?:[-'’]\p{Lu}+)*(?=$|[^\p{L}])/u.test(policyText)) return deepFreeze({ status: "unknown", reason: "name-policy/v1:ambiguous-all-caps-token" });
   const words = policyText.match(new RegExp(`(?:^|[^\\p{L}])(${nameWord})(?=$|[^\\p{L}])`, "gu")) ?? [];
   const sentenceStarts = policyText.match(new RegExp(`(?:^|[.!?]\\s+)${nameWord}(?=$|[^\\p{L}])`, "gu"))?.length ?? 0;
+  const headlineMinorWords = /^(?:a|an|and|as|at|by|for|from|in|into|nor|of|on|or|over|per|the|to|via|with)$/u;
+  const lexicalWords = policyText.match(/[\p{L}\p{M}]+(?:[-'’][\p{L}\p{M}]+)*/gu) ?? [];
+  const titleCase = words.length >= 3
+    && lexicalWords.length >= 3
+    && lexicalWords.every((word) => new RegExp(`^${nameWord}$`, "u").test(word) || headlineMinorWords.test(word));
+  if (titleCase) return deepFreeze({ status: "pass", reason: "name-policy/v1:no-personal-name-signal" });
   if (words.length > sentenceStarts) return deepFreeze({ status: "unknown", reason: "name-policy/v1:ambiguous-capitalized-token" });
   return deepFreeze({ status: "pass", reason: "name-policy/v1:no-personal-name-signal" });
 }

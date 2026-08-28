@@ -1,0 +1,11 @@
+{
+  "schema_version": "oddspark.semantic-qualification-approval/v1",
+  "plan_ref": "863a1acd48a72df7955a2cf94193c55c86413f149acea36296e2f592edbf80ef",
+  "run_id": "semantic-8e5c4baf-9b77-4b7d-b2db-4251027ffc30",
+  "approved_at": null,
+  "expires_at": null,
+  "approved_by": null,
+  "maximum_usd": 0.38664392000000003,
+  "total_calls": 38,
+  "decision": null
+}

@@ -175,6 +175,14 @@ Unintentional: revert the change rather than refreezing over it.
 See [docs/runtime-baseline.md](docs/runtime-baseline.md) for the pinned toolchain
 and the runtime identity freeze.
 
+## Autonomous BMAD governor
+
+The repository includes a project governor that reconciles live BMAD state and
+dispatches development and review into separate, resumable coding-harness
+sessions. See [Using the autonomous BMAD governor](docs/agent-project-governor.md)
+for installation, sanctum setup, Codex/Antigravity routing, live observation,
+session resume, and troubleshooting.
+
 ### Notes
 
 - This is a **Worker**, not Pages. It needs the AI and KV bindings plus request-level routing, so Pages Functions would be fighting the shape.

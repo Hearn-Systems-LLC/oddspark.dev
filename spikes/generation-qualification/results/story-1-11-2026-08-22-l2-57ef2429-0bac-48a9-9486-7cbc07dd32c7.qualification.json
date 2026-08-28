@@ -1,0 +1,233 @@
+{
+  "manifests": {
+    "primary": {
+      "schema_version": "STRUCT-GENERATION/v2",
+      "role": "primary",
+      "provider": "cloudflare-workers-ai",
+      "resolved_model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+      "decision": "NO-GO",
+      "reasons": [
+        "probe did not return a direct Candidate",
+        "expected 20 trials, found 0",
+        "direct-valid threshold 19/20 not met"
+      ],
+      "evidence_sha256": "a1f369f097ca4ba9fdf3adc56cb91b22a0ac7bbe2065befccf226e3108da830e",
+      "source_manifest_sha256": "7ba6308f0b2c714ba49e8b85bfcea22f846aa36bdc3e1bb525f7a6d63580cebe",
+      "runtime_identity_sha256": "b5f2d4b994ab5440dcab711eaf7ec9ac0543cfe7e9ca783b31a734366adbb3be",
+      "request_sha256": "1f6cb195c320eb9f6f3b512ae9fd0c3dc18660a81c11067e73609ee9c1f0850f",
+      "plan_ref": "686e93d98b8f3cdf7f12ab5a145c51836dea806aeafd2666ca666ca8f1981d3a",
+      "predicate_results": [
+        {
+          "id": "evidence.shape",
+          "pass": true
+        },
+        {
+          "id": "oracle.identity",
+          "pass": true
+        },
+        {
+          "id": "legacy.immutable",
+          "pass": true
+        },
+        {
+          "id": "runtime.identity",
+          "pass": true
+        },
+        {
+          "id": "source.identity",
+          "pass": true
+        },
+        {
+          "id": "adapter.identity",
+          "pass": true
+        },
+        {
+          "id": "candidate.binding",
+          "pass": true
+        },
+        {
+          "id": "fixtures.executed",
+          "pass": true
+        },
+        {
+          "id": "records.classified",
+          "pass": true
+        },
+        {
+          "id": "records.closed",
+          "pass": true
+        },
+        {
+          "id": "run.authorization",
+          "pass": true
+        },
+        {
+          "id": "run.cardinality",
+          "pass": true
+        },
+        {
+          "id": "run.ordering",
+          "pass": true
+        },
+        {
+          "id": "run.common_request",
+          "pass": true
+        },
+        {
+          "id": "summary.rates",
+          "pass": true
+        },
+        {
+          "id": "outcome.deterministic",
+          "pass": true
+        },
+        {
+          "id": "predicates.retained",
+          "pass": true
+        },
+        {
+          "id": "report.deterministic",
+          "pass": true
+        },
+        {
+          "id": "roles.independent",
+          "pass": true
+        },
+        {
+          "id": "output.direct_candidate",
+          "pass": true
+        },
+        {
+          "id": "schedule.zero_retry",
+          "pass": true
+        },
+        {
+          "id": "cost.recomputed",
+          "pass": true
+        },
+        {
+          "id": "manifest.independent",
+          "pass": true
+        }
+      ]
+    },
+    "fallback": {
+      "schema_version": "STRUCT-GENERATION/v2",
+      "role": "fallback",
+      "provider": "cloudflare-workers-ai",
+      "resolved_model": "@cf/meta/llama-3.1-8b-instruct-fast",
+      "decision": "NO-GO",
+      "reasons": [
+        "probe did not return a direct Candidate",
+        "expected 20 trials, found 0",
+        "direct-valid threshold 19/20 not met"
+      ],
+      "evidence_sha256": "a1f369f097ca4ba9fdf3adc56cb91b22a0ac7bbe2065befccf226e3108da830e",
+      "source_manifest_sha256": "7ba6308f0b2c714ba49e8b85bfcea22f846aa36bdc3e1bb525f7a6d63580cebe",
+      "runtime_identity_sha256": "b5f2d4b994ab5440dcab711eaf7ec9ac0543cfe7e9ca783b31a734366adbb3be",
+      "request_sha256": "48e2e48d2969cb5563f935aeb7253c9b6b82f3420b24bb824f034696716f49dc",
+      "plan_ref": "686e93d98b8f3cdf7f12ab5a145c51836dea806aeafd2666ca666ca8f1981d3a",
+      "predicate_results": [
+        {
+          "id": "evidence.shape",
+          "pass": true
+        },
+        {
+          "id": "oracle.identity",
+          "pass": true
+        },
+        {
+          "id": "legacy.immutable",
+          "pass": true
+        },
+        {
+          "id": "runtime.identity",
+          "pass": true
+        },
+        {
+          "id": "source.identity",
+          "pass": true
+        },
+        {
+          "id": "adapter.identity",
+          "pass": true
+        },
+        {
+          "id": "candidate.binding",
+          "pass": true
+        },
+        {
+          "id": "fixtures.executed",
+          "pass": true
+        },
+        {
+          "id": "records.classified",
+          "pass": true
+        },
+        {
+          "id": "records.closed",
+          "pass": true
+        },
+        {
+          "id": "run.authorization",
+          "pass": true
+        },
+        {
+          "id": "run.cardinality",
+          "pass": true
+        },
+        {
+          "id": "run.ordering",
+          "pass": true
+        },
+        {
+          "id": "run.common_request",
+          "pass": true
+        },
+        {
+          "id": "summary.rates",
+          "pass": true
+        },
+        {
+          "id": "outcome.deterministic",
+          "pass": true
+        },
+        {
+          "id": "predicates.retained",
+          "pass": true
+        },
+        {
+          "id": "report.deterministic",
+          "pass": true
+        },
+        {
+          "id": "roles.independent",
+          "pass": true
+        },
+        {
+          "id": "output.direct_candidate",
+          "pass": true
+        },
+        {
+          "id": "schedule.zero_retry",
+          "pass": true
+        },
+        {
+          "id": "cost.recomputed",
+          "pass": true
+        },
+        {
+          "id": "manifest.independent",
+          "pass": true
+        }
+      ]
+    }
+  },
+  "qualification_refs": {
+    "primary": null,
+    "fallback": null
+  },
+  "cycle_ref": "1d4e773eae154090de0de3f469d94add7e089c8a39d52b9510d8e0150f255b68",
+  "role_qualification_set": null,
+  "role_qualification_ref": null
+}

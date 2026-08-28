@@ -1,7 +1,9 @@
 import {
+  LEGACY_ARTIFACT_KINDS,
   canonicalScopeKey,
   classifyCompatibleArtifact,
   defensiveFreeze,
+  isLegacyArtifactKind,
   parseReceipt,
   parseRequestScope,
   validateCommitPayload,
@@ -12,7 +14,45 @@ import {
   committedBriefJson,
   committedBriefPresentation,
 } from "./pipeline/rendering.mjs";
-import { createInactiveDomainWriter } from "./pipeline/assembly.mjs";
+import {
+  legacySparkAsText,
+  legacySparkJson,
+  legacySparkPresentation,
+} from "./pipeline/legacy-rendering.mjs";
+import { activationPosture, createInactiveDomainWriter } from "./pipeline/assembly.mjs";
+import { productionPipelineEnv } from "./pipeline/production-ports.mjs";
+
+// One immutable assembly per exact environment/snapshot/content identity.
+// Request/coordinator state is never retained here. A binding value or
+// deployed-content identity change produces a different key and reassembles.
+const ASSEMBLED_WRITER_CACHE = new WeakMap();
+
+async function cachedInactiveDomainWriter(env, snapshot) {
+  const pipeline = productionPipelineEnv(env) ?? {};
+  const identities = pipeline.PIPELINE_ACTIVATION_IDENTITIES ?? null;
+  const snapshotKey = JSON.stringify({ snapshot, identities });
+  const resolved = { ...env, ...pipeline };
+  const dependencyKeys = ["PIPELINE_ACTIVATION_IDENTITIES", "PIPELINE_PRIORS", "PIPELINE_HOUSE", "PIPELINE_CORPUS", "PIPELINE_JUDGE", "PIPELINE_GENERATE_PROVIDER", "PIPELINE_JUDGE_PROVIDER"];
+  const dependencyValues = dependencyKeys.map((key) => resolved[key]);
+  const prior = ASSEMBLED_WRITER_CACHE.get(env);
+  if (prior?.snapshotKey === snapshotKey && dependencyValues.every((value, index) => value === prior.dependencyValues[index])) return prior.writer;
+  const assemblyEnv = { ...env, ...pipeline, ACTIVATION_SNAPSHOT: snapshot };
+  const writer = await createInactiveDomainWriter(assemblyEnv, {
+    coordPost: (path, body) => coordPost(env, path, body),
+  });
+  ASSEMBLED_WRITER_CACHE.set(env, { snapshotKey, dependencyValues, writer });
+  return writer;
+}
+import {
+  ABUSE_SLOT_RETENTION_MS,
+  NEURON_RECEIPT_RETENTION_MS,
+  PROFILE_RETENTION_MS,
+  absoluteKvExpiration,
+  addRetentionBoundary,
+  abuseSlotExpiresAt,
+  localArtifactExpiresAt,
+  profileExpiresAt,
+} from "./pipeline/retention.mjs";
 
 /**
  * oddspark.dev
@@ -48,11 +88,12 @@ const SCAN_BUDGET_MS = 4000;
 const SCAN_BYTE_LIMIT = 512 * 1024;
 const SCAN_PAGE_LIMIT = 3;
 const REDIRECT_LIMIT = 3;
-const PROFILE_TTL = 86400;
 const CLAIM_LEASE_MS = 20000;
-const VISITOR_WINDOW_MS = 60 * 60 * 1000;
+const VISITOR_WINDOW_MS = ABUSE_SLOT_RETENTION_MS;
 const VISITOR_DOMAIN_LIMIT = 10;
 const SPARK_ID_RE = /^[A-Za-z0-9._-]{1,128}$/;
+const COORD_VISITOR_KEY_RE = /^[A-Za-z0-9._:-]{1,128}$/;
+const COORD_DOMAIN_RE = /^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/;
 
 const UNAVAILABLE_WARNING = "Site context was unavailable; showing the generic spark.";
 const LIMITED_WARNING = "Site scanning is limited; showing the generic spark.";
@@ -653,7 +694,7 @@ function stripFence(s) {
 
 const NEURON_FREE_DAILY = 10000;
 const NEURON_FALLBACK_FRACTION = 0.25;
-const NEURON_RECEIPT_TTL = 172800; // 2 days; only the UTC day is ever live
+const NEURON_RECEIPT_TTL = NEURON_RECEIPT_RETENTION_MS / 1000; // 2 days; only the UTC day is ever live
 
 function neuronDay() {
   return new Date().toISOString().slice(0, 10);
@@ -679,6 +720,146 @@ export class NeuronMeter {
   }
 }
 
+const EXPIRY_PREFIX = "expiry:";
+
+function expiryIndexKey(entry) {
+  const identity = entry.family === "local" ? `${entry.scope_key}|${entry.artifact_id}|${entry.committed_at}`
+    : entry.family === "profile" ? entry.domain
+    : entry.family === "abuse" ? entry.visitor_key
+    : `${entry.scope_key}|${entry.owner}|${entry.lease_until}`;
+  return `${EXPIRY_PREFIX}${String(entry.expires_at).padStart(16, "0")}:${entry.family}:${encodeURIComponent(identity)}`;
+}
+
+async function indexExpiry(storage, entry) {
+  await storage.put(expiryIndexKey(entry), entry);
+}
+
+async function scheduleEarliestIndexedExpiry(storage, clearWhenEmpty = false) {
+  const indexed = await storage.list({ prefix: EXPIRY_PREFIX });
+  let earliest = null;
+  for (const entry of indexed.values()) {
+    if (validExpiryEntry(entry) && (earliest === null || entry.expires_at < earliest)) earliest = entry.expires_at;
+  }
+  const scheduled = await storage.getAlarm();
+  if (earliest === null) {
+    if (clearWhenEmpty && scheduled !== null) await storage.deleteAlarm();
+    return;
+  }
+  const scheduledMs = scheduled instanceof Date ? scheduled.getTime() : scheduled;
+  if (scheduledMs === null || earliest < scheduledMs) await storage.setAlarm(earliest);
+}
+
+async function transactionWithExpiry(storage, closure) {
+  const result = await storage.transaction(closure);
+  await scheduleEarliestIndexedExpiry(storage);
+  return result;
+}
+
+function validStoredProfile(profile, domain) {
+  return closedInput(profile, ["version", "domain", "scanned_urls", "vertical", "clarity", "observation", "scan_time", "profile_hash"])
+    && profile.version === PERSONALIZATION_VERSION && profile.domain === domain && COORD_DOMAIN_RE.test(profile.domain)
+    && Array.isArray(profile.scanned_urls) && profile.scanned_urls.length > 0 && profile.scanned_urls.every((url) => typeof url === "string" && !!url)
+    && typeof profile.vertical === "string" && profile.vertical.trim() === profile.vertical && !!profile.vertical
+    && ["clear", "unclear"].includes(profile.clarity)
+    && closedInput(profile.observation, ["url", "text"]) && typeof profile.observation.url === "string" && !!profile.observation.url
+    && typeof profile.observation.text === "string" && !!profile.observation.text
+    && typeof profile.scan_time === "string" && Number.isFinite(Date.parse(profile.scan_time))
+    && /^[a-f0-9]{64}$/.test(profile.profile_hash || "");
+}
+
+function validStoredProfileRecord(value, domain) {
+  if (!closedInput(value, ["profile", "created_at", "expires_at"]) || !validStoredProfile(value.profile, domain)
+      || !Number.isSafeInteger(value.created_at) || !Number.isSafeInteger(value.expires_at)) return false;
+  try { return profileExpiresAt(value.created_at) === value.expires_at; } catch { return false; }
+}
+
+function safeAbuseEntry(entry) {
+  if (!closedInput(entry, ["domain", "at"]) || !COORD_DOMAIN_RE.test(entry.domain || "") || !Number.isSafeInteger(entry.at)) return null;
+  try { return { entry, expires_at: abuseSlotExpiresAt(entry.at) }; } catch { return null; }
+}
+
+function validExpiryEntry(entry) {
+  if (!entry || typeof entry !== "object" || Array.isArray(entry) || !Number.isSafeInteger(entry.expires_at) || entry.expires_at < 0) return false;
+  if (entry.family === "local") {
+    try { return closedInput(entry, ["family", "expires_at", "scope_key", "artifact_id", "committed_at"])
+      && typeof entry.scope_key === "string" && entry.scope_key.startsWith("local:") && SPARK_ID_RE.test(entry.artifact_id || "")
+      && Number.isSafeInteger(entry.committed_at) && entry.expires_at === localArtifactExpiresAt(entry.committed_at); }
+    catch { return false; }
+  }
+  if (entry.family === "profile") return closedInput(entry, ["family", "expires_at", "domain"]) && COORD_DOMAIN_RE.test(entry.domain || "");
+  if (entry.family === "abuse") return closedInput(entry, ["family", "expires_at", "visitor_key"]) && typeof entry.visitor_key === "string" && !!entry.visitor_key;
+  if (entry.family === "claim") return closedInput(entry, ["family", "expires_at", "scope_key", "owner", "lease_until"])
+    && typeof entry.scope_key === "string" && typeof entry.owner === "string" && entry.lease_until === entry.expires_at;
+  return false;
+}
+
+async function cleanupCoordinatorExpiry(storage, now) {
+  const listed = await storage.list({ prefix: EXPIRY_PREFIX });
+  for (const [indexKey, candidate] of listed) {
+    if (!validExpiryEntry(candidate)) { await storage.delete(indexKey); continue; }
+    if (candidate.expires_at > now) continue;
+    await storage.transaction(async (txn) => {
+      const entry = await txn.get(indexKey);
+      if (!validExpiryEntry(entry)) { await txn.delete(indexKey); return; }
+      if (JSON.stringify(entry) !== JSON.stringify(candidate)) {
+        await txn.delete(indexKey);
+        await indexExpiry(txn, entry);
+        return;
+      }
+      await txn.delete(indexKey);
+      if (entry.family === "local") {
+        const receiptKey = "receipt:" + entry.scope_key;
+        const stored = await txn.get(receiptKey);
+        const receipt = parseReceipt(stored, stored?.scope);
+        if (receipt && receipt.scope.kind === "local") {
+          const actual = { family: "local", expires_at: receipt.expires_at, scope_key: canonicalScopeKey(receipt.scope),
+            artifact_id: receipt.artifact.id, committed_at: receipt.committed_at };
+          const matches = actual.scope_key === entry.scope_key && actual.artifact_id === entry.artifact_id
+            && actual.committed_at === entry.committed_at && actual.expires_at === entry.expires_at;
+          if (matches && now >= receipt.expires_at) {
+            await txn.delete(receiptKey);
+            const idKey = "artifact:" + entry.artifact_id;
+            const indexed = await txn.get(idKey);
+            const indexedReceipt = parseReceipt(indexed, indexed?.scope);
+            if (indexedReceipt && canonicalScopeKey(indexedReceipt.scope) === entry.scope_key
+                && indexedReceipt.artifact.id === entry.artifact_id && indexedReceipt.committed_at === entry.committed_at
+                && indexedReceipt.expires_at === entry.expires_at) await txn.delete(idKey);
+          } else await indexExpiry(txn, actual);
+        }
+      } else if (entry.family === "profile") {
+        const key = "profile:" + entry.domain;
+        const stored = await txn.get(key);
+        if (validStoredProfileRecord(stored, entry.domain)) {
+          if (stored.expires_at === entry.expires_at && now >= stored.expires_at) await txn.delete(key);
+          else await indexExpiry(txn, { family: "profile", expires_at: stored.expires_at, domain: entry.domain });
+        }
+      } else if (entry.family === "abuse") {
+        const key = "vis:" + entry.visitor_key;
+        const history = await txn.get(key);
+        if (Array.isArray(history)) {
+          const retained = history.map(safeAbuseEntry).filter((item) => item && item.expires_at > now);
+          if (retained.length) {
+            await txn.put(key, retained.map((item) => item.entry));
+            const next = Math.min(...retained.map((item) => item.expires_at));
+            await indexExpiry(txn, { family: "abuse", expires_at: next, visitor_key: entry.visitor_key });
+          } else await txn.delete(key);
+        } else await txn.delete(key);
+      } else if (entry.family === "claim") {
+        const key = "receipt:" + entry.scope_key;
+        const stored = await txn.get(key);
+        if (stored?.status === "claimed" && stored.owner === entry.owner && stored.lease_until === entry.lease_until
+            && canonicalScopeKey(stored.scope) === entry.scope_key && now >= stored.lease_until) await txn.delete(key);
+        else if (stored?.status === "claimed" && typeof stored.owner === "string" && Number.isSafeInteger(stored.lease_until)
+            && canonicalScopeKey(stored.scope) === entry.scope_key) {
+          await indexExpiry(txn, { family: "claim", expires_at: stored.lease_until, scope_key: entry.scope_key,
+            owner: stored.owner, lease_until: stored.lease_until });
+        }
+      }
+    });
+  }
+  await scheduleEarliestIndexedExpiry(storage, true);
+}
+
 // One global instance serializes the parts KV cannot make atomic: rolling
 // visitor slots, domain/window ownership, and the first accepted profile.
 export class SparkCoordinator {
@@ -686,26 +867,35 @@ export class SparkCoordinator {
     this.state = state;
   }
 
+  async alarm() {
+    await cleanupCoordinatorExpiry(this.state.storage, Date.now());
+  }
+
   async fetch(request) {
     const url = new URL(request.url);
     const input = request.method === "POST" ? await request.json() : {};
 
     if (url.pathname === "/slot") {
+      if (!closedInput(input, ["visitorKey", "domain"]) || !COORD_VISITOR_KEY_RE.test(input.visitorKey || "")
+          || !COORD_DOMAIN_RE.test(input.domain || "")) return Response.json({ error: "invalid coordinator slot" }, { status: 400 });
       const key = "vis:" + input.visitorKey;
       return Response.json(
-        await this.state.storage.transaction(async (txn) => {
+        await transactionWithExpiry(this.state.storage, async (txn) => {
           const now = Date.now();
           const history = ((await txn.get(key)) || []).filter((entry) => entry.at > now - VISITOR_WINDOW_MS);
           if (history.some((entry) => entry.domain === input.domain)) {
             await txn.put(key, history);
+            if (history.length) await indexExpiry(txn, { family: "abuse", expires_at: Math.min(...history.map((entry) => abuseSlotExpiresAt(entry.at))), visitor_key: input.visitorKey });
             return { allowed: true, consumed: false };
           }
           if (history.length >= VISITOR_DOMAIN_LIMIT) {
             await txn.put(key, history);
+            await indexExpiry(txn, { family: "abuse", expires_at: Math.min(...history.map((entry) => abuseSlotExpiresAt(entry.at))), visitor_key: input.visitorKey });
             return { allowed: false, consumed: false };
           }
           history.push({ domain: input.domain, at: now });
           await txn.put(key, history);
+          await indexExpiry(txn, { family: "abuse", expires_at: Math.min(...history.map((entry) => abuseSlotExpiresAt(entry.at))), visitor_key: input.visitorKey });
           return { allowed: true, consumed: true };
         })
       );
@@ -717,7 +907,25 @@ export class SparkCoordinator {
       const scope = byScope ? parseRequestScope(input.scope) : null;
       if ((!scope && !byId) || (byId && !SPARK_ID_RE.test(input.id || ""))) return Response.json({ error: "invalid coordinator read" }, { status: 400 });
       const key = scope ? "receipt:" + canonicalScopeKey(scope) : "artifact:" + input.id;
-      const receipt = await this.state.storage.get(key);
+      const receipt = await transactionWithExpiry(this.state.storage, async (txn) => {
+        const stored = await txn.get(key);
+        if (!stored || stored.status !== "committed" || stored.scope?.kind !== "local") return stored;
+        const parsed = parseReceipt(stored, stored.scope);
+        if (!parsed) return stored;
+        const scopeKey = canonicalScopeKey(parsed.scope);
+        const migrated = !Object.hasOwn(stored, "expires_at");
+        if (migrated) {
+          await txn.put(key, parsed);
+          const counterpartKey = key === "receipt:" + scopeKey ? "artifact:" + parsed.artifact.id : "receipt:" + scopeKey;
+          const counterpart = await txn.get(counterpartKey);
+          if (counterpart?.status === "committed" && !Object.hasOwn(counterpart, "expires_at")
+              && canonicalScopeKey(counterpart.scope) === scopeKey && counterpart.artifact?.id === parsed.artifact.id
+              && counterpart.committed_at === parsed.committed_at) await txn.put(counterpartKey, parsed);
+        }
+        await indexExpiry(txn, { family: "local", expires_at: parsed.expires_at, scope_key: scopeKey,
+          artifact_id: parsed.artifact.id, committed_at: parsed.committed_at });
+        return Date.now() < parsed.expires_at ? parsed : null;
+      });
       if (!receipt || receipt.status === "claimed") return Response.json({ status: "missing" });
       if (receipt.status === "ambiguous") return Response.json({ error: "ambiguous coordinator artifact" }, { status: 409 });
       const parsed = parseReceipt(receipt, scope || receipt.scope);
@@ -730,15 +938,49 @@ export class SparkCoordinator {
         return Response.json({ error: "invalid coordinator claim" }, { status: 400 });
       }
       const key = "receipt:" + canonicalScopeKey(scope);
-      return Response.json(await this.state.storage.transaction(async (txn) => {
-        const existing = await txn.get(key);
+      const result = await transactionWithExpiry(this.state.storage, async (txn) => {
+        let existing = await txn.get(key);
+        if (existing?.status === "committed" && scope.kind === "local") {
+          const parsed = parseReceipt(existing, scope);
+          if (!parsed) return existing;
+          const scopeKey = canonicalScopeKey(scope);
+          if (!Object.hasOwn(existing, "expires_at")) {
+            await txn.put(key, parsed);
+            const indexed = await txn.get("artifact:" + parsed.artifact.id);
+            if (indexed?.status === "committed" && !Object.hasOwn(indexed, "expires_at")
+                && canonicalScopeKey(indexed.scope) === scopeKey && indexed.artifact?.id === parsed.artifact.id
+                && indexed.committed_at === parsed.committed_at) await txn.put("artifact:" + parsed.artifact.id, parsed);
+          }
+          await indexExpiry(txn, { family: "local", expires_at: parsed.expires_at, scope_key: scopeKey,
+            artifact_id: parsed.artifact.id, committed_at: parsed.committed_at });
+          if (Date.now() < parsed.expires_at) return parsed;
+          const indexed = await txn.get("artifact:" + parsed.artifact.id);
+          const indexedReceipt = parseReceipt(indexed, indexed?.scope);
+          if (indexedReceipt && canonicalScopeKey(indexedReceipt.scope) === scopeKey
+              && indexedReceipt.artifact.id === parsed.artifact.id && indexedReceipt.committed_at === parsed.committed_at
+              && indexedReceipt.expires_at === parsed.expires_at) await txn.delete("artifact:" + parsed.artifact.id);
+          await txn.delete(key);
+          existing = null;
+        }
         if (existing?.status === "committed") return existing;
         const now = Date.now();
-        if (existing?.status === "claimed" && existing.owner !== input.owner && existing.lease_until > now) return existing;
-        const claimed = { status: "claimed", scope, owner: input.owner, lease_until: now + CLAIM_LEASE_MS };
+        if (existing?.status === "claimed" && typeof existing.owner === "string" && Number.isSafeInteger(existing.lease_until)
+            && canonicalScopeKey(existing.scope) === canonicalScopeKey(scope)) {
+          await indexExpiry(txn, { family: "claim", expires_at: existing.lease_until, scope_key: canonicalScopeKey(scope),
+            owner: existing.owner, lease_until: existing.lease_until });
+          if (existing.owner === input.owner) return existing;
+          if (existing.owner !== input.owner && existing.lease_until > now) return existing;
+        }
+        let claimLeaseUntil;
+        try { claimLeaseUntil = addRetentionBoundary(now, CLAIM_LEASE_MS, "claimNowMs"); }
+        catch { return { error: "invalid coordinator timestamp", __status: 400 }; }
+        const claimed = { status: "claimed", scope, owner: input.owner, lease_until: claimLeaseUntil };
         await txn.put(key, claimed);
+        await indexExpiry(txn, { family: "claim", expires_at: claimed.lease_until, scope_key: canonicalScopeKey(scope), owner: input.owner, lease_until: claimed.lease_until });
         return claimed;
-      }));
+      });
+      if (result?.__status) return Response.json({ error: result.error }, { status: result.__status });
+      return Response.json(result);
     }
 
     if (url.pathname === "/claim") {
@@ -757,15 +999,48 @@ export class SparkCoordinator {
       );
     }
 
-    if (url.pathname === "/commit" && input.scope) {
-      const commit = validateCommitPayload(input);
+    if (["/commit", "/terminal-commit"].includes(url.pathname) && input.scope) {
+      const terminalCommit = url.pathname === "/terminal-commit";
+      const terminalDeadlineMs = terminalCommit && closedInput(input, ["scope", "owner", "artifact", "terminal_deadline_ms"])
+        && Number.isSafeInteger(input.terminal_deadline_ms) && input.terminal_deadline_ms > 0 ? input.terminal_deadline_ms : null;
+      const commit = validateCommitPayload(terminalCommit
+        ? { scope: input.scope, owner: input.owner, artifact: input.artifact }
+        : input);
+      if (terminalCommit && terminalDeadlineMs === null) return Response.json({ error: "invalid coordinator commit" }, { status: 400 });
       if (!commit) return Response.json({ error: "invalid coordinator commit" }, { status: 400 });
       const key = "receipt:" + canonicalScopeKey(commit.scope);
-      return Response.json(await this.state.storage.transaction(async (txn) => {
-        const existing = await txn.get(key);
+      const result = await transactionWithExpiry(this.state.storage, async (txn) => {
+        let existing = await txn.get(key);
+        if (existing?.status === "committed" && commit.scope.kind === "local") {
+          const parsed = parseReceipt(existing, commit.scope);
+          if (!parsed) return existing;
+          if (Date.now() < parsed.expires_at) {
+            if (!Object.hasOwn(existing, "expires_at")) await txn.put(key, parsed);
+            await indexExpiry(txn, { family: "local", expires_at: parsed.expires_at, scope_key: canonicalScopeKey(parsed.scope),
+              artifact_id: parsed.artifact.id, committed_at: parsed.committed_at });
+            return parsed;
+          }
+          const indexed = await txn.get("artifact:" + parsed.artifact.id);
+          const indexedReceipt = parseReceipt(indexed, indexed?.scope);
+          if (indexedReceipt && canonicalScopeKey(indexedReceipt.scope) === canonicalScopeKey(parsed.scope)
+              && indexedReceipt.artifact.id === parsed.artifact.id && indexedReceipt.committed_at === parsed.committed_at
+              && indexedReceipt.expires_at === parsed.expires_at) await txn.delete("artifact:" + parsed.artifact.id);
+          await txn.delete(key);
+          existing = null;
+        }
         if (existing?.status === "committed") return existing;
         if (!existing || existing.status !== "claimed" || existing.owner !== commit.owner) return existing || { status: "missing" };
-        const receipt = { status: "committed", scope: commit.scope, artifact: commit.artifact, artifact_kind: commit.artifact_kind, committed_at: Date.now() };
+        // The coordinator owns the authoritative terminal check at the exact
+        // mutation boundary. A delayed request can never commit after the
+        // outer writer deadline merely because it entered the transport
+        // before that deadline.
+        if (terminalCommit && Date.now() >= terminalDeadlineMs) return { status: "terminal" };
+        const commitNow = Date.now();
+        let localExpiresAt;
+        try { if (commit.scope.kind === "local") localExpiresAt = localArtifactExpiresAt(commitNow); }
+        catch { return { error: "invalid coordinator timestamp", __status: 400 }; }
+        const receipt = { status: "committed", scope: commit.scope, artifact: commit.artifact, artifact_kind: commit.artifact_kind, committed_at: commitNow,
+          ...(localExpiresAt === undefined ? {} : { expires_at: localExpiresAt }) };
         await txn.put(key, receipt);
         if (commit.artifact.id) {
           const idKey = "artifact:" + commit.artifact.id;
@@ -775,8 +1050,12 @@ export class SparkCoordinator {
             await txn.put(idKey, { status: "ambiguous" });
           }
         }
+        if (commit.scope.kind === "local") await indexExpiry(txn, { family: "local", expires_at: receipt.expires_at,
+          scope_key: canonicalScopeKey(receipt.scope), artifact_id: receipt.artifact.id, committed_at: receipt.committed_at });
         return receipt;
-      }));
+      });
+      if (result?.__status) return Response.json({ error: result.error }, { status: result.__status });
+      return Response.json(result);
     }
 
     if (url.pathname === "/commit") {
@@ -847,20 +1126,44 @@ export class SparkCoordinator {
       return result ? Response.json(result) : Response.json({ error: "invalid coordinator metric state" }, { status: 500 });
     }
 
+    if (url.pathname === "/profile/read") {
+      if (!closedInput(input, ["domain"]) || !COORD_DOMAIN_RE.test(input.domain || "")) {
+        return Response.json({ error: "invalid coordinator profile read" }, { status: 400 });
+      }
+      const stored = await transactionWithExpiry(this.state.storage, async (txn) => {
+        const value = await txn.get("profile:" + input.domain);
+        if (validStoredProfileRecord(value, input.domain)) {
+          await indexExpiry(txn, { family: "profile", expires_at: value.expires_at, domain: input.domain });
+        }
+        return value;
+      });
+      if (!validStoredProfileRecord(stored, input.domain) || Date.now() >= stored.expires_at) return Response.json({ status: "missing" });
+      return Response.json({ status: "live", profile: stored.profile, expires_at: stored.expires_at });
+    }
+
     if (url.pathname === "/profile") {
+      if (!closedInput(input, ["domain", "profile"]) || !COORD_DOMAIN_RE.test(input.domain || "")
+          || !validStoredProfile(input.profile, input.domain)) {
+        return Response.json({ error: "invalid coordinator profile" }, { status: 400 });
+      }
       const key = "profile:" + input.domain;
-      return Response.json(
-        await this.state.storage.transaction(async (txn) => {
-          const now = Date.now();
+      const result = await transactionWithExpiry(this.state.storage, async (txn) => {
           const existing = await txn.get(key);
-          if (existing && existing.expires_at > now) {
+          if (validStoredProfileRecord(existing, input.domain) && existing.expires_at > Date.now()) {
+            await indexExpiry(txn, { family: "profile", expires_at: existing.expires_at, domain: input.domain });
             return { accepted: false, profile: existing.profile, expires_at: existing.expires_at };
           }
-          const value = { profile: input.profile, expires_at: now + PROFILE_TTL * 1000 };
+          const createdAt = Date.now();
+          let expiresAt;
+          try { expiresAt = profileExpiresAt(createdAt); }
+          catch { return { error: "invalid coordinator timestamp", __status: 400 }; }
+          const value = { profile: input.profile, created_at: createdAt, expires_at: expiresAt };
           await txn.put(key, value);
-          return { accepted: true, ...value };
-        })
-      );
+          await indexExpiry(txn, { family: "profile", expires_at: value.expires_at, domain: input.domain });
+          return { accepted: true, profile: value.profile, expires_at: value.expires_at };
+        });
+      if (result?.__status) return Response.json({ error: result.error }, { status: result.__status });
+      return Response.json(result);
     }
 
     return Response.json({ error: "unknown coordinator operation" }, { status: 404 });
@@ -1157,12 +1460,25 @@ function fallbackWithContext(spark, status, domain, warning) {
 }
 
 async function validCachedProfile(env, domain) {
-  const profile = await env.SPARKS.get("profile:" + domain, { type: "json" });
-  if (!profile || profile.domain !== domain || profile.version !== PERSONALIZATION_VERSION) return null;
+  const authority = await coordPost(env, "/profile/read", { domain });
+  if (authority.status === "missing") return null;
+  if (!closedInput(authority, ["status", "profile", "expires_at"]) || authority.status !== "live"
+      || !Number.isSafeInteger(authority.expires_at) || Date.now() >= authority.expires_at) throw new Error("invalid coordinator profile");
+  const profile = authority.profile;
+  if (!profile || profile.domain !== domain || profile.version !== PERSONALIZATION_VERSION) throw new Error("invalid coordinator profile");
   try {
     const { profile_hash } = await hashProfile(profile);
-    return profile_hash === profile.profile_hash ? profile : null;
+    if (profile_hash !== profile.profile_hash) throw new Error("invalid coordinator profile");
+    try {
+      const cached = await env.SPARKS.get("profile:" + domain, { type: "json" });
+      if (JSON.stringify(cached) !== JSON.stringify(profile)) {
+        const expiration = absoluteKvExpiration(authority.expires_at, Date.now());
+        if (expiration !== null) await env.SPARKS.put("profile:" + domain, JSON.stringify(profile), { expiration });
+      }
+    } catch { /* COORD remains authoritative when profile cache access fails. */ }
+    return profile;
   } catch (err) {
+    if (/invalid coordinator profile/.test(String(err?.message))) throw err;
     return null;
   }
 }
@@ -1238,7 +1554,7 @@ async function resolveCommit(env, commit, round, domain) {
   if (commit.artifact) {
     const receipt = parseReceipt(commit, { kind: "domain", round, domain });
     if (!receipt) throw new Error("invalid coordinator receipt");
-    await repairProjection(env, receipt.scope, receipt.artifact);
+    await repairProjection(env, receipt);
     return { ...receipt.artifact, cached: true };
   }
   if (commit.result === "personalized" && /^p-[0-9a-f]{16}$/.test(commit.id || "")) {
@@ -1331,8 +1647,8 @@ async function buildDomainSpark(request, env, website, round, visitorKey) {
       const candidate = await inferWebsiteProfile(env, website, await scanWebsite(website));
       const committed = await coordPost(env, "/profile", { domain: website.domain, profile: candidate });
       profile = committed.profile;
-      const ttl = Math.max(1, Math.min(PROFILE_TTL, Math.ceil((committed.expires_at - Date.now()) / 1000)));
-      await env.SPARKS.put("profile:" + website.domain, JSON.stringify(profile), { expirationTtl: ttl });
+      const expiration = absoluteKvExpiration(committed.expires_at, Date.now());
+      if (expiration !== null) await env.SPARKS.put("profile:" + website.domain, JSON.stringify(profile), { expiration });
     } catch (err) {
       if (err instanceof WebsiteInputError) {
         try {
@@ -1467,11 +1783,15 @@ async function buildSparkCandidate(env, requestedRound, project = true) {
   return { ...spark, cached: false };
 }
 
-async function repairProjection(env, scope, artifact) {
+async function repairProjection(env, receipt) {
+  const { scope, artifact } = receipt;
+  const expiration = scope.kind === "local" ? absoluteKvExpiration(receipt.expires_at, Date.now()) : undefined;
+  if (scope.kind === "local" && expiration === null) return;
+  const options = expiration === undefined ? undefined : { expiration };
   try {
-    await env.SPARKS.put(artifact.id, JSON.stringify(artifact));
+    await env.SPARKS.put(artifact.id, JSON.stringify(artifact), options);
     const pointer = scope.kind === "local" ? "w:" + scope.round : "pw:" + scope.round + ":" + scope.domain;
-    await env.SPARKS.put(pointer, artifact.id);
+    await env.SPARKS.put(pointer, artifact.id, options);
   } catch { /* Authority is already durable; projection repair is best effort. */ }
 }
 
@@ -1480,7 +1800,7 @@ async function buildSpark(env, requestedRound) {
   const scope = { kind: "local", round };
   const current = await readAuthoritative(env, scope);
   if (current) {
-    await repairProjection(env, scope, current.artifact);
+    await repairProjection(env, current);
     return { ...current.artifact, cached: true };
   }
   const owner = claimOwner();
@@ -1488,13 +1808,13 @@ async function buildSpark(env, requestedRound) {
   if (claim.status === "committed") {
     const receipt = parseReceipt(claim, scope);
     if (!receipt) throw new Error("invalid coordinator receipt");
-    await repairProjection(env, scope, receipt.artifact);
+    await repairProjection(env, receipt);
     return { ...receipt.artifact, cached: true };
   }
   const candidate = await buildSparkCandidate(env, round, false);
   const { cached: candidateCached, ...committable } = candidate;
   const receipt = await commitScope(env, scope, owner, committable);
-  await repairProjection(env, scope, receipt.artifact);
+  await repairProjection(env, receipt);
   return { ...receipt.artifact, cached: receipt.artifact.id !== candidate.id };
 }
 
@@ -1503,25 +1823,52 @@ async function compatibleArtifactById(env, id) {
   try { projected = await env.SPARKS.get(id, { type: "json" }); } catch { /* consult authority */ }
   const classification = classifyCompatibleArtifact(projected);
   const receipt = await readAuthoritative(env, id);
-  if (!receipt) return ["supported", "unsupported"].includes(classification.status) ? classification : { status: "miss" };
+  if (!receipt) return classification.status === "unsupported" ? classification : { status: "miss" };
   if (receipt.artifact.id !== id) throw new Error("coordinator artifact identity mismatch");
-  try { await env.SPARKS.put(id, JSON.stringify(receipt.artifact)); } catch { /* best effort */ }
+  await repairProjection(env, receipt);
   return classifyCompatibleArtifact(receipt.artifact);
 }
 
 async function recordServed(env, artifact, delivery) {
+  // Committed house detection is unchanged; legacy artifacts carry no Brief
+  // and therefore always serve with outcome "normal" — they are real serves.
   const outcome = artifact?.brief?.notice === HOUSE_NOTICE ? "house" : "normal";
   await coordPost(env, "/metric", { outcome, delivery });
 }
 
-function requireCommittedArtifact(input) {
+// Story 1.24 compatibility routing: classify a built or stored artifact once
+// and render by kind — committed_brief through the 1.15 presentation
+// boundary, legacy kinds (one shared set sourced from the receipts module)
+// through the lossless legacy presentation, anything else fails closed (502
+// at the route, before any metric). The throw message stays "committed brief
+// unavailable" so coordinator-uncertainty semantics are unchanged.
+function classifyServableArtifact(input) {
   if (!input || typeof input !== "object") throw new Error("committed brief unavailable");
   const { cached, ...candidate } = input;
   const classification = classifyCompatibleArtifact(candidate);
-  if (classification.status !== "supported" || classification.kind !== "committed_brief") {
+  if (classification.status !== "supported"
+      || (classification.kind !== "committed_brief" && !isLegacyArtifactKind(classification.kind))) {
     throw new Error("committed brief unavailable");
   }
-  return classification.value;
+  return { classification, cached: cached === true };
+}
+
+function servablePresentation(classification) {
+  return classification.kind === "committed_brief"
+    ? committedBriefPresentation(classification.value)
+    : legacySparkPresentation(classification);
+}
+
+function servableJson(classification, cached) {
+  return classification.kind === "committed_brief"
+    ? committedBriefJson(classification.value)
+    : legacySparkJson(classification, { cached });
+}
+
+function servableAsText(classification, origin, meter) {
+  return classification.kind === "committed_brief"
+    ? committedBriefAsText(classification.value)
+    : legacySparkAsText(classification, origin, meter);
 }
 
 /* ------------------------------------------------------------------ *
@@ -1542,6 +1889,16 @@ export const PRE_ACTIVATION_NOTICE = "Website reading is not switched on yet, so
 
 const INACTIVE_DOMAIN_WRITER_ERROR = "inactive domain writer unavailable";
 
+// Story 1.25: the writer port call is bounded by a finite 60s deadline —
+// chosen above the writer's own internal budgets (15s strike + 30s
+// claim-wait horizon) and intended to sit below typical Workers CPU/wall
+// limits; no guaranteed platform bound is claimed. Expiry fails closed to
+// exactly the writer-error terminal below: the in-flight write is abandoned
+// (never cancelled into the coordinator), no metric is recorded, and the
+// route negotiates the same 502 as any other writer fault. Exported so
+// offline fixtures pin its value and ordering.
+export const INACTIVE_DOMAIN_WRITER_DEADLINE_MS = 60000;
+
 export function deriveInactiveDomainDispatch(website, round) {
   // Input guards have already accepted this domain; a scope that fails to
   // parse here is a defect and fails closed rather than re-adjudicating input.
@@ -1560,12 +1917,39 @@ export function deriveInactiveDomainDispatch(website, round) {
   });
 }
 
-async function runInactiveDomainWriter(port, dispatch) {
+// Exported for offline fixtures: tests inject a short deadline through this
+// seam to prove the fail-closed timeout path without waiting out the
+// production budget. A non-finite or non-positive deadline falls back to the
+// pinned constant; the timer is always cleared when the write settles first.
+// The timer rejects with a cheap sentinel (never a constructed Error); the
+// single writer-error terminal is thrown once, below.
+const WRITER_DEADLINE_EXPIRED = Object.freeze({ marker: "inactive-domain-writer-deadline" });
+export async function runInactiveDomainWriter(port, dispatch, deadlineMs = INACTIVE_DOMAIN_WRITER_DEADLINE_MS) {
+  const boundedMs = Number.isFinite(deadlineMs) && deadlineMs > 0 ? deadlineMs : INACTIVE_DOMAIN_WRITER_DEADLINE_MS;
+  const deadlineMsAbsolute = Date.now() + boundedMs;
+  const terminal = new AbortController();
   let outcome;
+  let timer;
   try {
-    outcome = await port.write(dispatch);
+    outcome = await Promise.race([
+      Promise.resolve(port.write(dispatch, { signal: terminal.signal, deadline_ms: deadlineMsAbsolute })),
+      new Promise((_, reject) => {
+        timer = setTimeout(() => {
+          terminal.abort(WRITER_DEADLINE_EXPIRED);
+          reject(WRITER_DEADLINE_EXPIRED);
+        }, boundedMs);
+      }),
+    ]);
   } catch (err) {
+    const expired = err === WRITER_DEADLINE_EXPIRED;
+    // Redacted failure class only — never port internals, dispatch data, or
+    // request data. Logging can never fail the request.
+    try {
+      console.log(JSON.stringify({ class: expired ? "deadline_expired" : "port_error", event: "inactive_domain_writer_failure" }));
+    } catch { /* observability is best-effort */ }
     throw new Error(INACTIVE_DOMAIN_WRITER_ERROR);
+  } finally {
+    clearTimeout(timer);
   }
   // Hostile outcomes (throwing getters, Proxies) must fail closed to the same
   // terminal rather than leaking an internal message into the negotiated 502.
@@ -1611,14 +1995,14 @@ function page(initial, live, state = {}) {
   const boot = initial ? JSON.stringify(initial).replace(/</g, "\\u003c") : "null";
   const view = initial?.projection ?? null;
   const liveJson = live
-    ? JSON.stringify({ letter: live.letter, magnitude: live.magnitude, flux: live.flux })
+    ? JSON.stringify({ letter: live.letter, magnitude: live.magnitude, flux: live.flux }).replace(/</g, "\\u003c")
     : "null";
   const accent = SOLAR_COLOR[live && live.letter ? live.letter : "C"] || SOLAR_COLOR.C;
   const buttonText = live?.letter === "A" ? "#E4EAF0" : "#0B0D10";
   const liveClass = live ? live.letter + live.magnitude.toFixed(1) : "----";
   const title = view ? view.title + " / oddspark" : "oddspark";
   const desc = view
-    ? view.plan
+    ? (view.plan ?? view.premise)
     : "A recommendation seeded by verifiable distributed randomness and live solar flare activity.";
   const canonical = view?.share ? "https://oddspark.dev" + view.share.path : "https://oddspark.dev/";
   const ldJson = JSON.stringify({
@@ -1708,7 +2092,7 @@ function page(initial, live, state = {}) {
     cursor:grab; touch-action:none;
   }
   @media (min-width:920px){
-    .stage{max-height:min(82vh, 1100px)}
+    .stage{height:clamp(220px, 52vh, 440px);max-height:none}
   }
   .stage:active{cursor:grabbing}
   .stage:focus-visible{outline:2px solid var(--entropy);outline-offset:3px}
@@ -1870,11 +2254,13 @@ function page(initial, live, state = {}) {
 
   <section class="viz">
     <h2>Seed Geometry</h2>
-    <div class="stage" id="stage" tabindex="0" aria-label="Seed Geometry"><canvas id="cv" aria-hidden="true"></canvas></div>
+    <div class="stage" id="stage" role="region" tabindex="0" aria-label="Seed Geometry"><canvas id="cv" aria-hidden="true"></canvas></div>
     <div class="legend" id="legend"></div>
   </section>
 
-  <section class="prov" id="prov"${view ? "" : " hidden"}>
+  <!-- shell provenance stays placeholder-only for committed briefs; legacy
+       presentations carry their own lossless provenance inside the markup -->
+  <section class="prov" id="prov"${view && view.kind !== "legacy" ? "" : " hidden"}>
     <h2>Provenance</h2>
     <dl>
       <div class="field"><dt>drand round</dt><dd class="cool" id="f-round">&mdash;</dd></div>
@@ -1959,6 +2345,10 @@ function page(initial, live, state = {}) {
     return s.length > n ? s.slice(0, n) + "\\u2026" : s;
   }
 
+  // The shared legacy-kind set, injected from src/pipeline/receipts.mjs so the
+  // enhanced client and the server can never drift apart.
+  var LEGACY_KINDS = ${JSON.stringify([...LEGACY_ARTIFACT_KINDS])};
+
   function bindShare(view){
     var cluster = el("foot-links");
     cluster.replaceChildren();
@@ -1987,10 +2377,19 @@ function page(initial, live, state = {}) {
     if (Object.keys(presentation).sort().join(",") !== "markup,projection" || typeof presentation.markup !== "string") return false;
     var view = presentation.projection;
     if (!view || typeof view !== "object" || Array.isArray(view)) return false;
-    var keys = ["before_after","change_level","contact_url","id","invitation","mode","notice","plan","request_scope","retention","share","stays_same","title","what_gets_better","why_fits"];
+    // Story 1.24: the legacy presentation shape is accepted losslessly — its
+    // own view model, never widened into Brief fields.
+    if (view.kind === "legacy") {
+      if (Object.keys(view).sort().join(",") !== "geometry,id,kind,legacy_kind,premise,share,title") return false;
+      if (!/^[A-Za-z0-9._-]{1,128}$/.test(view.id)) return false;
+      if (!LEGACY_KINDS.includes(view.legacy_kind)) return false;
+      if (typeof view.title !== "string" || typeof view.premise !== "string" || !validGeometry(view.geometry)) return false;
+      return !!view.share && Object.keys(view.share).sort().join(",") === "id,path" && view.share.id === view.id && view.share.path === "/s/" + encodeURIComponent(view.id);
+    }
+    var keys = ["before_after","change_level","contact_url","geometry","id","invitation","mode","notice","plan","request_scope","retention","share","stays_same","title","what_gets_better","why_fits"];
     if (Object.keys(view).sort().join(",") !== keys.sort().join(",")) return false;
     if (!/^[A-Za-z0-9._-]{1,128}$/.test(view.id) || !["local","domain"].includes(view.request_scope) || !["local","domain"].includes(view.mode)) return false;
-    if ([view.title, view.plan, view.what_gets_better, view.invitation, view.contact_url, view.retention].some(function(v){ return typeof v !== "string"; })) return false;
+    if ([view.title, view.plan, view.what_gets_better, view.invitation, view.contact_url, view.retention].some(function(v){ return typeof v !== "string"; }) || !validGeometry(view.geometry)) return false;
     if (!(view.notice === null || typeof view.notice === "string")) return false;
     if (!view.why_fits || typeof view.why_fits.text !== "string" || !(view.why_fits.breadcrumb === null || typeof view.why_fits.breadcrumb === "string")) return false;
     if (!view.before_after || typeof view.before_after.before !== "string" || typeof view.before_after.after !== "string") return false;
@@ -2000,8 +2399,15 @@ function page(initial, live, state = {}) {
     return view.share === null;
   }
 
+  function validGeometry(geometry){
+    return !!geometry && typeof geometry === "object" && !Array.isArray(geometry) &&
+      Object.keys(geometry).sort().join(",") === "hash,version" && geometry.version === 1 &&
+      typeof geometry.hash === "string" && /^[0-9a-f]{64}$/.test(geometry.hash);
+  }
+
   function clearResult(){
     el("idea").innerHTML = ""; el("idea").hidden = true; el("prov").hidden = true; el("foot-links").replaceChildren();
+    VIZ.clear();
     if (location.pathname && location.pathname.indexOf("/s/") === 0) history.replaceState({}, "", "/");
     document.title = "oddspark";
     var mark = document.querySelector("header .mark");
@@ -2016,8 +2422,11 @@ function page(initial, live, state = {}) {
     el("status").className = "sr-only";
     el("status").removeAttribute("tabindex");
     el("idea").hidden = false;
-    el("prov").hidden = false;
+    // Legacy markup carries its own lossless provenance; the shell's
+    // placeholder provenance block stays hidden for it.
+    el("prov").hidden = view.kind === "legacy";
     el("idea").innerHTML = presentation.markup;
+    VIZ.geometry(view.geometry);
     bindShare(view);
     if (updateHistory && view.share) history.replaceState({}, "", view.share.path);
     document.title = view.title + " / oddspark";
@@ -2052,11 +2461,11 @@ function page(initial, live, state = {}) {
    * ---------------------------------------------------------------- */
   var VIZ = (function(){
     var cv = el("cv"), stage = el("stage");
-    if (!cv || !cv.getContext) return { spark:function(){}, live:function(){} };
+    if (!cv || !cv.getContext) return { clear:function(){}, geometry:function(){}, live:function(){} };
     var ctx = cv.getContext("2d");
 
     var W = 0, H = 0, DPR = 1;
-    var nodes = [], edges = [], stride = 7, hasSeed = false;
+    var nodes = [], edges = [], stride = 7, hasSeed = false, fingerprint = null;
     var core = { r:0.16, rays:6, letter:"C", cls:"----" };
     var yaw = 0.7, pitch = -0.22, spin = 0.0024, vy = 0, vp = 0;
     var drag = false, lx = 0, ly = 0;
@@ -2127,10 +2536,10 @@ function page(initial, live, state = {}) {
       var L = [];
       L.push('<div><b>core</b><span>GOES X-ray flux <em>' + esc(core.cls) + '</em></span></div>');
       if (hasSeed){
-        L.push('<div><b>shell</b><span>32 nodes, one per byte of the seed</span></div>');
+        L.push('<div><b>shell</b><span>32 nodes, one per byte of the presentation fingerprint</span></div>');
         L.push('<div><b>radius</b><span>each node sits at its own byte value</span></div>');
         L.push('<div><b>weave</b><span>stride <u>' + stride + '</u>, taken from byte 0</span></div>');
-        L.push('<div><b>id</b><span><u>' + esc((seedHex || "").slice(0,8)) + '</u></span></div>');
+        L.push('<div><b>fingerprint</b><span><u>' + esc((seedHex || "").slice(0,8)) + '</u></span></div>');
       } else {
         L.push('<div><b>shell</b><span>awaiting a seed</span></div>');
       }
@@ -2303,17 +2712,23 @@ function page(initial, live, state = {}) {
     start();
 
     return {
-      spark: function(s){
-        setCore(s.solar.letter, s.solar.class, s.solar.flux);
-        setSeed(s.seed.hash);
-        legend(s.seed.hash);
+      clear: function(){
+        fingerprint = null; hasSeed = false; nodes = []; edges = []; stride = 7;
+        legend(null);
+        if (reduce) draw(performance.now());
+      },
+      geometry: function(descriptor){
+        if (!validGeometry(descriptor)) return;
+        fingerprint = descriptor.hash;
+        setSeed(fingerprint);
+        legend(fingerprint);
         if (reduce) draw(performance.now());
       },
       live: function(l){
         setCore(l ? l.letter : "C",
                 l ? l.letter + l.magnitude.toFixed(1) : "----",
                 l ? l.flux : 1e-6);
-        legend(null);
+        legend(fingerprint);
         if (reduce) draw(performance.now());
       }
     };
@@ -2380,6 +2795,7 @@ function page(initial, live, state = {}) {
   if (BOOT) {
     bindShare(BOOT.projection);
     VIZ.live(LIVE);
+    VIZ.geometry(BOOT.projection.geometry);
     btn.textContent = "Strike again";
   } else {
     VIZ.live(LIVE);
@@ -2395,8 +2811,9 @@ function esc(s) {
 }
 
 /* ------------------------------------------------------------------ *
- * How it works. Mermaid from CDN; if the CDN is down the raw diagram
- * source is still legible in the <pre> blocks. No build step.
+ * How it works. The ordered flows are the durable content; Mermaid is
+ * a progressive enhancement and remains outside the accessibility and
+ * keyboard surfaces unless it renders successfully.
  * ------------------------------------------------------------------ */
 
 function howPage() {
@@ -2406,19 +2823,19 @@ function howPage() {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>how oddspark works / oddspark</title>
-<meta name="description" content="The plumbing behind oddspark: drand randomness, solar X-ray flux, one SHA-256, and a 5 minute window.">
+<meta name="description" content="How oddspark turns bounded evidence into one committed Opportunity Brief, with privacy, fallback, and receipt limits explained.">
 <link rel="canonical" href="https://oddspark.dev/how">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="oddspark">
 <meta property="og:title" content="how oddspark works / oddspark">
-<meta property="og:description" content="The plumbing behind oddspark: drand randomness, solar X-ray flux, one SHA-256, and a 5 minute window.">
+<meta property="og:description" content="How oddspark turns bounded evidence into one committed Opportunity Brief, with privacy, fallback, and receipt limits explained.">
 <meta property="og:url" content="https://oddspark.dev/how">
 <meta property="og:image" content="https://oddspark.dev/og.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="how oddspark works / oddspark">
-<meta name="twitter:description" content="The plumbing behind oddspark: drand randomness, solar X-ray flux, one SHA-256, and a 5 minute window.">
+<meta name="twitter:description" content="How oddspark turns bounded evidence into one committed Opportunity Brief, with privacy, fallback, and receipt limits explained.">
 <meta name="twitter:image" content="https://oddspark.dev/og.png">
 <link rel="icon" href="${FAVICON}">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -2427,8 +2844,8 @@ function howPage() {
 <style>
   :root{
     --void:#0B0D10; --panel:#101419; --rule:#1D242C;
-    --text:#C6CFD8; --dim:#67737F; --faint:#3D4750;
-    --entropy:#6E8FB8; --solar:#C9A227;
+    --text:#C6CFD8; --dim-raised:#7E8B98;
+    --entropy:#6E8FB8; --gold:#C9A227; --border-strong:#7E8B98;
     --mono:"Courier Prime",ui-monospace,SFMono-Regular,Menlo,monospace;
     --serif:"Newsreader",Georgia,serif;
   }
@@ -2447,7 +2864,7 @@ function howPage() {
     gap:16px; padding:22px 0 18px; border-bottom:1px solid var(--rule);
   }
   .mark{font-weight:700; letter-spacing:.14em; text-transform:lowercase; font-size:13px}
-  .mark span{color:var(--solar)}
+  .mark span{color:var(--gold)}
   a{color:var(--entropy); text-decoration:none}
   a:hover{border-bottom:1px solid var(--entropy)}
   header a{font-size:11px; letter-spacing:.1em}
@@ -2459,21 +2876,30 @@ function howPage() {
   section{border-top:1px solid var(--rule); margin-top:44px; padding-top:20px}
   h2{
     font-size:10.5px; letter-spacing:.24em; text-transform:uppercase;
-    color:var(--dim); font-weight:400; margin:0 0 14px;
+    color:var(--dim-raised); font-weight:400; margin:0 0 14px;
   }
   p{font-family:var(--serif); font-size:16.5px; line-height:1.62; margin:0 0 18px}
-  p code, li code{font-family:var(--mono); font-size:.85em; color:var(--solar)}
-  .diagram{
-    background:var(--panel); border:1px solid var(--rule);
-    padding:22px 16px; margin:18px 0 26px; overflow-x:auto;
+  p code, li code{font-family:var(--mono); font-size:.85em; color:var(--gold)}
+  .diagram-figure{margin:18px 0 16px}
+  .diagram-scroll{
+    background:var(--panel); border:1px solid var(--border-strong);
+    padding:22px 16px; overflow-x:auto;
   }
-  .mermaid{display:flex; justify-content:center; min-width:520px}
+  .diagram-scroll:focus-visible, a:focus-visible{
+    outline:2px solid var(--entropy); outline-offset:2px;
+  }
+  .mermaid{display:flex; justify-content:center; min-width:640px}
+  .mermaid:not([data-processed]){visibility:hidden}
+  .flow{margin:0; padding-left:24px}
+  .flow li{font-family:var(--serif); font-size:16.5px; line-height:1.55; margin:0 0 10px; padding-left:5px}
+  .flow li::marker{color:var(--gold); font-family:var(--mono)}
+  .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
   footer{
     margin-top:44px; padding-top:18px; border-top:1px solid var(--rule);
-    display:flex; flex-wrap:wrap; gap:8px 22px; font-size:11px; color:var(--faint);
+    display:flex; flex-wrap:wrap; gap:8px 22px; font-size:11px; color:var(--dim-raised);
   }
   /* Builder's credit, same treatment as the front page footer. */
-  .built{color:var(--dim); border-bottom:0}
+  .built{color:var(--dim-raised); border-bottom:0}
   .built:hover{color:var(--text); border-bottom:0}
   .built svg{height:.78em; width:auto; vertical-align:baseline; margin-left:.3em}
 </style>
@@ -2487,107 +2913,110 @@ function howPage() {
   </header>
 
   <h1>How does this work?</h1>
-  <p class="lede">One button, one recommendation, and a receipt. The recommendation
-  is a deterministic function of two live public feeds, so anyone can recompute
-  the seed and confirm the spark was not invented after the fact.</p>
+  <p class="lede">One button starts a bounded Evidence-to-Render pipeline. It can
+  return a qualified Opportunity Brief or an approved house Brief, while keeping
+  rejected work and private material out of the page.</p>
+  <p>A published seed is transparent input to generation. Model output is
+  nondeterministic, so the seed is not a promise that another run will produce
+  identical words. The current receipt references the approved Evidence and
+  binds the committed artifact; it does not claim that the public can recreate
+  or independently prove the model run.</p>
 
   <section>
-    <h2>1 &middot; What happens when you press Strike</h2>
-    <p>The Worker asks drand for the latest round and floors it to a multiple of
-    100. Quicknet emits a round every 3 seconds, so that is a 5 minute window:
-    the first strike in a window does the work, every later strike in the same
-    window serves the same cached spark out of KV. A thousand visitors in five
-    minutes cost one generation.</p>
-    <div class="diagram"><pre class="mermaid">
-sequenceDiagram
-  autonumber
-  participant B as Browser
-  participant W as Worker
-  participant D as drand quicknet
-  participant N as NOAA SWPC
-  participant K as Workers KV
-  participant A as Workers AI
-  B->>W: POST /api/spark
-  W->>D: GET /rounds/latest
-  D-->>W: round R
-  Note over W: window = R - (R mod 100)
-  W->>K: GET w:window
-  alt already struck this window
-    K-->>W: spark id
-    W->>K: GET spark
-    K-->>W: stored spark
-    W-->>B: cached spark
-  else first strike of the window
-    W->>D: GET /rounds/window
-    D-->>W: signature
-    W->>N: GET xrays-1-day.json
-    N-->>W: flux + time_tag
-    Note over W: randomness = SHA256(signature)<br/>seed = SHA256(randomness : round : flux : time_tag)
-    W->>A: run the model of the day on the four seed axes
-    A-->>W: headline, premise, question
-    Note over W,A: usage.neurons added to a Durable Object counter<br/>past 2,500/day the cheaper fallback model takes over
-    W->>K: PUT spark + w:window pointer
-    W-->>B: fresh spark
-  end
-    </pre></div>
+    <h2>1 &middot; Evidence to Render</h2>
+    <p>Each stage has one job. Only a Candidate that passes deterministic local
+    checks and an independent Judge can reach the authoritative commit. A
+    rejected Candidate is never rendered.</p>
+    <div class="diagram-scroll" data-diagram="pipeline" role="region" tabindex="-1" aria-label="Scrollable diagram: the Evidence-to-Render pipeline" hidden>
+      <figure class="diagram-figure" aria-hidden="true"><pre class="mermaid">flowchart LR
+  accTitle: The Evidence-to-Render pipeline
+  accDescr: Evidence is assembled before generation. A Candidate passes the Local Gate and Judge before Commit and Render.
+  E[Evidence] --> G[Generate] --> L[Local Gate] --> J[Judge] --> C[Commit] --> R[Render]
+      </pre></figure>
+    </div>
+    <ol class="flow" data-flow="pipeline">
+      <li data-step="evidence"><strong>Evidence.</strong> Assemble an immutable, allowlisted grounding bundle.</li>
+      <li data-step="generate"><strong>Generate.</strong> Ask the active generation role for one Candidate.</li>
+      <li data-step="local-gate"><strong>Local Gate.</strong> Check schema, grounding, privacy, names, and number provenance without another model call.</li>
+      <li data-step="judge"><strong>Judge.</strong> Independently assess all nine gates, tone, and claims.</li>
+      <li data-step="commit"><strong>Commit.</strong> Ask COORD to authoritatively accept one qualified Brief.</li>
+      <li data-step="render"><strong>Render.</strong> Show only the committed Brief and its permitted receipt details.</li>
+    </ol>
   </section>
 
   <section>
-    <h2>2 &middot; The seed derivation</h2>
-    <p>Drand&rsquo;s own definition of randomness for unchained beacons like quicknet
-    is the SHA-256 of the round signature. That, the floored round number, the
-    current GOES X-ray flux, and its timestamp are hashed once more. Every input
-    is published and archived by someone else, so the whole chain is reproducible
-    by a third party. On a toy. That is the joke.</p>
-    <div class="diagram"><pre class="mermaid">
-flowchart LR
-  sig["drand signature<br/>round floored to 100"] --> rnd["randomness = SHA256(signature)"]
-  flx["GOES X-ray flux<br/>0.1-0.8nm + time_tag"] --> seed
-  rnd --> seed["seed = SHA256(randomness : round : flux : time_tag)"]
-  seed --> id["id = seed[0:8]<br/>the permalink"]
-  seed --> axes["bytes 0-3 pick<br/>domain / lens / form / friction"]
-  axes --> ai["Workers AI prompt<br/>one recommendation"]
-    </pre></div>
+    <h2>2 &middot; Evidence and privacy</h2>
+    <p>Evidence can use approved local priors and public feed inputs. A submitted
+    website may be read only when that capability is active. Private sources,
+    personal information, raw pages, and rejected Candidates are excluded before
+    persistence or model use. The published seed is separate input, not Evidence.</p>
+    <div class="diagram-scroll" data-diagram="privacy" role="region" tabindex="-1" aria-label="Scrollable diagram: Evidence and the privacy boundary" hidden>
+      <figure class="diagram-figure" aria-hidden="true"><pre class="mermaid">flowchart LR
+  accTitle: Evidence and the privacy boundary
+  accDescr: Approved public and local inputs enter Evidence. Private sources remain outside, and the seed enters Generate separately.
+  A[Approved public and local inputs] --> E[Evidence]
+  P[Private sources stay outside] -. blocked .-> E
+  E --> G[Generate]
+  S[Published seed input] --> G
+      </pre></figure>
+    </div>
+    <ol class="flow" data-flow="privacy">
+      <li data-step="allowlisted-inputs"><strong>Use allowlisted inputs.</strong> Build Evidence only from approved local priors and permitted public observations.</li>
+      <li data-step="privacy-boundary"><strong>Keep the boundary.</strong> Exclude private sources, personal information, raw pages, and rejected Candidates before persistence or model use.</li>
+      <li data-step="seed-separation"><strong>Separate the seed.</strong> Pass the published seed to Generate as transparent input, not as Evidence or a reproduction guarantee.</li>
+      <li data-step="evidence-ledger"><strong>Count Evidence calls.</strong> Any metered Evidence request consumes the same shared call ledger used by generation and judging.</li>
+    </ol>
   </section>
 
   <section>
-    <h2>3 &middot; Same seed, same object</h2>
-    <p>The panel beside the text is not decoration; it is the seed rendered as an
-    object. The sun core reads the live flux. The shell seats one node per byte of
-    the hash on a Fibonacci sphere, each byte setting its own node&rsquo;s orbital
-    radius, and byte 0 sets the weave stride. A permalink always draws the
-    identical form. Hand-rolled projection and painter&rsquo;s-algorithm depth
-    sorting on a 2D canvas; no rendering library.</p>
-    <div class="diagram"><pre class="mermaid">
-flowchart TD
-  seed["seed: 32 bytes"] --> shell["shell: 32 nodes, one per byte"]
-  shell --> pos["position: Fibonacci sphere, even spacing"]
-  shell --> rad["orbital radius: each byte's own value"]
-  seed --> weave["byte 0: weave stride, the lacing pattern"]
-  flx["live X-ray flux"] --> core["core: radius, color, ray count"]
-  pos --> canvas["2D canvas<br/>hand-rolled projection + depth sort"]
-  rad --> canvas
-  weave --> canvas
-  core --> canvas
-    </pre></div>
+    <h2>3 &middot; Bounded attempts and house fallback</h2>
+    <p>Evidence, generation, and judging share one cap of six model calls. The
+    orchestrator starts only a complete Generate-and-Judge pair that fits in the
+    remaining budget and deadline. There can be at most three such pairs when
+    Evidence used no calls, and fewer when it did.</p>
+    <div class="diagram-scroll" data-diagram="attempts" role="region" tabindex="-1" aria-label="Scrollable diagram: the shared six-call ledger" hidden>
+      <figure class="diagram-figure" aria-hidden="true"><pre class="mermaid">flowchart LR
+  accTitle: The shared six-call ledger
+  accDescr: Evidence calls and complete Generate-and-Judge pairs share six calls. Safe exhaustion can select an approved house Brief before authoritative commit.
+  L[Six-call shared ledger] --> E[Evidence calls]
+  L --> P[Complete Generate and Judge pair]
+  P --> Q{Qualified?}
+  Q -->|yes| C[COORD commit]
+  Q -->|no and another pair fits| P
+  Q -->|failure or exhausted| H[Approved house Brief]
+  H --> C
+      </pre></figure>
+    </div>
+    <ol class="flow" data-flow="attempts">
+      <li data-step="shared-cap"><strong>Share six calls.</strong> Evidence, Generate, and Judge debit one request-level ledger capped at six model calls.</li>
+      <li data-step="complete-pairs"><strong>Start complete pairs only.</strong> A Candidate attempt begins only when both its Generate and Judge calls fit inside the budget and deadline.</li>
+      <li data-step="qualified-result"><strong>Use a qualified result.</strong> A Candidate proceeds only after both the Local Gate and Judge pass it.</li>
+      <li data-step="house-fallback"><strong>Fall back safely.</strong> On failure or exhaustion, select an approved house Brief only when its catalog authority is valid and COORD can safely commit it. A house Brief is curated content, not another model.</li>
+    </ol>
   </section>
 
   <section>
-    <h2>4 &middot; Routing, and the artifact curl sees</h2>
-    <p>The Worker sniffs <code>User-Agent</code> and <code>Accept</code>. A browser
-    gets the page; curl and wget get a plain-text rendering with the full
-    provenance block, an artifact the browser never shows.</p>
-    <div class="diagram"><pre class="mermaid">
-flowchart TD
-  req["request"] --> which{"path"}
-  which -->|"/"| home{"who is asking?"}
-  home -->|"browser (Accept: text/html)"| html["the page + canvas"]
-  home -->|"curl / wget / no html"| text["strike + text/plain<br/>idea + full provenance"]
-  which -->|"/s/:id"| perm["permalink, server-hydrated<br/>curl gets text here too"]
-  which -->|"POST /api/spark"| strike["strike; full JSON with provenance"]
-  which -->|"/api/spark/:id"| raw["one stored spark, raw JSON"]
-  which -->|"/api/sun"| sun["current flare class only"]
-    </pre></div>
+    <h2>4 &middot; Authority and receipt honesty</h2>
+    <p>COORD is the authority for claiming work, reading current state, committing
+    the Brief, and counting served outcomes. KV is a projection for compatible
+    reads, not commit authority. If COORD is uncertain, oddspark does not render
+    a new Brief.</p>
+    <div class="diagram-scroll" data-diagram="receipt" role="region" tabindex="-1" aria-label="Scrollable diagram: commit authority and receipt limits" hidden>
+      <figure class="diagram-figure" aria-hidden="true"><pre class="mermaid">flowchart LR
+  accTitle: Commit authority and receipt limits
+  accDescr: COORD owns claims, reads, commits, and served counts. KV is projection-only, while the receipt reports bounded facts without promising repeatable model output.
+  Q[Qualified Brief] --> C[COORD authority]
+  C --> K[KV projection]
+  C --> R[Receipt and Render]
+  N[Model output varies between runs] --> R
+      </pre></figure>
+    </div>
+    <ol class="flow" data-flow="receipt">
+      <li data-step="coord-authority"><strong>Trust COORD.</strong> COORD alone claims, reads, commits, and counts served outcomes.</li>
+      <li data-step="kv-projection"><strong>Treat KV as projection-only.</strong> KV may support compatible reads but cannot authorize a commit.</li>
+      <li data-step="bounded-receipt"><strong>Read the receipt narrowly.</strong> It references the approved Evidence and binds the committed artifact; receipt-proof claims remain off until an active ReceiptClaimManifest authorizes exact wording.</li>
+      <li data-step="nondeterminism"><strong>Expect nondeterminism.</strong> The same published seed can lead a model to different valid wording on another run.</li>
+    </ol>
   </section>
 
   <footer>
@@ -2599,35 +3028,52 @@ flowchart TD
 
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11.17.0/dist/mermaid.min.js"></script>
 <script>
+if (globalThis.mermaid) {
 mermaid.initialize({
-  startOnLoad: true,
+  startOnLoad: false,
   securityLevel: "strict",
   theme: "base",
   themeVariables: {
     background: "#0B0D10",
     primaryColor: "#101419",
     primaryTextColor: "#C6CFD8",
-    primaryBorderColor: "#3D4750",
-    lineColor: "#67737F",
+    primaryBorderColor: "#7E8B98",
+    lineColor: "#7E8B98",
     secondaryColor: "#101419",
     tertiaryColor: "#0B0D10",
     clusterBkg: "#0B0D10",
     edgeLabelBackground: "#101419",
     actorBkg: "#101419",
-    actorBorder: "#3D4750",
+    actorBorder: "#7E8B98",
     actorTextColor: "#C6CFD8",
-    actorLineColor: "#3D4750",
+    actorLineColor: "#7E8B98",
     signalColor: "#C6CFD8",
     signalTextColor: "#C6CFD8",
     noteBkgColor: "#101419",
-    noteBorderColor: "#3D4750",
+    noteBorderColor: "#7E8B98",
     noteTextColor: "#C6CFD8",
     fontFamily: "'Courier Prime', monospace",
     fontSize: "13px"
-  }
+  },
+  themeCSS: ".node rect,.node polygon,.node circle,.actor,.note{stroke:#7E8B98!important}.edgePath path,.flowchart-link,.messageLine0,.messageLine1{stroke:#7E8B98!important}"
 });
+mermaid.run({nodes:document.querySelectorAll(".mermaid")}).then(function(){
+  document.querySelectorAll(".diagram-scroll").forEach(function(scroller){
+    var figure = scroller.querySelector(".diagram-figure");
+    var source = figure && figure.querySelector(".mermaid");
+    var svg = source && source.querySelector("svg");
+    if (!source || source.getAttribute("data-processed") !== "true" || !svg) return;
+    figure.setAttribute("aria-hidden", "true");
+    svg.setAttribute("aria-hidden", "true");
+    scroller.setAttribute("tabindex", "0");
+    scroller.hidden = false;
+  });
+}).catch(function(){
+  /* The ordered flows remain the complete, visible explanation. */
+});
+}
 </script>
 </body>
 </html>`;
@@ -2693,8 +3139,8 @@ export default {
         const id = path.split("/").pop();
         if (!SPARK_ID_RE.test(id || "")) return apiJson(request, { error: "no spark with that id" }, 404);
         const compatible = await compatibleArtifactById(env, id);
-        if (compatible.status !== "supported" || compatible.kind !== "committed_brief") return apiJson(request, { error: compatible.status === "unsupported" ? "unsupported spark artifact" : "no spark with that id" }, 404);
-        const body = committedBriefJson(compatible.value);
+        if (compatible.status !== "supported") return apiJson(request, { error: compatible.status === "unsupported" ? "unsupported spark artifact" : "no spark with that id" }, 404);
+        const body = servableJson(compatible);
         await recordServed(env, compatible.value, "json");
         return apiJson(request, body);
       }
@@ -2712,10 +3158,11 @@ export default {
           throw err;
         }
         if (!intent.website) {
-          const artifact = requireCommittedArtifact(await buildSpark(env));
-          const presentation = committedBriefPresentation(artifact);
+          const { classification, cached } = classifyServableArtifact(await buildSpark(env));
+          const artifact = classification.value;
+          const presentation = servablePresentation(classification);
           if (html) return new Response(null, { status: 303, headers: { location: `/s/${encodeURIComponent(artifact.id)}`, ...DYNAMIC_HEADERS } });
-          const body = request.headers.get("x-oddspark-presentation") === "1" ? presentation : committedBriefJson(artifact);
+          const body = request.headers.get("x-oddspark-presentation") === "1" ? presentation : servableJson(classification, cached);
           await recordServed(env, artifact, "json");
           return apiJson(request, body);
         }
@@ -2730,9 +3177,33 @@ export default {
         // closed with the 1.16 writer error. Either way the assembled writer
         // itself has no legacy generator fallback.
         const injectedWriter = env.INACTIVE_DOMAIN_WRITER;
+        // Story 1.25: emit the redacted activation posture (stable reason
+        // codes only — never manifest internals, request data, or PII) as
+        // structured Workers Logs, once per writer-seam resolution. Logs
+        // only: no metric, no coordinator write, no stored data; a logging
+        // fault can never fail the request.
+        let activationSnapshot;
+        try {
+          activationSnapshot = env.ACTIVATION_SNAPSHOT;
+          // `event` pinned last so a future posture field can never shadow it.
+          console.log(JSON.stringify({ ...await activationPosture({ ...env, ACTIVATION_SNAPSHOT: activationSnapshot }), event: "activation_posture" }));
+        } catch { /* observability is best-effort */ }
+        // The assembled writer now sees the production pipeline environment:
+        // bundled, hash/approval-verified content plus AI-bound provider ports
+        // (null-safe — a verification failure contributes nothing). The
+        // activation manifest stays absent, so the writer remains null and
+        // the legacy fallthrough below is byte-identical to the 1.24 artifact.
+        // `env` itself is never mutated. Any fault reading the environment or
+        // constructing the writer (e.g. a throwing ACTIVATION_MANIFEST
+        // binding getter) fails closed to a null writer — the request is
+        // unaffected and keeps the legacy fallthrough.
+        let assembledWriter = null;
+        try {
+          assembledWriter = await cachedInactiveDomainWriter(env, activationSnapshot);
+        } catch { /* fail closed: no writer */ }
         const inactiveWriter = injectedWriter != null && typeof injectedWriter.write === "function"
           ? injectedWriter
-          : createInactiveDomainWriter(env, { coordPost: (path, body) => coordPost(env, path, body) });
+          : assembledWriter;
         if (inactiveWriter) {
           const dispatch = deriveInactiveDomainDispatch(intent.website, round);
           const artifact = await runInactiveDomainWriter(inactiveWriter, dispatch);
@@ -2748,25 +3219,27 @@ export default {
         }
         const visitorKey = await visitorKeyFor(request);
         if (!visitorKey) {
-          const artifact = requireCommittedArtifact(await authoritativeDomainFallback(env, round, intent.website.domain, "limited", LIMITED_WARNING));
-          const presentation = committedBriefPresentation(artifact);
+          const { classification, cached } = classifyServableArtifact(await authoritativeDomainFallback(env, round, intent.website.domain, "limited", LIMITED_WARNING));
+          const artifact = classification.value;
+          const presentation = servablePresentation(classification);
           if (html) {
             const response = new Response(page(presentation, null), { headers: { "content-type": "text/html; charset=utf-8", ...DYNAMIC_HEADERS } });
             await recordServed(env, artifact, "domain_html");
             return response;
           }
-          const body = request.headers.get("x-oddspark-presentation") === "1" ? presentation : committedBriefJson(artifact);
+          const body = request.headers.get("x-oddspark-presentation") === "1" ? presentation : servableJson(classification, cached);
           await recordServed(env, artifact, "json");
           return apiJson(request, body);
         }
-        const artifact = requireCommittedArtifact(await buildDomainSpark(request, env, intent.website, round, visitorKey));
-        const presentation = committedBriefPresentation(artifact);
+        const { classification, cached } = classifyServableArtifact(await buildDomainSpark(request, env, intent.website, round, visitorKey));
+        const artifact = classification.value;
+        const presentation = servablePresentation(classification);
         if (html) {
           const response = new Response(page(presentation, null), { headers: { "content-type": "text/html; charset=utf-8", ...DYNAMIC_HEADERS } });
           await recordServed(env, artifact, "domain_html");
           return response;
         }
-        const body = request.headers.get("x-oddspark-presentation") === "1" ? presentation : committedBriefJson(artifact);
+        const body = request.headers.get("x-oddspark-presentation") === "1" ? presentation : servableJson(classification, cached);
         await recordServed(env, artifact, "json");
         return apiJson(request, body);
       }
@@ -2793,20 +3266,32 @@ export default {
         const id = path.split("/").pop();
         if (!SPARK_ID_RE.test(id || "")) return new Response(page(null, null, { statusMessage: "That spark is no longer available. Press Strike for a new one." }), { status: 404, headers: { "content-type": "text/html; charset=utf-8", ...DYNAMIC_HEADERS } });
         const compatible = await compatibleArtifactById(env, id);
-        if (compatible.status !== "supported" || compatible.kind !== "committed_brief" || compatible.value.request_scope !== "local") {
+        const servable = compatible.status === "supported"
+          && (compatible.kind === "committed_brief" ? compatible.value.request_scope === "local" : isLegacyArtifactKind(compatible.kind));
+        if (!servable) {
           return new Response(page(null, null, { statusMessage: "That spark is no longer available. Press Strike for a new one." }), { status: 404, headers: { "content-type": "text/html; charset=utf-8", ...DYNAMIC_HEADERS } });
         }
         const s = compatible.value;
+        // Domain-scope legacy artifacts (personalized/fallback) are not local
+        // deliveries; only legacy_local and committed locals are.
+        const delivery = compatible.kind === "legacy_local" || compatible.kind === "committed_brief"
+          ? "local_permalink" : "domain_html";
         if (wantsText(request)) {
-          const body = committedBriefAsText(s);
-          await recordServed(env, s, "local_permalink");
+          const body = servableAsText(compatible, origin);
+          await recordServed(env, s, delivery);
           return new Response(body, {
             headers: { "content-type": "text/plain; charset=utf-8", ...DYNAMIC_HEADERS },
           });
         }
-        const presentation = committedBriefPresentation(s);
-        const body = page(presentation, null);
-        await recordServed(env, s, "local_permalink");
+        const presentation = servablePresentation(compatible);
+        // Legacy pages seat the masthead on the stored flare class, as the
+        // rollback artifact did — but only when the magnitude parses to a
+        // finite number; otherwise the masthead degrades to ----.
+        const magnitude = compatible.kind === "committed_brief" ? NaN : parseFloat(s.solar.class.slice(1));
+        const live = compatible.kind === "committed_brief" || !Number.isFinite(magnitude) ? null
+          : { letter: s.solar.letter, magnitude, flux: s.solar.flux };
+        const body = page(presentation, live);
+        await recordServed(env, s, delivery);
         return new Response(body, {
           headers: { "content-type": "text/html; charset=utf-8", ...DYNAMIC_HEADERS },
         });
@@ -2822,9 +3307,16 @@ export default {
       // Home
       if (path === "/") {
         if (wantsText(request)) {
-          const s = requireCommittedArtifact(await buildSpark(env));
-          const body = committedBriefAsText(s);
-          await recordServed(env, s, "json");
+          const { classification } = classifyServableArtifact(await buildSpark(env));
+          let meter = null;
+          if (classification.kind !== "committed_brief") {
+            try {
+              const used = await neuronsUsedToday(env);
+              meter = { used, free: NEURON_FREE_DAILY, model: modelFor(env, used) };
+            } catch (err) { /* the readout is best-effort; the text still serves */ }
+          }
+          const body = servableAsText(classification, origin, meter);
+          await recordServed(env, classification.value, "json");
           return new Response(body, {
             headers: { "content-type": "text/plain; charset=utf-8", ...DYNAMIC_HEADERS },
           });

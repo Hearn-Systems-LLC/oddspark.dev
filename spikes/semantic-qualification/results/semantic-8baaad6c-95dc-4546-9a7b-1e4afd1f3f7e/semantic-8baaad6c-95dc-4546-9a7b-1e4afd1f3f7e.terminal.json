@@ -1,0 +1,14 @@
+{
+  "schema_version": "oddspark.semantic-qualification-terminal/v1",
+  "run_id": "semantic-8baaad6c-95dc-4546-9a7b-1e4afd1f3f7e",
+  "plan_ref": "2f6d330b61c77dac3c9a358b3371b69275ace32cecfbaa1abdb3ac7878b8c9ae",
+  "outcome": "NO-GO",
+  "code": "semantic_not_qualified",
+  "calls_started": 38,
+  "evidence_sha256": "033c2c7d46fa920869caaa1a8e38f41ecac90f6423157756d6520cb066eb97c9",
+  "report_sha256": [
+    "fa59129f94161e3bc94dbc7cf48db0662f1dcf551a48d963e63d8986eca217e4",
+    "1f89042790c234220bf1887690af7721ac0eb42952f862803a72c8ce6b153c35"
+  ],
+  "semantic_ref": null
+}

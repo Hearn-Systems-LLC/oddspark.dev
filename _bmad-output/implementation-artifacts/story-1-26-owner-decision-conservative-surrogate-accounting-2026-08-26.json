@@ -1,0 +1,31 @@
+{
+  "schema_version": "oddspark.story-1-26-owner-accounting-decision/v1",
+  "story": "1.26",
+  "recorded_at": "2026-08-26",
+  "decision_verbatim": "accept conservative surrogate accounting for unpriced endpoints",
+  "scope": {
+    "kind": "prospective-accounting-policy",
+    "applies_to": "Story 1.26 Stage 2 r3 retained evidence and its Stage 3 prerequisite reconciliation only",
+    "generalizes_beyond_story_1_26": false,
+    "historical_bytes_mutable": false
+  },
+  "rule": {
+    "unpriced_endpoint_treatment": "When an endpoint lacks authoritative frozen pricing, accounting may use the plan-frozen conservative surrogate rate.",
+    "minimum_conservatism": "The surrogate input and output rates must each be at least the highest corresponding authoritative frozen rate among the run's priced endpoints.",
+    "usage_requirement": "Usage must be complete for every provider call and every endpoint included in the reconciliation.",
+    "cap_requirement": "Computed conservative surrogate spend must remain within the exact approved call and cost caps.",
+    "free_neuron_ordering": "Apply available free neurons first, then paid neurons bounded by the plan cap.",
+    "fail_closed": [
+      "absent or incomplete usage",
+      "absent plan-frozen surrogate binding",
+      "call-cap or cost-cap breach",
+      "surrogate input or output rate below the highest corresponding authoritative frozen rate among priced endpoints",
+      "substitution of a different endpoint, rate, run, plan, approval, attempt, or evidence packet"
+    ]
+  },
+  "historical_verdict": {
+    "preserved": true,
+    "original_stage_2_r3_accounting_verdict": "NO-GO",
+    "effect": "This decision creates prospective authority for a separate reconciliation; it does not alter the historical packet or its original verdict."
+  }
+}

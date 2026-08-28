@@ -105,6 +105,9 @@ context:
   - `[medium]` `[patch]` src/worker.js pipeline imports pinned to `./pipeline/` by an import audit.
   - `[low]` `[patch]` Pipeline fixtures cloned per environment; claim deadline-exceeded branch tested.
 
+### 2026-08-22 — Independent close-out review
+- Result: PASS. Merge `b144716` / feat `601a6ed`. Canonical `src/pipeline/` graph, fail-closed activation posture, and offline I/O matrix hold at HEAD. `activationPosture` observability DW satisfied by Story 1.25; per-request verification memoization remains open.
+
 ## Design Notes
 
 - Move, don't rewrite: every canonical module keeps its validated logic; the only logic edits are Node-API excisions (`node:crypto` → contracts SHA-256) and deduplicating `canonicalJson`/`domainHash` to the contracts single source. Behavior-preserving moves are what make "Worker and Node import the same modules" auditable.
@@ -113,6 +116,11 @@ context:
 - Claim lifecycle: take the claim inside the try block so every failure path releases it; while a competitor's lease is live, wait up to the real `lease_until` (with jitter), never a fixed short cap; when commit is rejected, re-read authority to distinguish a lost race (read the winner's receipt) from a transient failure before throwing.
 
 ## Verification
+
+### 2026-08-24 — Activation Manifest v2 assembly refreeze
+
+- `npm run assembly:freeze` passed offline after the approved 2026-08-24 Direct-Path Activation Authority override changed `src/pipeline/activation.mjs` to the closed v2 manifest and v2 hash domain.
+- Frozen runtime assembly identity: `446628799d96f044ea9f5bdb48d01477559b97c96ec15b58b676cf06f99307a5` over 17 modules.
 
 **Commands:**
 - `npm test` -- expected: all outer route fixtures pass, including the new cold-domain/concurrency/disabled-posture matrix.
