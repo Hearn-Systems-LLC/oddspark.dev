@@ -1,9 +1,6 @@
 #!/usr/bin/env node
-// CI stand-in for `npm run check` that omits `spike:judge:self-test` (DW-6).
-// package.json is evidence-pinned by the a0ed5363 STRUCT-JUDGE identity, so the
-// skip cannot live in the `check` script. When self-test is removed from
-// `check` (source-manifest split), this file must fail closed rather than
-// silently drift.
+// CI runner for every current `npm run check` step plus the browser-backed and
+// semantic suites that intentionally remain outside the package script.
 
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -11,7 +8,6 @@ import path from "node:path";
 import { executeCiStep } from "./check-ci-runner.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const SKIP = "npm run spike:judge:self-test";
 const SEMANTIC_REGRESSION = "node --test scripts/semantic-regression.test.mjs";
 const HOW_PAGE = "node --test scripts/how-page.test.mjs";
 const HOW_PAGE_BROWSER = "REQUIRE_CHROME=1 node --test scripts/how-page.browser.test.mjs";
@@ -27,15 +23,7 @@ function run(step) {
   }
 }
 
-if (!steps.includes(SKIP)) {
-  throw new Error(`${SKIP} is not in npm run check; delete the DW-6 CI exception and run npm run check`);
-}
-
 for (const step of steps) {
-  if (step === SKIP) {
-    console.log(`skip  ${step}  (DW-6: plan-governance assertion is evidence-pinned)`);
-    continue;
-  }
   run(step);
 }
 
