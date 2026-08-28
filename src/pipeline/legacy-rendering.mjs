@@ -15,6 +15,7 @@
 // value is HTML-escaped; no Brief field is ever emitted.
 
 import { defensiveFreeze, isLegacyArtifactKind } from "./receipts.mjs";
+import { sha256Hex } from "./contracts.mjs";
 
 const escapeHtml = (value) => String(value).replace(/[&<>"']/g, (character) => ({
   "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
@@ -53,6 +54,10 @@ export function projectLegacySpark(classification) {
     kind: "legacy",
     legacy_kind: classification.kind,
     id: spark.id,
+    geometry: defensiveFreeze({
+      version: 1,
+      hash: sha256Hex(`oddspark-seed-geometry/v1\0${classification.kind}\0${spark.id}`),
+    }),
     title: spark.idea.headline,
     premise: spark.idea.premise,
     share: defensiveFreeze({ id: spark.id, path: `/s/${encodeURIComponent(spark.id)}` }),

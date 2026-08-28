@@ -1,4 +1,4 @@
-import { buildCommittedBrief, deepFreeze } from "./contracts.mjs";
+import { buildCommittedBrief, deepFreeze, sha256Hex } from "./contracts.mjs";
 
 export const RETENTION_COPY = "Local references expire 30 days after they are created; website references expire one hour after they are created.";
 export const CONTACT_URL = "https://hearn.systems/contact";
@@ -18,6 +18,11 @@ const escapeHtml = (value) => String(value).replace(/[&<>"']/g, (character) => (
   "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
 })[character]);
 
+const geometryDescriptor = (family, publicId) => deepFreeze({
+  version: 1,
+  hash: sha256Hex(`oddspark-seed-geometry/v1\0${family}\0${publicId}`),
+});
+
 export function committedBriefJson(committedBrief) {
   return cloneCommitted(committedBrief);
 }
@@ -27,6 +32,7 @@ export function projectCommittedBrief(committedBrief) {
   const brief = envelope.brief;
   return deepFreeze({
     id: envelope.id,
+    geometry: geometryDescriptor("committed_brief", envelope.id),
     request_scope: envelope.request_scope,
     mode: brief.mode,
     notice: brief.notice ?? null,

@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import vm from "node:vm";
 import worker from "../src/worker.js";
-import { buildCommittedBrief, CANDIDATE_SCHEMA_VERSION, deriveCandidateRef } from "./brief-contracts.mjs";
+import { buildCommittedBrief, CANDIDATE_SCHEMA_VERSION, deriveCandidateRef, sha256Hex } from "./brief-contracts.mjs";
 import { committedBriefPresentation, CONTACT_URL, RETENTION_COPY } from "./brief-rendering.mjs";
 import { classifyCompatibleArtifact, LEGACY_ARTIFACT_KINDS } from "../src/pipeline/receipts.mjs";
 import { legacySparkPresentation } from "../src/pipeline/legacy-rendering.mjs";
@@ -145,19 +145,62 @@ export function story15Cases(harness) {
     },
     async enhanced() {
       const source = await readFile(new URL("../src/worker.js", import.meta.url), "utf8");
+      const vizStart = source.indexOf("  var VIZ = (function(){");
+      const submitStart = source.indexOf("  document.querySelector(\"form.strike-row\").onsubmit");
+      const bootStart = source.indexOf("  if (BOOT) {");
+      const clientEnd = source.indexOf("})();\n</script>", bootStart);
+      assert.ok(vizStart >= 0 && submitStart > vizStart && bootStart > submitStart && clientEnd > bootStart, "client source-slice markers must exist in execution order");
+      const vizExecutable = source.slice(vizStart, submitStart);
+      const bootExecutable = source.slice(bootStart, clientEnd);
+      function executeBoot(projection, live) {
+        const legend = { innerHTML: "" };
+        const stage = { addEventListener(){}, getBoundingClientRect(){ return { width: 400, height: 300 }; }, matches(){ return false; } };
+        const gradient = { addColorStop(){} };
+        const canvasContext = new Proxy({}, { get(target, key) { if (!(key in target)) target[key] = key === "createRadialGradient" ? () => gradient : () => {}; return target[key]; }, set(target, key, value) { target[key] = value; return true; } });
+        const canvas = { getContext(){ return canvasContext; } };
+        const btnNode = { textContent: "" };
+        const context = {
+          BOOT: { projection }, LIVE: live, btn: btnNode,
+          el(id) { return { cv: canvas, stage, legend }[id]; },
+          validGeometry(value) { return !!value && typeof value === "object" && !Array.isArray(value) && Object.keys(value).sort().join(",") === "hash,version" && value.version === 1 && typeof value.hash === "string" && /^[0-9a-f]{64}$/.test(value.hash); },
+          esc(value) { return String(value).replace(/[&<>\"]/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '\"': "&quot;" })[character]); },
+          bindShare(){}, reduce: true, performance: { now(){ return 1000; } },
+          window: { devicePixelRatio: 1, addEventListener(){} }, ResizeObserver: class { observe(){} },
+          document: { documentElement: {}, activeElement: null, hidden: false, addEventListener(){} },
+          getComputedStyle(){ return { getPropertyValue(name){ return name === "--solar" ? "#C9A227" : "#6E8FB8"; } }; },
+          matchMedia(){ return { matches: true }; }, requestAnimationFrame(){},
+          setTimeout(){ return 1; }, clearTimeout(){}, Math, parseInt,
+        };
+        vm.runInNewContext(`${vizExecutable}\n${bootExecutable}`, context);
+        return { get legend(){ return legend.innerHTML; }, get button(){ return btnNode.textContent; }, VIZ: context.VIZ };
+      }
       // The slice starts at the injected shared legacy-kind set so the client
       // under test reads exactly what the server renders into the page.
-      const executable = (source.slice(source.indexOf("  var LEGACY_KINDS = "), source.indexOf("  function solarColor")) + source.slice(source.indexOf("  document.querySelector(\"form.strike-row\").onsubmit"), source.indexOf("  if (BOOT)")))
+      const legacyStart = source.indexOf("  var LEGACY_KINDS = ");
+      const solarStart = source.indexOf("  function solarColor");
+      const submitEnd = source.indexOf("  if (BOOT)", submitStart);
+      assert.ok(legacyStart >= 0 && solarStart > legacyStart && submitStart > solarStart && submitEnd > submitStart, "enhanced source-slice markers must exist in execution order");
+      const executable = (source.slice(legacyStart, solarStart) + source.slice(submitStart, submitEnd))
         .replace("${JSON.stringify([...LEGACY_ARTIFACT_KINDS])}", JSON.stringify([...LEGACY_ARTIFACT_KINDS]));
       let mark;
       class Node { constructor(tag = "div") { this.tagName = tag.toUpperCase(); this.children = []; this.attributes = {}; this.focused = 0; this.hidden = false; this.textContent = ""; this.innerHTML = ""; this.value = ""; } replaceChildren(...x) { this.children = x; } append(...x) { this.children.push(...x); } setAttribute(k, v) { this.attributes[k] = String(v); } getAttribute(k) { return this.attributes[k] ?? null; } hasAttribute(k) { return k in this.attributes; } removeAttribute(k) { delete this.attributes[k]; } focus() { this.focused++; } replaceWith(x) { mark = x; } }
-      const nodes = Object.fromEntries(["foot-links", "status", "website-error", "idea", "prov", "headline", "legend"].map((id) => [id, new Node()])); const form = new Node("form"); const btn = new Node("button"); const website = new Node("input"); mark = new Node("h1"); mark.innerHTML = "mark"; const historyCalls = []; const queue = [];
+      const nodes = Object.fromEntries(["foot-links", "status", "website-error", "idea", "prov", "headline", "legend"].map((id) => [id, new Node()])); const form = new Node("form"); const btn = new Node("button"); const website = new Node("input"); mark = new Node("h1"); mark.innerHTML = "mark"; const historyCalls = []; const geometryCalls = []; const queue = [];
       const location = { origin: "https://oddspark.dev", pathname: "/" };
       const history = { replaceState(_state, _title, path) { historyCalls.push(path); location.pathname = path; } };
-      const context = { Promise, location, history, navigator: {}, website, btn, el: (id) => nodes[id], fetch: async () => { const next = queue.shift(); return { ok: next.ok, status: next.status, json: async () => next.payload }; }, setTimeout, clearTimeout, document: { title: "oddspark", createElement: (tag) => new Node(tag), createTextNode: (text) => ({ text }), querySelector: (selector) => selector === "form.strike-row" ? form : mark }, console };
-      vm.runInNewContext(`${executable};globalThis.render=render`, context);
       const local = committedBriefPresentation(fixture({ id: "enhanced-local" }));
+      const enhancedViz = executeBoot(local.projection, { letter: "M", magnitude: 2.4, flux: 2.4e-5 });
+      enhancedViz.VIZ.clear();
+      const context = { Promise, location, history, navigator: {}, website, btn, VIZ: { clear(){ enhancedViz.VIZ.clear(); }, geometry(value) { geometryCalls.push(value); enhancedViz.VIZ.geometry(value); } }, el: (id) => nodes[id], fetch: async () => { const next = queue.shift(); return { ok: next.ok, status: next.status, json: async () => next.payload }; }, setTimeout, clearTimeout, document: { title: "oddspark", createElement: (tag) => new Node(tag), createTextNode: (text) => ({ text }), querySelector: (selector) => selector === "form.strike-row" ? form : mark }, console };
+      vm.runInNewContext(`${executable};globalThis.render=render`, context);
+      const liveBoot = executeBoot(local.projection, { letter: "M", magnitude: 2.4, flux: 2.4e-5 });
+      assert.match(liveBoot.legend, /GOES X-ray flux <em>M2\.4<\/em>/); assert.match(liveBoot.legend, new RegExp(local.projection.geometry.hash.slice(0, 8))); assert.doesNotMatch(liveBoot.legend, /awaiting a seed/); assert.equal(liveBoot.button, "Strike again");
+      liveBoot.VIZ.geometry({ version: 1, hash: "b".repeat(64) }); assert.match(liveBoot.legend, /GOES X-ray flux <em>M2\.4<\/em>/); assert.match(liveBoot.legend, /bbbbbbbb/);
+      const degradedBoot = executeBoot(local.projection, null);
+      assert.match(degradedBoot.legend, /GOES X-ray flux <em>----<\/em>/); assert.match(degradedBoot.legend, new RegExp(local.projection.geometry.hash.slice(0, 8))); assert.doesNotMatch(degradedBoot.legend, /awaiting a seed/);
+      const invalidBoot = executeBoot({ ...local.projection, geometry: { version: 1, hash: "A".repeat(64) } }, null);
+      assert.match(invalidBoot.legend, /awaiting a seed/); assert.doesNotMatch(invalidBoot.legend, /AAAAAAAA/);
       context.render(local, true); const clipboardCases = [undefined, { writeText(){ throw new Error("sync"); } }, { writeText(){ return Promise.reject(new Error("async")); } }];
+      assert.match(enhancedViz.legend, /GOES X-ray flux <em>M2\.4<\/em>/); assert.match(enhancedViz.legend, new RegExp(local.projection.geometry.hash.slice(0, 8)));
       for (const clipboard of clipboardCases) { context.navigator.clipboard = clipboard; context.render(local, false); const copy = nodes["foot-links"].children.find((x) => x instanceof Node && x.tagName === "BUTTON"); copy.onclick(); await new Promise((resolve) => setTimeout(resolve, 0)); assert.equal(nodes.status.textContent, "The link could not be copied. Copy it from the address bar."); assert.equal(copy.textContent, "copy link"); }
       const submit = async (next) => { queue.push(next); form.onsubmit({ preventDefault(){} }); await new Promise((resolve) => setTimeout(resolve, 0)); await new Promise((resolve) => setTimeout(resolve, 0)); };
       location.pathname = "/"; historyCalls.length = 0; website.value = ""; await submit({ ok: true, status: 200, payload: local });
@@ -180,6 +223,12 @@ export function story15Cases(harness) {
         model: "mock-primary", generated: true,
       };
       const legacy = legacySparkPresentation(classifyCompatibleArtifact(legacyArtifact));
+      const changedLegacy = structuredClone(legacyArtifact);
+      changedLegacy.seed = { ...changedLegacy.seed, hash: "1".repeat(64), preimage: "different-private-preimage" };
+      changedLegacy.entropy = { ...changedLegacy.entropy, signature: "cd".repeat(96), randomness: "2".repeat(64) };
+      assert.deepEqual(legacySparkPresentation(classifyCompatibleArtifact(changedLegacy)).projection.geometry, legacy.projection.geometry);
+      const legacyBoot = executeBoot(legacy.projection, { letter: "C", magnitude: 2.5, flux: 2.5e-6 });
+      assert.match(legacyBoot.legend, /GOES X-ray flux <em>C2\.5<\/em>/); assert.match(legacyBoot.legend, new RegExp(legacy.projection.geometry.hash.slice(0, 8))); assert.doesNotMatch(legacyBoot.legend, /awaiting a seed/);
       website.value = ""; const beforeLegacy = historyCalls.length; await submit({ ok: true, status: 200, payload: legacy });
       assert.equal(nodes.idea.hidden, false); assert.equal(nodes.idea.innerHTML, legacy.markup);
       assert.equal(nodes.prov.hidden, true); // legacy markup carries its own provenance; the shell placeholder block stays hidden
@@ -193,15 +242,22 @@ export function story15Cases(harness) {
       assert.equal(legacyLinks[0].href, "/s/0a1b2c3d");
       assert.equal(legacyLinks[1].href, "/api/spark/0a1b2c3d");
       assert.equal(historyCalls.slice(beforeLegacy).length, 1);
-      // The seed-geometry placeholder stays untouched for a legacy projection:
-      // no stale committed geometry is rendered into the legend or canvas.
-      assert.equal(nodes.legend.innerHTML, "");
-      assert.equal(nodes.legend.children.length, 0);
+      assert.deepEqual(geometryCalls.at(-1), legacy.projection.geometry);
+      assert.notEqual(geometryCalls.at(-1).hash, local.projection.geometry.hash);
+      assert.equal(legacy.projection.geometry.hash, sha256Hex(`oddspark-seed-geometry/v1\0legacy_local\0${legacyArtifact.id}`));
+      assert.equal(JSON.stringify(legacy.projection.geometry).includes(legacyArtifact.seed.hash), false);
+      assert.match(enhancedViz.legend, /GOES X-ray flux <em>M2\.4<\/em>/); assert.match(enhancedViz.legend, new RegExp(legacy.projection.geometry.hash.slice(0, 8)));
+      const invalidPresentation = structuredClone(local); invalidPresentation.projection.geometry.hash = "A".repeat(64);
+      const beforeInvalidGeometry = geometryCalls.length; await submit({ ok: true, status: 200, payload: invalidPresentation });
+      assert.equal(geometryCalls.length, beforeInvalidGeometry); assert.equal(nodes.idea.hidden, true); assert.equal(nodes.status.className, "err"); assert.equal(btn.textContent, "Strike");
+      assert.match(enhancedViz.legend, /GOES X-ray flux <em>M2\.4<\/em>/); assert.match(enhancedViz.legend, /awaiting a seed/); assert.doesNotMatch(enhancedViz.legend, new RegExp(legacy.projection.geometry.hash.slice(0, 8)));
     },
     async shell() {
       createNetwork(); const h = createEnvironment(); await seed(h, { kind: "local", round: ROUND }, fixture({ id: "committed-shell", empty: true })); const html = await (await worker.fetch(new Request("https://oddspark.dev/s/committed-shell", { headers: { accept: "text/html" } }), h.env)).text();
-      assert.equal((html.match(/<h1\b/g) || []).length, 1); assert.match(html, /<main>/); assert.match(html, /<div class="stage" id="stage" role="region" tabindex="0" aria-label="Seed Geometry">/); assert.match(html, /<canvas id="cv" aria-hidden="true">/); assert.match(html, /awaiting a seed/); assert.match(html, /drand round[\s\S]*signature[\s\S]*randomness[\s\S]*xray flux[\s\S]*flare class[\s\S]*observed[\s\S]*seed/); assert.match(html, /@media \(min-width:920px\)/); assert.match(html, /@media \(max-width:520px\)/); assert.match(html, /prefers-reduced-motion:reduce/); assert.match(html, /Nothing in the current routine is replaced/); assert.doesNotMatch(html, /Same window, same spark/);
+      assert.equal((html.match(/<h1\b/g) || []).length, 1); assert.match(html, /<main>/); assert.match(html, /<div class="stage" id="stage" role="region" tabindex="0" aria-label="Seed Geometry">/); assert.match(html, /<canvas id="cv" aria-hidden="true">/); assert.match(html, /presentation fingerprint/); assert.match(html, /VIZ\.geometry\(BOOT\.projection\.geometry\)/); assert.match(html, /drand round[\s\S]*signature[\s\S]*randomness[\s\S]*xray flux[\s\S]*flare class[\s\S]*observed[\s\S]*seed/); assert.match(html, /@media \(min-width:920px\)/); assert.match(html, /@media \(max-width:520px\)/); assert.match(html, /prefers-reduced-motion:reduce/); assert.match(html, /Nothing in the current routine is replaced/); assert.doesNotMatch(html, /Same window, same spark/);
       assert.match(html, /<span id="live">----<\/span> &middot; SUN NOW/); assert.match(html, /grid-template-columns:minmax\(0,660px\) minmax\(322px,1fr\)/); assert.match(html, /white-space:normal/); assert.match(html, /<form class="strike-row"[\s\S]*<input[\s\S]*<button/); assert.match(html, /<span id="foot-links">[\s\S]*<span id="meter">/);
+      assert.match(html, /height:clamp\(220px, 52vh, 440px\);max-height:none/);
+      assert.match(html, /@media \(max-width:919\.98px\)[\s\S]*\.viz\{margin-top:38px\}/);
     },
   };
 }

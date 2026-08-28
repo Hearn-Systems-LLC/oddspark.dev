@@ -2092,7 +2092,7 @@ function page(initial, live, state = {}) {
     cursor:grab; touch-action:none;
   }
   @media (min-width:920px){
-    .stage{max-height:min(82vh, 1100px)}
+    .stage{height:clamp(220px, 52vh, 440px);max-height:none}
   }
   .stage:active{cursor:grabbing}
   .stage:focus-visible{outline:2px solid var(--entropy);outline-offset:3px}
@@ -2380,16 +2380,16 @@ function page(initial, live, state = {}) {
     // Story 1.24: the legacy presentation shape is accepted losslessly — its
     // own view model, never widened into Brief fields.
     if (view.kind === "legacy") {
-      if (Object.keys(view).sort().join(",") !== "id,kind,legacy_kind,premise,share,title") return false;
+      if (Object.keys(view).sort().join(",") !== "geometry,id,kind,legacy_kind,premise,share,title") return false;
       if (!/^[A-Za-z0-9._-]{1,128}$/.test(view.id)) return false;
       if (!LEGACY_KINDS.includes(view.legacy_kind)) return false;
-      if (typeof view.title !== "string" || typeof view.premise !== "string") return false;
+      if (typeof view.title !== "string" || typeof view.premise !== "string" || !validGeometry(view.geometry)) return false;
       return !!view.share && Object.keys(view.share).sort().join(",") === "id,path" && view.share.id === view.id && view.share.path === "/s/" + encodeURIComponent(view.id);
     }
-    var keys = ["before_after","change_level","contact_url","id","invitation","mode","notice","plan","request_scope","retention","share","stays_same","title","what_gets_better","why_fits"];
+    var keys = ["before_after","change_level","contact_url","geometry","id","invitation","mode","notice","plan","request_scope","retention","share","stays_same","title","what_gets_better","why_fits"];
     if (Object.keys(view).sort().join(",") !== keys.sort().join(",")) return false;
     if (!/^[A-Za-z0-9._-]{1,128}$/.test(view.id) || !["local","domain"].includes(view.request_scope) || !["local","domain"].includes(view.mode)) return false;
-    if ([view.title, view.plan, view.what_gets_better, view.invitation, view.contact_url, view.retention].some(function(v){ return typeof v !== "string"; })) return false;
+    if ([view.title, view.plan, view.what_gets_better, view.invitation, view.contact_url, view.retention].some(function(v){ return typeof v !== "string"; }) || !validGeometry(view.geometry)) return false;
     if (!(view.notice === null || typeof view.notice === "string")) return false;
     if (!view.why_fits || typeof view.why_fits.text !== "string" || !(view.why_fits.breadcrumb === null || typeof view.why_fits.breadcrumb === "string")) return false;
     if (!view.before_after || typeof view.before_after.before !== "string" || typeof view.before_after.after !== "string") return false;
@@ -2399,8 +2399,15 @@ function page(initial, live, state = {}) {
     return view.share === null;
   }
 
+  function validGeometry(geometry){
+    return !!geometry && typeof geometry === "object" && !Array.isArray(geometry) &&
+      Object.keys(geometry).sort().join(",") === "hash,version" && geometry.version === 1 &&
+      typeof geometry.hash === "string" && /^[0-9a-f]{64}$/.test(geometry.hash);
+  }
+
   function clearResult(){
     el("idea").innerHTML = ""; el("idea").hidden = true; el("prov").hidden = true; el("foot-links").replaceChildren();
+    VIZ.clear();
     if (location.pathname && location.pathname.indexOf("/s/") === 0) history.replaceState({}, "", "/");
     document.title = "oddspark";
     var mark = document.querySelector("header .mark");
@@ -2419,6 +2426,7 @@ function page(initial, live, state = {}) {
     // placeholder provenance block stays hidden for it.
     el("prov").hidden = view.kind === "legacy";
     el("idea").innerHTML = presentation.markup;
+    VIZ.geometry(view.geometry);
     bindShare(view);
     if (updateHistory && view.share) history.replaceState({}, "", view.share.path);
     document.title = view.title + " / oddspark";
@@ -2453,11 +2461,11 @@ function page(initial, live, state = {}) {
    * ---------------------------------------------------------------- */
   var VIZ = (function(){
     var cv = el("cv"), stage = el("stage");
-    if (!cv || !cv.getContext) return { spark:function(){}, live:function(){} };
+    if (!cv || !cv.getContext) return { clear:function(){}, geometry:function(){}, live:function(){} };
     var ctx = cv.getContext("2d");
 
     var W = 0, H = 0, DPR = 1;
-    var nodes = [], edges = [], stride = 7, hasSeed = false;
+    var nodes = [], edges = [], stride = 7, hasSeed = false, fingerprint = null;
     var core = { r:0.16, rays:6, letter:"C", cls:"----" };
     var yaw = 0.7, pitch = -0.22, spin = 0.0024, vy = 0, vp = 0;
     var drag = false, lx = 0, ly = 0;
@@ -2528,10 +2536,10 @@ function page(initial, live, state = {}) {
       var L = [];
       L.push('<div><b>core</b><span>GOES X-ray flux <em>' + esc(core.cls) + '</em></span></div>');
       if (hasSeed){
-        L.push('<div><b>shell</b><span>32 nodes, one per byte of the seed</span></div>');
+        L.push('<div><b>shell</b><span>32 nodes, one per byte of the presentation fingerprint</span></div>');
         L.push('<div><b>radius</b><span>each node sits at its own byte value</span></div>');
         L.push('<div><b>weave</b><span>stride <u>' + stride + '</u>, taken from byte 0</span></div>');
-        L.push('<div><b>id</b><span><u>' + esc((seedHex || "").slice(0,8)) + '</u></span></div>');
+        L.push('<div><b>fingerprint</b><span><u>' + esc((seedHex || "").slice(0,8)) + '</u></span></div>');
       } else {
         L.push('<div><b>shell</b><span>awaiting a seed</span></div>');
       }
@@ -2704,17 +2712,23 @@ function page(initial, live, state = {}) {
     start();
 
     return {
-      spark: function(s){
-        setCore(s.solar.letter, s.solar.class, s.solar.flux);
-        setSeed(s.seed.hash);
-        legend(s.seed.hash);
+      clear: function(){
+        fingerprint = null; hasSeed = false; nodes = []; edges = []; stride = 7;
+        legend(null);
+        if (reduce) draw(performance.now());
+      },
+      geometry: function(descriptor){
+        if (!validGeometry(descriptor)) return;
+        fingerprint = descriptor.hash;
+        setSeed(fingerprint);
+        legend(fingerprint);
         if (reduce) draw(performance.now());
       },
       live: function(l){
         setCore(l ? l.letter : "C",
                 l ? l.letter + l.magnitude.toFixed(1) : "----",
                 l ? l.flux : 1e-6);
-        legend(null);
+        legend(fingerprint);
         if (reduce) draw(performance.now());
       }
     };
@@ -2781,6 +2795,7 @@ function page(initial, live, state = {}) {
   if (BOOT) {
     bindShare(BOOT.projection);
     VIZ.live(LIVE);
+    VIZ.geometry(BOOT.projection.geometry);
     btn.textContent = "Strike again";
   } else {
     VIZ.live(LIVE);
