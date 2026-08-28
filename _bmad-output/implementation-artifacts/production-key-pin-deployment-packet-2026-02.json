@@ -1,0 +1,218 @@
+{
+  "authorization_scope": {
+    "allowed_executions": 1,
+    "approval_requirement": "Fresh owner approval must name the SHA-256 of these exact retained packet bytes. Approval is invalid after any prerequisite, source, target, version, binding, route, config, build-trigger, or remote-state drift.",
+    "authorized_operation": "Deploy the exact reviewed source-pinned 2026-02 public-key trust map while preserving inactive production posture.",
+    "forbidden": [
+      "POST requests or strike creation during verification",
+      "ACTIVATION_SNAPSHOT creation or mutation",
+      "ACTIVATION_MANIFEST creation or mutation",
+      "activation",
+      "signing or private-key access",
+      "provider calls or live qualification",
+      "retry or substitution",
+      "rollback without separate fresh owner authority",
+      "traffic, route, resource, var, secret, or binding mutation outside the single deploy",
+      "verification side effects beyond two served-metric writes and two KV projection-repair writes total"
+    ],
+    "status": "unapproved"
+  },
+  "binding_invariants": {
+    "activation_authority_absent": [
+      "ACTIVATION_SNAPSHOT",
+      "ACTIVATION_MANIFEST"
+    ],
+    "expected_bindings": [
+      "AI",
+      "AI_MODEL",
+      "AI_MODEL_FALLBACK",
+      "COORD",
+      "METER",
+      "SPARKS"
+    ],
+    "expected_binding_count": 6,
+    "expected_custom_domain": "oddspark.dev",
+    "unexpected_binding_count": 0
+  },
+  "deployment": {
+    "command": "CLOUDFLARE_ACCOUNT_ID=e72c232411bedeed357f3c73e4f4f0aa WRANGLER_LOG_PATH=/tmp/oddspark-production-key-pin-2026-02.log npx --no-install wrangler deploy --config /Volumes/fast/Github/oddspark/wrangler.toml --name oddspark --strict --message 'production key pin 2026-02; source 0e624016edd15a2308183f3ad0f045da05f5b728; assembly 0eca7833bf857403949928960f2975116445e593471d5c84c9e47499657318e6'",
+    "execution_policy": "Run once only, from /Volumes/fast/Github/oddspark, after every prerequisite is freshly rechecked and exact packet-SHA approval is recorded. Do not add --env: the root config has no env.production section and --env production would select an alternate named Worker.",
+    "expected_result": "One new Wrangler-originated version deployed at 100 percent to the existing oddspark Worker and oddspark.dev custom domain, with the exact six-binding inventory and no activation authority.",
+    "pinned_wrangler_version": "4.123.0"
+  },
+  "packet_contract": "oddspark-production-public-key-pin-deployment-packet/v1",
+  "post_deploy_verification": {
+    "bounded_observation_window_seconds": 300,
+    "checks_in_order": [
+      "Capture the single returned version ID; absence, ambiguity, or more than one new version is failure.",
+      "Read deployments list and require the returned version ID to be the sole 100-percent production version for Worker oddspark in account e72c232411bedeed357f3c73e4f4f0aa.",
+      "Read the returned version metadata and require Wrangler source plus the exact deployment message containing source 0e624016edd15a2308183f3ad0f045da05f5b728 and assembly 0eca7833bf857403949928960f2975116445e593471d5c84c9e47499657318e6.",
+      "Require the live binding inventory to be exactly AI, AI_MODEL, AI_MODEL_FALLBACK, COORD, METER, SPARKS; require ACTIVATION_SNAPSHOT and ACTIVATION_MANIFEST absent and zero unexpected bindings.",
+      "Require oddspark.dev to remain the production custom domain and no workers.dev preview to become production traffic.",
+      "Execute each entry in verification_gets exactly once and no other application request; require every exact method, URL, Accept header, User-Agent header where specified, status, content type, artifact identity, and retained legacy contract.",
+      "Require aggregate verification side effects to remain at or below two COORD served-metric writes and two KV projection-repair writes; require zero other KV or Durable Object writes.",
+      "Require inactive activation posture logs to report activation_snapshot_missing and require zero provider calls attributable to verification.",
+      "Observe production for 300 seconds and require zero unexpected 5xx attributable to the new version. Retain query/window/version evidence."
+    ],
+    "failure_policy": "Stop immediately. Do not retry, issue a POST, create a strike, or roll back under this packet. Record the terminal evidence and request separate rollback authority.",
+    "side_effect_budget": {
+      "activation_operations": 0,
+      "durable_object_writes_other_than_served_metric": 0,
+      "kv_projection_repair_writes_maximum": 2,
+      "other_kv_writes": 0,
+      "post_requests": 0,
+      "provider_calls": 0,
+      "rollback_operations": 0,
+      "served_metric_writes_maximum": 2,
+      "signing_operations": 0,
+      "strike_creations": 0
+    },
+    "verification_gets": [
+      {
+        "accept_header": "text/html",
+        "command": "curl --fail-with-body --silent --show-error --request GET --header 'Accept: text/html' https://oddspark.dev/",
+        "expected_content_type": "text/html; charset=utf-8",
+        "expected_contract": "Production root renders successfully.",
+        "expected_status": 200,
+        "maximum_kv_projection_repair_writes": 0,
+        "maximum_served_metric_writes": 0,
+        "method": "GET",
+        "url": "https://oddspark.dev/"
+      },
+      {
+        "accept_header": "text/plain",
+        "command": "curl --fail-with-body --silent --show-error --request GET --header 'Accept: text/plain' --user-agent 'curl/oddspark-key-pin-verifier' https://oddspark.dev/s/632dcc0b",
+        "expected_content_type": "text/plain; charset=utf-8",
+        "expected_contract": "Retained legacy artifact 632dcc0b renders the pre-1.14 legacy text view losslessly: headline, premise, question, provenance rows, and seed formula.",
+        "expected_status": 200,
+        "maximum_kv_projection_repair_writes": 1,
+        "maximum_served_metric_writes": 1,
+        "method": "GET",
+        "url": "https://oddspark.dev/s/632dcc0b",
+        "user_agent_header": "curl/oddspark-key-pin-verifier"
+      },
+      {
+        "accept_header": "application/json",
+        "command": "curl --fail-with-body --silent --show-error --request GET --header 'Accept: application/json' https://oddspark.dev/api/spark/632dcc0b",
+        "expected_content_type": "application/json; charset=utf-8",
+        "expected_contract": "Response identifies retained legacy artifact 632dcc0b and agrees losslessly with the text permalink on the legacy artifact identity and retained legacy view contract.",
+        "expected_status": 200,
+        "maximum_kv_projection_repair_writes": 1,
+        "maximum_served_metric_writes": 1,
+        "method": "GET",
+        "url": "https://oddspark.dev/api/spark/632dcc0b"
+      }
+    ]
+  },
+  "preparation_evidence": {
+    "prepared_at_utc": "2026-08-26T23:38:29Z",
+    "remote_mutations": 0,
+    "provider_calls": 0,
+    "read_only_live_observations": {
+      "active_deployment_percentage": 100,
+      "active_version_id": "d7bdc546-04a5-4ee5-bd4a-9406b03c255e",
+      "active_version_number": 130,
+      "active_version_source": "wrangler",
+      "bindings": [
+        "AI",
+        "AI_MODEL",
+        "AI_MODEL_FALLBACK",
+        "COORD",
+        "METER",
+        "SPARKS"
+      ],
+      "has_preview": false,
+      "observed_at_utc": "2026-08-26T23:33:00Z"
+    },
+    "workers_builds_owner_observation": {
+      "deploy_command": "npx wrangler deploy",
+      "deploy_hooks": "none",
+      "git_repository": "Hearn-Systems-LLC/oddspark.dev",
+      "non_production_branch_builds_enabled": true,
+      "observed_by": "owner",
+      "production_branch": "main",
+      "root_directory": "/",
+      "security_interpretation": "develop may automatically upload an unpromoted Worker version but cannot automatically change production traffic",
+      "version_command": "npx wrangler versions upload"
+    },
+    "workers_builds_state": "owner-observed and subject to a fresh exact-settings drift check before approval and execution; automatic build state is not deployment authority"
+  },
+  "prerequisite_checks": [
+    {
+      "command": "test \"$(git branch --show-current)\" = develop && test \"$(git rev-parse HEAD)\" = 0e624016edd15a2308183f3ad0f045da05f5b728 && test \"$(git rev-parse origin/develop)\" = 0e624016edd15a2308183f3ad0f045da05f5b728 && test -z \"$(git status --porcelain)\"",
+      "expected": "exit 0; clean develop exactly synchronized with origin/develop"
+    },
+    {
+      "command": "git merge-base --is-ancestor e97f863912b2fc0cdfa17d58d6a50e4b68898fd5 HEAD",
+      "expected": "exit 0"
+    },
+    {
+      "command": "npm run writer:preflight && npm run assembly:verify && WRANGLER_LOG_PATH=/tmp/oddspark-production-key-pin-check.log npm run check",
+      "expected": "all gates pass; assembly identity 0eca7833bf857403949928960f2975116445e593471d5c84c9e47499657318e6; no provider or remote mutation"
+    },
+    {
+      "command": "CLOUDFLARE_ACCOUNT_ID=e72c232411bedeed357f3c73e4f4f0aa WRANGLER_LOG_PATH=/tmp/oddspark-production-key-pin-dry-run.log npx --no-install wrangler deploy --dry-run --config /Volumes/fast/Github/oddspark/wrangler.toml --name oddspark --strict",
+      "expected": "dry-run exits 0 and prints exactly METER, COORD, SPARKS, AI, AI_MODEL, AI_MODEL_FALLBACK; no activation binding; no upload"
+    },
+    {
+      "command": "CLOUDFLARE_ACCOUNT_ID=e72c232411bedeed357f3c73e4f4f0aa WRANGLER_LOG_PATH=/tmp/oddspark-production-key-pin-readonly.log npx --no-install wrangler deployments list --config /Volumes/fast/Github/oddspark/wrangler.toml --name oddspark --json",
+      "expected": "latest deployment remains solely d7bdc546-04a5-4ee5-bd4a-9406b03c255e at 100 percent until execution"
+    },
+    {
+      "command": "Operator re-verifies the exact owner-observed Workers Builds settings recorded in preparation_evidence.workers_builds_owner_observation and checks current build activity through an authorized read-only surface.",
+      "expected": "repository Hearn-Systems-LLC/oddspark.dev; production branch main; deploy command npx wrangler deploy; non-production builds enabled with npx wrangler versions upload; root /; no deploy hooks; develop cannot automatically change production traffic; no conflicting pending or running build/version upload; otherwise abort"
+    }
+  ],
+  "rollback_boundary": {
+    "authorization": "not_authorized; separately gated preparation and fresh owner approval required",
+    "candidate": {
+      "command_if_separately_approved": "CLOUDFLARE_ACCOUNT_ID=e72c232411bedeed357f3c73e4f4f0aa WRANGLER_LOG_PATH=/tmp/oddspark-production-key-pin-rollback.log npx --no-install wrangler rollback d7bdc546-04a5-4ee5-bd4a-9406b03c255e --config /Volumes/fast/Github/oddspark/wrangler.toml --name oddspark --yes --message 'separately authorized rollback of production key pin 2026-02'",
+      "evidence": "Verified during preparation as the sole 100-percent active Wrangler deployment, version number 130, with the expected six bindings and no activation binding.",
+      "version_id": "d7bdc546-04a5-4ee5-bd4a-9406b03c255e"
+    },
+    "failure_rule": "A failed post-deploy check does not authorize this command. Preserve evidence and obtain a new exact rollback packet/approval."
+  },
+  "source_identity": {
+    "branch": "develop",
+    "commit": "0e624016edd15a2308183f3ad0f045da05f5b728",
+    "expected_file_sha256": {
+      "package-lock.json": "c5c31aa5474ec9d04a96a4744c5f41c4ffb2e644cbb0ec28950041edc60301ba",
+      "runtime-assembly.json": "18342d357658d8b4e6eee480d5a9155c7f561be7973386691f2fd74e40fbe866",
+      "src/pipeline/release-decision.mjs": "b3f4fdfbf5af2c329a8cc994d7068656e7e2fb3dee43dea02a279a957c3e23ae",
+      "src/worker.js": "59d4db078fbc61809fe43902b98ab338dbf338ad2f441ee794fdd1f4af2ab657",
+      "wrangler.toml": "dccc172215d1e99b730ffc61c027966b768fe70e55a988d8f667c0d959e2178f"
+    },
+    "origin_develop": "0e624016edd15a2308183f3ad0f045da05f5b728",
+    "rotation_implementation_commit": "e97f863912b2fc0cdfa17d58d6a50e4b68898fd5",
+    "runtime_assembly_identity_sha256": "0eca7833bf857403949928960f2975116445e593471d5c84c9e47499657318e6"
+  },
+  "status": "unapproved",
+  "stop_and_abort_conditions": [
+    "Packet status is not unapproved immediately before a fresh exact-SHA owner approval record is created.",
+    "Git branch, cleanliness, HEAD, origin/develop, rotation ancestry, file hash, assembly identity, config, lockfile, or Wrangler version differs.",
+    "Current production version is absent, ambiguous, not solely 100 percent, or differs from d7bdc546-04a5-4ee5-bd4a-9406b03c255e before execution.",
+    "Account, Worker name, root config path, custom domain, routes, resources, vars, secrets, or bindings differ.",
+    "ACTIVATION_SNAPSHOT or ACTIVATION_MANIFEST exists anywhere in the deployment inventory/config authority.",
+    "Any prerequisite or dry run fails, warns, or prints an unexpected binding/resource.",
+    "Workers Builds or any other automatic/manual path could create an unapproved parallel deployment.",
+    "Any owner-observed Workers Builds field drifts: repository, production branch, deploy command, non-production version command, root directory, deploy hooks, or the inability of develop to change production traffic automatically.",
+    "Any remote mutation occurs after approval and before execution.",
+    "Verification would exceed two served-metric writes or two KV projection-repair writes total, perform any other KV or Durable Object write, or issue any POST, strike creation, provider call, signing, activation, retry, or rollback.",
+    "Deploy command differs, prompts for substitution, would install a package, or would select an environment/config/name other than the pinned target.",
+    "The single deploy returns an error or ambiguous version; never retry.",
+    "Any post-deploy check fails; preserve terminal evidence and seek separate rollback authority."
+  ],
+  "target": {
+    "account_id": "e72c232411bedeed357f3c73e4f4f0aa",
+    "config_absolute_path": "/Volumes/fast/Github/oddspark/wrangler.toml",
+    "custom_domain": "oddspark.dev",
+    "environment": "production",
+    "worker_script": "oddspark"
+  },
+  "trust_key": {
+    "algorithm": "Ed25519",
+    "key_id": "oddspark-production-activation-2026-02",
+    "public_spki_base64url": "MCowBQYDK2VwAyEAh4GQdgxMP65vNfGmtKRBfb2Z4ayMCnzNvuvtsihM5pY",
+    "spki_der_sha256": "8e2f2502d2ab783de6fb558663aa86ffd69c2d7f4a3fa98c2f2108358a047e6b"
+  }
+}

@@ -1,0 +1,171 @@
+{
+  "packet_contract": "oddspark-production-public-key-pin-deployment-packet/v1",
+  "successor_of": {
+    "terminal_packet": "_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r3.json",
+    "terminal_packet_sha256": "536d84583232e8ca926843d5450c155113bf054dab6c470daabf9d366f691e08",
+    "reason": "The approved r3 execution terminated before deployment because its single offline prerequisite invocation yielded a running process ID and the executor treated the absent immediate exit status as ambiguity instead of continuing to wait on that same process. r1 and r3 approvals are consumed; r2 was never approved. None authorizes r4.",
+    "predecessor_artifacts": {
+      "_bmad-output/implementation-artifacts/handoff-production-key-pin-deployment-packet-2026-02-review.md": "f4803deb7541a180ec343ed668477238871c701185e0cee14576cb9c27581009",
+      "_bmad-output/implementation-artifacts/handoff-production-key-pin-deployment-packet-2026-02.md": "74e2e3f16943e0766dd54262228d5b16ecfffac4c51908529736b8b370fb7814",
+      "_bmad-output/implementation-artifacts/production-key-pin-deployment-execution-2026-02-evidence.md": "8e54b4528db861d6e8f86f49192560f4ec725bcddfa083b10e81f5d57b8e5265",
+      "_bmad-output/implementation-artifacts/production-key-pin-deployment-execution-2026-02-handoff.md": "c12ad994ffd52dfba4d5ece543525a602fe70515ecf58a3c4f09d22294d3ba62",
+      "_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r2-handoff.md": "4c6df360a63f9e76935c811afe33935c6fb2d1f5d3c204cc6a1173a1ee5fd27f",
+      "_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r2-review.md": "6b9f8b237150ac0b7ec4e73eab0d463adb0314c07d0ac64362e85fd8d0c87370",
+      "_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r2.json": "d26d8d40dc220c260ed7d1618d1d0a83b4524f72cca7317710cf170395528282",
+      "_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r3-handoff.md": "c30795a71664cb99599a8d5c3079859cb1c0bcd033982d6bab4c8f8d2cab76c4",
+      "_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r3-review.md": "0b7fc155214307ff28d838f343d44dba5579983bf868c297c8e41962686f1760",
+      "_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r3.json": "536d84583232e8ca926843d5450c155113bf054dab6c470daabf9d366f691e08",
+      "_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02.json": "2215f584154fc592dae2c3d9d7ec243c34f3f226676c7c9d64256b827cad1f70",
+      "_bmad-output/implementation-artifacts/production-key-pin-deployment-r3-execution-2026-02-evidence.md": "2c21f5e7becc2462569d11239a2e62855a47e0b88c74923c5dfb0a87dad7f07c",
+      "_bmad-output/implementation-artifacts/production-key-pin-deployment-r3-execution-2026-02-handoff.md": "8b3e26ef4aeba21279abd56692fcaa4091570b67c9e9112ec83f16c481465188"
+    }
+  },
+  "status": "unapproved",
+  "authorization_scope": {
+    "allowed_executions": 1,
+    "approval_requirement": "Fresh owner approval must name the SHA-256 of these exact r4 packet bytes after a real independent r4 review exists. The consumed r1 and r3 approvals and the never-approved r2 packet are invalid for r4. Approval is invalid after any predecessor hash, allowlist, source, target, version, binding, route, config, build-trigger, or remote-state drift.",
+    "authorized_operation": "Deploy the exact reviewed source-pinned 2026-02 public-key trust map while preserving inactive production posture.",
+    "forbidden": [
+      "POST requests or strike creation during verification",
+      "ACTIVATION_SNAPSHOT creation or mutation",
+      "ACTIVATION_MANIFEST creation or mutation",
+      "activation",
+      "signing or private-key access",
+      "provider calls or live qualification",
+      "retry, substitution, or a second invocation where exactly one invocation is authorized",
+      "rollback without separate fresh owner authority",
+      "traffic, route, resource, var, secret, or binding mutation outside the single deploy",
+      "verification side effects beyond two served-metric writes and two KV projection-repair writes total"
+    ]
+  },
+  "source_identity": {
+    "branch": "develop",
+    "commit": "0e624016edd15a2308183f3ad0f045da05f5b728",
+    "origin_develop": "0e624016edd15a2308183f3ad0f045da05f5b728",
+    "rotation_implementation_commit": "e97f863912b2fc0cdfa17d58d6a50e4b68898fd5",
+    "runtime_assembly_identity_sha256": "0eca7833bf857403949928960f2975116445e593471d5c84c9e47499657318e6",
+    "expected_file_sha256": {
+      "package-lock.json": "c5c31aa5474ec9d04a96a4744c5f41c4ffb2e644cbb0ec28950041edc60301ba",
+      "runtime-assembly.json": "18342d357658d8b4e6eee480d5a9155c7f561be7973386691f2fd74e40fbe866",
+      "src/pipeline/release-decision.mjs": "b3f4fdfbf5af2c329a8cc994d7068656e7e2fb3dee43dea02a279a957c3e23ae",
+      "src/worker.js": "59d4db078fbc61809fe43902b98ab338dbf338ad2f441ee794fdd1f4af2ab657",
+      "wrangler.toml": "dccc172215d1e99b730ffc61c027966b768fe70e55a988d8f667c0d959e2178f"
+    }
+  },
+  "execution_time_untracked_allowlist": [
+    "_bmad-output/implementation-artifacts/handoff-production-key-pin-deployment-packet-2026-02-review.md",
+    "_bmad-output/implementation-artifacts/handoff-production-key-pin-deployment-packet-2026-02.md",
+    "_bmad-output/implementation-artifacts/production-key-pin-deployment-execution-2026-02-evidence.md",
+    "_bmad-output/implementation-artifacts/production-key-pin-deployment-execution-2026-02-handoff.md",
+    "_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r2-handoff.md",
+    "_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r2-review.md",
+    "_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r2.json",
+    "_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r3-handoff.md",
+    "_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r3-review.md",
+    "_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r3.json",
+    "_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r4-handoff.md",
+    "_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r4-review.md",
+    "_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r4.json",
+    "_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02.json",
+    "_bmad-output/implementation-artifacts/production-key-pin-deployment-r3-execution-2026-02-evidence.md",
+    "_bmad-output/implementation-artifacts/production-key-pin-deployment-r3-execution-2026-02-handoff.md"
+  ],
+  "process_completion_semantics": {
+    "scope": "Every prerequisite command, deployment command, verification GET command, metadata command, and the 300-second observation process/window.",
+    "single_invocation_rule": "Starting a command creates one invocation. If that invocation yields a running cell, session, or process ID instead of an immediate terminal result, it remains the same single invocation.",
+    "continuation_rule": "Use only the environment's wait, poll, or resume mechanism on that exact yielded ID until that same process returns exactly one terminal exit status and complete output. Waiting, polling, or resuming the same exact ID is not a retry, substitution, or second invocation.",
+    "never_restart_rule": "Never start the command again after an ID has been yielded. A replacement invocation, alternate command, or new process is forbidden.",
+    "terminal_ambiguity_rule": "Loss of the exact running ID, process termination without a final exit status, inability to continue waiting or polling that same ID, multiple terminal statuses, or incomplete terminal output is terminal ambiguity. Stop and preserve evidence; do not retry or substitute.",
+    "accounting_rule": "Record invocation_count separately from wait_poll_count for every command. Where the packet says once, require invocation_count exactly 1; wait_poll_count may be zero or greater and does not change invocation_count.",
+    "observation_rule": "The 300-second observation is one observation invocation and one continuous version-bound window. A normal tool yield requires same-ID waiting or polling until the single terminal result and complete window output; it must not manufacture ambiguity or restart the window."
+  },
+  "prerequisite_checks": [
+    {
+      "name": "tracked_source_and_index_clean_with_exact_git_pins",
+      "command": "test \"$(git branch --show-current)\" = develop && test \"$(git rev-parse HEAD)\" = 0e624016edd15a2308183f3ad0f045da05f5b728 && test \"$(git rev-parse origin/develop)\" = 0e624016edd15a2308183f3ad0f045da05f5b728 && git diff --quiet -- && git diff --cached --quiet --",
+      "expected": "one invocation; terminal exit 0 with complete output; tracked worktree and index clean; exact Git pins"
+    },
+    {
+      "name": "exact_execution_time_untracked_governed_artifact_allowlist",
+      "command": "test \"$(git ls-files --others --exclude-standard | LC_ALL=C sort)\" = \"$(printf '%s\\n' '_bmad-output/implementation-artifacts/handoff-production-key-pin-deployment-packet-2026-02-review.md' '_bmad-output/implementation-artifacts/handoff-production-key-pin-deployment-packet-2026-02.md' '_bmad-output/implementation-artifacts/production-key-pin-deployment-execution-2026-02-evidence.md' '_bmad-output/implementation-artifacts/production-key-pin-deployment-execution-2026-02-handoff.md' '_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r2-handoff.md' '_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r2-review.md' '_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r2.json' '_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r3-handoff.md' '_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r3-review.md' '_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r3.json' '_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r4-handoff.md' '_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r4-review.md' '_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r4.json' '_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02.json' '_bmad-output/implementation-artifacts/production-key-pin-deployment-r3-execution-2026-02-evidence.md' '_bmad-output/implementation-artifacts/production-key-pin-deployment-r3-execution-2026-02-handoff.md')\"",
+      "expected": "one invocation; terminal exit 0 only after the real independent r4 review exists and exactly all 16 sorted paths are untracked; any missing or unexpected path fails closed"
+    },
+    {
+      "name": "all_predecessor_artifact_hashes",
+      "command": "printf '%s  %s\\n' 'f4803deb7541a180ec343ed668477238871c701185e0cee14576cb9c27581009' '_bmad-output/implementation-artifacts/handoff-production-key-pin-deployment-packet-2026-02-review.md' '74e2e3f16943e0766dd54262228d5b16ecfffac4c51908529736b8b370fb7814' '_bmad-output/implementation-artifacts/handoff-production-key-pin-deployment-packet-2026-02.md' '8e54b4528db861d6e8f86f49192560f4ec725bcddfa083b10e81f5d57b8e5265' '_bmad-output/implementation-artifacts/production-key-pin-deployment-execution-2026-02-evidence.md' 'c12ad994ffd52dfba4d5ece543525a602fe70515ecf58a3c4f09d22294d3ba62' '_bmad-output/implementation-artifacts/production-key-pin-deployment-execution-2026-02-handoff.md' '4c6df360a63f9e76935c811afe33935c6fb2d1f5d3c204cc6a1173a1ee5fd27f' '_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r2-handoff.md' '6b9f8b237150ac0b7ec4e73eab0d463adb0314c07d0ac64362e85fd8d0c87370' '_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r2-review.md' 'd26d8d40dc220c260ed7d1618d1d0a83b4524f72cca7317710cf170395528282' '_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r2.json' 'c30795a71664cb99599a8d5c3079859cb1c0bcd033982d6bab4c8f8d2cab76c4' '_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r3-handoff.md' '0b7fc155214307ff28d838f343d44dba5579983bf868c297c8e41962686f1760' '_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r3-review.md' '536d84583232e8ca926843d5450c155113bf054dab6c470daabf9d366f691e08' '_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r3.json' '2215f584154fc592dae2c3d9d7ec243c34f3f226676c7c9d64256b827cad1f70' '_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02.json' '2c21f5e7becc2462569d11239a2e62855a47e0b88c74923c5dfb0a87dad7f07c' '_bmad-output/implementation-artifacts/production-key-pin-deployment-r3-execution-2026-02-evidence.md' '8b3e26ef4aeba21279abd56692fcaa4091570b67c9e9112ec83f16c481465188' '_bmad-output/implementation-artifacts/production-key-pin-deployment-r3-execution-2026-02-handoff.md' | shasum -a 256 -c -",
+      "expected": "one invocation; terminal exit 0; all 13 existing governed artifacts match exact pinned hashes"
+    },
+    {
+      "name": "rotation_ancestry",
+      "command": "git merge-base --is-ancestor e97f863912b2fc0cdfa17d58d6a50e4b68898fd5 HEAD",
+      "expected": "one invocation; terminal exit 0"
+    },
+    {
+      "name": "offline_repository_gates",
+      "command": "npm run writer:preflight && npm run assembly:verify && WRANGLER_LOG_PATH=/tmp/oddspark-production-key-pin-check.log npm run check",
+      "expected": "one invocation; same-ID waits/polls permitted until one terminal exit 0 and complete output; all gates pass; assembly identity 0eca7833bf857403949928960f2975116445e593471d5c84c9e47499657318e6; no provider or remote mutation"
+    },
+    {
+      "name": "exact_wrangler_dry_run",
+      "command": "CLOUDFLARE_ACCOUNT_ID=e72c232411bedeed357f3c73e4f4f0aa WRANGLER_LOG_PATH=/tmp/oddspark-production-key-pin-dry-run.log npx --no-install wrangler deploy --dry-run --config /Volumes/fast/Github/oddspark/wrangler.toml --name oddspark --strict",
+      "expected": "one invocation; terminal exit 0; exactly METER, COORD, SPARKS, AI, AI_MODEL, AI_MODEL_FALLBACK; no activation binding; no upload"
+    },
+    {
+      "name": "read_only_current_deployment",
+      "command": "CLOUDFLARE_ACCOUNT_ID=e72c232411bedeed357f3c73e4f4f0aa WRANGLER_LOG_PATH=/tmp/oddspark-production-key-pin-readonly.log npx --no-install wrangler deployments list --config /Volumes/fast/Github/oddspark/wrangler.toml --name oddspark --json",
+      "expected": "one invocation; terminal exit 0 and complete output; latest deployment remains solely d7bdc546-04a5-4ee5-bd4a-9406b03c255e at 100 percent until execution"
+    },
+    {
+      "name": "owner_observed_workers_builds_drift_gate",
+      "command": "Operator re-verifies the retained owner-observed Workers Builds settings and checks current build activity through an authorized read-only surface.",
+      "expected": "one invocation per observation command with same-ID polling semantics; repository Hearn-Systems-LLC/oddspark.dev; production branch main; exact commands and root; no deploy hooks or conflicting activity; otherwise abort"
+    }
+  ],
+  "deployment": {
+    "command": "CLOUDFLARE_ACCOUNT_ID=e72c232411bedeed357f3c73e4f4f0aa WRANGLER_LOG_PATH=/tmp/oddspark-production-key-pin-2026-02.log npx --no-install wrangler deploy --config /Volumes/fast/Github/oddspark/wrangler.toml --name oddspark --strict --message 'production key pin 2026-02; source 0e624016edd15a2308183f3ad0f045da05f5b728; assembly 0eca7833bf857403949928960f2975116445e593471d5c84c9e47499657318e6'",
+    "execution_policy": "Run once only from /Volumes/fast/Github/oddspark after every prerequisite passes, a real independent r4 review exists, and fresh approval of this exact r4 SHA is recorded. A yielded running ID must be polled as the same invocation. Never execute r1, r2, or r3. Do not add --env.",
+    "pinned_wrangler_version": "4.123.0"
+  },
+  "target": {
+    "account_id": "e72c232411bedeed357f3c73e4f4f0aa",
+    "config_absolute_path": "/Volumes/fast/Github/oddspark/wrangler.toml",
+    "custom_domain": "oddspark.dev",
+    "environment": "production",
+    "worker_script": "oddspark"
+  },
+  "binding_invariants": {
+    "expected_bindings": ["AI", "AI_MODEL", "AI_MODEL_FALLBACK", "COORD", "METER", "SPARKS"],
+    "expected_binding_count": 6,
+    "unexpected_binding_count": 0,
+    "activation_authority_absent": ["ACTIVATION_SNAPSHOT", "ACTIVATION_MANIFEST"]
+  },
+  "post_deploy_verification": {
+    "bounded_observation_window_seconds": 300,
+    "observation_process": "Invoke the retained authorized version-bound observation process exactly once, record invocation_count=1 separately from wait_poll_count, preserve one continuous 300-second window, and use only same-ID waits/polls until one terminal exit status and complete output.",
+    "verification_gets": [
+      {"method":"GET","url":"https://oddspark.dev/","accept_header":"text/html","command":"curl --fail-with-body --silent --show-error --request GET --header 'Accept: text/html' https://oddspark.dev/","expected_status":200,"expected_content_type":"text/html; charset=utf-8","expected_contract":"Production root renders successfully.","maximum_served_metric_writes":0,"maximum_kv_projection_repair_writes":0},
+      {"method":"GET","url":"https://oddspark.dev/s/632dcc0b","accept_header":"text/plain","user_agent_header":"curl/oddspark-key-pin-verifier","command":"curl --fail-with-body --silent --show-error --request GET --header 'Accept: text/plain' --user-agent 'curl/oddspark-key-pin-verifier' https://oddspark.dev/s/632dcc0b","expected_status":200,"expected_content_type":"text/plain; charset=utf-8","expected_contract":"Retained legacy artifact 632dcc0b renders the pre-1.14 legacy text view losslessly: headline, premise, question, provenance rows, and seed formula.","maximum_served_metric_writes":1,"maximum_kv_projection_repair_writes":1},
+      {"method":"GET","url":"https://oddspark.dev/api/spark/632dcc0b","accept_header":"application/json","command":"curl --fail-with-body --silent --show-error --request GET --header 'Accept: application/json' https://oddspark.dev/api/spark/632dcc0b","expected_status":200,"expected_content_type":"application/json; charset=utf-8","expected_contract":"Response identifies retained legacy artifact 632dcc0b and agrees losslessly with the text permalink on the legacy artifact identity and retained legacy view contract.","maximum_served_metric_writes":1,"maximum_kv_projection_repair_writes":1}
+    ],
+    "side_effect_budget": {"activation_operations":0,"durable_object_writes_other_than_served_metric":0,"kv_projection_repair_writes_maximum":2,"other_kv_writes":0,"post_requests":0,"provider_calls":0,"rollback_operations":0,"served_metric_writes_maximum":2,"signing_operations":0,"strike_creations":0},
+    "failure_policy": "Stop immediately on a terminal failure or same-ID ambiguity. Do not restart, retry, substitute, POST, create a strike, or roll back under this packet. Record terminal evidence and request separate authority."
+  },
+  "rollback_boundary": {
+    "authorization": "not_authorized; separately gated preparation and fresh owner approval required",
+    "candidate_version_id": "d7bdc546-04a5-4ee5-bd4a-9406b03c255e",
+    "failure_rule": "A failed post-deploy check does not authorize rollback. Preserve evidence and obtain a new exact rollback packet and approval."
+  },
+  "stop_and_abort_conditions": [
+    "A real independent r4 review is absent, is not accepting, or fresh approval does not name this exact r4 packet SHA-256.",
+    "Any of the 13 existing governed artifacts is missing or its exact hash differs.",
+    "Tracked worktree or index differs, or branch, HEAD, origin/develop, ancestry, source file hash, assembly identity, config, lockfile, or Wrangler version differs.",
+    "The exact 16-path execution-time governed untracked allowlist differs in any way, including a missing anticipated real r4 review or any unexpected path.",
+    "Current production version, target, domain, routes, resources, vars, secrets, or exact six-binding inventory differs, or activation authority exists.",
+    "Any prerequisite fails, warns, reveals drift, or cannot reach one terminal status and complete output by continuing the exact yielded ID.",
+    "Any remote mutation occurs after approval and before execution.",
+    "Any command invocation count differs from exactly one where specified; same-ID wait/poll count is recorded separately and is not an invocation.",
+    "A yielded ID is lost, cannot be continued, terminates without final status, or is replaced; never restart, retry, or substitute.",
+    "The one deploy fails or is ambiguous; never retry.",
+    "Any GET, observation process/window, or post-deploy check fails or would exceed the retained caps; never retry or roll back under this packet."
+  ]
+}

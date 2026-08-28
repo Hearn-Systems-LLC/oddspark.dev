@@ -1,0 +1,176 @@
+{
+  "packet_contract": "oddspark-production-public-key-pin-deployment-packet/v1",
+  "successor_of": {
+    "terminal_packet": "_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02.json",
+    "terminal_packet_sha256": "2215f584154fc592dae2c3d9d7ec243c34f3f226676c7c9d64256b827cad1f70",
+    "reason": "The prior exact-SHA approval was consumed by one terminal precondition attempt. Its literal git status --porcelain check rejected the governed untracked packet and reviewed handoffs. Deployment execution count, GET count, and remote mutation count were all zero. The old packet is terminal, must not be executed again, and cannot authorize this successor.",
+    "predecessor_artifacts": {
+      "_bmad-output/implementation-artifacts/handoff-production-key-pin-deployment-packet-2026-02-review.md": "f4803deb7541a180ec343ed668477238871c701185e0cee14576cb9c27581009",
+      "_bmad-output/implementation-artifacts/handoff-production-key-pin-deployment-packet-2026-02.md": "74e2e3f16943e0766dd54262228d5b16ecfffac4c51908529736b8b370fb7814",
+      "_bmad-output/implementation-artifacts/production-key-pin-deployment-execution-2026-02-evidence.md": "8e54b4528db861d6e8f86f49192560f4ec725bcddfa083b10e81f5d57b8e5265",
+      "_bmad-output/implementation-artifacts/production-key-pin-deployment-execution-2026-02-handoff.md": "c12ad994ffd52dfba4d5ece543525a602fe70515ecf58a3c4f09d22294d3ba62",
+      "_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02.json": "2215f584154fc592dae2c3d9d7ec243c34f3f226676c7c9d64256b827cad1f70"
+    }
+  },
+  "status": "unapproved",
+  "authorization_scope": {
+    "allowed_executions": 1,
+    "approval_requirement": "Fresh owner approval must name the SHA-256 of these exact successor packet bytes. The consumed predecessor approval is invalid for this successor. Approval is invalid after any prerequisite, predecessor hash, source, target, version, binding, route, config, build-trigger, or remote-state drift.",
+    "authorized_operation": "Deploy the exact reviewed source-pinned 2026-02 public-key trust map while preserving inactive production posture.",
+    "forbidden": [
+      "POST requests or strike creation during verification",
+      "ACTIVATION_SNAPSHOT creation or mutation",
+      "ACTIVATION_MANIFEST creation or mutation",
+      "activation",
+      "signing or private-key access",
+      "provider calls or live qualification",
+      "retry or substitution",
+      "rollback without separate fresh owner authority",
+      "traffic, route, resource, var, secret, or binding mutation outside the single deploy",
+      "verification side effects beyond two served-metric writes and two KV projection-repair writes total"
+    ]
+  },
+  "source_identity": {
+    "branch": "develop",
+    "commit": "0e624016edd15a2308183f3ad0f045da05f5b728",
+    "origin_develop": "0e624016edd15a2308183f3ad0f045da05f5b728",
+    "rotation_implementation_commit": "e97f863912b2fc0cdfa17d58d6a50e4b68898fd5",
+    "runtime_assembly_identity_sha256": "0eca7833bf857403949928960f2975116445e593471d5c84c9e47499657318e6",
+    "expected_file_sha256": {
+      "package-lock.json": "c5c31aa5474ec9d04a96a4744c5f41c4ffb2e644cbb0ec28950041edc60301ba",
+      "runtime-assembly.json": "18342d357658d8b4e6eee480d5a9155c7f561be7973386691f2fd74e40fbe866",
+      "src/pipeline/release-decision.mjs": "b3f4fdfbf5af2c329a8cc994d7068656e7e2fb3dee43dea02a279a957c3e23ae",
+      "src/worker.js": "59d4db078fbc61809fe43902b98ab338dbf338ad2f441ee794fdd1f4af2ab657",
+      "wrangler.toml": "dccc172215d1e99b730ffc61c027966b768fe70e55a988d8f667c0d959e2178f"
+    }
+  },
+  "prerequisite_checks": [
+    {
+      "name": "tracked_source_and_index_clean_with_exact_git_pins",
+      "command": "test \"$(git branch --show-current)\" = develop && test \"$(git rev-parse HEAD)\" = 0e624016edd15a2308183f3ad0f045da05f5b728 && test \"$(git rev-parse origin/develop)\" = 0e624016edd15a2308183f3ad0f045da05f5b728 && git diff --quiet -- && git diff --cached --quiet --",
+      "expected": "exit 0; tracked worktree and index have no changes; develop, HEAD, and origin/develop are exact. Governed untracked artifacts are intentionally evaluated only by the separate exact allowlist gate."
+    },
+    {
+      "name": "exact_untracked_governed_artifact_allowlist",
+      "command": "test \"$(git ls-files --others --exclude-standard | LC_ALL=C sort)\" = \"$(printf '%s\\n' '_bmad-output/implementation-artifacts/handoff-production-key-pin-deployment-packet-2026-02-review.md' '_bmad-output/implementation-artifacts/handoff-production-key-pin-deployment-packet-2026-02.md' '_bmad-output/implementation-artifacts/production-key-pin-deployment-execution-2026-02-evidence.md' '_bmad-output/implementation-artifacts/production-key-pin-deployment-execution-2026-02-handoff.md' '_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r2-handoff.md' '_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02-r2.json' '_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02.json')\"",
+      "expected": "exit 0; exactly seven expected governed artifacts are untracked and every unexpected untracked path is rejected"
+    },
+    {
+      "name": "predecessor_artifact_hashes",
+      "command": "printf '%s  %s\\n' 'f4803deb7541a180ec343ed668477238871c701185e0cee14576cb9c27581009' '_bmad-output/implementation-artifacts/handoff-production-key-pin-deployment-packet-2026-02-review.md' '74e2e3f16943e0766dd54262228d5b16ecfffac4c51908529736b8b370fb7814' '_bmad-output/implementation-artifacts/handoff-production-key-pin-deployment-packet-2026-02.md' '8e54b4528db861d6e8f86f49192560f4ec725bcddfa083b10e81f5d57b8e5265' '_bmad-output/implementation-artifacts/production-key-pin-deployment-execution-2026-02-evidence.md' 'c12ad994ffd52dfba4d5ece543525a602fe70515ecf58a3c4f09d22294d3ba62' '_bmad-output/implementation-artifacts/production-key-pin-deployment-execution-2026-02-handoff.md' '2215f584154fc592dae2c3d9d7ec243c34f3f226676c7c9d64256b827cad1f70' '_bmad-output/implementation-artifacts/production-key-pin-deployment-packet-2026-02.json' | shasum -a 256 -c -",
+      "expected": "exit 0; all five predecessor packet, review, handoff, and terminal-evidence artifacts match their exact retained hashes"
+    },
+    {
+      "name": "rotation_ancestry",
+      "command": "git merge-base --is-ancestor e97f863912b2fc0cdfa17d58d6a50e4b68898fd5 HEAD",
+      "expected": "exit 0"
+    },
+    {
+      "name": "offline_repository_gates",
+      "command": "npm run writer:preflight && npm run assembly:verify && WRANGLER_LOG_PATH=/tmp/oddspark-production-key-pin-check.log npm run check",
+      "expected": "all gates pass; assembly identity 0eca7833bf857403949928960f2975116445e593471d5c84c9e47499657318e6; no provider or remote mutation"
+    },
+    {
+      "name": "exact_wrangler_dry_run",
+      "command": "CLOUDFLARE_ACCOUNT_ID=e72c232411bedeed357f3c73e4f4f0aa WRANGLER_LOG_PATH=/tmp/oddspark-production-key-pin-dry-run.log npx --no-install wrangler deploy --dry-run --config /Volumes/fast/Github/oddspark/wrangler.toml --name oddspark --strict",
+      "expected": "dry-run exits 0 and prints exactly METER, COORD, SPARKS, AI, AI_MODEL, AI_MODEL_FALLBACK; no activation binding; no upload"
+    },
+    {
+      "name": "read_only_current_deployment",
+      "command": "CLOUDFLARE_ACCOUNT_ID=e72c232411bedeed357f3c73e4f4f0aa WRANGLER_LOG_PATH=/tmp/oddspark-production-key-pin-readonly.log npx --no-install wrangler deployments list --config /Volumes/fast/Github/oddspark/wrangler.toml --name oddspark --json",
+      "expected": "latest deployment remains solely d7bdc546-04a5-4ee5-bd4a-9406b03c255e at 100 percent until execution"
+    },
+    {
+      "name": "owner_observed_workers_builds_drift_gate",
+      "command": "Operator re-verifies the retained owner-observed Workers Builds settings and checks current build activity through an authorized read-only surface.",
+      "expected": "repository Hearn-Systems-LLC/oddspark.dev; production branch main; deploy command npx wrangler deploy; non-production builds enabled with npx wrangler versions upload; root /; no deploy hooks; develop cannot automatically change production traffic; no conflicting pending or running build/version upload; otherwise abort"
+    }
+  ],
+  "deployment": {
+    "command": "CLOUDFLARE_ACCOUNT_ID=e72c232411bedeed357f3c73e4f4f0aa WRANGLER_LOG_PATH=/tmp/oddspark-production-key-pin-2026-02.log npx --no-install wrangler deploy --config /Volumes/fast/Github/oddspark/wrangler.toml --name oddspark --strict --message 'production key pin 2026-02; source 0e624016edd15a2308183f3ad0f045da05f5b728; assembly 0eca7833bf857403949928960f2975116445e593471d5c84c9e47499657318e6'",
+    "execution_policy": "Run once only, from /Volumes/fast/Github/oddspark, after every prerequisite is freshly rechecked and fresh approval of this exact successor packet SHA-256 is recorded. Never execute the predecessor packet again. Do not add --env.",
+    "pinned_wrangler_version": "4.123.0"
+  },
+  "target": {
+    "account_id": "e72c232411bedeed357f3c73e4f4f0aa",
+    "config_absolute_path": "/Volumes/fast/Github/oddspark/wrangler.toml",
+    "custom_domain": "oddspark.dev",
+    "environment": "production",
+    "worker_script": "oddspark"
+  },
+  "binding_invariants": {
+    "expected_bindings": ["AI", "AI_MODEL", "AI_MODEL_FALLBACK", "COORD", "METER", "SPARKS"],
+    "expected_binding_count": 6,
+    "unexpected_binding_count": 0,
+    "activation_authority_absent": ["ACTIVATION_SNAPSHOT", "ACTIVATION_MANIFEST"]
+  },
+  "post_deploy_verification": {
+    "bounded_observation_window_seconds": 300,
+    "verification_gets": [
+      {
+        "method": "GET",
+        "url": "https://oddspark.dev/",
+        "accept_header": "text/html",
+        "command": "curl --fail-with-body --silent --show-error --request GET --header 'Accept: text/html' https://oddspark.dev/",
+        "expected_status": 200,
+        "expected_content_type": "text/html; charset=utf-8",
+        "expected_contract": "Production root renders successfully.",
+        "maximum_served_metric_writes": 0,
+        "maximum_kv_projection_repair_writes": 0
+      },
+      {
+        "method": "GET",
+        "url": "https://oddspark.dev/s/632dcc0b",
+        "accept_header": "text/plain",
+        "user_agent_header": "curl/oddspark-key-pin-verifier",
+        "command": "curl --fail-with-body --silent --show-error --request GET --header 'Accept: text/plain' --user-agent 'curl/oddspark-key-pin-verifier' https://oddspark.dev/s/632dcc0b",
+        "expected_status": 200,
+        "expected_content_type": "text/plain; charset=utf-8",
+        "expected_contract": "Retained legacy artifact 632dcc0b renders the pre-1.14 legacy text view losslessly: headline, premise, question, provenance rows, and seed formula.",
+        "maximum_served_metric_writes": 1,
+        "maximum_kv_projection_repair_writes": 1
+      },
+      {
+        "method": "GET",
+        "url": "https://oddspark.dev/api/spark/632dcc0b",
+        "accept_header": "application/json",
+        "command": "curl --fail-with-body --silent --show-error --request GET --header 'Accept: application/json' https://oddspark.dev/api/spark/632dcc0b",
+        "expected_status": 200,
+        "expected_content_type": "application/json; charset=utf-8",
+        "expected_contract": "Response identifies retained legacy artifact 632dcc0b and agrees losslessly with the text permalink on the legacy artifact identity and retained legacy view contract.",
+        "maximum_served_metric_writes": 1,
+        "maximum_kv_projection_repair_writes": 1
+      }
+    ],
+    "side_effect_budget": {
+      "activation_operations": 0,
+      "durable_object_writes_other_than_served_metric": 0,
+      "kv_projection_repair_writes_maximum": 2,
+      "other_kv_writes": 0,
+      "post_requests": 0,
+      "provider_calls": 0,
+      "rollback_operations": 0,
+      "served_metric_writes_maximum": 2,
+      "signing_operations": 0,
+      "strike_creations": 0
+    },
+    "failure_policy": "Stop immediately. Do not retry, issue a POST, create a strike, or roll back under this packet. Record terminal evidence and request separate rollback authority."
+  },
+  "rollback_boundary": {
+    "authorization": "not_authorized; separately gated preparation and fresh owner approval required",
+    "candidate_version_id": "d7bdc546-04a5-4ee5-bd4a-9406b03c255e",
+    "failure_rule": "A failed post-deploy check does not authorize rollback. Preserve evidence and obtain a new exact rollback packet and approval."
+  },
+  "stop_and_abort_conditions": [
+    "Fresh approval does not name this exact successor packet SHA-256.",
+    "Any predecessor artifact hash differs or any predecessor is missing.",
+    "Tracked worktree or index differs, or branch, HEAD, origin/develop, ancestry, source file hash, assembly identity, config, lockfile, or Wrangler version differs.",
+    "The exact seven-path governed untracked allowlist differs in any way or any unexpected untracked path exists.",
+    "Current production version, target, domain, routes, resources, vars, secrets, or exact six-binding inventory differs, or activation authority exists.",
+    "Any prerequisite fails, warns, or reveals drift or a conflicting automatic/manual deployment path.",
+    "Any remote mutation occurs after approval and before execution.",
+    "Deploy command differs, would install or substitute a package, prompts, or targets another environment, config, account, or Worker.",
+    "The one deploy fails or is ambiguous; never retry.",
+    "Any GET or post-deploy check fails or would exceed the retained caps; never retry or roll back under this packet."
+  ]
+}
