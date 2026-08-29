@@ -31,9 +31,11 @@ function browserHtml(source, mermaidOutcome) {
   const withoutFonts = source.replace(/<link[^>]+fonts\.(?:googleapis|gstatic)\.com[^>]*>/g, "");
   if (mermaidOutcome === "live") return withoutFonts;
   const stub = mermaidOutcome === "success"
-    ? `<script>globalThis.mermaid={initialize:function(){},run:function(options){options.nodes.forEach(function(node){var svg=document.createElementNS("http://www.w3.org/2000/svg","svg");svg.setAttribute("width","640");svg.setAttribute("height","180");node.replaceChildren(svg);node.setAttribute("data-processed","true");});return Promise.resolve();}};</script>`
+    ? `<script>globalThis.mermaid={runCalls:0,initialize:function(){},run:function(options){this.runCalls+=1;options.nodes.forEach(function(node){var svg=document.createElementNS("http://www.w3.org/2000/svg","svg");svg.setAttribute("width","640");svg.setAttribute("height","180");node.replaceChildren(svg);node.setAttribute("data-processed","true");});return Promise.resolve();}};</script>`
+    : mermaidOutcome === "processed-reject"
+      ? `<script>globalThis.mermaid={initialize:function(){},run:function(options){options.nodes.forEach(function(node){var svg=document.createElementNS("http://www.w3.org/2000/svg","svg");svg.setAttribute("width","640");svg.setAttribute("height","180");node.replaceChildren(svg);node.setAttribute("data-processed","true");});return Promise.reject(new Error("aggregate Mermaid failure"));}};</script>`
     : mermaidOutcome === "partial"
-      ? `<script>globalThis.mermaid={initialize:function(){},run:function(options){var node=options.nodes[0];var svg=document.createElementNS("http://www.w3.org/2000/svg","svg");svg.setAttribute("width","640");svg.setAttribute("height","180");node.replaceChildren(svg);node.setAttribute("data-processed","true");return Promise.resolve();}};</script>`
+      ? `<script>globalThis.mermaid={initialize:function(){},run:function(options){var node=options.nodes[0];var svg=document.createElementNS("http://www.w3.org/2000/svg","svg");svg.setAttribute("width","640");svg.setAttribute("height","180");node.replaceChildren(svg);node.setAttribute("data-processed","true");return Promise.reject(new Error("partial Mermaid failure"));}};</script>`
       : mermaidOutcome === "malformed"
         ? `<script>globalThis.mermaid={initialize:function(){},run:function(options){options.nodes.forEach(function(node){node.setAttribute("data-processed","true");});return Promise.resolve();}};</script>`
         : `<script>globalThis.mermaid={initialize:function(){},run:function(){return Promise.reject(new Error("blocked Mermaid"));}};</script>`;
@@ -365,6 +367,33 @@ test("Chrome: successful Mermaid rendering preserves Option A semantics at 320px
   });
 });
 
+test("Chrome: processed Mermaid diagrams remain exposed after aggregate rejection", { skip: !CHROME }, async () => {
+  await browserSession({ "/success": browserHtml(source, "processed-reject") }, async (cdp) => {
+    await waitFor(cdp, 'document.querySelectorAll(".diagram-scroll:not([hidden])").length === 4');
+    const state = await evaluate(cdp, `(() => ({
+      visibleScrollers: document.querySelectorAll(".diagram-scroll:not([hidden])").length,
+      tabbableScrollers: document.querySelectorAll('.diagram-scroll[tabindex="0"]').length,
+      hiddenFigures: document.querySelectorAll('.diagram-scroll:not([hidden]) figure[aria-hidden="true"]').length,
+      hiddenSvgs: document.querySelectorAll('.diagram-scroll:not([hidden]) svg[aria-hidden="true"]').length,
+      visibleFlows: [...document.querySelectorAll("ol.flow")].filter((node) => node.getClientRects().length > 0).length,
+      visibleRawSources: [...document.querySelectorAll("pre.mermaid")].filter((node) => node.getClientRects().length > 0 && !node.querySelector("svg")).length,
+      pageOverflow: document.documentElement.scrollWidth > document.documentElement.clientWidth,
+    }))()`);
+    assert.deepEqual(state, {
+      visibleScrollers: 4,
+      tabbableScrollers: 4,
+      hiddenFigures: 4,
+      hiddenSvgs: 4,
+      visibleFlows: 4,
+      visibleRawSources: 0,
+      pageOverflow: false,
+    });
+    const ax = await cdp.send("Accessibility.getFullAXTree");
+    assert.equal(ax.nodes.filter((node) => node.name?.value?.startsWith("Scrollable diagram:")).length, 4);
+    assert.equal(ax.nodes.filter((node) => node.role?.value === "image" && /Evidence-to-Render|privacy boundary|six-call|receipt limits/i.test(node.name?.value || "")).length, 0);
+  });
+});
+
 test("Chrome: failed Mermaid rendering leaves only the four ordered equivalents exposed", { skip: !CHROME }, async () => {
   await browserSession({ "/success": browserHtml(source, "failure") }, async (cdp) => {
     await sleep(100);
@@ -384,16 +413,36 @@ test("Chrome: failed Mermaid rendering leaves only the four ordered equivalents 
 test("Chrome: partial, malformed, and repeated Mermaid initialization fail closed per scroller", { skip: !CHROME }, async () => {
   for (const [outcome, exposed] of [["partial", 1], ["malformed", 0]]) {
     await browserSession({ "/success": browserHtml(source, outcome) }, async (cdp) => {
-      await sleep(100);
-      assert.equal(await evaluate(cdp, 'document.querySelectorAll(".diagram-scroll:not([hidden])").length'), exposed, outcome);
-      assert.equal(await evaluate(cdp, 'document.querySelectorAll(".diagram-scroll:not([hidden]) figure:not([aria-hidden=true]), .diagram-scroll:not([hidden]) svg:not([aria-hidden=true])").length'), 0, outcome);
+      await waitFor(cdp, `document.querySelectorAll(".mermaid[data-processed=true]").length === ${outcome === "partial" ? 1 : 4}`);
+      if (outcome === "partial") await waitFor(cdp, 'document.querySelectorAll(".diagram-scroll:not([hidden])").length === 1');
+      const state = await evaluate(cdp, `(() => ({
+        visibleScrollers: document.querySelectorAll(".diagram-scroll:not([hidden])").length,
+        hiddenNonTabbableSiblings: document.querySelectorAll('.diagram-scroll[hidden][tabindex="-1"]').length,
+        exposedVisualsInAccessibilityTree: document.querySelectorAll('.diagram-scroll:not([hidden]) figure:not([aria-hidden="true"]), .diagram-scroll:not([hidden]) svg:not([aria-hidden="true"])').length,
+        visibleFlows: [...document.querySelectorAll("ol.flow")].filter((node) => node.getClientRects().length > 0).length,
+        visibleRawSources: [...document.querySelectorAll("pre.mermaid")].filter((node) => node.getClientRects().length > 0 && !node.querySelector("svg")).length,
+        pageOverflow: document.documentElement.scrollWidth > document.documentElement.clientWidth,
+      }))()`);
+      assert.equal(state.visibleScrollers, exposed, outcome);
+      assert.equal(state.hiddenNonTabbableSiblings, 4 - exposed, outcome);
+      assert.equal(state.exposedVisualsInAccessibilityTree, 0, outcome);
+      assert.equal(state.visibleFlows, 4, outcome);
+      assert.equal(state.visibleRawSources, 0, outcome);
+      assert.equal(state.pageOverflow, false, outcome);
     });
   }
   await browserSession({ "/success": browserHtml(source, "success") }, async (cdp) => {
     await waitFor(cdp, 'document.querySelectorAll(".diagram-scroll:not([hidden])").length === 4');
+    assert.equal(await evaluate(cdp, "globalThis.mermaid.runCalls"), 1);
     const enhancement = await evaluate(cdp, `[...document.scripts].map(node => node.textContent).find(text => text.includes("mermaid.initialize"))`);
+    await evaluate(cdp, `(() => {
+      const scroller = document.querySelector(".diagram-scroll");
+      scroller.hidden = true;
+      scroller.setAttribute("tabindex", "-1");
+      scroller.querySelector("svg").removeAttribute("aria-hidden");
+    })()`);
     await evaluate(cdp, enhancement);
-    await waitFor(cdp, 'document.querySelectorAll(".diagram-scroll:not([hidden]) svg[aria-hidden=true]").length === 4');
+    await waitFor(cdp, 'globalThis.mermaid.runCalls === 2 && document.querySelectorAll(".diagram-scroll:not([hidden]) svg[aria-hidden=true]").length === 4');
     assert.equal(await evaluate(cdp, 'document.querySelectorAll(".diagram-scroll[tabindex=\\"0\\"]").length'), 4);
   });
 });
