@@ -94,7 +94,7 @@ test("accessibility and contrast state transitions fail closed when weakened", a
     html.replace("--border-strong:#7E8B98", "--border-strong:#3D4750"),
     html.replace('<figure class="diagram-figure" aria-hidden="true">', '<figure class="diagram-figure">'),
     html.replace('svg.setAttribute("aria-hidden", "true")', ""),
-    html.replace("scroller.hidden = false", "scroller.hidden = true"),
+    html.replace('scroller.setAttribute("tabindex", "0");\n    scroller.hidden = false', 'scroller.setAttribute("tabindex", "0");\n    scroller.hidden = true'),
   ];
   for (const mutation of mutations) assert.notEqual(validateHowPage(mutation).length, 0);
 });

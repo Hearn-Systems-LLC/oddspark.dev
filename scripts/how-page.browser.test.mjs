@@ -31,7 +31,7 @@ function browserHtml(source, mermaidOutcome) {
   const withoutFonts = source.replace(/<link[^>]+fonts\.(?:googleapis|gstatic)\.com[^>]*>/g, "");
   if (mermaidOutcome === "live") return withoutFonts;
   const stub = mermaidOutcome === "success"
-    ? `<script>globalThis.mermaid={runCalls:0,initialize:function(){},run:function(options){this.runCalls+=1;options.nodes.forEach(function(node){var svg=document.createElementNS("http://www.w3.org/2000/svg","svg");svg.setAttribute("width","640");svg.setAttribute("height","180");node.replaceChildren(svg);node.setAttribute("data-processed","true");});return Promise.resolve();}};</script>`
+    ? `<script>globalThis.mermaid={runCalls:0,nodesWereLaidOut:false,initialize:function(){},run:function(options){this.runCalls+=1;this.nodesWereLaidOut=Array.from(options.nodes).every(function(node){return !node.closest(".diagram-scroll").hidden && getComputedStyle(node.closest(".diagram-scroll")).display!=="none";});options.nodes.forEach(function(node){var svg=document.createElementNS("http://www.w3.org/2000/svg","svg");svg.setAttribute("width","640");svg.setAttribute("height","180");node.replaceChildren(svg);node.setAttribute("data-processed","true");});return Promise.resolve();}};</script>`
     : mermaidOutcome === "processed-reject"
       ? `<script>globalThis.mermaid={initialize:function(){},run:function(options){options.nodes.forEach(function(node){var svg=document.createElementNS("http://www.w3.org/2000/svg","svg");svg.setAttribute("width","640");svg.setAttribute("height","180");node.replaceChildren(svg);node.setAttribute("data-processed","true");});return Promise.reject(new Error("aggregate Mermaid failure"));}};</script>`
     : mermaidOutcome === "partial"
@@ -329,6 +329,7 @@ test("Chrome: successful Mermaid rendering preserves Option A semantics at 320px
       };
     })()`);
     assert.equal(layout.innerWidth, 320);
+    assert.equal(await evaluate(cdp, "globalThis.mermaid.nodesWereLaidOut"), true, "Mermaid must measure diagrams while their scrollers participate in layout");
     assert.equal(layout.scrollWidth, layout.clientWidth, "diagram overflow must stay inside its scroller");
     assert.equal(layout.scrollers.length, 4);
     for (const scroller of layout.scrollers) {

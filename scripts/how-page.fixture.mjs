@@ -104,7 +104,8 @@ export function validateHowPage(html) {
   if (!source.includes(".mermaid:not([data-processed]){visibility:hidden}")) errors.push("raw Mermaid source must remain hidden before processing");
   if (!source.includes('https://cdn.jsdelivr.net/npm/mermaid@11.17.0/dist/mermaid.min.js')) errors.push("Mermaid must remain pinned to the reviewed exact distributable version");
   if (!source.includes("--border-strong:#7E8B98") || !source.includes('lineColor: "#7E8B98"')) errors.push("diagram contrast tokens drifted");
-  if (!source.includes('source.getAttribute("data-processed") !== "true"') || !source.includes('scroller.setAttribute("tabindex", "0")') || !source.includes("scroller.hidden = false")) errors.push("successful Mermaid processing must exclusively expose and enable each visual scroller");
+  if (!source.includes('source.getAttribute("data-processed") !== "true"') || !source.includes('scroller.setAttribute("tabindex", "0");\n    scroller.hidden = false')) errors.push("successful Mermaid processing must exclusively expose and enable each visual scroller");
+  if (!source.includes('scroller.classList.add("diagram-pending");\n  scroller.hidden = false;') || !source.includes('.diagram-scroll.diagram-pending{visibility:hidden}')) errors.push("Mermaid diagrams must participate invisibly in layout before rendering");
   if (!source.includes(".then(reconcileDiagrams,reconcileDiagrams)")) errors.push("Mermaid visibility reconciliation must run after fulfillment and rejection");
   if (!source.includes('figure.setAttribute("aria-hidden", "true")') || !source.includes('svg.setAttribute("aria-hidden", "true")')) errors.push("rendered figure and SVG must remain hidden from assistive technology");
   if (source.includes('svg.setAttribute("role", "img")') || source.includes('svg.setAttribute("aria-labelledby"')) errors.push("ordered lists must remain the sole assistive-technology diagram equivalent");

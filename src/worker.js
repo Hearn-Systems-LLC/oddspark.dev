@@ -2885,6 +2885,7 @@ function howPage() {
     background:var(--panel); border:1px solid var(--border-strong);
     padding:22px 16px; overflow-x:auto;
   }
+  .diagram-scroll.diagram-pending{visibility:hidden}
   .diagram-scroll:focus-visible, a:focus-visible{
     outline:2px solid var(--entropy); outline-offset:2px;
   }
@@ -3064,13 +3065,21 @@ function reconcileDiagrams(){
     var figure = scroller.querySelector(".diagram-figure");
     var source = figure && figure.querySelector(".mermaid");
     var svg = source && source.querySelector("svg");
-    if (!source || source.getAttribute("data-processed") !== "true" || !svg) return;
+    scroller.classList.remove("diagram-pending");
+    if (!source || source.getAttribute("data-processed") !== "true" || !svg) {
+      scroller.hidden = true;
+      return;
+    }
     figure.setAttribute("aria-hidden", "true");
     svg.setAttribute("aria-hidden", "true");
     scroller.setAttribute("tabindex", "0");
     scroller.hidden = false;
   });
 }
+document.querySelectorAll(".diagram-scroll").forEach(function(scroller){
+  scroller.classList.add("diagram-pending");
+  scroller.hidden = false;
+});
 mermaid.run({nodes:document.querySelectorAll(".mermaid")}).then(reconcileDiagrams,reconcileDiagrams);
 }
 </script>
